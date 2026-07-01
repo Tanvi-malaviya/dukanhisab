@@ -1,0 +1,73 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AppSettingController;
+
+// Public mobile client system API configuration endpoint
+Route::get('/v1/app-config', [AppSettingController::class, 'getPublicConfig']);
+
+// Sanctum authenticated user info route
+Route::get('/user', function (Request $request) {
+    return $request->user();
+})->middleware('auth:sanctum');
+
+// API version 1 routes with authentication and shop scope
+// Auth routes (no auth middleware)
+Route::post('/v1/auth/login', [App\Http\Controllers\Api\AuthApiController::class, 'login']);
+Route::post('/v1/auth/register', [App\Http\Controllers\Api\AuthApiController::class, 'register']);
+
+// API version 1 routes with authentication and shop scope
+Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardApiController::class, 'index']);
+
+    // Product CRUD
+    Route::apiResource('products', \App\Http\Controllers\Api\ProductApiController::class);
+
+    // Customer CRUD
+    Route::apiResource('customers', \App\Http\Controllers\Api\CustomerApiController::class);
+
+    // Supplier CRUD
+    Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierApiController::class);
+
+    // Sale CRUD
+    Route::apiResource('sales', \App\Http\Controllers\Api\SaleApiController::class);
+    Route::post('/sales/{id}/return', [\App\Http\Controllers\Api\SaleApiController::class, 'returnSale']);
+    Route::get('/sales/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePDF']);
+
+    // Purchase CRUD
+    Route::apiResource('purchases', \App\Http\Controllers\Api\PurchaseApiController::class);
+    Route::get('/purchases/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePurchasePDF']);
+    Route::post('/purchases/{id}/return', [\App\Http\Controllers\Api\PurchaseApiController::class, 'returnPurchase']);
+
+    // CashBook
+    Route::apiResource('cashbooks', \App\Http\Controllers\Api\CashBookApiController::class);
+
+    // Bank accounts
+    Route::apiResource('bank-accounts', \App\Http\Controllers\Api\BankAccountApiController::class);
+
+    // Expenses
+    Route::apiResource('expenses', \App\Http\Controllers\Api\ExpenseApiController::class);
+
+    // Reports
+    Route::get('/reports', [\App\Http\Controllers\Api\ReportApiController::class, 'index']);
+});
+
+// ShopOwner Common API Authentication Module
+Route::prefix('v1/shopowner')->group(function () {
+    Route::post('/register', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'register']);
+    Route::post('/verify-otp', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'verifyOtp']);
+    Route::post('/resend-otp', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'resendOtp']);
+    Route::post('/login', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'login']);
+    Route::post('/forgot-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'forgotPassword']);
+    Route::post('/reset-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'resetPassword']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/shop-setup', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'shopSetup']);
+        Route::post('/change-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'changePassword']);
+        Route::post('/logout', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'logout']);
+        Route::get('/profile', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'profile']);
+    });
+});
+

@@ -1,0 +1,133 @@
+{{-- PURCHASES RETURNED --}}
+<div x-show="page === 'purchase-returned'" class="space-y-2" x-cloak>
+    <!-- <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white font-sans">Purchases Returned</h3>
+            <p class="text-xs text-slate-500 font-sans">View history of returned purchases and stock adjustments</p>
+        </div>
+    </div> -->
+
+    {{-- Filter + Search section --}}
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-wrap gap-3 items-end">
+        {{-- Search Bar --}}
+        <div class="w-full sm:flex-1 min-w-[200px] relative">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Search</label>
+            <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 pointer-events-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" x-model="purchaseReturnedFilter.search" @input.debounce.300ms="loadPurchases()"
+                    placeholder="Search by Purchase No or Supplier..."
+                    class="block w-full pl-9 pr-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all">
+            </div>
+        </div>
+        {{-- Month --}}
+        <div class="w-full sm:w-auto">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Month</label>
+            <input type="month" x-model="purchaseReturnedFilter.month" @change="loadPurchases()"
+                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+        </div>
+        {{-- Supplier --}}
+        <div class="w-full sm:w-auto min-w-[200px] relative" x-data="{ open: false }" @click.away="open = false">
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Supplier</label>
+            <div class="relative">
+                <!-- Dropdown Trigger Button -->
+                <button type="button" @click="open = !open" 
+                    class="w-full flex items-center justify-between px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white bg-white text-left focus:outline-none">
+                    <span class="truncate pr-2" x-text="getSelectedPurchaseReturnedSupplierName()"></span>
+                    <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                <!-- Dropdown Panel -->
+                <div x-show="open" x-cloak
+                    class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
+                    <!-- Search Input inside Dropdown -->
+                    <input type="text" placeholder="Search supplier..." 
+                        x-model="purchaseReturnedSupplierSearchQuery" 
+                        @input.debounce.300ms="searchPurchaseReturnedSuppliers()" 
+                        @click.stop
+                        class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-lg text-xs dark:bg-gray-900 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
+                    
+                    <!-- Supplier List Options -->
+                    <div class="space-y-1">
+                        <button type="button" @click="selectPurchaseReturnedSupplier(null); open = false;"
+                            class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
+                            All Suppliers
+                        </button>
+                        
+                        <template x-for="sup in purchaseReturnedFilteredSuppliers" :key="sup.id">
+                            <button type="button" @click="selectPurchaseReturnedSupplier(sup); open = false;"
+                                class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-all font-medium text-slate-700 dark:text-slate-300 flex justify-between items-center">
+                                <span x-text="sup.name"></span>
+                                <span class="text-[10px] text-slate-400 font-mono" x-text="sup.mobile || 'No Mobile'"></span>
+                            </button>
+                        </template>
+
+                        <template x-if="purchaseReturnedFilteredSuppliers.length === 0">
+                            <div class="text-center py-4 text-xs text-slate-400">No suppliers found.</div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2 w-full sm:w-auto">
+            <button @click="clearPurchaseReturnedFilter()"
+                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all cursor-pointer">Reset</button>
+        </div>
+    </div>
+
+    {{-- Purchase List Cards --}}
+    <div class="space-y-4">
+        {{-- Loading State --}}
+        <template x-if="purchasesLoading">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm text-center">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                <p class="text-xs text-slate-400 mt-2 font-medium">Loading returned purchases...</p>
+            </div>
+        </template>
+
+        {{-- Empty State --}}
+        <template x-if="!purchasesLoading && filteredPurchases().length === 0">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm text-center text-slate-400 text-sm">
+                <template x-if="purchaseReturnedFilter.search">
+                    <span>No returned purchases found matching "<span class="font-bold text-slate-600 dark:text-slate-300" x-text="purchaseReturnedFilter.search"></span>"</span>
+                </template>
+                <template x-if="!purchaseReturnedFilter.search">
+                    <span>No returned purchases recorded.</span>
+                </template>
+            </div>
+        </template>
+
+        {{-- Cards Grid --}}
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <template x-for="pur in (purchasesLoading ? [] : filteredPurchases())" :key="pur.id">
+                <div @click="viewPurchase(pur.id)"
+                    class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-slate-50 dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary relative group">
+                    
+                    {{-- Delete Button (Hover state/top-right) --}}
+                    <button @click.stop="deletePurchase(pur.id)" 
+                        title="Delete Record"
+                        class="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all opacity-60 group-hover:opacity-100 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+
+                    <div>
+                        <p class="font-bold text-sm text-slate-800 dark:text-white truncate pr-6 font-sans" x-text="pur.purchase_number"></p>
+                        <p class="text-[10px] text-slate-400 mt-0.5 truncate font-sans" x-text="'Supplier: ' + (pur.supplier ? pur.supplier.name : 'Walk-In Supplier')"></p>
+                        <p class="text-[10px] text-slate-400 font-sans" x-text="'Date: ' + new Date(pur.purchase_date).toLocaleDateString()"></p>
+                    </div>
+                    <div class="flex justify-between items-center mt-3">
+                        <span class="text-sm font-extrabold text-primary font-sans">₹<span x-text="parseFloat(pur.total_amount).toFixed(2)"></span></span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold font-sans"
+                            :class="pur.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'"
+                            x-text="pur.status"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <x-pagination currentPage="returnedPurchasesPage" totalItems="returnedPurchasesTotal" perPage="purchasesPerPage" loading="purchasesLoading" />
+    </div>
+</div>

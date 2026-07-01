@@ -1,0 +1,329 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Purchase;
+use App\Models\PurchaseItem;
+use App\Models\Product;
+use App\Models\Supplier;
+use App\Models\CashBook;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
+
+class PurchaseApiController extends Controller
+{
+    public function index(Request $request)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $query = Purchase::where('shop_id', $shopId)->with('supplier');
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('purchase_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('purchase_date', '<=', $request->end_date);
+        }
+
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'Completed') {
+                $query->whereIn('status', ['Completed', 'Partially Returned']);
+            } elseif ($request->status === 'Returned') {
+                $query->whereIn('status', ['Returned', 'Partially Returned']);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('purchase_number', 'like', "%{$search}%")
+                  ->orWhereHas('supplier', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->has('page') || $request->boolean('paginate')) {
+            $perPage = $request->input('per_page', 10);
+            $purchases = $query->orderBy('purchase_date', 'desc')->paginate($perPage);
+        } else {
+            $purchases = $query->orderBy('purchase_date', 'desc')->get();
+        }
+        return response()->json($purchases);
+    }
+
+    public function store(Request $request)
+    {
+        $shopId = $request->attributes->get('shop_id');
+
+        $validator = Validator::make($request->all(), [
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'total_amount' => 'required|numeric|min:0',
+            'payment_type' => 'required|string|in:Cash,Bank,UPI,Credit',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.purchase_price' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        return DB::transaction(function () use ($request, $shopId) {
+            $todayStr = Carbon::now()->format('Ymd');
+            $randomHex = strtoupper(substr(md5(uniqid()), 0, 4));
+            $purchaseNumber = 'PUR-' . $todayStr . '-' . $randomHex;
+
+            $purchase = Purchase::create([
+                'shop_id' => $shopId,
+                'supplier_id' => $request->supplier_id,
+                'purchase_number' => $purchaseNumber,
+                'total_amount' => $request->total_amount,
+                'payment_type' => $request->payment_type,
+                'purchase_date' => Carbon::now(),
+            ]);
+
+            foreach ($request->items as $item) {
+                // Create Purchase Item
+                PurchaseItem::create([
+                    'purchase_id' => $purchase->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'purchase_price' => $item['purchase_price'],
+                ]);
+
+                // Increment Product Stock and update purchase price
+                $product = Product::findOrFail($item['product_id']);
+                $product->increment('stock', $item['quantity']);
+                $product->update(['purchase_price' => $item['purchase_price']]);
+            }
+
+            // Adjust Supplier Dues if Credit purchase
+            if ($request->payment_type === 'Credit' && $request->supplier_id) {
+                $supplier = Supplier::findOrFail($request->supplier_id);
+                $supplier->increment('due_amount', $request->total_amount);
+            }
+
+            // Log in Cash Book for Non-Credit purchases
+            if ($request->payment_type !== 'Credit') {
+                $methodMap = [
+                    'Cash' => 'cash',
+                    'Bank' => 'bank',
+                    'UPI' => 'upi'
+                ];
+                
+                CashBook::create([
+                    'shop_id' => $shopId,
+                    'type' => 'cash_out',
+                    'amount' => $request->total_amount,
+                    'payment_method' => $methodMap[$request->payment_type] ?? 'cash',
+                    'description' => 'Purchase: ' . $purchaseNumber,
+                    'reference_id' => $purchase->id,
+                    'reference_type' => 'purchase',
+                    'transaction_date' => Carbon::now(),
+                ]);
+            }
+
+            return response()->json($purchase->load('items.product', 'supplier'), 201);
+        });
+    }
+
+    public function show(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
+        return response()->json($purchase);
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $purchase = Purchase::where('shop_id', $shopId)->findOrFail($id);
+
+        return DB::transaction(function () use ($purchase, $shopId) {
+            foreach ($purchase->items as $item) {
+                $product = Product::findOrFail($item->product_id);
+                $product->decrement('stock', $item->quantity);
+            }
+
+            if ($purchase->payment_type === 'Credit' && $purchase->supplier_id) {
+                $supplier = Supplier::findOrFail($purchase->supplier_id);
+                $supplier->decrement('due_amount', $purchase->total_amount);
+            }
+
+            // Delete related Cash Book entry
+            CashBook::where('shop_id', $shopId)
+                ->where('reference_type', 'purchase')
+                ->where('reference_id', $purchase->id)
+                ->delete();
+
+            $purchase->delete();
+            return response()->json(null, 204);
+        });
+    }
+
+    /**
+     * Process purchase return.
+     */
+    public function returnPurchase(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $purchase = Purchase::where('shop_id', $shopId)->with('items')->findOrFail($id);
+
+        if ($purchase->status === 'Returned') {
+            return response()->json(['message' => 'Purchase is already returned.'], 400);
+        }
+
+        // If request has items (partial return)
+        if ($request->has('items') && is_array($request->items)) {
+            $validator = Validator::make($request->all(), [
+                'items' => 'required|array|min:1',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|integer|min:1',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+
+            return DB::transaction(function () use ($purchase, $request, $shopId) {
+                foreach ($request->items as $returnItem) {
+                    $productId = $returnItem['product_id'];
+                    $returnQty = $returnItem['quantity'];
+
+                    // Find corresponding purchase item
+                    $purchaseItem = $purchase->items()->where('product_id', $productId)->first();
+                    if (!$purchaseItem) {
+                        return response()->json(['message' => 'Product not found in this purchase.'], 400);
+                    }
+
+                    $availableToReturn = $purchaseItem->quantity - $purchaseItem->returned_quantity;
+                    if ($returnQty > $availableToReturn) {
+                        return response()->json(['message' => "Cannot return more than available quantity ({$availableToReturn}) for product ID {$productId}."], 400);
+                    }
+
+                    // Decrement Product Stock (since we returned them to supplier, inventory decreases)
+                    $product = Product::findOrFail($productId);
+                    $product->decrement('stock', $returnQty);
+
+                    // Update returned_quantity of the Purchase Item
+                    $purchaseItem->increment('returned_quantity', $returnQty);
+                }
+
+                // Recalculate total amount from remaining items
+                $allPurchaseItems = $purchase->items()->get();
+                $newTotalAmount = 0;
+                foreach ($allPurchaseItems as $item) {
+                    $netQty = $item->quantity - $item->returned_quantity;
+                    $newTotalAmount += $netQty * $item->purchase_price;
+                }
+
+                $actualRefund = $purchase->total_amount - $newTotalAmount;
+
+                // Adjust Supplier Due if Credit purchase
+                if ($purchase->payment_type === 'Credit' && $purchase->supplier_id) {
+                    $supplier = Supplier::findOrFail($purchase->supplier_id);
+                    $supplier->decrement('due_amount', $actualRefund);
+                }
+
+                // Log refund in Cash Book (Refund received from supplier) for non-credit purchases
+                if ($purchase->payment_type !== 'Credit' && $actualRefund > 0) {
+                    $methodMap = [
+                        'Cash' => 'cash',
+                        'Bank' => 'bank',
+                        'UPI' => 'upi'
+                    ];
+
+                    CashBook::create([
+                        'shop_id' => $shopId,
+                        'type' => 'cash_in',
+                        'amount' => $actualRefund,
+                        'payment_method' => $methodMap[$purchase->payment_type] ?? 'cash',
+                        'description' => 'Partial Return: ' . $purchase->purchase_number,
+                        'reference_id' => $purchase->id,
+                        'reference_type' => 'purchase',
+                        'transaction_date' => Carbon::now(),
+                    ]);
+                }
+
+                // Update Purchase status
+                $hasRemaining = false;
+                foreach ($allPurchaseItems as $item) {
+                    if ($item->quantity > $item->returned_quantity) {
+                        $hasRemaining = true;
+                        break;
+                    }
+                }
+
+                $purchase->total_amount = $newTotalAmount;
+                if (!$hasRemaining) {
+                    $purchase->status = 'Returned';
+                } else {
+                    $purchase->status = 'Partially Returned';
+                }
+                $purchase->save();
+
+                return response()->json($purchase->load('items.product', 'supplier'));
+            });
+        }
+
+        // Otherwise process full return
+        return DB::transaction(function () use ($purchase, $shopId) {
+            // 1. Decrement Product Stocks & Update returned_quantity of all items
+            $totalRefundAmount = 0;
+            foreach ($purchase->items as $item) {
+                $unreturnedQty = $item->quantity - $item->returned_quantity;
+                if ($unreturnedQty > 0) {
+                    $product = Product::findOrFail($item->product_id);
+                    $product->decrement('stock', $unreturnedQty);
+                    
+                    $item->returned_quantity = $item->quantity;
+                    $item->save();
+
+                    $totalRefundAmount += $unreturnedQty * $item->purchase_price;
+                }
+            }
+
+            // 2. Adjust Supplier Due if Credit purchase
+            if ($purchase->payment_type === 'Credit' && $purchase->supplier_id && $totalRefundAmount > 0) {
+                $supplier = Supplier::findOrFail($purchase->supplier_id);
+                $supplier->decrement('due_amount', $totalRefundAmount);
+            }
+
+            // 3. Log cash in in Cash Book (Refund received from supplier)
+            if ($purchase->payment_type !== 'Credit' && $totalRefundAmount > 0) {
+                $methodMap = [
+                    'Cash' => 'cash',
+                    'Bank' => 'bank',
+                    'UPI' => 'upi'
+                ];
+
+                CashBook::create([
+                    'shop_id' => $shopId,
+                    'type' => 'cash_in',
+                    'amount' => $totalRefundAmount,
+                    'payment_method' => $methodMap[$purchase->payment_type] ?? 'cash',
+                    'description' => 'Purchase Return: ' . $purchase->purchase_number,
+                    'reference_id' => $purchase->id,
+                    'reference_type' => 'purchase',
+                    'transaction_date' => Carbon::now(),
+                ]);
+            }
+
+            $purchase->status = 'Returned';
+            $purchase->total_amount = 0; // Everything is returned
+            $purchase->save();
+
+            return response()->json($purchase->load('items.product', 'supplier'));
+        });
+    }
+}

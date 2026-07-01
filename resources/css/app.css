@@ -1,0 +1,221 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* DukanHisab Official Color System */
+    --color-primary: #0F766E;          /* Teal 700 (Primary) */
+    --color-primary-hover: #115E59;    /* Teal 800 (Primary Dark) */
+    --color-secondary: #14B8A6;        /* Teal 500 (Secondary) */
+    --color-secondary-hover: #0D9488;  /* Teal 600 */
+    
+    --color-success: #22C55E;          /* Success Green */
+    --color-success-hover: #16A34A;
+    --color-danger: #EF4444;           /* Error Red */
+    --color-danger-hover: #DC2626;
+    --color-warning: #F59E0B;          /* Warning Amber */
+    --color-warning-hover: #D97706;
+    --color-info: #2563EB;             /* Blue 600 */
+    --color-info-hover: #1D4ED8;
+    
+    --color-bg-dark: #F8FAFC;          /* Background Cool Slate */
+    --color-card-dark: #FFFFFF;        /* Surface White */
+    --color-border-dark: #CBD5E1;      /* Input & general borders */
+}
+
+/* Light Theme Overrides for Text & Headings */
+html {
+    background-color: var(--color-bg-dark);
+    color: #0F172A !important;         /* text_primary */
+}
+
+/* headings and default bold values to text_primary */
+h1, h2, h3, h4, h5, h6,
+.text-white:not(button):not(a):not(.bg-primary *):not(.bg-success *):not(.bg-danger *):not(.bg-info *):not(.bg-warning *) {
+    color: #0F172A !important;
+}
+
+/* text_secondary mapping */
+.text-slate-300, .text-slate-400 {
+    color: #64748B !important;
+}
+
+/* text_disabled mapping */
+.text-slate-500 {
+    color: #94A3B8 !important;
+}
+
+/* App Bar & Navigation Rules */
+header {
+    background-color: #FFFFFF !important;
+    height: 56px !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+header h1, header span {
+    color: #0F172A !important;
+}
+header svg {
+    color: #0F766E !important;
+}
+
+/* Sidebar Styling - Modern clean like Notion */
+.w-64 {
+    background-color: #FFFFFF !important;
+    border-right: 1px solid #E2E8F0 !important;
+}
+.w-64 span.text-white {
+    color: #0F172A !important;
+}
+.w-64 border-b, .w-64 border-t {
+    border-color: #E2E8F0 !important;
+}
+
+/* Inactive nav links hover behavior */
+.w-64 a:not(.bg-primary) {
+    color: #64748B !important;
+}
+.w-64 a:not(.bg-primary):hover {
+    background-color: #F8FAFC !important;
+    color: #0F766E !important;
+}
+
+/* Active navigation link and primary buttons text color */
+a.text-white, button.text-white, a.bg-primary, button.bg-primary {
+    color: #FFFFFF !important;
+}
+
+/* Inputs & Form Fields Styling */
+input, select, textarea {
+    background-color: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+    color: #0F172A !important;
+}
+select {
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E") !important;
+    background-position: right 0.75rem center !important;
+    background-repeat: no-repeat !important;
+    background-size: 1rem 1rem !important;
+    padding-right: 2.5rem !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    cursor: pointer;
+}
+input:focus, select:focus, textarea:focus {
+    border-color: #0F766E !important;
+    outline: none !important;
+    box-shadow: 0 0 0 1px #0F766E !important;
+}
+input::placeholder, textarea::placeholder {
+    color: #94A3B8 !important;
+}
+
+/* Secondary Button Overrides (Cancel/Close/Back) */
+.bg-secondary\/50, .bg-secondary\/60,
+button[class*="bg-secondary/50"],
+button[class*="bg-secondary/60"],
+button[onclick*="close"],
+button[onclick*="Cancel"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+}
+.bg-secondary\/50:hover, .bg-secondary\/60:hover {
+    background-color: #F8FAFC !important;
+    color: #0F766E !important;
+}
+
+/* Table layout styling for Light Mode */
+thead tr {
+    background-color: #F8FAFC !important;
+}
+thead th {
+    color: #64748B !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
+/* Dashboard Card System */
+.card-sales {
+    background-color: #DCFCE7 !important; /* Today's Sales bg */
+    border-color: #BBF7D0 !important;
+}
+.card-sales .card-icon {
+    background-color: #FFFFFF !important;
+    color: #22C55E !important;
+}
+
+.card-purchase {
+    background-color: #DBEAFE !important; /* Today's Purchase bg */
+    border-color: #BFDBFE !important;
+}
+.card-purchase .card-icon {
+    background-color: #FFFFFF !important;
+    color: #2563EB !important;
+}
+
+.card-cash {
+    background-color: #CCFBF1 !important; /* Cash Balance bg */
+    border-color: #99F6E4 !important;
+}
+.card-cash .card-icon {
+    background-color: #FFFFFF !important;
+    color: #0F766E !important;
+}
+
+.card-bank {
+    background-color: #E0F2FE !important; /* Bank Balance bg */
+    border-color: #BAE6FD !important;
+}
+.card-bank .card-icon {
+    background-color: #FFFFFF !important;
+    color: #0284C7 !important;
+}
+
+.card-customer-due {
+    background-color: #FEF3C7 !important; /* Customer Due bg */
+    border-color: #FDE68A !important;
+}
+.card-customer-due .card-icon {
+    background-color: #FFFFFF !important;
+    color: #D97706 !important;
+}
+
+.card-supplier-due {
+    background-color: #FEE2E2 !important; /* Supplier Due bg */
+    border-color: #FECACA !important;
+}
+.card-supplier-due .card-icon {
+    background-color: #FFFFFF !important;
+    color: #DC2626 !important;
+}
+
+/* Base card border mapping */
+.border-border-dark {
+    border-color: #E2E8F0 !important;
+}
+
+/* Shopowner Auth Layout Overrides to prevent global styles from breaking premium design */
+.shopowner-auth-container .text-white,
+.shopowner-auth-container .text-white * {
+    color: #FFFFFF !important;
+}
+.shopowner-auth-container .text-teal-100 {
+    color: #CCFBF1 !important;
+}
+.shopowner-auth-container .text-emerald-200 {
+    color: #A7F3D0 !important;
+}
+.shopowner-auth-container .text-emerald-300 {
+    color: #6EE7B7 !important;
+}
+.shopowner-auth-container .text-teal-50 {
+    color: #F0FDFA !important;
+}
+
+
