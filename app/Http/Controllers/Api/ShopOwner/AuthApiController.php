@@ -338,6 +338,7 @@ class AuthApiController extends Controller
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
             'mobile' => 'required|string|max:20',
+            'address' => 'nullable|string',
             'gst_number' => 'nullable|string|max:50',
             'logo' => 'nullable|image|max:2048', // max 2MB
         ]);
@@ -365,6 +366,7 @@ class AuthApiController extends Controller
             [
                 'name' => $request->name,
                 'mobile' => $request->mobile,
+                'address' => $request->address,
                 'gst_number' => $request->gst_number,
                 'logo' => $logoPath ?: ($user->shops()->first()?->logo)
             ]

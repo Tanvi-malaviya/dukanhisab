@@ -216,7 +216,24 @@ class InvoiceApiController extends Controller
                             <th style="width: 50px; text-align: center;">#</th>
                             <th>Product Name</th>
                             <th style="width: 80px; text-align: right;">Price</th>
-                            <th style="width: 80px; text-align: center;">Qty</th>
+                            <th style="width: 80px; text-align: center;">Qty</th>';
+        
+        $isReturned = ($sale->status === 'Returned' || $sale->status === 'Partially Returned');
+        $hasReturnedQty = false;
+        foreach ($sale->items as $item) {
+            if (($item->returned_quantity ?? 0) > 0) {
+                $hasReturnedQty = true;
+                break;
+            }
+        }
+        
+        if ($isReturned) {
+            $html .= '
+                            <th style="width: 80px; text-align: center;">Returned</th>
+                            <th style="width: 80px; text-align: center;">Net Qty</th>';
+        }
+        
+        $html .= '
                             <th style="width: 100px; text-align: right;">Total</th>
                         </tr>
                     </thead>
@@ -224,13 +241,31 @@ class InvoiceApiController extends Controller
                     
                     $i = 1;
                     foreach ($sale->items as $item) {
+                        $returnedQty = 0;
+                        $netQty = $item->quantity;
+                        if (($item->returned_quantity ?? 0) > 0) {
+                            $returnedQty = $item->returned_quantity;
+                            $netQty = $item->quantity - $returnedQty;
+                        } elseif (!$hasReturnedQty && $sale->status === 'Returned') {
+                            $returnedQty = $item->quantity;
+                            $netQty = 0;
+                        }
+
                         $html .= '
                         <tr>
                             <td style="text-align: center;">' . $i++ . '</td>
-                            <td>' . htmlspecialchars($item->product->name) . '</td>
+                            <td>' . htmlspecialchars($item->product->name ?? 'Unknown Product') . '</td>
                             <td style="text-align: right;">Rs. ' . number_format($item->selling_price, 2) . '</td>
-                            <td style="text-align: center;">' . $item->quantity . '</td>
-                            <td style="text-align: right;">Rs. ' . number_format($item->selling_price * $item->quantity, 2) . '</td>
+                            <td style="text-align: center;">' . $item->quantity . '</td>';
+                        
+                        if ($isReturned) {
+                            $html .= '
+                            <td style="text-align: center; color: #ef4444; font-weight: bold;">' . $returnedQty . '</td>
+                            <td style="text-align: center; font-weight: bold;">' . $netQty . '</td>';
+                        }
+
+                        $html .= '
+                            <td style="text-align: right;">Rs. ' . number_format($item->selling_price * $netQty, 2) . '</td>
                         </tr>';
                     }
 
@@ -473,7 +508,24 @@ class InvoiceApiController extends Controller
                             <th style="width: 50px; text-align: center;">#</th>
                             <th>Product Name</th>
                             <th style="width: 80px; text-align: right;">Unit Price</th>
-                            <th style="width: 80px; text-align: center;">Qty</th>
+                            <th style="width: 80px; text-align: center;">Qty</th>';
+
+        $isReturned = ($purchase->status === 'Returned' || $purchase->status === 'Partially Returned');
+        $hasReturnedQty = false;
+        foreach ($purchase->items as $item) {
+            if (($item->returned_quantity ?? 0) > 0) {
+                $hasReturnedQty = true;
+                break;
+            }
+        }
+
+        if ($isReturned) {
+            $html .= '
+                            <th style="width: 80px; text-align: center;">Returned</th>
+                            <th style="width: 80px; text-align: center;">Net Qty</th>';
+        }
+
+        $html .= '
                             <th style="width: 100px; text-align: right;">Total</th>
                         </tr>
                     </thead>
@@ -481,13 +533,31 @@ class InvoiceApiController extends Controller
                     
                     $i = 1;
                     foreach ($purchase->items as $item) {
+                        $returnedQty = 0;
+                        $netQty = $item->quantity;
+                        if (($item->returned_quantity ?? 0) > 0) {
+                            $returnedQty = $item->returned_quantity;
+                            $netQty = $item->quantity - $returnedQty;
+                        } elseif (!$hasReturnedQty && $purchase->status === 'Returned') {
+                            $returnedQty = $item->quantity;
+                            $netQty = 0;
+                        }
+
                         $html .= '
                         <tr>
                             <td style="text-align: center;">' . $i++ . '</td>
                             <td>' . htmlspecialchars($item->product->name ?? 'Deleted Product') . '</td>
                             <td style="text-align: right;">Rs. ' . number_format($item->purchase_price, 2) . '</td>
-                            <td style="text-align: center;">' . $item->quantity . '</td>
-                            <td style="text-align: right;">Rs. ' . number_format($item->purchase_price * $item->quantity, 2) . '</td>
+                            <td style="text-align: center;">' . $item->quantity . '</td>';
+
+                        if ($isReturned) {
+                            $html .= '
+                            <td style="text-align: center; color: #ef4444; font-weight: bold;">' . $returnedQty . '</td>
+                            <td style="text-align: center; font-weight: bold;">' . $netQty . '</td>';
+                        }
+
+                        $html .= '
+                            <td style="text-align: right;">Rs. ' . number_format($item->purchase_price * $netQty, 2) . '</td>
                         </tr>';
                     }
 

@@ -23,6 +23,14 @@ class AdminMiddleware
             return redirect()->route('admin.login')->with('error', 'Your administrator account has been suspended.');
         }
 
-        return $next($request);
+        $response = $next($request);
+
+        if ($response instanceof Response) {
+            $response->headers->set('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
+            $response->headers->set('Pragma', 'no-cache');
+            $response->headers->set('Expires', 'Sun, 02 Jan 1990 00:00:00 GMT');
+        }
+
+        return $response;
     }
 }

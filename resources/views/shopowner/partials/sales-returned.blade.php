@@ -93,40 +93,53 @@
                         <div>
                             <span class="text-xs font-bold text-primary" x-text="sale.sale_number"></span>
                         </div>
-                        <span class="px-2 py-0.5 bg-rose-100 text-rose-800 rounded-full text-[10px] font-bold whitespace-nowrap inline-block" x-text="sale.status"></span>
+                        <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block" x-text="sale.status"></span>
                     </div>
 
                     {{-- Card Body --}}
-                    <div class="space-y-1 text-[11px] py-1.5 border-y border-slate-100 dark:border-gray-700/50">
+                    <div class="space-y-1 text-[11px] py-1.5 border-t border-slate-100 dark:border-gray-700/50">
                         <div class="flex justify-between">
-                            <span class="text-slate-400">Customer:</span>
-                            <span class="text-slate-700 dark:text-slate-300 font-semibold" x-text="sale.customer ? sale.customer.name : 'Walk-In'"></span>
+                            <span class="text-slate-400 font-sans">Customer:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-semibold font-sans" x-text="sale.customer ? sale.customer.name : 'Walk-In'"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-400">Date:</span>
-                            <span class="text-slate-700 dark:text-slate-300" x-text="new Date(sale.sale_date).toLocaleDateString()"></span>
+                            <span class="text-slate-400 font-sans">Date:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="new Date(sale.sale_date).toLocaleDateString()"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-400">Payment:</span>
-                            <span class="text-slate-700 dark:text-slate-300 font-medium" x-text="sale.payment_type"></span>
+                            <span class="text-slate-400 font-sans">Payment:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-medium font-sans" x-text="sale.payment_type"></span>
                         </div>
                     </div>
 
-                    {{-- Total Amount --}}
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-slate-500">Total:</span>
-                        <span class="text-base font-extrabold text-slate-900 dark:text-white">₹<span x-text="parseFloat(sale.grand_total).toFixed(2)"></span></span>
+                    {{-- Returned Items List & Returned Value --}}
+                    <div class="flex flex-col space-y-1.5 bg-rose-50/50 dark:bg-rose-950/10 p-2.5 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                        <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider font-sans">Returned Items</span>
+                        <div class="space-y-1 max-h-24 overflow-y-auto pr-1">
+                            <template x-for="item in sale.items" :key="item.id">
+                                <template x-if="item.returned_quantity > 0 || (!sale.items.some(i => i.returned_quantity > 0) && sale.status === 'Returned')">
+                                    <div class="flex justify-between items-center text-[11px] text-slate-700 dark:text-slate-300">
+                                        <span class="truncate font-medium pr-2 font-sans" x-text="item.product ? item.product.name : 'Unknown Product'"></span>
+                                        <span class="font-bold text-rose-600 dark:text-rose-400 shrink-0 font-mono" x-text="(item.returned_quantity > 0 ? item.returned_quantity : item.quantity) + ' Qty'"></span>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-2 border-t border-rose-100 dark:border-rose-900/20 mt-1">
+                            <span class="text-[11px] font-bold text-rose-600 dark:text-rose-400 font-sans">Returned Value:</span>
+                            <span class="text-sm font-extrabold text-rose-700 dark:text-rose-300 font-mono">
+                                ₹<span x-text="parseFloat(
+                                    sale.items.some(i => i.returned_quantity > 0)
+                                        ? sale.items.reduce((sum, item) => sum + (parseFloat(item.returned_quantity) * parseFloat(item.selling_price)), 0)
+                                        : (sale.status === 'Returned' ? sale.items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.selling_price)), 0) : 0)
+                                ).toFixed(2)"></span>
+                            </span>
+                        </div>
                     </div>
 
                     {{-- Actions --}}
                     <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700/50 gap-2 w-full">
-                        <!-- Edit Button -->
-                        <button @click="openEditSaleModal(sale)" 
-                            title="Edit Sale"
-                            class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white rounded-lg transition-all">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-
                         <!-- Invoice Button -->
                         <button @click="viewInvoice(sale.id)" 
                             title="View Invoice"
@@ -134,7 +147,7 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         </button>
 
-                        <!-- Return Button -->
+                        <!-- Return Button (Only for Partially Returned to allow further returns) -->
                         <button @click="returnSale(sale.id)" 
                             title="Return Sale"
                             :disabled="sale.status === 'Returned'"

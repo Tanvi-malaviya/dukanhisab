@@ -287,7 +287,7 @@
             plan = elementOrPlan;
         }
 
-        document.getElementById('editPlanForm').action = "/admin/subscriptions/plan/" + plan.id;
+        document.getElementById('editPlanForm').action = "{{ route('admin.subscriptions.plan.update', ['id' => ':id']) }}".replace(':id', plan.id);
         document.getElementById('edit_plan_name').value = plan.name;
         document.getElementById('edit_plan_desc').value = plan.description;
         document.getElementById('edit_plan_price').value = plan.price;
@@ -301,7 +301,7 @@
         document.getElementById('editPlanModal').classList.add('hidden');
     }
     function openExtendSubModal(id, shopName) {
-        document.getElementById('extendSubForm').action = "/admin/subscriptions/" + id + "/extend";
+        document.getElementById('extendSubForm').action = "{{ route('admin.subscriptions.extend', ['id' => ':id']) }}".replace(':id', id);
         document.getElementById('extend_shop_name').innerText = shopName;
         document.getElementById('extendSubModal').classList.remove('hidden');
     }

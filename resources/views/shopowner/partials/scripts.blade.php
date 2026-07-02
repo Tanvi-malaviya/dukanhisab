@@ -876,7 +876,13 @@
                             }
                             this.showToast('Shop profile updated successfully!');
                         } else {
-                            this.showToast(d.message || 'Failed to update shop.', 'error');
+                            if (d.errors) {
+                                const firstKey = Object.keys(d.errors)[0];
+                                const firstError = d.errors[firstKey][0];
+                                this.showToast(firstError, 'error');
+                            } else {
+                                this.showToast(d.message || 'Failed to update shop.', 'error');
+                            }
                         }
                     }).catch(() => {
                         this.loading = false;

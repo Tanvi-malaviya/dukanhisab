@@ -19,7 +19,7 @@ class SaleApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         
-        $query = Sale::where('shop_id', $shopId)->with('customer');
+        $query = Sale::where('shop_id', $shopId)->with(['customer', 'items.product']);
 
         // Apply Date Filters
         if ($request->filled('start_date')) {
@@ -294,27 +294,25 @@ class SaleApiController extends Controller
                         return response()->json(['message' => 'Product not found in this sale.'], 400);
                     }
 
-                    if ($returnQty > $saleItem->quantity) {
-                        return response()->json(['message' => "Cannot return more than purchased quantity ({$saleItem->quantity}) for product ID {$productId}."], 400);
+                    $availableToReturn = $saleItem->quantity - $saleItem->returned_quantity;
+                    if ($returnQty > $availableToReturn) {
+                        return response()->json(['message' => "Cannot return more than available quantity ({$availableToReturn}) for product ID {$productId}."], 400);
                     }
 
                     // Restore Product Stock
                     $product = Product::findOrFail($productId);
                     $product->increment('stock', $returnQty);
 
-                    // Update or Delete Sale Item
-                    if ($returnQty == $saleItem->quantity) {
-                        $saleItem->delete();
-                    } else {
-                        $saleItem->decrement('quantity', $returnQty);
-                    }
+                    // Increment returned_quantity of the Sale Item
+                    $saleItem->increment('returned_quantity', $returnQty);
                 }
 
                 // Recalculate subtotal from remaining items
-                $remainingItems = $sale->items()->get();
+                $allSaleItems = $sale->items()->get();
                 $newSubtotal = 0;
-                foreach ($remainingItems as $item) {
-                    $newSubtotal += $item->quantity * $item->selling_price;
+                foreach ($allSaleItems as $item) {
+                    $netQty = $item->quantity - $item->returned_quantity;
+                    $newSubtotal += $netQty * $item->selling_price;
                 }
 
                 // Recalculate grand total. Ensure discount doesn't exceed new subtotal.
@@ -349,12 +347,20 @@ class SaleApiController extends Controller
                     ]);
                 }
 
-                // Update Sale
+                // Update Sale status
+                $hasRemaining = false;
+                foreach ($allSaleItems as $item) {
+                    if ($item->quantity > $item->returned_quantity) {
+                        $hasRemaining = true;
+                        break;
+                    }
+                }
+
                 $sale->subtotal = $newSubtotal;
                 $sale->discount = $newDiscount;
                 $sale->grand_total = $newGrandTotal;
                 
-                if ($remainingItems->count() === 0) {
+                if (!$hasRemaining) {
                     $sale->status = 'Returned';
                 } else {
                     $sale->status = 'Partially Returned';
@@ -372,23 +378,31 @@ class SaleApiController extends Controller
     private function processSaleReturn($sale)
     {
         return DB::transaction(function () use ($sale) {
-            $sale->status = 'Returned';
-            $sale->save();
-
-            // 1. Restore Product Stocks
+            // 1. Restore Product Stocks & Update returned_quantity of all items
+            $totalRefundAmount = 0;
             foreach ($sale->items as $item) {
-                $product = Product::findOrFail($item->product_id);
-                $product->increment('stock', $item->quantity);
+                $unreturnedQty = $item->quantity - $item->returned_quantity;
+                if ($unreturnedQty > 0) {
+                    $product = Product::findOrFail($item->product_id);
+                    $product->increment('stock', $unreturnedQty);
+                    
+                    $item->returned_quantity = $item->quantity;
+                    $item->save();
+
+                    $totalRefundAmount += $unreturnedQty * $item->selling_price;
+                }
             }
 
+            $actualRefund = $sale->grand_total;
+
             // 2. Adjust Customer Due if Credit sale
-            if ($sale->payment_type === 'Credit' && $sale->customer_id) {
+            if ($sale->payment_type === 'Credit' && $sale->customer_id && $actualRefund > 0) {
                 $customer = Customer::findOrFail($sale->customer_id);
-                $customer->decrement('due_amount', $sale->grand_total);
+                $customer->decrement('due_amount', $actualRefund);
             }
 
             // 3. Log cash out in Cash Book (Refund)
-            if ($sale->payment_type !== 'Credit') {
+            if ($sale->payment_type !== 'Credit' && $actualRefund > 0) {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
@@ -398,7 +412,7 @@ class SaleApiController extends Controller
                 CashBook::create([
                     'shop_id' => $sale->shop_id,
                     'type' => 'cash_out',
-                    'amount' => $sale->grand_total,
+                    'amount' => $actualRefund,
                     'payment_method' => $methodMap[$sale->payment_type] ?? 'cash',
                     'description' => 'Return: ' . $sale->sale_number,
                     'reference_id' => $sale->id,
@@ -406,6 +420,10 @@ class SaleApiController extends Controller
                     'transaction_date' => Carbon::now(),
                 ]);
             }
+
+            $sale->status = 'Returned';
+            $sale->grand_total = 0; // Everything is returned
+            $sale->save();
 
             return response()->json($sale->load('items.product', 'customer'));
         });
