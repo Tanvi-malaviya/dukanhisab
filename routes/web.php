@@ -18,7 +18,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 
 // Main customer landing page placeholder
 Route::get('/', function () {
-    return view('welcome');
+    return view('app');
 });
 
 // Admin Auth Routes
@@ -118,3 +118,9 @@ Route::get('/shopowner/{any?}', function () {
     return view('shopowner');
 })->where('any', '.*');
 
+
+
+// Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '^(?!admin|api|shopowner).*$');

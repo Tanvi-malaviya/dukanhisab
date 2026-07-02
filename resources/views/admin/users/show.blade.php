@@ -368,7 +368,7 @@
 
     <script>
         function openEditModal(user) {
-            document.getElementById('editForm').action = "/admin/users/" + user.id;
+               document.getElementById('editForm').action = "{{ route('admin.users.update', ['id' => ':id']) }}".replace(':id', user.id);
             document.getElementById('edit_name').value = user.name;
             document.getElementById('edit_email').value = user.email;
             document.getElementById('edit_mobile').value = user.mobile || '';
@@ -446,7 +446,7 @@
         }
 
         function openPasswordModal(id, name) {
-            document.getElementById('passwordForm').action = "/admin/users/" + id + "/reset-password";
+            document.getElementById('passwordForm').action = "{{ route('admin.users.reset_password', ['id' => ':id']) }}".replace(':id', id);
             document.getElementById('pwd_user_name').innerText = name;
 
             document.getElementById('passwordModal').classList.remove('hidden');

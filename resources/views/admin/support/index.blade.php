@@ -13,7 +13,7 @@
             <div class="w-full md:w-40 shrink-0" style="flex-shrink: 0; width: 160px;">
                 <select name="status"
                     class="block w-full px-3 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-700">
-                    <option value="">All Statuses</option>
+                    <option value="">All Statu  ses</option>
                     <option value="open" {{ request('status') === 'open' ? 'selected' : '' }}>Open</option>
                     <option value="inProgress" {{ request('status') === 'inProgress' ? 'selected' : '' }}>In Progress</option>
                     <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Resolved</option>
@@ -165,7 +165,7 @@
 
     <script>
         function openReplyModal(ticket) {
-            document.getElementById('replyForm').action = "/admin/support/" + ticket.id + "/reply";
+          document.getElementById('replyForm').action = "{{ route('admin.support.reply', ['id' => ':id']) }}".replace(':id', ticket.id);
             document.getElementById('ticket_subject').innerText = ticket.subject;
             document.getElementById('ticket_message').innerText = ticket.message;
 
@@ -194,7 +194,7 @@
             if (!status) return;
 
             const form = document.getElementById('status-update-form');
-            form.action = "/admin/support/" + ticketId + "/status/" + status;
+             form.action = "{{ route('admin.support.status', ['id' => ':id', 'status' => ':status']) }}".replace(':id', ticketId).replace(':status', status);
             form.submit();
         }
     </script>

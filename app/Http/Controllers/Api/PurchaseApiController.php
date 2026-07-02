@@ -18,7 +18,7 @@ class PurchaseApiController extends Controller
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
-        $query = Purchase::where('shop_id', $shopId)->with('supplier');
+        $query = Purchase::where('shop_id', $shopId)->with(['supplier', 'items.product']);
 
         if ($request->filled('start_date')) {
             $query->whereDate('purchase_date', '>=', $request->start_date);

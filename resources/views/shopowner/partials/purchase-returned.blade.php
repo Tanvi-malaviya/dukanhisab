@@ -101,28 +101,63 @@
         </template>
 
         {{-- Cards Grid --}}
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <template x-for="pur in (purchasesLoading ? [] : filteredPurchases())" :key="pur.id">
                 <div @click="viewPurchase(pur.id)"
-                    class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-slate-50 dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary relative group">
+                    class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-white dark:bg-gray-800 hover:shadow-md cursor-pointer hover:border-primary relative group space-y-3">
                     
-                    {{-- Delete Button (Hover state/top-right) --}}
-                    <button @click.stop="deletePurchase(pur.id)" 
-                        title="Delete Record"
-                        class="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all opacity-60 group-hover:opacity-100 cursor-pointer">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-
                     <div>
-                        <p class="font-bold text-sm text-slate-800 dark:text-white truncate pr-6 font-sans" x-text="pur.purchase_number"></p>
-                        <p class="text-[10px] text-slate-400 mt-0.5 truncate font-sans" x-text="'Supplier: ' + (pur.supplier ? pur.supplier.name : 'Walk-In Supplier')"></p>
-                        <p class="text-[10px] text-slate-400 font-sans" x-text="'Date: ' + new Date(pur.purchase_date).toLocaleDateString()"></p>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-sm text-slate-800 dark:text-white truncate font-sans" x-text="pur.purchase_number"></span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans"
+                                    :class="pur.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'"
+                                    x-text="pur.status"></span>
+                                <button @click.stop="deletePurchase(pur.id)" 
+                                    title="Delete Record"
+                                    class="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex justify-between items-center mt-3">
-                        <span class="text-sm font-extrabold text-primary font-sans">₹<span x-text="parseFloat(pur.total_amount).toFixed(2)"></span></span>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full font-bold font-sans"
-                            :class="pur.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'"
-                            x-text="pur.status"></span>
+
+                    {{-- Card Body --}}
+                    <div class="space-y-1 text-[11px] py-1.5 border-t border-slate-100 dark:border-gray-700/50">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400 font-sans">Supplier:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-semibold font-sans truncate max-w-[150px]" x-text="pur.supplier ? pur.supplier.name : 'Walk-In Supplier'"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400 font-sans">Date:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="new Date(pur.purchase_date).toLocaleDateString()"></span>
+                        </div>
+                    </div>
+
+                    {{-- Returned Items List & Returned Value --}}
+                    <div class="flex flex-col space-y-1.5 bg-rose-50/50 dark:bg-rose-950/10 p-2.5 rounded-xl border border-rose-100 dark:border-rose-900/30">
+                        <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider font-sans">Returned Items</span>
+                        <div class="space-y-1 max-h-24 overflow-y-auto pr-1">
+                            <template x-for="item in pur.items" :key="item.id">
+                                <template x-if="item.returned_quantity > 0 || (!pur.items.some(i => i.returned_quantity > 0) && pur.status === 'Returned')">
+                                    <div class="flex justify-between items-center text-[11px] text-slate-700 dark:text-slate-300">
+                                        <span class="truncate font-medium pr-2 font-sans" x-text="item.product ? item.product.name : 'Unknown Product'"></span>
+                                        <span class="font-bold text-rose-600 dark:text-rose-400 shrink-0 font-mono" x-text="(item.returned_quantity > 0 ? item.returned_quantity : item.quantity) + ' Qty'"></span>
+                                    </div>
+                                </template>
+                            </template>
+                        </div>
+                        
+                        <div class="flex justify-between items-center pt-2 border-t border-rose-100 dark:border-rose-900/20 mt-1">
+                            <span class="text-[11px] font-bold text-rose-600 dark:text-rose-400 font-sans">Returned Value:</span>
+                            <span class="text-sm font-extrabold text-rose-700 dark:text-rose-300 font-mono">
+                                ₹<span x-text="parseFloat(
+                                    pur.items && pur.items.some(i => i.returned_quantity > 0)
+                                        ? pur.items.reduce((sum, item) => sum + (parseFloat(item.returned_quantity) * parseFloat(item.purchase_price)), 0)
+                                        : (pur.status === 'Returned' && pur.items ? pur.items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.purchase_price)), 0) : 0)
+                                ).toFixed(2)"></span>
+                            </span>
+                        </div>
                     </div>
                 </div>
             </template>

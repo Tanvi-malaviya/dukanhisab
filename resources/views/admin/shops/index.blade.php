@@ -419,7 +419,7 @@
         document.getElementById('detailsContent').innerHTML = '<p class="text-sm text-slate-400 text-center py-4">Querying details from server...</p>';
         document.getElementById('detailsModal').classList.remove('hidden');
 
-        fetch('/admin/shops/' + shopId)
+      fetch("{{ route('admin.shops.show', ['id' => ':id']) }}".replace(':id', shopId))
             .then(res => res.json())
             .then(data => {
                 let planName = 'None';

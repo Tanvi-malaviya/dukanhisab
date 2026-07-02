@@ -66,17 +66,52 @@
                                 <th class="px-4 py-2 text-left font-bold text-slate-500">Item</th>
                                 <th class="px-4 py-2 text-right font-bold text-slate-500">Price</th>
                                 <th class="px-4 py-2 text-center font-bold text-slate-500">Qty</th>
+                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500">Returned</th>
+                                </template>
+                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500">Net Qty</th>
+                                </template>
                                 <th class="px-4 py-2 text-right font-bold text-slate-500">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="item in selectedSale.items" :key="item.id">
                                 <tr>
-                                    <td class="px-4 py-2.5 font-semibold" x-text="item.product.name"></td>
-                                    <td class="px-4 py-2.5 text-right" x-text="'₹' + item.selling_price"></td>
+                                    <td class="px-4 py-2.5 font-semibold" x-text="item.product ? item.product.name : 'Unknown Product'"></td>
+                                    <td class="px-4 py-2.5 text-right" x-text="'₹' + parseFloat(item.selling_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
+                                    <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                        <td class="px-4 py-2.5 text-center text-rose-600 font-bold" 
+                                            x-text="
+                                                (() => {
+                                                    if (item.returned_quantity > 0) return item.returned_quantity;
+                                                    const hasReturnedQty = selectedSale.items.some(i => i.returned_quantity > 0);
+                                                    if (!hasReturnedQty && selectedSale.status === 'Returned') return item.quantity;
+                                                    return 0;
+                                                })()
+                                            "></td>
+                                    </template>
+                                    <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                        <td class="px-4 py-2.5 text-center font-semibold text-slate-600 dark:text-slate-400" 
+                                            x-text="
+                                                (() => {
+                                                    if (item.returned_quantity > 0) return item.quantity - item.returned_quantity;
+                                                    const hasReturnedQty = selectedSale.items.some(i => i.returned_quantity > 0);
+                                                    if (!hasReturnedQty && selectedSale.status === 'Returned') return 0;
+                                                    return item.quantity;
+                                                })()
+                                            "></td>
+                                    </template>
                                     <td class="px-4 py-2.5 text-right font-bold"
-                                        x-text="'₹' + (item.selling_price * item.quantity).toFixed(2)"></td>
+                                        x-text="'₹' + (item.selling_price * (
+                                            (() => {
+                                                if (item.returned_quantity > 0) return item.quantity - item.returned_quantity;
+                                                const hasReturnedQty = selectedSale.items.some(i => i.returned_quantity > 0);
+                                                if (!hasReturnedQty && selectedSale.status === 'Returned') return 0;
+                                                return item.quantity;
+                                            })()
+                                        )).toFixed(2)"></td>
                                 </tr>
                             </template>
                         </tbody>

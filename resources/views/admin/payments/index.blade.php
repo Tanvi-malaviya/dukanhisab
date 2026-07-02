@@ -259,7 +259,7 @@
 
     <script>
         function openRefundModal(id, txId, amount) {
-            document.getElementById('refundForm').action = "/admin/payments/" + id + "/refund";
+           document.getElementById('refundForm').action = "{{ route('admin.payments.refund', ['id' => ':id']) }}".replace(':id', id);
             document.getElementById('refund_tx_id').innerText = txId;
             document.getElementById('refund_tx_amount').innerText = "₹" + amount;
             document.getElementById('refundModal').classList.remove('hidden');
