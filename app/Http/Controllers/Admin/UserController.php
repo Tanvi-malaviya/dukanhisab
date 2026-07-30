@@ -175,9 +175,13 @@ class UserController extends Controller
         // Login as the user under standard web guard
         Auth::login($user);
 
+        // The shop-owner panel authenticates via a Sanctum token stored in
+        // localStorage, not the web session above, so issue one here too.
+        $token = $user->createToken('admin-impersonation')->plainTextToken;
+
         AuditLog::log("Admin impersonated user #{$user->id} ({$user->name})", null, $user->id);
 
-        return redirect('/')->with('success', "You are now logged in as {$user->name}.");
+        return view('admin.users.impersonate-redirect', ['token' => $token]);
     }
 
     public function destroy($id)

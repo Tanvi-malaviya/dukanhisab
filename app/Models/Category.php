@@ -5,16 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Customer extends Model
+class Category extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
         'shop_id',
         'name',
-        'mobile',
-        'email',
-        'due_amount',
+        'description',
     ];
 
     public function shop()
@@ -22,8 +20,8 @@ class Customer extends Model
         return $this->belongsTo(Shop::class);
     }
 
-    public function sales()
+    public function products()
     {
-        return $this->hasMany(Sale::class);
+        return $this->hasMany(Product::class);
     }
 }

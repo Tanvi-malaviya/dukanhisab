@@ -318,6 +318,50 @@ class AuthApiController extends Controller
     }
 
     /**
+     * Update the authenticated user's account settings (basic info + preferences).
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'display_name' => 'nullable|string|max:255',
+            'mobile' => 'nullable|string|max:20',
+            'email' => 'sometimes|required|email|max:255|unique:users,email,' . $user->id,
+            'date_of_birth' => 'nullable|date',
+            'gender' => 'nullable|string|in:male,female,other',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'language' => 'nullable|string|max:10',
+            'currency' => 'nullable|string|max:10',
+            'date_format' => 'nullable|string|max:20',
+            'time_format' => 'nullable|string|in:12h,24h',
+            'theme' => 'nullable|string|in:light,dark,system',
+            'notification_preferences' => 'nullable|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $data = $validator->validated();
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        }
+
+        $user->update($data);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $user->fresh(),
+        ]);
+    }
+
+    /**
      * Logout and revoke token.
      */
     public function logout(Request $request)
@@ -338,9 +382,19 @@ class AuthApiController extends Controller
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
             'mobile' => 'required|string|max:20',
+            'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'pincode' => 'nullable|string|max:10',
             'gst_number' => 'nullable|string|max:50',
+            'invoice_prefix' => 'nullable|string|max:20',
+            'currency' => 'nullable|string|max:10',
+            'upi_id' => 'nullable|string|max:100',
+            'bank_details' => 'nullable|string',
+            'invoice_footer' => 'nullable|string',
             'logo' => 'nullable|image|max:2048', // max 2MB
+            'signature' => 'nullable|image|max:2048', // max 2MB
         ]);
 
         if ($validator->fails()) {
@@ -354,10 +408,18 @@ class AuthApiController extends Controller
         $user->mobile = $request->mobile;
         $user->save();
 
+        $existingShop = $user->shops()->first();
+
         // Handle Shop Logo Upload
         $logoPath = null;
         if ($request->hasFile('logo')) {
             $logoPath = $request->file('logo')->store('logos', 'public');
+        }
+
+        // Handle Shop Signature Upload
+        $signaturePath = null;
+        if ($request->hasFile('signature')) {
+            $signaturePath = $request->file('signature')->store('signatures', 'public');
         }
 
         // Create or update Shop (we assume one shop per owner for setup module)
@@ -366,9 +428,19 @@ class AuthApiController extends Controller
             [
                 'name' => $request->name,
                 'mobile' => $request->mobile,
+                'email' => $request->email,
                 'address' => $request->address,
+                'city' => $request->city,
+                'state' => $request->state,
+                'pincode' => $request->pincode,
                 'gst_number' => $request->gst_number,
-                'logo' => $logoPath ?: ($user->shops()->first()?->logo)
+                'invoice_prefix' => $request->invoice_prefix,
+                'currency' => $request->currency,
+                'upi_id' => $request->upi_id,
+                'bank_details' => $request->bank_details,
+                'invoice_footer' => $request->invoice_footer,
+                'logo' => $logoPath ?: ($existingShop?->logo),
+                'signature' => $signaturePath ?: ($existingShop?->signature),
             ]
         );
 

@@ -242,30 +242,6 @@
             </nav>
         </div>
 
-        {{-- Profile / Logout / Theme --}}
-        <div class="p-4 border-t border-slate-200 dark:border-gray-700 flex flex-col gap-2">
-            <!-- <div class="flex items-center justify-between">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dark Mode</span>
-                <button @click="toggleTheme()" class="p-1 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300">
-                    <template x-if="dark">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m3.343-5.657l-.707.707m2.828 9.9a5 5 0 117.072 0l-.707-.707M6.343 17.657l-.707-.707m2.828-9.9a5 5 0 117.072 0l-.707.707"></path></svg>
-                    </template>
-                    <template x-if="!dark">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    </template>
-                </button>
-            </div> -->
-            <div class="flex items-center gap-3 pt-2">
-                <div class="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold" x-text="user ? user.name.substring(0,2).toUpperCase() : 'U'"></div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold truncate" x-text="user ? user.name : 'User'"></p>
-                    <p class="text-xs text-slate-500 truncate" x-text="user ? user.email : ''"></p>
-                </div>
-                <button @click="handleLogout()" class="text-slate-400 hover:text-rose-600" title="Logout">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -550,31 +526,6 @@
                   </nav>
              </div>
 
-             <!-- Mobile Profile/Theme Panel -->
-             <div class="p-4 border-t border-slate-200 dark:border-gray-700 flex flex-col gap-2">
-                 <div class="flex items-center justify-between">
-                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dark Mode</span>
-                     <button @click="toggleTheme()" class="p-1 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300">
-                         <template x-if="dark">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9H3m3.343-5.657l-.707.707m2.828 9.9a5 5 0 117.072 0l-.707-.707M6.343 17.657l-.707-.707m2.828-9.9a5 5 0 117.072 0l-.707.707"></path></svg>
-                         </template>
-                         <template x-if="!dark">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                         </template>
-                     </button>
-                 </div>
-                 <div class="flex items-center gap-3 pt-2">
-                     <div class="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold" x-text="user ? user.name.substring(0,2).toUpperCase() : 'U'"></div>
-                     <div class="flex-1 min-w-0">
-                         <p class="text-sm font-semibold truncate" x-text="user ? user.name : 'User'"></p>
-                         <p class="text-xs text-slate-500 truncate" x-text="user ? user.email : ''"></p>
-                     </div>
-                     <button @click="handleLogout()" class="text-slate-400 hover:text-rose-600" title="Logout">
-                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                     </button>
-                 </div>
-             </div>
-             
         </div>
     </div>
 </div>

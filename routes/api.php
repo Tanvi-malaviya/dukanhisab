@@ -18,9 +18,19 @@ Route::post('/v1/auth/login', [App\Http\Controllers\Api\AuthApiController::class
 Route::post('/v1/auth/register', [App\Http\Controllers\Api\AuthApiController::class, 'register']);
 
 // API version 1 routes with authentication and shop scope
-Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope'])->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardApiController::class, 'index']);
+
+    // Sync
+    Route::post('/sync/batch', [\App\Http\Controllers\Api\SyncBatchController::class, 'batch']);
+
+    // Invoice Settings
+    Route::get('/invoice-settings', [\App\Http\Controllers\Api\InvoiceSettingApiController::class, 'show']);
+    Route::post('/invoice-settings', [\App\Http\Controllers\Api\InvoiceSettingApiController::class, 'update']);
+
+    // Category CRUD
+    Route::apiResource('categories', \App\Http\Controllers\Api\CategoryApiController::class);
 
     // Product CRUD
     Route::apiResource('products', \App\Http\Controllers\Api\ProductApiController::class);
@@ -68,6 +78,7 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::post('/change-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'changePassword']);
         Route::post('/logout', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'logout']);
         Route::get('/profile', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'profile']);
+        Route::post('/profile', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'updateProfile']);
     });
 });
 

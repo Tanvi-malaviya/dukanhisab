@@ -16,6 +16,16 @@ class CashBookApiController extends Controller
         
         $query = CashBook::where('shop_id', $shopId);
 
+        if ($request->filled('updated_since')) {
+            $validator = Validator::make($request->only('updated_since'), [
+                'updated_since' => 'date',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            $query->withTrashed()->where('updated_at', '>=', Carbon::parse($request->updated_since));
+        }
+
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }

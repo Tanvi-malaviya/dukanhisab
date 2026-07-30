@@ -116,16 +116,31 @@
                             </template>
                         </tbody>
                     </table>
-                    <div
-                        class="border-t border-slate-200 dark:border-gray-700 pt-4 flex flex-col items-end gap-1 text-xs">
-                        <div class="flex justify-between w-48"><span class="text-slate-500">Subtotal:</span><span
-                                class="font-semibold">₹<span x-text="selectedSale.subtotal"></span></span></div>
-                        <div class="flex justify-between w-48"><span class="text-slate-500">Discount:</span><span
-                                class="font-semibold">-₹<span x-text="selectedSale.discount"></span></span></div>
-                        <div
-                            class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                            <span>Grand Total:</span><span class="text-primary">₹<span
-                                    x-text="selectedSale.grand_total"></span></span>
+                    <div class="border-t border-slate-200 dark:border-gray-700 pt-4 flex justify-between items-start gap-4 text-xs">
+                        <!-- Left Side: UPI QR Code & Bank Details -->
+                        <div class="flex flex-col items-start gap-2 max-w-[50%]">
+                            <template x-if="invoiceSettings && invoiceSettings.show_upi_qr && shop && shop.upi_id">
+                                <div class="flex flex-col items-center gap-1">
+                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shop.upi_id + '&pn=' + (shop.name || 'Shop') + '&am=' + parseFloat(selectedSale.grand_total).toFixed(2) + '&cu=INR')" class="w-20 h-20 p-1 bg-white rounded border border-slate-200 shadow-sm">
+                                    <span class="text-[8px] text-slate-400 font-semibold" x-text="shop.upi_id"></span>
+                                </div>
+                            </template>
+                            <template x-if="invoiceSettings && invoiceSettings.show_bank_details && shop && shop.bank_details">
+                                <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full" x-text="shop.bank_details"></p>
+                            </template>
+                        </div>
+                        
+                        <!-- Right Side: Totals -->
+                        <div class="flex flex-col items-end gap-1">
+                            <div class="flex justify-between w-48"><span class="text-slate-500">Subtotal:</span><span
+                                    class="font-semibold">₹<span x-text="selectedSale.subtotal"></span></span></div>
+                            <div class="flex justify-between w-48"><span class="text-slate-500">Discount:</span><span
+                                    class="font-semibold">-₹<span x-text="selectedSale.discount"></span></span></div>
+                            <div
+                                class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                                <span>Grand Total:</span><span class="text-primary">₹<span
+                                        x-text="selectedSale.grand_total"></span></span>
+                            </div>
                         </div>
                     </div>
                 </div>

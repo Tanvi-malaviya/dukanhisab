@@ -21,14 +21,23 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'display_name',
         'email',
         'password',
         'mobile',
         'avatar',
+        'date_of_birth',
+        'gender',
         'status',
         'last_login_at',
         'otp_code',
         'otp_expires_at',
+        'language',
+        'currency',
+        'date_format',
+        'time_format',
+        'theme',
+        'notification_preferences',
     ];
 
     /**
@@ -52,6 +61,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'otp_expires_at' => 'datetime',
+            'date_of_birth' => 'date',
+            'notification_preferences' => 'array',
             'password' => 'hashed',
         ];
     }
