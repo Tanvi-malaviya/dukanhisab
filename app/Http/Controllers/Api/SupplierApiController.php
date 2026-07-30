@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class SupplierApiController extends Controller
 {
@@ -13,6 +14,16 @@ class SupplierApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $query = Supplier::where('shop_id', $shopId);
+
+        if ($request->filled('updated_since')) {
+            $validator = Validator::make($request->only('updated_since'), [
+                'updated_since' => 'date',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            $query->withTrashed()->where('updated_at', '>=', Carbon::parse($request->updated_since));
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;

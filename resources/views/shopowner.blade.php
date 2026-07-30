@@ -8,11 +8,11 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
     <!-- AlpineJS -->
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-    
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -24,7 +24,7 @@
                         primary: { DEFAULT: '#0F766E', hover: '#115E59', light: '#CCFBF1' },
                         secondary: { DEFAULT: '#14B8A6', hover: '#0D9488' }
                     },
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] }
+                    fontFamily: { sans: ['"Quicksand"', 'system-ui', 'sans-serif'] }
                 }
             }
         }
@@ -35,30 +35,7 @@
 
     <style>
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-        }
-        @media (min-width: 768px) {
-            body {
-                overflow: hidden !important;
-            }
-            .shopowner-auth-container {
-                display: flex !important;
-                flex-direction: row !important;
-                height: 100vh !important;
-                overflow: hidden !important;
-            }
-            .auth-forms-container {
-                width: 50% !important;
-                height: 100% !important;
-                overflow-y: auto !important;
-                order: 1 !important;
-            }
-            .auth-branding-container {
-                display: flex !important;
-                width: 50% !important;
-                height: 100% !important;
-                order: 2 !important;
-            }
+            font-family: 'Quicksand', sans-serif;
         }
         .glass-card {
             background: rgba(255, 255, 255, 0.85);
@@ -67,7 +44,7 @@
         }
     </style>
 </head>
-<body class="h-full bg-slate-50 text-slate-900" x-data="authApp()">
+<body class="min-h-screen text-slate-900" x-data="authApp()" style="background: linear-gradient(135deg, #0F766E 0%, #115E59 55%, #021b18 100%);">
 
     <!-- Toast Notification System -->
     <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full">
@@ -103,20 +80,29 @@
     </div>
 
     <!-- Main Container -->
-    <div class="shopowner-auth-container min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row bg-slate-50">
-        
-        <!-- Left Side: Premium Branding & Showcase (Deep rich teal with glowing overlays) -->
-        <div class="auth-branding-container hidden md:flex flex-1 md:w-1/2 p-8 xl:p-10 flex-col justify-between relative overflow-hidden h-full" style="background-color: #021b18; order: 2;">
-            <!-- Dot pattern overlay -->
-            <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
-            
-            <!-- Colorful neon glow blobs -->
-            <div class="absolute w-[45rem] h-[45rem] rounded-full bg-emerald-500/[0.08] blur-[130px] -bottom-40 -right-40 pointer-events-none"></div>
-            <div class="absolute w-[35rem] h-[35rem] rounded-full bg-teal-500/[0.06] blur-[110px] -top-20 -left-20 pointer-events-none"></div>
-            <div class="absolute w-[25rem] h-[25rem] rounded-full bg-cyan-500/[0.04] blur-[100px] top-[30%] left-[20%] pointer-events-none"></div>
+    <div class="shopowner-auth-container relative min-h-screen w-full overflow-hidden flex flex-col">
+
+        <!-- Organic blob shapes (full page, teal palette) -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-16 -left-16 w-[40rem] h-[40rem] bg-emerald-400/40"
+                 style="border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; filter: blur(6px);"></div>
+            <div class="absolute top-[8%] -right-32 w-[36rem] h-[36rem] bg-teal-300/30"
+                 style="border-radius: 40% 60% 70% 30% / 50% 60% 40% 50%; filter: blur(6px);"></div>
+            <div class="absolute -bottom-32 left-[12%] w-[38rem] h-[38rem] bg-black/25"
+                 style="border-radius: 50% 50% 40% 60% / 40% 50% 60% 50%; filter: blur(6px);"></div>
+            <div class="absolute bottom-[6%] -right-10 w-[26rem] h-[26rem] bg-emerald-300/30"
+                 style="border-radius: 45% 55% 65% 35% / 55% 45% 55% 45%; filter: blur(6px);"></div>
+            <div class="absolute top-[35%] left-[8%] w-[18rem] h-[18rem] bg-cyan-300/20"
+                 style="border-radius: 55% 45% 35% 65% / 45% 55% 65% 35%; filter: blur(6px);"></div>
+        </div>
+
+        <div class="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-10 px-6 lg:px-12 py-10">
+
+        <!-- Left Side: Premium Branding & Showcase -->
+        <div class="auth-branding-container hidden lg:flex flex-col justify-center max-w-xl">
 
             <!-- Branding Header (Glassmorphic Pill style) -->
-            <div class="flex items-center gap-3 z-10">
+            <div class="flex items-center gap-3 z-10 mb-6">
                 <div class="inline-flex items-center justify-center px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full shadow-lg font-bold text-white">
                     <svg class="w-4 h-4 text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
@@ -126,7 +112,7 @@
             </div>
 
             <!-- Content Middle -->
-            <div class="max-w-xl w-full mx-auto my-auto z-10 space-y-6">
+            <div class="w-full z-10 space-y-6">
                 <div class="space-y-3">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-emerald-500/20">
                         <span class="flex h-2 w-2 relative">
@@ -227,17 +213,15 @@
             </div>
 
             <!-- Footer copyright inside left panel -->
-            <div class="text-[10px] text-teal-100/60 z-10">
+            <div class="text-[10px] text-teal-100/60 z-10 mt-8">
                 &copy; {{ date('Y') }} DukanHisab. One Platform. Complete Control.
             </div>
         </div>
 
         <!-- Right Side: Forms Container -->
-        <div class="auth-forms-container flex-1 md:w-1/2 bg-white flex flex-col justify-between p-6 md:p-8 xl:p-10 relative overflow-hidden h-full" style="order: 1;">
-            <!-- Decorative background light blob -->
-            <div class="absolute w-[20rem] h-[20rem] rounded-full bg-primary/5 blur-[80px] -top-20 -left-20 pointer-events-none"></div>
+        <div class="auth-forms-container w-full max-w-md relative z-10">
 
-            <div class="w-full max-w-md mx-auto my-auto relative z-10">
+            <div class="w-full relative z-10">
                 <!-- Branding Header for Mobile Only -->
                 <div class="flex md:hidden items-center justify-between mb-4">
                     <div class="flex items-center gap-2">
@@ -251,14 +235,15 @@
                     <span class="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full" x-text="subtitleText()"></span>
                 </div>
 
-                <!-- Page Header (desktop) -->
-                <div class="hidden md:block mb-4">
-                    <div class="text-2xl font-extrabold text-slate-800 tracking-tight" x-text="view === 'login' ? 'Shop Owner Login' : (view === 'register' ? 'Create Account' : (view === 'forgot-password' ? 'Forgot Password' : (view === 'reset-password' ? 'Reset Password' : (view === 'verify-otp' ? 'Verify OTP' : (view === 'shop-setup' ? 'Shop Setup' : 'Dashboard')))))"></div>
-                    <p class="mt-1 text-xs text-slate-400 font-medium" x-text="subtitleText()"></p>
-                </div>
-
                 <div class="glass-card py-4 px-4 sm:px-5 shadow-md border border-slate-200/50 rounded-xl">
-                    
+
+                    <!-- Page Header (inside card, top center) -->
+                    <div class="text-center mb-4">
+                        <div class="text-2xl font-extrabold text-slate-800 tracking-tight" x-text="view === 'login' ? 'Login' : (view === 'register' ? 'Create Account' : (view === 'forgot-password' ? 'Forgot Password' : (view === 'reset-password' ? 'Reset Password' : (view === 'verify-otp' ? 'Verify OTP' : (view === 'shop-setup' ? 'Shop Setup' : 'Dashboard')))))"></div>
+                        <p class="mt-1 text-xs text-slate-400 font-medium" x-text="subtitleText()"></p>
+                    </div>
+
+
                     <!-- 1. LOGIN SCREEN -->
                     <div x-show="view === 'login'">
                         <form @submit.prevent="handleLogin()" class="space-y-4">
@@ -676,9 +661,11 @@
             </div>
 
             <!-- Footer copyright inside right panel -->
-            <div class="w-full max-w-md mx-auto mt-auto pt-4 text-center text-[10px] text-slate-400 relative z-10 border-t border-slate-100">
+            <div class="w-full mx-auto mt-6 pt-4 text-center text-[10px] text-white/70 relative z-10 border-t border-white/10">
                 &copy; {{ date('Y') }} DukanHisab Shop Panel. All rights reserved.
             </div>
+        </div>
+
         </div>
     </div>
 

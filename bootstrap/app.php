@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'audit' => \App\Http\Middleware\AuditLogMiddleware::class,
             'shop.scope' => \App\Http\Middleware\ShopScopeMiddleware::class,
+            'idempotency' => \App\Http\Middleware\EnsureIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

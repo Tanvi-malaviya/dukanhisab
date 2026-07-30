@@ -1,12 +1,23 @@
 {{-- SETTINGS PANEL --}}
 <div x-show="page === 'settings'" class="space-y-6"
     x-data="{
+        settingsTab: 'shop',
+        showPreviewModal: false,
         shopUpdateForm: {
             name: shop ? shop.name : '',
             owner_name: user ? user.name : '',
             mobile: shop ? shop.mobile : '',
+            email: shop ? shop.email : '',
             gst_number: shop ? shop.gst_number : '',
-            address: shop ? shop.address : ''
+            address: shop ? shop.address : '',
+            city: shop ? shop.city : '',
+            state: shop ? shop.state : '',
+            pincode: shop ? shop.pincode : '',
+            invoice_prefix: shop && shop.invoice_prefix ? shop.invoice_prefix : 'INV',
+            currency: shop && shop.currency ? shop.currency : 'INR',
+            upi_id: shop ? shop.upi_id : '',
+            bank_details: shop ? shop.bank_details : '',
+            invoice_footer: shop ? shop.invoice_footer : ''
         },
         logoPreview: '',
         logoFile: null,
@@ -16,31 +27,198 @@
                 this.logoFile = file;
                 this.logoPreview = URL.createObjectURL(file);
             }
+        },
+        signaturePreview: '',
+        signatureFile: null,
+        onSettingsSignatureChange(e) {
+            const file = e.target.files[0];
+            if (file) {
+                this.signatureFile = file;
+                this.signaturePreview = URL.createObjectURL(file);
+            }
+        },
+        userProfileForm: {
+            name: user ? user.name : '',
+            display_name: user ? user.display_name : '',
+            mobile: user ? user.mobile : '',
+            email: user ? user.email : '',
+            date_of_birth: user ? user.date_of_birth : '',
+            gender: user ? user.gender : '',
+            currency: user && user.currency ? user.currency : 'INR',
+            date_format: user && user.date_format ? user.date_format : 'DD/MM/YYYY',
+            time_format: user && user.time_format ? user.time_format : '12h',
+            notification_preferences: Object.assign({ email: true, sms: false, whatsapp: true, push: true }, (user && user.notification_preferences) ? user.notification_preferences : {})
+        },
+        profileAvatarPreview: '',
+        profileAvatarFile: null,
+        onProfileAvatarChange(e) {
+            const file = e.target.files[0];
+            if (file) {
+                this.profileAvatarFile = file;
+                this.profileAvatarPreview = URL.createObjectURL(file);
+            }
+        },
+        invoiceConfigForm: {
+            starting_invoice_number: 1,
+            auto_increment: true,
+            date_format: 'DD/MM/YYYY',
+            paper_size: 'A4',
+            theme_color: '#0F766E',
+            show_customer_address: true,
+            show_customer_gst: true,
+            show_hsn_code: false,
+            show_discount: true,
+            show_tax: true,
+            show_sku: false,
+            gst_enabled: true,
+            round_off: true,
+            tax_summary: true,
+            show_upi_qr: true,
+            show_bank_details: false,
+            auto_print: false,
+            whatsapp_share: true,
+            pdf_download: true,
+            email_invoice: false
+        },
+        bank_holder: '',
+        bank_account: '',
+        bank_ifsc: '',
+        bank_name: '',
+        updateBankDetailsString() {
+            let parts = [];
+            if (this.bank_holder) parts.push('Holder Name: ' + this.bank_holder);
+            if (this.bank_account) parts.push('Account No: ' + this.bank_account);
+            if (this.bank_ifsc) parts.push('IFSC: ' + this.bank_ifsc);
+            if (this.bank_name) parts.push('Bank: ' + this.bank_name);
+            this.shopUpdateForm.bank_details = parts.join('\n');
+        },
+        parseBankDetails() {
+            const str = this.shopUpdateForm.bank_details || '';
+            const holderMatch = str.match(/Holder Name:\s*(.*)/i);
+            const accountMatch = str.match(/Account No:\s*(.*)/i);
+            const ifscMatch = str.match(/IFSC:\s*(.*)/i);
+            const bankMatch = str.match(/Bank:\s*(.*)/i);
+            
+            this.bank_holder = holderMatch ? holderMatch[1].trim() : '';
+            this.bank_account = accountMatch ? accountMatch[1].trim() : '';
+            this.bank_ifsc = ifscMatch ? ifscMatch[1].trim() : '';
+            this.bank_name = bankMatch ? bankMatch[1].trim() : '';
+            
+            if (!this.bank_holder && !this.bank_account && !this.bank_ifsc && !this.bank_name && str) {
+                this.bank_holder = str;
+            }
+        },
+        saveInvoiceSettings() {
+            this.submitShopProfileUpdate(this.logoFile, this.signatureFile);
+            this.submitInvoiceSettingsUpdate(this.invoiceConfigForm);
+        },
+        testPrintInvoice() {
+            document.body.classList.add('printing-invoice-preview');
+            window.print();
+            setTimeout(() => document.body.classList.remove('printing-invoice-preview'), 500);
         }
     }"
     x-init="
+    if (shop) {
+        shopUpdateForm.bank_details = shop.bank_details || '';
+        parseBankDetails();
+    }
     $watch('page', value => {
         if(value === 'settings' && shop) {
-            shopUpdateForm = { name: shop.name, owner_name: user ? user.name : '', mobile: shop.mobile || '', gst_number: shop.gst_number || '', address: shop.address || '' };
+            shopUpdateForm = {
+                name: shop.name,
+                owner_name: user ? user.name : '',
+                mobile: shop.mobile || '',
+                email: shop.email || '',
+                gst_number: shop.gst_number || '',
+                address: shop.address || '',
+                city: shop.city || '',
+                state: shop.state || '',
+                pincode: shop.pincode || '',
+                invoice_prefix: shop.invoice_prefix || 'INV',
+                currency: shop.currency || 'INR',
+                upi_id: shop.upi_id || '',
+                bank_details: shop.bank_details || '',
+                invoice_footer: shop.invoice_footer || ''
+            };
             logoPreview = '';
             logoFile = null;
+            signaturePreview = '';
+            signatureFile = null;
+            parseBankDetails();
         }
-    })
+        if (value === 'settings' && user) {
+            userProfileForm = {
+                name: user.name || '',
+                display_name: user.display_name || '',
+                mobile: user.mobile || '',
+                email: user.email || '',
+                date_of_birth: user.date_of_birth || '',
+                gender: user.gender || '',
+                currency: user.currency || 'INR',
+                date_format: user.date_format || 'DD/MM/YYYY',
+                time_format: user.time_format || '12h',
+                notification_preferences: Object.assign({ email: true, sms: false, whatsapp: true, push: true }, user.notification_preferences || {})
+            };
+            profileAvatarPreview = '';
+            profileAvatarFile = null;
+        }
+    });
+    $watch('invoiceSettings', value => {
+        if (value) {
+            invoiceConfigForm = {
+                starting_invoice_number: value.starting_invoice_number ?? 1,
+                auto_increment: !!value.auto_increment,
+                date_format: value.date_format || 'DD/MM/YYYY',
+                paper_size: value.paper_size || 'A4',
+                theme_color: value.theme_color || '#0F766E',
+                show_customer_address: !!value.show_customer_address,
+                show_customer_gst: !!value.show_customer_gst,
+                show_hsn_code: !!value.show_hsn_code,
+                show_discount: !!value.show_discount,
+                show_tax: !!value.show_tax,
+                show_sku: !!value.show_sku,
+                gst_enabled: !!value.gst_enabled,
+                round_off: !!value.round_off,
+                tax_summary: !!value.tax_summary,
+                show_upi_qr: !!value.show_upi_qr,
+                show_bank_details: !!value.show_bank_details,
+                auto_print: !!value.auto_print,
+                whatsapp_share: !!value.whatsapp_share,
+                pdf_download: !!value.pdf_download,
+                email_invoice: !!value.email_invoice
+            };
+        }
+    });
 ">
-    <div>
-        <h3 class="text-xl font-extrabold text-slate-800 dark:text-white">Shop Settings & Preferences</h3>
-        <p class="text-xs text-slate-500">Manage shop profile, branding, and contact details</p>
+    {{-- Tab Switcher --}}
+    <div class="flex gap-2 border-b border-slate-200 dark:border-gray-700">
+        <button type="button" @click="settingsTab = 'shop'"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            :class="settingsTab === 'shop' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+            Shop Settings
+        </button>
+        <button type="button" @click="settingsTab = 'profile'"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            :class="settingsTab === 'profile' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+            User Settings
+        </button>
+        <button type="button" @click="settingsTab = 'invoice'"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            :class="settingsTab === 'invoice' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+            Invoice Settings
+        </button>
     </div>
 
     {{-- Shop Profile Settings --}}
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
-        <form @submit.prevent="submitShopProfileUpdate(logoFile)" class="flex flex-col lg:flex-row gap-8">
-            
-            {{-- Left Side: Logo Upload card --}}
-            <div class="w-full lg:w-1/3 flex flex-col items-center justify-center p-6 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0">
-                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Shop Branding</span>
-                
-                <div class="relative w-28 h-28 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
+    <div x-show="settingsTab === 'shop'" class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+        <form @submit.prevent="submitShopProfileUpdate(logoFile, signatureFile)" class="flex flex-col lg:flex-row gap-6">
+
+            {{-- Left Side: Logo Upload card (Compact) --}}
+            <div class="w-full lg:w-1/4 flex flex-col items-center justify-start p-4 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0">
+                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Shop Branding</span>
+
+                <div class="relative w-22 h-22 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
                     <!-- Preview selected file -->
                     <template x-if="logoPreview">
                         <img :src="logoPreview" class="w-full h-full object-cover">
@@ -49,59 +227,101 @@
                     <template x-if="!logoPreview">
                         <img :src="shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
                     </template>
-                    
+
                     <!-- Hover Edit Overlay -->
                     <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
-                        <span class="text-[9px] text-slate-200 font-bold uppercase tracking-wider">Change Logo</span>
+                        <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider">Change Logo</span>
                     </div>
-                    
+
                     <input type="file" accept="image/*" @change="onSettingsLogoChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
-                
-                <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4" x-text="shopUpdateForm.name || 'My Shop'"></h5>
-                <p class="text-[10px] text-slate-400 mt-1 uppercase font-semibold tracking-widest" x-text="'GSTIN: ' + (shopUpdateForm.gst_number || 'None')"></p>
-                <p class="text-xs text-slate-400 mt-2 max-w-[200px]">Format: JPG, PNG. Max size 2MB.</p>
-            </div>
 
-            {{-- Right Side: Form Inputs --}}
-            <div class="flex-1 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Name</label>
-                        <input type="text" required x-model="shopUpdateForm.name"
-                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Owner Name</label>
-                        <input type="text" required x-model="shopUpdateForm.owner_name"
-                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-3" x-text="shopUpdateForm.name || 'My Shop'"></h5>
+                <p class="text-[9px] text-slate-400 mt-0.5 uppercase font-semibold tracking-widest" x-text="'GSTIN: ' + (shopUpdateForm.gst_number || 'None')"></p>
+                <p class="text-[10px] text-slate-400 mt-1 max-w-[200px]">Format: JPG, PNG. Max 2MB.</p>
+
+                {{-- Shop Signature Upload (Optional) --}}
+                <div class="w-full mt-4 pt-3 border-t border-slate-100 dark:border-gray-700/50 flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Shop Signature (Optional)</span>
+                    <div class="relative w-full h-14 rounded-xl border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 group transition-all hover:border-primary">
+                        <template x-if="signaturePreview">
+                            <img :src="signaturePreview" class="w-full h-full object-contain p-1">
+                        </template>
+                        <template x-if="!signaturePreview && shop && shop.signature">
+                            <img :src="'/storage/' + shop.signature" class="w-full h-full object-contain p-1">
+                        </template>
+                        <template x-if="!signaturePreview && !(shop && shop.signature)">
+                            <span class="text-[9px] text-slate-400">No signature uploaded</span>
+                        </template>
+
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                            <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider">Change</span>
+                        </div>
+
+                        <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+            </div>
+
+            {{-- Right Side: Form Inputs (12-Column Grid Layout) --}}
+            <div class="flex-1 space-y-3.5">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Name</label>
+                        <input type="text" required x-model="shopUpdateForm.name"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">GSTIN Number (Optional)</label>
+                        <input type="text" placeholder="22AAAAA0000A1Z5" x-model="shopUpdateForm.gst_number"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-6">
                         <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mobile Number</label>
                         <input type="text" required x-model="shopUpdateForm.mobile" maxlength="10"
                             x-on:input="shopUpdateForm.mobile = shopUpdateForm.mobile.replace(/\D/g, '').slice(0, 10)"
-                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">GSTIN Number (Optional)</label>
-                        <input type="text" placeholder="22AAAAA0000A1Z5" x-model="shopUpdateForm.gst_number"
-                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Email</label>
+                        <input type="email" x-model="shopUpdateForm.email"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Address</label>
-                    <textarea rows="3" placeholder="Street Address, City, State..." x-model="shopUpdateForm.address"
-                        class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all"></textarea>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Address</label>
+                        <input type="text" placeholder="Street Address..." x-model="shopUpdateForm.address"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">City</label>
+                        <input type="text" x-model="shopUpdateForm.city"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">State</label>
+                        <input type="text" x-model="shopUpdateForm.state"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Pincode</label>
+                        <input type="text" maxlength="10" x-model="shopUpdateForm.pincode"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
                 </div>
-                <div class="pt-2 flex justify-end">
+
+                <div class="pt-1 flex justify-end">
                     <button type="submit" :disabled="loading"
-                        class="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                        class="w-full sm:w-auto px-5 py-2 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                         <template x-if="loading">
                             <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                         </template>
@@ -111,4 +331,555 @@
             </div>
         </form>
     </div>
+
+    {{-- My Profile / Account Settings --}}
+    <div x-show="settingsTab === 'profile'" class="space-y-6">
+        <form @submit.prevent="submitUserProfileUpdate(profileAvatarFile)" class="space-y-6">
+
+            {{-- Basic Information --}}
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mb-4">Basic Information</h4>
+                <div class="flex flex-col lg:flex-row gap-8">
+
+                    {{-- Profile Photo --}}
+                    <div class="w-full lg:w-1/3 flex flex-col items-center justify-center p-6 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0 relative">
+                        <!-- Account Status (Top Right) -->
+                        <div class="absolute top-3 right-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                                :class="(user && user.status === 'suspended') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
+                                x-text="user && user.status ? user.status : 'active'"></span>
+                        </div>
+
+                        <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Profile Photo</span>
+
+                        <div class="relative w-28 h-28 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
+                            <template x-if="profileAvatarPreview">
+                                <img :src="profileAvatarPreview" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!profileAvatarPreview">
+                                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userProfileForm.name || 'User') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
+                            </template>
+
+                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                <span class="text-[9px] text-slate-200 font-bold uppercase tracking-wider">Change Photo</span>
+                            </div>
+
+                            <input type="file" accept="image/*" @change="onProfileAvatarChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                        </div>
+
+                        <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4" x-text="userProfileForm.display_name || userProfileForm.name || 'My Account'"></h5>
+                        <p class="text-xs text-slate-400 mt-2 max-w-[200px]">Format: JPG, PNG. Max size 2MB.</p>
+                    </div>
+
+                    {{-- Right Side: Basic Info Form Inputs --}}
+                    <div class="flex-1 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Full Name</label>
+                                <input type="text" required x-model="userProfileForm.name"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Display Name</label>
+                                <input type="text" placeholder="How you'd like to be shown" x-model="userProfileForm.display_name"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mobile Number</label>
+                                <input type="text" x-model="userProfileForm.mobile" maxlength="10"
+                                    x-on:input="userProfileForm.mobile = userProfileForm.mobile.replace(/\D/g, '').slice(0, 10)"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Email Address</label>
+                                <input type="email" required x-model="userProfileForm.email"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date of Birth (Optional)</label>
+                                <input type="date" x-model="userProfileForm.date_of_birth"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Gender (Optional)</label>
+                                <select x-model="userProfileForm.gender"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    <option value="">Prefer not to say</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-gray-700/50">
+                            <div>
+                                <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Registration Date</span>
+                                <div class="px-3 py-2 bg-slate-50 dark:bg-gray-900/30 border border-slate-200 dark:border-gray-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-semibold"
+                                     x-text="user && user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'">
+                                </div>
+                            </div>
+                            <div>
+                                <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Last Login</span>
+                                <div class="px-3 py-2 bg-slate-50 dark:bg-gray-900/30 border border-slate-200 dark:border-gray-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-semibold"
+                                     x-text="user && user.last_login_at ? new Date(user.last_login_at).toLocaleString() : '-'">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Preferences --}}
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mb-4">Preferences</h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Currency</label>
+                        <select x-model="userProfileForm.currency"
+                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <option value="INR">INR (₹)</option>
+                            <option value="USD">USD ($)</option>
+                            <option value="EUR">EUR (€)</option>
+                            <option value="GBP">GBP (£)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date Format</label>
+                        <select x-model="userProfileForm.date_format"
+                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Time Format</label>
+                        <select x-model="userProfileForm.time_format"
+                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <option value="12h">12-hour</option>
+                            <option value="24h">24-hour</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-gray-700/50">
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">Notification Preferences</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.email" class="rounded border-slate-300 text-primary focus:ring-primary">
+                            Email
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.sms" class="rounded border-slate-300 text-primary focus:ring-primary">
+                            SMS
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.whatsapp" class="rounded border-slate-300 text-primary focus:ring-primary">
+                            WhatsApp
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.push" class="rounded border-slate-300 text-primary focus:ring-primary">
+                            Push
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" :disabled="loading"
+                    class="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                    <template x-if="loading">
+                        <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    </template>
+                    <span x-text="loading ? 'Saving...' : 'Save Changes'"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {{-- Invoice Settings --}}
+    <div x-show="settingsTab === 'invoice'" class="w-full">
+        <form @submit.prevent="saveInvoiceSettings()" class="w-full space-y-6">
+
+            {{-- General, Layout & Branding --}}
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Invoice Details & Branding</h4>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Invoice Prefix</label>
+                        <input type="text" placeholder="INV" x-model="shopUpdateForm.invoice_prefix"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Starting Invoice Number</label>
+                        <input type="number" min="1" x-model.number="invoiceConfigForm.starting_invoice_number"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date Format</label>
+                        <select x-model="invoiceConfigForm.date_format"
+                            class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Paper Size</label>
+                        <div class="flex gap-1">
+                            <template x-for="size in ['A4', '58mm', '80mm']" :key="size">
+                                <button type="button" @click="invoiceConfigForm.paper_size = size"
+                                    class="flex-1 py-1 px-2 rounded-lg text-xs font-bold border transition-all"
+                                    :class="invoiceConfigForm.paper_size === size ? 'bg-primary text-white border-primary' : 'border-slate-300 dark:border-gray-600 text-slate-500 dark:text-slate-400 hover:border-primary'"
+                                    x-text="size"></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Theme Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" x-model="invoiceConfigForm.theme_color" class="h-8 w-10 rounded border border-slate-300 dark:border-gray-600 cursor-pointer bg-transparent">
+                            <input type="text" x-model="invoiceConfigForm.theme_color"
+                                class="flex-1 min-w-0 px-2.5 py-1 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                        </div>
+                    </div>
+                    <div class="pt-4 flex items-center justify-between gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" x-model="invoiceConfigForm.auto_increment" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Auto Increment</span>
+                        </label>
+                        <button type="button" @click="showPreviewModal = true"
+                            class="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 border border-slate-300 dark:border-gray-600 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-200 transition-all flex items-center gap-1.5 shrink-0 shadow-sm">
+                            <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            Preview
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Logo and Signature (Branding Row) --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-gray-700/50">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Logo</label>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded border border-slate-200 dark:border-gray-600 overflow-hidden bg-slate-50 dark:bg-gray-900/30 shrink-0">
+                                <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff')" class="w-full h-full object-cover">
+                            </div>
+                            <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
+                                class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Signature</label>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-10 h-10 rounded border border-slate-200 dark:border-gray-600 overflow-hidden bg-slate-50 dark:bg-gray-900/30 shrink-0 flex items-center justify-center">
+                                <template x-if="signaturePreview || (shop && shop.signature)">
+                                    <img :src="signaturePreview || ('/storage/' + shop.signature)" class="w-full h-full object-contain p-0.5">
+                                </template>
+                                <template x-if="!signaturePreview && !(shop && shop.signature)">
+                                    <span class="text-[8px] text-slate-400">None</span>
+                                </template>
+                            </div>
+                            <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)"
+                                class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Invoice Footer</label>
+                    <input type="text" placeholder="Thank you for your business!" x-model="shopUpdateForm.invoice_footer"
+                        class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                </div>
+            </div>
+
+            {{-- Invoice Features & Preferences --}}
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Invoice Features & Preferences</h4>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:divide-x md:divide-slate-200 md:dark:divide-gray-700/50">
+                    <!-- Column 1: Customer Info -->
+                    <div class="space-y-2">
+                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Customer Info</h5>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Address</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_customer_address" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show GST Number</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_customer_gst" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Products -->
+                    <div class="space-y-2 md:pl-6">
+                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Products</h5>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show HSN Code</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_hsn_code" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Discount</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_discount" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Tax</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_tax" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show SKU</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_sku" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: Print & Share -->
+                    <div class="space-y-2 md:pl-6">
+                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Print & Share</h5>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Auto Print</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.auto_print" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">WhatsApp Share</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.whatsapp_share" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">PDF Download</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.pdf_download" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Email Invoice</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.email_invoice" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Column 4: Tax Settings -->
+                    <div class="space-y-2 md:pl-6">
+                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Tax Settings</h5>
+                        <div class="space-y-1.5">
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">GST Enable/Disable</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.gst_enabled" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Round Off</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.round_off" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                            <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Tax Summary</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.tax_summary" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Payment options inside the same card (to minimize vertical space/cards) --}}
+                <div class="pt-3 border-t border-slate-100 dark:border-gray-700/50">
+                    <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Payment Info</h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 mb-2">
+                        <label class="flex items-center justify-between gap-3 py-1 cursor-pointer">
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show UPI QR</span>
+                            <input type="checkbox" x-model="invoiceConfigForm.show_upi_qr" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                        </label>
+                        <label class="flex items-center justify-between gap-3 py-1 cursor-pointer">
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Bank Details</span>
+                            <input type="checkbox" x-model="invoiceConfigForm.show_bank_details" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                        </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div x-show="invoiceConfigForm.show_upi_qr" class="md:col-span-4">
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">UPI ID</label>
+                            <input type="text" placeholder="shopname@upi" x-model="shopUpdateForm.upi_id"
+                                class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                        </div>
+                        <div x-show="invoiceConfigForm.show_bank_details" class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3" :class="!invoiceConfigForm.show_upi_qr && 'md:col-span-12'">
+                            <div class="sm:col-span-2">
+                                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Bank Account Details</span>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Account Holder Name</label>
+                                <input type="text" placeholder="John Doe" x-model="bank_holder" @input="updateBankDetailsString()"
+                                    class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Bank Name</label>
+                                <input type="text" placeholder="State Bank of India" x-model="bank_name" @input="updateBankDetailsString()"
+                                    class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Account Number</label>
+                                <input type="text" placeholder="1234567890" x-model="bank_account" @input="updateBankDetailsString()"
+                                    class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">IFSC Code</label>
+                                <input type="text" placeholder="SBIN0001234" x-model="bank_ifsc" @input="updateBankDetailsString()"
+                                    class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" :disabled="loading"
+                    class="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                    <template x-if="loading">
+                        <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    </template>
+                    <span x-text="loading ? 'Saving...' : 'Save Invoice Settings'"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Preview Modal Popup -->
+    <template x-teleport="body">
+        <div x-show="showPreviewModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95">
+            <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+                 @click.outside="showPreviewModal = false">
+                
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900">
+                    <h3 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        Invoice Live Preview
+                    </h3>
+                    <button type="button" @click="showPreviewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+    
+                <!-- Modal Content (Preview Area) -->
+                <div class="p-6 overflow-y-auto bg-slate-50 dark:bg-gray-900/40 flex-1 flex justify-center items-start">
+                    <div id="invoicePreviewPrintArea" class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-md p-5 w-full max-w-sm overflow-hidden"
+                        :class="invoiceConfigForm.paper_size === 'A4' ? '' : 'max-w-[280px]'">
+                        <div class="rounded-lg p-3.5 text-white flex items-start justify-between gap-4" :style="'background-color: ' + invoiceConfigForm.theme_color">
+                            <!-- Left Side: Logo & Shop Name -->
+                            <div class="flex flex-col items-start gap-1.5">
+                                <div x-show="logoPreview || (shop && shop.logo)" class="w-8 h-8 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                                    <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : '')" class="w-full h-full object-cover">
+                                </div>
+                                <span class="text-xs font-bold leading-tight" x-text="shopUpdateForm.name || 'My Shop'"></span>
+                            </div>
+                            
+                            <!-- Right Side: Invoice Meta & Customer Details -->
+                            <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
+                                <p class="font-bold" x-text="(invoiceConfigForm.date_format || 'DD/MM/YYYY') + ' • ' + (shopUpdateForm.invoice_prefix || 'INV') + '-' + (invoiceConfigForm.starting_invoice_number || 1)"></p>
+                                <template x-if="invoiceConfigForm.show_customer_address">
+                                    <p>Bill To: Sample Customer, 123 Main St</p>
+                                </template>
+                                <template x-if="invoiceConfigForm.show_customer_gst">
+                                    <p>GSTIN: 22AAAAA0000A1Z5</p>
+                                </template>
+                                <p class="text-[8px] opacity-80 mt-0.5">Payment: Cash (Paid)</p>
+                            </div>
+                        </div>
+                        <table class="mt-4 w-full text-[9px] border-t border-slate-100 dark:border-gray-700">
+                            <thead>
+                                <tr class="text-slate-400">
+                                    <th class="text-left py-1">Item</th>
+                                    <template x-if="invoiceConfigForm.show_sku"><th class="text-left">SKU</th></template>
+                                    <template x-if="invoiceConfigForm.show_hsn_code"><th class="text-left">HSN</th></template>
+                                    <th class="text-right">Qty</th>
+                                    <template x-if="invoiceConfigForm.show_discount"><th class="text-right">Disc</th></template>
+                                    <template x-if="invoiceConfigForm.show_tax"><th class="text-right">Tax</th></template>
+                                    <th class="text-right">Amt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="text-slate-600 dark:text-slate-300">
+                                    <td class="py-1">Sample Item</td>
+                                    <template x-if="invoiceConfigForm.show_sku"><td>SKU001</td></template>
+                                    <template x-if="invoiceConfigForm.show_hsn_code"><td>1234</td></template>
+                                    <td class="text-right">1</td>
+                                    <template x-if="invoiceConfigForm.show_discount"><td class="text-right">0</td></template>
+                                    <template x-if="invoiceConfigForm.show_tax"><td class="text-right">18%</td></template>
+                                    <td class="text-right">100.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="mt-2 pt-2 border-t border-slate-100 dark:border-gray-700 text-[10px] text-right space-y-0.5">
+                            <template x-if="invoiceConfigForm.tax_summary && invoiceConfigForm.gst_enabled">
+                                <p class="text-slate-400">GST: ₹18.00</p>
+                            </template>
+                            <template x-if="invoiceConfigForm.round_off">
+                                <p class="text-slate-400">Round Off: ₹0.00</p>
+                            </template>
+                            <p class="font-bold text-slate-800 dark:text-white">Total: ₹100.00</p>
+                        </div>
+                        <template x-if="invoiceConfigForm.show_upi_qr">
+                            <div class="mt-2 flex flex-col items-center justify-center gap-1">
+                                <template x-if="shopUpdateForm.upi_id">
+                                    <div class="flex flex-col items-center gap-0.5">
+                                        <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shopUpdateForm.upi_id + '&pn=' + (shopUpdateForm.name || 'Shop') + '&am=100.00&cu=INR')" class="w-16 h-16 bg-white p-0.5 rounded border border-slate-200 shadow-sm">
+                                        <span class="text-[7px] text-slate-400" x-text="shopUpdateForm.upi_id"></span>
+                                    </div>
+                                </template>
+                                <template x-if="!shopUpdateForm.upi_id">
+                                    <div class="w-12 h-12 border border-dashed border-slate-300 dark:border-gray-600 rounded flex items-center justify-center text-[6px] text-slate-400 text-center px-1">
+                                        Enter UPI ID in profile
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template x-if="invoiceConfigForm.show_bank_details && shopUpdateForm.bank_details">
+                            <p class="mt-2 text-[8px] text-slate-400 whitespace-pre-line" x-text="shopUpdateForm.bank_details"></p>
+                        </template>
+                        <p class="mt-2 text-[9px] text-center text-slate-400" x-text="shopUpdateForm.invoice_footer || 'Thank you for your business!'"></p>
+                        <template x-if="signaturePreview || (shop && shop.signature)">
+                            <img :src="signaturePreview || ('/storage/' + shop.signature)" class="mt-2 h-8 ml-auto object-contain">
+                        </template>
+                    </div>
+                </div>
+    
+                <!-- Modal Footer -->
+                <div class="px-5 py-4 border-t border-slate-100 dark:border-gray-700/50 bg-slate-50 dark:bg-gray-800 flex flex-col sm:flex-row gap-2 justify-end">
+                    <button type="button" @click="testPrintInvoice()"
+                        class="w-full sm:w-auto px-4 py-2 border border-primary text-primary hover:bg-primary/5 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"></path>
+                        </svg>
+                        Test Print
+                    </button>
+                    <button type="button" @click="showPreviewModal = false"
+                        class="w-full sm:w-auto px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-xs font-semibold text-slate-600 dark:text-slate-200 rounded-xl transition-all shadow-sm">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
 </div>

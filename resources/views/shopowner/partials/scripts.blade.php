@@ -50,6 +50,8 @@
             // Data
             dashboardStats: { today_sales: 0, today_purchases: 0, cash_balance: 0, bank_balance: 0, customer_due: 0, supplier_due: 0, low_stock_count: 0, low_stock_products: [], recent_sales: [], recent_purchases: [] },
             dashboardLoading: false,
+            invoiceSettings: null,
+            invoiceSettingsLoading: false,
             products: [],
             productsTotal: 0,
             productsLoading: false,
@@ -150,7 +152,10 @@
 
                 // Redirect to login page if unauthenticated
                 if (!this.token || !this.hasShop) {
-                    const redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
+                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
+                    if (redirectUrl === window.location.pathname) {
+                        redirectUrl = '/shopowner/';
+                    }
                     window.location.href = redirectUrl;
                     return;
                 }
@@ -169,7 +174,10 @@
                             this.authPage = 'login';
                             this.showToast('Session expired. Please log in again.', 'error');
                             setTimeout(() => {
-                                const redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
+                                let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
+                                if (redirectUrl === window.location.pathname) {
+                                    redirectUrl = '/shopowner/';
+                                }
                                 window.location.href = redirectUrl;
                             }, 1500);
                         }
@@ -268,6 +276,7 @@
                 else if (pageName === 'transactions') this.loadCashBook();
                 else if (pageName === 'reports') this.loadReports();
                 else if (pageName === 'reminders') { this.loadCustomers(); this.loadSuppliers(); this.loadProducts(); }
+                else if (pageName === 'settings') this.loadInvoiceSettings();
             },
 
             toggleTheme() {
@@ -291,7 +300,7 @@
             },
 
             // ── DATA LOADERS ──────────────────────────────────────────
-            loadAllData() { this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); },
+            loadAllData() { this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); this.loadInvoiceSettings(); },
 
             loadDashboard() {
                 this.dashboardLoading = true;
@@ -851,15 +860,25 @@
                 w.document.close(); w.print();
             },
 
-            submitShopProfileUpdate(logoFile = null) {
+            submitShopProfileUpdate(logoFile = null, signatureFile = null) {
                 this.loading = true;
                 const fd = new FormData();
                 fd.append('name', this.shopUpdateForm.name);
                 fd.append('owner_name', this.shopUpdateForm.owner_name);
                 fd.append('mobile', this.shopUpdateForm.mobile);
+                if (this.shopUpdateForm.email) fd.append('email', this.shopUpdateForm.email);
                 if (this.shopUpdateForm.gst_number) fd.append('gst_number', this.shopUpdateForm.gst_number);
                 if (this.shopUpdateForm.address) fd.append('address', this.shopUpdateForm.address);
+                if (this.shopUpdateForm.city) fd.append('city', this.shopUpdateForm.city);
+                if (this.shopUpdateForm.state) fd.append('state', this.shopUpdateForm.state);
+                if (this.shopUpdateForm.pincode) fd.append('pincode', this.shopUpdateForm.pincode);
+                if (this.shopUpdateForm.invoice_prefix) fd.append('invoice_prefix', this.shopUpdateForm.invoice_prefix);
+                if (this.shopUpdateForm.currency) fd.append('currency', this.shopUpdateForm.currency);
+                if (this.shopUpdateForm.upi_id) fd.append('upi_id', this.shopUpdateForm.upi_id);
+                if (this.shopUpdateForm.bank_details) fd.append('bank_details', this.shopUpdateForm.bank_details);
+                if (this.shopUpdateForm.invoice_footer) fd.append('invoice_footer', this.shopUpdateForm.invoice_footer);
                 if (logoFile) fd.append('logo', logoFile);
+                if (signatureFile) fd.append('signature', signatureFile);
                 fetch('/api/v1/shopowner/shop-setup', {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token },
@@ -887,6 +906,83 @@
                     }).catch(() => {
                         this.loading = false;
                         this.showToast('Error updating shop profile.', 'error');
+                    });
+            },
+
+            submitUserProfileUpdate(avatarFile = null) {
+                this.loading = true;
+                const fd = new FormData();
+                fd.append('name', this.userProfileForm.name);
+                fd.append('display_name', this.userProfileForm.display_name || '');
+                fd.append('mobile', this.userProfileForm.mobile || '');
+                fd.append('email', this.userProfileForm.email);
+                if (this.userProfileForm.date_of_birth) fd.append('date_of_birth', this.userProfileForm.date_of_birth);
+                if (this.userProfileForm.gender) fd.append('gender', this.userProfileForm.gender);
+                fd.append('currency', this.userProfileForm.currency);
+                fd.append('date_format', this.userProfileForm.date_format);
+                fd.append('time_format', this.userProfileForm.time_format);
+                Object.keys(this.userProfileForm.notification_preferences).forEach(key => {
+                    fd.append('notification_preferences[' + key + ']', this.userProfileForm.notification_preferences[key] ? '1' : '0');
+                });
+                if (avatarFile) fd.append('avatar', avatarFile);
+
+                fetch('/api/v1/shopowner/profile', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token },
+                    body: fd
+                })
+                    .then(r => r.json()).then(d => {
+                        this.loading = false;
+                        if (d.user) {
+                            this.user = d.user;
+                            localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            this.showToast('Profile updated successfully!');
+                        } else {
+                            if (d.errors) {
+                                const firstKey = Object.keys(d.errors)[0];
+                                this.showToast(d.errors[firstKey][0], 'error');
+                            } else {
+                                this.showToast(d.message || 'Failed to update profile.', 'error');
+                            }
+                        }
+                    }).catch(() => {
+                        this.loading = false;
+                        this.showToast('Error updating profile.', 'error');
+                    });
+            },
+
+            loadInvoiceSettings() {
+                this.invoiceSettingsLoading = true;
+                fetch('/api/v1/invoice-settings', { headers: this.getHeaders() })
+                    .then(r => r.json()).then(d => {
+                        this.invoiceSettingsLoading = false;
+                        this.invoiceSettings = d;
+                    }).catch(() => { this.invoiceSettingsLoading = false; });
+            },
+
+            submitInvoiceSettingsUpdate(form) {
+                this.loading = true;
+                fetch('/api/v1/invoice-settings', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(form)
+                })
+                    .then(r => r.json()).then(d => {
+                        this.loading = false;
+                        if (d.id) {
+                            this.invoiceSettings = d;
+                            this.showToast('Invoice settings updated successfully!');
+                        } else {
+                            if (d.errors) {
+                                const firstKey = Object.keys(d.errors)[0];
+                                this.showToast(d.errors[firstKey][0], 'error');
+                            } else {
+                                this.showToast(d.message || 'Failed to update invoice settings.', 'error');
+                            }
+                        }
+                    }).catch(() => {
+                        this.loading = false;
+                        this.showToast('Error updating invoice settings.', 'error');
                     });
             },
 
@@ -1025,7 +1121,10 @@
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
                     ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
-                    const redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
+                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
+                    if (redirectUrl === window.location.pathname) {
+                        redirectUrl = '/shopowner/';
+                    }
                     window.location.href = redirectUrl;
                 });
             },
@@ -1387,10 +1486,9 @@
             },
 
             printInvoice() {
-                const html = document.getElementById('print-area').innerHTML;
-                const w = window.open('', '', 'width=800,height=600');
-                w.document.write('<html><head><title>Invoice</title></head><body>' + html + '</body></html>');
-                w.document.close(); w.print();
+                document.body.classList.add('printing-sale-invoice');
+                window.print();
+                setTimeout(() => document.body.classList.remove('printing-sale-invoice'), 500);
             },
 
             downloadPDF() {
@@ -1398,11 +1496,11 @@
                 this.loading = true;
                 fetch('/api/v1/sales/' + this.selectedSale.id + '/invoice', { headers: this.getHeaders() })
                     .then(r => r.blob()).then(blob => {
-                        this.loading = false;
-                        const link = document.createElement('a');
-                        link.href = window.URL.createObjectURL(blob);
-                        link.download = 'Invoice-' + this.selectedSale.sale_number + '.pdf';
-                        link.click();
+                         this.loading = false;
+                         const link = document.createElement('a');
+                         link.href = window.URL.createObjectURL(blob);
+                         link.download = 'Invoice-' + this.selectedSale.sale_number + '.pdf';
+                         link.click();
                     }).catch(() => { this.loading = false; this.showToast('Error generating PDF.', 'error'); });
             },
 
@@ -1423,10 +1521,9 @@
             },
 
             printPurchase() {
-                const html = document.getElementById('purchase-print-area').innerHTML;
-                const w = window.open('', '', 'width=800,height=600');
-                w.document.write('<html><head><title>Purchase Invoice</title></head><body>' + html + '</body></html>');
-                w.document.close(); w.print();
+                document.body.classList.add('printing-purchase-invoice');
+                window.print();
+                setTimeout(() => document.body.classList.remove('printing-purchase-invoice'), 500);
             },
 
             downloadPurchasePDF() {

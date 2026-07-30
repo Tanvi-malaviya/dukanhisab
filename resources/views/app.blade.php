@@ -8,7 +8,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,7 +21,7 @@
                         primary: { DEFAULT: '#0F766E', hover: '#115E59', light: '#CCFBF1' },
                         secondary: { DEFAULT: '#14B8A6', hover: '#0D9488' }
                     },
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] }
+                    fontFamily: { sans: ['"Poppins"', 'system-ui', 'sans-serif'] }
                 }
             }
         }
@@ -34,7 +34,7 @@
     @vite(['resources/css/app.css'])
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Poppins', sans-serif; }
         /* Hide elements with x-cloak until Alpine.js fully initializes */
         [x-cloak] { display: none !important; }
         .glass-card {
@@ -45,6 +45,48 @@
         .dark .glass-card {
             background: rgba(17,24,39,0.85);
             border-color: rgba(31,41,55,0.5);
+        }
+        /* Test Print: while active, print only the invoice preview area */
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            body.printing-invoice-preview * { visibility: hidden; }
+            body.printing-invoice-preview #invoicePreviewPrintArea,
+            body.printing-invoice-preview #invoicePreviewPrintArea * { visibility: visible; }
+            body.printing-invoice-preview #invoicePreviewPrintArea {
+                position: fixed;
+                inset: 0;
+                margin: auto;
+                z-index: 99999;
+            }
+
+            body.printing-sale-invoice * { visibility: hidden; }
+            body.printing-sale-invoice #print-area,
+            body.printing-sale-invoice #print-area * { visibility: visible; }
+            body.printing-sale-invoice #print-area {
+                position: fixed;
+                inset: 0;
+                margin: auto;
+                z-index: 99999;
+                background: white !important;
+                color: black !important;
+                padding: 10px;
+            }
+
+            body.printing-purchase-invoice * { visibility: hidden; }
+            body.printing-purchase-invoice #purchase-print-area,
+            body.printing-purchase-invoice #purchase-print-area * { visibility: visible; }
+            body.printing-purchase-invoice #purchase-print-area {
+                position: fixed;
+                inset: 0;
+                margin: auto;
+                z-index: 99999;
+                background: white !important;
+                color: black !important;
+                padding: 10px;
+            }
         }
     </style>
 </head>

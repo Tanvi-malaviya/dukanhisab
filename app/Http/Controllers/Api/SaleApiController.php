@@ -21,6 +21,16 @@ class SaleApiController extends Controller
         
         $query = Sale::where('shop_id', $shopId)->with(['customer', 'items.product']);
 
+        if ($request->filled('updated_since')) {
+            $validator = Validator::make($request->only('updated_since'), [
+                'updated_since' => 'date',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
+            $query->withTrashed()->where('updated_at', '>=', Carbon::parse($request->updated_since));
+        }
+
         // Apply Date Filters
         if ($request->filled('start_date')) {
             $query->whereDate('sale_date', '>=', $request->start_date);
