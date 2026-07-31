@@ -100,6 +100,7 @@ class PurchaseApiController extends Controller
                 'purchase_number' => $purchaseNumber,
                 'total_amount' => $request->total_amount,
                 'payment_type' => $request->payment_type,
+                'status' => $request->payment_type === 'Credit' ? 'Unpaid' : 'Completed',
                 'purchase_date' => Carbon::now(),
             ]);
 

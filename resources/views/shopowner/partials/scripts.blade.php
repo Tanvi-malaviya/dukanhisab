@@ -209,6 +209,10 @@
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
             showPurchaseReturnModal: false,
             purchaseReturnForm: { purchaseId: null, purchase_number: '', payment_type: '', items: [] },
+            collectCustomerModalOpen: false,
+            collectCustomerForm: { customer_id: null, customer_name: '', current_due: 0, amount: 0, payment_method: 'Cash', note: '' },
+            paySupplierModalOpen: false,
+            paySupplierForm: { supplier_id: null, supplier_name: '', current_due: 0, amount: 0, payment_method: 'Cash', note: '' },
             showEditSaleItemsModal: false,
             editingSaleId: null,
             showEditPurchaseItemsModal: false,
@@ -1414,7 +1418,7 @@
                             }
                             this.showConfirm('Validation Error', messages.join('\n'), () => { });
                         } else {
-                            this.showToast('Error saving sale.', 'error');
+                            this.showToast((err && err.message) ? err.message : 'Error saving sale.', 'error');
                         }
                     });
             },
@@ -1847,6 +1851,116 @@
                     this.loading = true;
                     fetch('/api/v1/customers/' + custId, { method: 'DELETE', headers: this.getHeaders() })
                         .then(r => { this.loading = false; if (r.status === 204) { this.showToast('Customer deleted.'); this.loadCustomers(); } });
+                });
+            },
+
+            openCollectCustomerPaymentModal(cust) {
+                const due = parseFloat(cust.due_amount) || 0;
+                this.collectCustomerForm = {
+                    customer_id: cust.id,
+                    customer_name: cust.name,
+                    current_due: due,
+                    amount: due,
+                    payment_method: 'Cash',
+                    note: ''
+                };
+                this.collectCustomerModalOpen = true;
+            },
+
+            submitCollectCustomerPayment() {
+                if (!this.collectCustomerForm.amount || this.collectCustomerForm.amount <= 0) {
+                    this.showConfirm('Validation Error', 'Please enter a valid payment amount.', () => { });
+                    return;
+                }
+                this.loading = true;
+                fetch('/api/v1/customers/' + this.collectCustomerForm.customer_id + '/collect-payment', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        amount: this.collectCustomerForm.amount,
+                        payment_method: this.collectCustomerForm.payment_method,
+                        note: this.collectCustomerForm.note
+                    })
+                })
+                .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, body: d })))
+                .then(res => {
+                    this.loading = false;
+                    if (res.ok) {
+                        this.collectCustomerModalOpen = false;
+                        this.showToast(res.body.message || 'Payment collected successfully!');
+                        this.loadCustomers();
+                        this.loadCashbook();
+                        this.loadDashboard();
+                    } else if (res.body && res.body.errors) {
+                        let messages = [];
+                        for (const key in res.body.errors) {
+                            if (Array.isArray(res.body.errors[key])) {
+                                messages.push(...res.body.errors[key]);
+                            }
+                        }
+                        this.showConfirm('Validation Error', messages.join('\n'), () => { });
+                    } else {
+                        this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showConfirm('Error', 'An error occurred while saving payment.', () => { });
+                });
+            },
+
+            openPaySupplierDueModal(sup) {
+                const due = parseFloat(sup.due_amount) || 0;
+                this.paySupplierForm = {
+                    supplier_id: sup.id,
+                    supplier_name: sup.name,
+                    current_due: due,
+                    amount: due,
+                    payment_method: 'Cash',
+                    note: ''
+                };
+                this.paySupplierModalOpen = true;
+            },
+
+            submitPaySupplierDue() {
+                if (!this.paySupplierForm.amount || this.paySupplierForm.amount <= 0) {
+                    this.showConfirm('Validation Error', 'Please enter a valid payment amount.', () => { });
+                    return;
+                }
+                this.loading = true;
+                fetch('/api/v1/suppliers/' + this.paySupplierForm.supplier_id + '/pay-due', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        amount: this.paySupplierForm.amount,
+                        payment_method: this.paySupplierForm.payment_method,
+                        note: this.paySupplierForm.note
+                    })
+                })
+                .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, body: d })))
+                .then(res => {
+                    this.loading = false;
+                    if (res.ok) {
+                        this.paySupplierModalOpen = false;
+                        this.showToast(res.body.message || 'Supplier payment recorded!');
+                        this.loadSuppliers();
+                        this.loadCashbook();
+                        this.loadDashboard();
+                    } else if (res.body && res.body.errors) {
+                        let messages = [];
+                        for (const key in res.body.errors) {
+                            if (Array.isArray(res.body.errors[key])) {
+                                messages.push(...res.body.errors[key]);
+                            }
+                        }
+                        this.showConfirm('Validation Error', messages.join('\n'), () => { });
+                    } else {
+                        this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showConfirm('Error', 'An error occurred while saving payment.', () => { });
                 });
             },
 

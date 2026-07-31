@@ -1021,3 +1021,127 @@
         </div>
     </div>
 </div>
+
+{{-- 14. COLLECT CUSTOMER PAYMENT MODAL --}}
+<div x-show="collectCustomerModalOpen" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
+            <div>
+                <h3 class="font-bold text-slate-800 dark:text-white">Collect Customer Payment</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Record customer Udhar repayment into CashBook</p>
+            </div>
+            <button @click="collectCustomerModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <form @submit.prevent="submitCollectCustomerPayment()" class="p-6 space-y-4">
+            <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-3.5 flex justify-between items-center">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Customer Name</span>
+                    <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="collectCustomerForm.customer_name"></h4>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Outstanding Due</span>
+                    <p class="font-black text-rose-600 text-base">₹<span x-text="collectCustomerForm.current_due.toFixed(2)"></span></p>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount Received (₹)</label>
+                <input type="number" step="0.01" min="0.01" :max="collectCustomerForm.current_due" x-model.number="collectCustomerForm.amount" required
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white font-bold text-lg focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</label>
+                <select x-model="collectCustomerForm.payment_method" required
+                    class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500">
+                    <option value="Cash">Cash</option>
+                    <option value="Bank">Bank Transfer</option>
+                    <option value="UPI">UPI / GPay / PhonePe</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Remarks / Note (Optional)</label>
+                <input type="text" x-model="collectCustomerForm.note" placeholder="e.g. Received partial payment via Google Pay"
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
+                <button type="button" @click="collectCustomerModalOpen = false"
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
+                    Collect ₹<span x-text="(collectCustomerForm.amount || 0).toFixed(2)"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- 15. PAY SUPPLIER DUE MODAL --}}
+<div x-show="paySupplierModalOpen" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
+            <div>
+                <h3 class="font-bold text-slate-800 dark:text-white">Pay Supplier Due</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Record payment made to supplier into CashBook</p>
+            </div>
+            <button @click="paySupplierModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        <form @submit.prevent="submitPaySupplierDue()" class="p-6 space-y-4">
+            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3.5 flex justify-between items-center">
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Supplier Name</span>
+                    <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="paySupplierForm.supplier_name"></h4>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Total Owed</span>
+                    <p class="font-black text-rose-600 text-base">₹<span x-text="paySupplierForm.current_due.toFixed(2)"></span></p>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount Paid (₹)</label>
+                <input type="number" step="0.01" min="0.01" :max="paySupplierForm.current_due" x-model.number="paySupplierForm.amount" required
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white font-bold text-lg focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</label>
+                <select x-model="paySupplierForm.payment_method" required
+                    class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-500">
+                    <option value="Cash">Cash</option>
+                    <option value="Bank">Bank Transfer</option>
+                    <option value="UPI">UPI / GPay / PhonePe</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Remarks / Note (Optional)</label>
+                <input type="text" x-model="paySupplierForm.note" placeholder="e.g. Paid balance via Net Banking"
+                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
+                <button type="button" @click="paySupplierModalOpen = false"
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
+                    Pay ₹<span x-text="(paySupplierForm.amount || 0).toFixed(2)"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -101,4 +101,56 @@ class CustomerApiController extends Controller
         $customer->delete();
         return response()->json(null, 204);
     }
+
+    /**
+     * Record payment / settlement received from a Customer for outstanding due (Udhar).
+     */
+    public function recordPayment(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $customer = Customer::where('shop_id', $shopId)->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|in:Cash,Bank,UPI,cash,bank,upi',
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $amount = (float) $request->amount;
+        $currentDue = (float) $customer->due_amount;
+
+        if ($amount > $currentDue) {
+            return response()->json([
+                'message' => 'Payment amount (₹' . number_format($amount, 2) . ') cannot exceed current due balance (₹' . number_format($currentDue, 2) . ').'
+            ], 422);
+        }
+
+        // 1. Decrement Customer Due Balance
+        $customer->decrement('due_amount', $amount);
+        $customer->refresh();
+
+        // 2. Add CashBook Entry (Cash In)
+        $paymentMethod = strtolower($request->payment_method);
+        \App\Models\CashBook::create([
+            'shop_id' => $shopId,
+            'type' => 'cash_in',
+            'amount' => $amount,
+            'payment_method' => $paymentMethod,
+            'description' => 'Udhar Repayment: ' . $customer->name . ($request->filled('note') ? ' (' . $request->note . ')' : ''),
+            'reference_id' => $customer->id,
+            'reference_type' => 'customer_payment',
+            'transaction_date' => Carbon::now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Udhar repayment recorded successfully.',
+            'customer' => $customer,
+            'paid_amount' => $amount,
+            'remaining_due' => $customer->due_amount
+        ], 200);
+    }
 }
