@@ -92,9 +92,10 @@ class SaleApiController extends Controller
         }
 
         return DB::transaction(function () use ($request, $shopId) {
-            $todayStr = Carbon::now()->format('Ymd');
-            $randomHex = strtoupper(substr(md5(uniqid()), 0, 4));
-            $saleNumber = 'SAL-' . $todayStr . '-' . $randomHex;
+            $today = Carbon::now();
+            $todayStr = $today->format('Ymd');
+            $nextNumber = \App\Models\InvoiceCounter::nextNumber($shopId, 'sale', $today);
+            $saleNumber = 'INV-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
             $sale = Sale::create([
                 'shop_id' => $shopId,
@@ -169,10 +170,102 @@ class SaleApiController extends Controller
             'payment_type' => 'sometimes|required|string|in:Cash,UPI,Bank,Credit',
             'sale_date' => 'sometimes|required|date',
             'status' => 'sometimes|required|string|in:Completed,Returned,Partially Returned',
+            'items' => 'sometimes|array|min:1',
+            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.selling_price' => 'required_with:items|numeric|min:0',
+            'subtotal' => 'sometimes|numeric|min:0',
+            'discount' => 'sometimes|numeric|min:0',
+            'grand_total' => 'sometimes|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($request->has('items')) {
+            if ($sale->status !== 'Completed') {
+                return response()->json(['message' => 'Cannot edit items of a returned sale.'], 400);
+            }
+
+            return DB::transaction(function () use ($request, $sale, $shopId) {
+                $oldPaymentType = $sale->payment_type;
+                $oldCustomerId = $sale->customer_id;
+
+                // Revert stock for the items currently on this sale
+                foreach ($sale->items as $item) {
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $product->increment('stock', $item->quantity);
+                    }
+                }
+
+                // Revert old payment effects
+                if ($oldPaymentType === 'Credit' && $oldCustomerId) {
+                    $oldCust = Customer::find($oldCustomerId);
+                    if ($oldCust) {
+                        $oldCust->decrement('due_amount', $sale->grand_total);
+                    }
+                } else {
+                    CashBook::where('shop_id', $shopId)
+                        ->where('reference_type', 'sale')
+                        ->where('reference_id', $sale->id)
+                        ->delete();
+                }
+
+                // Replace items with the new set
+                $sale->items()->delete();
+                foreach ($request->items as $item) {
+                    SaleItem::create([
+                        'sale_id' => $sale->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'selling_price' => $item['selling_price'],
+                    ]);
+                    $product = Product::findOrFail($item['product_id']);
+                    $product->decrement('stock', $item['quantity']);
+                }
+
+                if ($request->has('customer_id')) {
+                    $sale->customer_id = $request->customer_id;
+                }
+                if ($request->has('payment_type')) {
+                    $sale->payment_type = $request->payment_type;
+                }
+                $sale->subtotal = $request->input('subtotal', $sale->subtotal);
+                $sale->discount = $request->input('discount', $sale->discount);
+                $sale->grand_total = $request->input('grand_total', $sale->grand_total);
+                $sale->save();
+
+                $newPaymentType = $sale->payment_type;
+                $newCustomerId = $sale->customer_id;
+
+                // Apply new payment effects
+                if ($newPaymentType === 'Credit' && $newCustomerId) {
+                    $newCust = Customer::find($newCustomerId);
+                    if ($newCust) {
+                        $newCust->increment('due_amount', $sale->grand_total);
+                    }
+                } elseif ($newPaymentType !== 'Credit') {
+                    $methodMap = [
+                        'Cash' => 'cash',
+                        'Bank' => 'bank',
+                        'UPI' => 'upi'
+                    ];
+                    CashBook::create([
+                        'shop_id' => $shopId,
+                        'type' => 'cash_in',
+                        'amount' => $sale->grand_total,
+                        'payment_method' => $methodMap[$newPaymentType] ?? 'cash',
+                        'description' => 'Sale updated: ' . $sale->sale_number,
+                        'reference_id' => $sale->id,
+                        'reference_type' => 'sale',
+                        'transaction_date' => $sale->sale_date,
+                    ]);
+                }
+
+                return response()->json($sale->load('items.product', 'customer'));
+            });
         }
 
         return DB::transaction(function () use ($request, $sale, $shopId) {

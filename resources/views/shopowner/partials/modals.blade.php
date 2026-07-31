@@ -17,31 +17,33 @@
         <div id="print-area" class="flex-1 overflow-y-auto p-6 space-y-6 text-slate-800 dark:text-slate-200">
             <template x-if="selectedSale">
                 <div>
-                    <div
-                        class="flex justify-between items-start border-b border-dashed border-slate-200 dark:border-gray-700 pb-4">
-                        <div>
-                            <h4 class="text-xl font-extrabold text-primary" x-text="shop ? shop.name : 'DukanHisab'">
-                            </h4>
-                            <p class="text-xs text-slate-400 mt-1" x-text="shop ? shop.address : ''"></p>
-                            <p class="text-xs text-slate-400" x-text="'Mobile: ' + (shop ? (shop.mobile || '') : '')">
-                            </p>
-                            <p class="text-xs text-slate-400"
-                                x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
+                    <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all mb-4 invoice-theme-header"
+                         :class="getContrastColor(invoiceSettings ? invoiceSettings.theme_color : '#0F766E')"
+                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E')">
+                        <!-- Left Side: Logo & Shop Name -->
+                        <div class="flex items-start gap-2">
+                            <div x-show="shop && shop.logo" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                                <img :src="shop && shop.logo ? '/storage/' + shop.logo : ''" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex flex-col items-start gap-0.5">
+                                <span class="text-xs font-bold leading-tight" x-text="shop ? shop.name : 'DukanHisab'"></span>
+                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="'Mobile: ' + (shop ? (shop.mobile || '') : '')"></p>
+                                <p x-show="shop && shop.address" class="text-[9px] opacity-90" x-text="shop ? shop.address : ''"></p>
+                                <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90" x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center justify-end gap-2">
+                        
+                        <!-- Right Side: Invoice Meta -->
+                        <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
+                            <h3 class="font-bold text-sm flex items-center justify-end gap-2">
                                 <span>INVOICE</span>
                                 <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border"
-                                        :class="selectedSale.status === 'Partially Returned' 
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/50' 
-                                            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/50'"
+                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
                                         x-text="selectedSale.status"></span>
                                 </template>
                             </h3>
-                            <p class="text-xs font-semibold text-slate-500" x-text="selectedSale.sale_number"></p>
-                            <p class="text-xs text-slate-400 mt-1"
-                                x-text="new Date(selectedSale.sale_date).toLocaleString()"></p>
+                            <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
@@ -49,15 +51,20 @@
                             <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Bill To</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white"
                                 x-text="selectedSale.customer ? selectedSale.customer.name : 'Walk-In Customer'"></p>
-                            <p class="text-slate-500"
-                                x-text="selectedSale.customer && selectedSale.customer.mobile ? 'Mobile: ' + selectedSale.customer.mobile : ''">
-                            </p>
+                            <template x-if="(!invoiceSettings || invoiceSettings.show_customer_address) && selectedSale.customer && selectedSale.customer.mobile">
+                                <p class="text-slate-500" x-text="'Mobile: ' + selectedSale.customer.mobile"></p>
+                            </template>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Details</p>
-                            <p class="text-sm font-bold text-slate-800 dark:text-white"
-                                x-text="selectedSale.payment_type"></p>
-                            <p class="text-slate-500" x-text="selectedSale.status"></p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
+                            <p class="text-sm font-bold text-slate-800 dark:text-white">
+                                <span class="text-slate-500 font-normal">Payment Status:</span>
+                                <span :class="selectedSale.status === 'Returned' ? 'text-rose-600' : ''" x-text="selectedSale.status === 'Returned' ? 'Returned' : 'Paid'"></span>
+                            </p>
+                            <p class="text-sm font-bold text-slate-800 dark:text-white">
+                                <span class="text-slate-500 font-normal">Method:</span>
+                                <span x-text="selectedSale.payment_type"></span>
+                            </p>
                         </div>
                     </div>
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700 text-xs">
@@ -143,6 +150,10 @@
                             </div>
                         </div>
                     </div>
+                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : 'Thank you for your business!'"></p>
+                    <template x-if="shop && shop.signature">
+                        <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
+                    </template>
                 </div>
             </template>
         </div>
@@ -159,9 +170,11 @@
                 <a :href="whatsappLink()" target="_blank"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Share
                     WhatsApp</a>
-                <a :href="emailShareLink()" target="_blank"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg">Share
-                    Email</a>
+                <button type="button" @click="sendSaleInvoiceEmail()" :disabled="sendingSaleEmail"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg">
+                    <span x-show="!sendingSaleEmail">Share Email</span>
+                    <span x-show="sendingSaleEmail">Sending...</span>
+                </button>
             </div>
         </div>
     </div>
@@ -359,30 +372,33 @@
         <div id="purchase-print-area" class="flex-1 overflow-y-auto p-6 space-y-6 text-slate-800 dark:text-slate-200">
             <template x-if="selectedPurchase">
                 <div>
-                    <div
-                        class="flex justify-between items-start border-b border-dashed border-slate-200 dark:border-gray-700 pb-4">
-                        <div>
-                            <h4 class="text-xl font-extrabold text-primary" x-text="shop ? shop.name : 'DukanHisab'">
-                            </h4>
-                            <p class="text-xs text-slate-400 mt-1" x-text="shop ? shop.address : ''"></p>
-                            <p class="text-xs text-slate-400" x-text="'Mobile: ' + (shop ? (shop.mobile || '') : '')">
-                            </p>
+                    <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all mb-4 invoice-theme-header"
+                         :class="getContrastColor(invoiceSettings ? invoiceSettings.theme_color : '#0F766E')"
+                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E')">
+                        <!-- Left Side: Logo & Shop Name -->
+                        <div class="flex items-start gap-2">
+                            <div x-show="shop && shop.logo" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                                <img :src="shop && shop.logo ? '/storage/' + shop.logo : ''" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex flex-col items-start gap-0.5">
+                                <span class="text-xs font-bold leading-tight" x-text="shop ? shop.name : 'DukanHisab'"></span>
+                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="'Mobile: ' + (shop ? (shop.mobile || '') : '')"></p>
+                                <p x-show="shop && shop.address" class="text-[9px] opacity-90" x-text="shop ? shop.address : ''"></p>
+                                <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90" x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center justify-end gap-2">
+
+                        <!-- Right Side: Invoice Meta -->
+                        <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
+                            <h3 class="font-bold text-sm flex items-center justify-end gap-2">
                                 <span>PURCHASE INVOICE</span>
                                 <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border"
-                                        :class="selectedPurchase.status === 'Partially Returned' 
-                                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/50' 
-                                            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/50'"
+                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
                                         x-text="selectedPurchase.status"></span>
                                 </template>
                             </h3>
-                            <p class="text-xs font-semibold text-slate-500" x-text="selectedPurchase.purchase_number">
-                            </p>
-                            <p class="text-xs text-slate-400 mt-1"
-                                x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></p>
+                            <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
@@ -397,9 +413,15 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Mode</p>
-                            <p class="text-sm font-bold text-slate-800 dark:text-white"
-                                x-text="selectedPurchase.payment_type"></p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
+                            <p class="text-sm font-bold text-slate-800 dark:text-white">
+                                <span class="text-slate-500 font-normal">Payment Status:</span>
+                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600' : ''" x-text="selectedPurchase.status === 'Returned' ? 'Returned' : 'Paid'"></span>
+                            </p>
+                            <p class="text-sm font-bold text-slate-800 dark:text-white">
+                                <span class="text-slate-500 font-normal">Method:</span>
+                                <span x-text="selectedPurchase.payment_type"></span>
+                            </p>
                         </div>
                     </div>
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700 text-xs">
@@ -437,14 +459,33 @@
                             </template>
                         </tbody>
                     </table>
-                    <div
-                        class="border-t border-slate-200 dark:border-gray-700 pt-4 flex flex-col items-end gap-1 text-xs">
-                        <div
-                            class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                            <span>Total Amount:</span><span class="text-primary font-extrabold">₹<span
-                                    x-text="parseFloat(selectedPurchase.total_amount).toFixed(2)"></span></span>
+                    <div class="border-t border-slate-200 dark:border-gray-700 pt-4 flex justify-between items-start gap-4 text-xs">
+                        <!-- Left Side: UPI QR Code & Bank Details -->
+                        <div class="flex flex-col items-start gap-2 max-w-[50%]">
+                            <template x-if="invoiceSettings && invoiceSettings.show_upi_qr && shop && shop.upi_id">
+                                <div class="flex flex-col items-center gap-1">
+                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shop.upi_id + '&pn=' + (shop.name || 'Shop') + '&am=' + parseFloat(selectedPurchase.total_amount).toFixed(2) + '&cu=INR')" class="w-20 h-20 p-1 bg-white rounded border border-slate-200 shadow-sm">
+                                    <span class="text-[8px] text-slate-400 font-semibold" x-text="shop.upi_id"></span>
+                                </div>
+                            </template>
+                            <template x-if="invoiceSettings && invoiceSettings.show_bank_details && shop && shop.bank_details">
+                                <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full" x-text="shop.bank_details"></p>
+                            </template>
+                        </div>
+
+                        <!-- Right Side: Totals -->
+                        <div class="flex flex-col items-end gap-1">
+                            <div
+                                class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                                <span>Total Amount:</span><span class="text-primary font-extrabold">₹<span
+                                        x-text="parseFloat(selectedPurchase.total_amount).toFixed(2)"></span></span>
+                            </div>
                         </div>
                     </div>
+                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : 'Thank you for your business!'"></p>
+                    <template x-if="shop && shop.signature">
+                        <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
+                    </template>
                 </div>
             </template>
         </div>
@@ -456,20 +497,16 @@
                 <button @click="downloadPurchasePDF()"
                     class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg">Download
                     PDF</button>
-                <button @click="returnPurchase(selectedPurchase.id); showPurchaseDetailsModal = false"
-                    x-show="selectedPurchase.status !== 'Returned'"
-                    class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
-                    Return
-                </button>
             </div>
             <div class="flex gap-2">
                 <a :href="whatsappPurchaseLink()" target="_blank"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Share
                     WhatsApp</a>
-                <a :href="emailPurchaseShareLink()" target="_blank"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg">Share
-                    Email</a>
+                <button type="button" @click="sendPurchaseInvoiceEmail()" :disabled="sendingPurchaseEmail"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg">
+                    <span x-show="!sendingPurchaseEmail">Share Email</span>
+                    <span x-show="sendingPurchaseEmail">Sending...</span>
+                </button>
             </div>
         </div>
     </div>
@@ -578,53 +615,335 @@
     </div>
 </div>
 
-{{-- 12. EDIT SALE MODAL --}}
-<div x-show="showEditSaleModal" x-cloak
+{{-- 12. EDIT SALE ITEMS MODAL --}}
+<div x-show="showEditSaleItemsModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-        <div
-            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
-            <h3 class="font-bold text-slate-800 dark:text-white">Edit Sale</h3>
-            <button @click="showEditSaleModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900 shrink-0">
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="'Edit Sale #' + (editingSaleId ? (selectedSale && selectedSale.id === editingSaleId ? selectedSale.sale_number : '') : '')"></h3>
+            <button @click="showEditSaleItemsModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
                 </svg></button>
         </div>
-        <form @submit.prevent="updateSale()" class="p-6 space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Customer</label>
-                <select x-model="editSaleForm.customer_id"
-                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-                    <option value="">Walk-In Customer</option>
-                    <template x-for="cust in customers" :key="cust.id">
-                        <option :value="cust.id" x-text="cust.name"></option>
-                    </template>
-                </select>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div class="flex flex-col lg:flex-row gap-4">
+                {{-- Product Selection Side --}}
+                <div class="flex-1 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden min-h-[400px]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <div class="relative">
+                            <input type="text" placeholder="Search product name..." x-model="pos.searchQuery"
+                                @input.debounce.300ms="loadProducts(pos.searchQuery)"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" placeholder="Scan barcode..." x-model="pos.barcodeInput"
+                                @keydown.enter.prevent="handleBarcodeScan()"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-4V8m0 8l-4-4m4 4l4-4"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
+                        <template x-for="prod in filteredProducts()" :key="prod.id">
+                            <div @click="prod.stock > 0 ? addToBill(prod) : showToast('Product is Out of Stock!', 'error')"
+                                :class="prod.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary'"
+                                class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between">
+                                <div>
+                                    <p class="font-bold text-sm text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
+                                    <p class="text-[10px] text-slate-400">Barcode: <span x-text="prod.barcode"></span></p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3">
+                                    <span class="text-sm font-extrabold text-primary">₹<span x-text="prod.selling_price"></span></span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                                        :class="prod.stock <= 0 ? 'bg-rose-100 text-rose-700' : (prod.stock <= prod.low_stock_threshold ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-700')"
+                                        x-text="prod.stock <= 0 ? 'Out of Stock' : 'Qty: ' + prod.stock"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Billing Side --}}
+                <div class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
+                        Billing Cart
+                        <button @click="pos.items = []" class="text-xs text-rose-500 hover:underline">Clear All</button>
+                    </h3>
+
+                    {{-- Customer Selector --}}
+                    <div class="flex items-center gap-2 mb-4 relative" x-data="{ open: false }" @click.away="open = false">
+                        <div class="flex-1 relative">
+                            <button type="button" @click="open = !open"
+                                class="w-full flex items-center justify-between px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white bg-white text-left focus:outline-none">
+                                <span class="truncate pr-2" x-text="getSelectedPosCustomerName()"></span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+
+                            <div x-show="open" x-cloak
+                                class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
+                                <input type="text" placeholder="Search customer name or mobile..."
+                                    x-model="posCustomerSearchQuery"
+                                    @input.debounce.300ms="searchPosCustomers()"
+                                    @click.stop
+                                    class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-lg text-xs dark:bg-gray-900 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
+
+                                <div class="space-y-1">
+                                    <button type="button" @click="selectPosCustomer(null); open = false;"
+                                        class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
+                                        Walk-In Customer
+                                    </button>
+
+                                    <template x-for="cust in posFilteredCustomers" :key="cust.id">
+                                        <button type="button" @click="selectPosCustomer(cust); open = false;"
+                                            class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-all font-medium text-slate-700 dark:text-slate-300 flex justify-between items-center">
+                                            <span x-text="cust.name"></span>
+                                            <span class="text-[10px] text-slate-400 font-mono" x-text="cust.mobile || 'No Mobile'"></span>
+                                        </button>
+                                    </template>
+
+                                    <template x-if="posFilteredCustomers.length === 0">
+                                        <div class="text-center py-4 text-xs text-slate-400">No customers found.</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <button @click="showCustomerModal = true" class="p-2 border border-slate-300 dark:border-gray-600 hover:border-primary rounded-xl text-slate-500 hover:text-primary transition-all shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        </button>
+                    </div>
+
+                    {{-- Cart Items (delete button top-right on each card) --}}
+                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 mb-4 max-h-[280px]">
+                        <template x-for="(item, idx) in pos.items" :key="idx">
+                            <div class="p-2 bg-white dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[180px]" x-text="item.name"></span>
+                                    <button @click="removeFromBill(idx)" title="Remove item" class="text-slate-400 hover:text-rose-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                                        <button @click="decreaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
+                                        <span class="px-2.5 text-xs font-bold" x-text="item.quantity"></span>
+                                        <button @click="increaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs text-slate-400">₹</span>
+                                        <input type="number" step="0.01" x-model.number="item.selling_price" class="w-16 px-1.5 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">₹<span x-text="(item.selling_price * item.quantity).toFixed(2)"></span></span>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="pos.items.length === 0">
+                            <div class="text-center py-10 text-slate-400 text-sm">Cart is empty. Click products above to add.</div>
+                        </template>
+                    </div>
+
+                    {{-- Totals & Payment --}}
+                    <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2">
+                        <div class="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+                            <span>Subtotal</span>
+                            <span>₹<span x-text="calculateSubtotal().toFixed(2)"></span></span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
+                            <span>Discount (₹)</span>
+                            <input type="number" x-model.number="pos.discount" class="w-20 px-2 py-1 border border-slate-300 dark:border-gray-600 rounded-lg text-right text-xs dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                            <span>Grand Total</span>
+                            <span class="text-primary">₹<span x-text="calculateGrandTotal().toFixed(2)"></span></span>
+                        </div>
+
+                        <div class="pt-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Type</label>
+                            <div class="grid grid-cols-4 gap-1.5">
+                                <button @click="pos.paymentType = 'Cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
+                                <button @click="pos.paymentType = 'UPI'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
+                                <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
+                                <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                            </div>
+                        </div>
+
+                        <button @click="saveEditedSale()" :disabled="pos.items.length === 0"
+                            class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50">
+                            Save & Print Bill
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Payment Method</label>
-                <select x-model="editSaleForm.payment_type" required
-                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-                    <option value="Cash">Cash</option>
-                    <option value="UPI">UPI</option>
-                    <option value="Bank">Bank</option>
-                    <option value="Credit">Credit</option>
-                </select>
+        </div>
+    </div>
+</div>
+
+{{-- 13. EDIT PURCHASE ITEMS MODAL --}}
+<div x-show="showEditPurchaseItemsModal" x-cloak
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900 shrink-0">
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="'Edit Purchase #' + (editingPurchaseId ? (selectedPurchase && selectedPurchase.id === editingPurchaseId ? selectedPurchase.purchase_number : '') : '')"></h3>
+            <button @click="showEditPurchaseItemsModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg></button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+            <div class="flex flex-col lg:flex-row gap-4">
+                {{-- Product Selection Side --}}
+                <div class="flex-1 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden min-h-[400px]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        <div class="relative">
+                            <input type="text" placeholder="Search product name..." x-model="pos.searchQuery"
+                                @input.debounce.300ms="loadProducts(pos.searchQuery)"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" placeholder="Scan barcode..." x-model="pos.barcodeInput"
+                                @keydown.enter.prevent="handlePurchaseBarcodeScan()"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-4V8m0 8l-4-4m4 4l4-4"></path></svg>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
+                        <template x-for="prod in filteredProducts()" :key="prod.id">
+                            <div @click="addPurchaseItemById(prod.id)"
+                                class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary">
+                                <div>
+                                    <p class="font-bold text-sm text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
+                                    <p class="text-[10px] text-slate-400">Barcode: <span x-text="prod.barcode"></span></p>
+                                </div>
+                                <div class="flex justify-between items-center mt-3">
+                                    <span class="text-sm font-extrabold text-primary">₹<span x-text="prod.purchase_price"></span></span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-200 text-slate-700"
+                                        x-text="'Stock: ' + prod.stock"></span>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                {{-- Purchase Billing Side --}}
+                <div class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
+                        Purchase Cart
+                        <button @click="newPurchase.items = []" class="text-xs text-rose-500 hover:underline">Clear All</button>
+                    </h3>
+
+                    {{-- Supplier Selector --}}
+                    <div class="flex items-center gap-2 mb-4 relative" x-data="{ open: false }" @click.away="open = false">
+                        <div class="flex-1 relative">
+                            <button type="button" @click="open = !open"
+                                class="w-full flex items-center justify-between px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white bg-white text-left focus:outline-none">
+                                <span class="truncate pr-2" x-text="getSelectedPurchaseSupplierName()"></span>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+
+                            <div x-show="open" x-cloak
+                                class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
+                                <input type="text" placeholder="Search supplier..."
+                                    x-model="purchaseSupplierSearchQuery"
+                                    @input.debounce.300ms="searchPurchaseSuppliers()"
+                                    @click.stop
+                                    class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-lg text-xs dark:bg-gray-900 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
+
+                                <div class="space-y-1">
+                                    <button type="button" @click="selectPurchaseSupplier(null); open = false;"
+                                        class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
+                                        Walk-In Supplier
+                                    </button>
+
+                                    <template x-for="sup in purchaseFilteredSuppliers" :key="sup.id">
+                                        <button type="button" @click="selectPurchaseSupplier(sup); open = false;"
+                                            class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-all font-medium text-slate-700 dark:text-slate-300 flex justify-between items-center">
+                                            <span x-text="sup.name"></span>
+                                            <span class="text-[10px] text-slate-400 font-mono" x-text="sup.mobile || 'No Mobile'"></span>
+                                        </button>
+                                    </template>
+
+                                    <template x-if="purchaseFilteredSuppliers.length === 0">
+                                        <div class="text-center py-4 text-xs text-slate-400">No suppliers found.</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <button @click="showSupplierModal = true" class="p-2 border border-slate-300 dark:border-gray-600 hover:border-primary rounded-xl text-slate-500 hover:text-primary transition-all shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        </button>
+                    </div>
+
+                    {{-- Cart Items (delete button top-right on each card) --}}
+                    <div class="flex-1 overflow-y-auto space-y-2 pr-1 mb-4 max-h-[280px]">
+                        <template x-for="(item, idx) in newPurchase.items" :key="idx">
+                            <div class="p-2 bg-white dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
+                                <div class="flex justify-between items-start">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[180px]" x-text="item.name"></span>
+                                    <button @click="newPurchase.items.splice(idx, 1)" title="Remove item" class="text-slate-400 hover:text-rose-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                                <div class="flex justify-between items-center gap-2">
+                                    <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                                        <button @click="if (item.quantity > 1) item.quantity--" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
+                                        <span class="px-2.5 text-xs font-bold" x-text="item.quantity"></span>
+                                        <button @click="item.quantity++" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-xs text-slate-400">₹</span>
+                                        <input type="number" step="0.01" x-model.number="item.purchase_price" class="w-16 px-1.5 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">₹<span x-text="(item.purchase_price * item.quantity).toFixed(2)"></span></span>
+                                </div>
+                            </div>
+                        </template>
+                        <template x-if="newPurchase.items.length === 0">
+                            <div class="text-center py-10 text-slate-400 text-sm">Cart is empty. Click products above to add.</div>
+                        </template>
+                    </div>
+
+                    {{-- Totals & Payment --}}
+                    <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2">
+                        <div class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                            <span>Grand Total</span>
+                            <span class="text-primary">₹<span x-text="calculatePurchaseTotal().toFixed(2)"></span></span>
+                        </div>
+
+                        <div class="pt-2">
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Type</label>
+                            <div class="grid grid-cols-4 gap-1.5">
+                                <button @click="newPurchase.payment_type = 'Cash'" :class="newPurchase.payment_type === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
+                                <button @click="newPurchase.payment_type = 'UPI'"  :class="newPurchase.payment_type === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
+                                <button @click="newPurchase.payment_type = 'Bank'" :class="newPurchase.payment_type === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
+                                <button @click="newPurchase.payment_type = 'Credit'" :class="newPurchase.payment_type === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                            </div>
+                        </div>
+
+                        <button @click="saveEditedPurchase()" :disabled="newPurchase.items.length === 0"
+                            class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50">
+                            Save & Purchase
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Sale Date</label>
-                <input type="date" required x-model="editSaleForm.sale_date"
-                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="pt-2 flex justify-end gap-2">
-                <button type="button" @click="showEditSaleModal = false"
-                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
-                <button type="submit"
-                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md">Save
-                    Changes</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 

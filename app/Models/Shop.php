@@ -25,6 +25,11 @@ class Shop extends Model
         'invoice_footer',
         'status',
         'active_plan_id',
+        'website_settings',
+    ];
+
+    protected $casts = [
+        'website_settings' => 'array',
     ];
 
     public function owner()

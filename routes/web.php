@@ -121,9 +121,10 @@ Route::get('/shopowner/{any?}', function () {
     return view('shopowner');
 })->where('any', '.*');
 
-
+// Public Storefront routes
+Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::class, 'show'])->name('store.public');
 
 // Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!admin|api|shopowner).*$');
+})->where('any', '^(?!admin|api|shopowner|store).*$');
