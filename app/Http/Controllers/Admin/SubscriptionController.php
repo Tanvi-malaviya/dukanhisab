@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SubscriptionPlan;
 use App\Models\Subscription;
+use App\Models\User;
 use App\Models\Shop;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -16,26 +17,29 @@ class SubscriptionController extends Controller
     {
         $plans = SubscriptionPlan::latest()->get();
         
-        $allSubscriptions = Subscription::select('id', 'shop_id', 'status')
+        $allSubscriptions = Subscription::select('id', 'user_id', 'status')
+            ->whereNotNull('user_id')
             ->orderBy('id', 'desc')
             ->get();
             
-        $grouped = $allSubscriptions->groupBy('shop_id');
+        $grouped = $allSubscriptions->groupBy('user_id');
         $subscriptionIds = [];
-        foreach ($grouped as $shopId => $subs) {
+        foreach ($grouped as $userId => $subs) {
             $subToShow = $subs->firstWhere('status', 'active') ?: $subs->first();
             if ($subToShow) {
                 $subscriptionIds[] = $subToShow->id;
             }
         }
 
-        $historyQuery = Subscription::with(['shop.owner', 'plan'])
+        $historyQuery = Subscription::with(['user', 'plan'])
             ->whereIn('id', $subscriptionIds);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $historyQuery->whereHas('shop', function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
+            $historyQuery->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('mobile', 'like', "%{$search}%");
             });
         }
         $history = $historyQuery->latest()->paginate(10)->withQueryString();
@@ -57,7 +61,7 @@ class SubscriptionController extends Controller
         
         // Ensure features structure has defaults
         $features = $validated['features'] ?? [];
-        $features['max_products'] = isset($features['max_products']) ? (int)$features['max_products'] : -1; // -1 means unlimited
+        $features['max_shops'] = isset($features['max_shops']) ? (int)$features['max_shops'] : 1;
         $features['max_devices'] = isset($features['max_devices']) ? (int)$features['max_devices'] : 1;
         $features['advanced_reports'] = isset($features['advanced_reports']) ? true : false;
         $features['backup'] = isset($features['backup']) ? true : false;
@@ -84,7 +88,7 @@ class SubscriptionController extends Controller
         ]);
 
         $features = $validated['features'] ?? [];
-        $features['max_products'] = isset($features['max_products']) ? (int)$features['max_products'] : -1;
+        $features['max_shops'] = isset($features['max_shops']) ? (int)$features['max_shops'] : 1;
         $features['max_devices'] = isset($features['max_devices']) ? (int)$features['max_devices'] : 1;
         $features['advanced_reports'] = isset($features['advanced_reports']) ? true : false;
         $features['backup'] = isset($features['backup']) ? true : false;
@@ -99,26 +103,29 @@ class SubscriptionController extends Controller
 
     public function expireSubscription($id)
     {
-        $subscription = Subscription::findOrFail($id);
+        $subscription = Subscription::with('user')->findOrFail($id);
         $subscription->update([
             'status' => 'expired',
             'ends_at' => now(),
         ]);
 
-        // Reset Shop's active plan to null or Free plan
+        // Reset User's active plan to null or Free plan
         $freePlan = SubscriptionPlan::where('slug', 'free')->first();
-        $subscription->shop->update([
-            'active_plan_id' => $freePlan ? $freePlan->id : null,
-        ]);
+        if ($subscription->user) {
+            $subscription->user->update([
+                'active_plan_id' => $freePlan ? $freePlan->id : null,
+            ]);
+        }
 
-        AuditLog::log("Expired subscription #{$subscription->id} for shop '{$subscription->shop->name}'");
+        $userName = $subscription->user ? $subscription->user->name : 'User';
+        AuditLog::log("Expired subscription #{$subscription->id} for user '{$userName}'");
 
         return back()->with('success', 'Subscription has been expired.');
     }
 
     public function extendSubscription(Request $request, $id)
     {
-        $subscription = Subscription::findOrFail($id);
+        $subscription = Subscription::with('user')->findOrFail($id);
         
         $request->validate([
             'days' => 'required|integer|min:1',
@@ -140,7 +147,8 @@ class SubscriptionController extends Controller
 
         // Create manual payment record if it is a paid plan
         $plan = $subscription->plan;
-        if ($plan && $plan->price > 0) {
+        $user = $subscription->user;
+        if ($plan && $plan->price > 0 && $user) {
             $amount = 0.00;
             if ($plan->billing_period === 'monthly') {
                 $amount = round(($plan->price / 30) * $days, 2);
@@ -150,9 +158,11 @@ class SubscriptionController extends Controller
                 $amount = $plan->price;
             }
 
+            $firstShop = $user->shops()->first();
+
             \App\Models\Payment::create([
-                'user_id' => $subscription->shop->owner_id,
-                'shop_id' => $subscription->shop_id,
+                'user_id' => $user->id,
+                'shop_id' => $firstShop ? $firstShop->id : null,
                 'plan_id' => $subscription->plan_id,
                 'amount' => $amount,
                 'payment_gateway' => 'manual',
@@ -162,10 +172,9 @@ class SubscriptionController extends Controller
             ]);
         }
 
-        // Restore active_plan_id on the shop if it's currently null or different
-        $shop = $subscription->shop;
-        if ($shop && $shop->active_plan_id !== $subscription->plan_id) {
-            $shop->update([
+        // Restore active_plan_id on the user if it's currently null or different
+        if ($user && $user->active_plan_id !== $subscription->plan_id) {
+            $user->update([
                 'active_plan_id' => $subscription->plan_id,
             ]);
         }
@@ -177,8 +186,9 @@ class SubscriptionController extends Controller
 
     public function reactivateSubscription($id)
     {
-        $subscription = Subscription::findOrFail($id);
+        $subscription = Subscription::with('user')->findOrFail($id);
         $plan = $subscription->plan;
+        $user = $subscription->user;
 
         if ($subscription->ends_at && $subscription->ends_at->isFuture()) {
             $newEndsAt = $subscription->ends_at;
@@ -193,10 +203,11 @@ class SubscriptionController extends Controller
             $msg = "Subscription reactivated successfully. New expiry: {$newEndsAt->format('Y-m-d')}.";
 
             // If it is a paid plan, record a manual payment
-            if ($plan && $plan->price > 0) {
+            if ($plan && $plan->price > 0 && $user) {
+                $firstShop = $user->shops()->first();
                 \App\Models\Payment::create([
-                    'user_id' => $subscription->shop->owner_id,
-                    'shop_id' => $subscription->shop_id,
+                    'user_id' => $user->id,
+                    'shop_id' => $firstShop ? $firstShop->id : null,
                     'plan_id' => $subscription->plan_id,
                     'amount' => $plan->price,
                     'payment_gateway' => 'manual',
@@ -212,14 +223,14 @@ class SubscriptionController extends Controller
             'status' => 'active',
         ]);
 
-        $shop = $subscription->shop;
-        if ($shop && $shop->active_plan_id !== $subscription->plan_id) {
-            $shop->update([
+        if ($user && $user->active_plan_id !== $subscription->plan_id) {
+            $user->update([
                 'active_plan_id' => $subscription->plan_id,
             ]);
         }
 
-        AuditLog::log("Reactivated subscription #{$subscription->id} for shop '{$subscription->shop->name}' until {$newEndsAt->toDateString()}");
+        $userName = $user ? $user->name : 'User';
+        AuditLog::log("Reactivated subscription #{$subscription->id} for user '{$userName}' until {$newEndsAt->toDateString()}");
 
         return back()->with('success', $msg);
     }
@@ -228,7 +239,7 @@ class SubscriptionController extends Controller
     {
         $plan = SubscriptionPlan::findOrFail($id);
 
-        // Check if there are active subscriptions/shops using this plan
+        // Check if there are active subscriptions using this plan
         $activeSubCount = Subscription::where('plan_id', $id)->where('status', 'active')->count();
         if ($activeSubCount > 0) {
             return back()->with('error', 'Cannot delete this plan because it has active subscribers.');
@@ -239,9 +250,9 @@ class SubscriptionController extends Controller
             return back()->with('error', 'Cannot delete the default Free subscription plan.');
         }
 
-        // Delete associated subscriptions and nullify shop references
+        // Delete associated subscriptions and nullify user references
         Subscription::where('plan_id', $id)->delete();
-        Shop::where('active_plan_id', $id)->update(['active_plan_id' => null]);
+        User::where('active_plan_id', $id)->update(['active_plan_id' => null]);
 
         $plan->delete();
 

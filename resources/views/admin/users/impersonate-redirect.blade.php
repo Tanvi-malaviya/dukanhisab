@@ -5,7 +5,6 @@
     <title>Redirecting…</title>
 </head>
 <body>
-    <p>Signing you in as the shop owner…</p>
     <script>
         // Clear any previously cached shop-owner session (e.g. from a prior
         // "Login As" or a different account on this browser) so the SPA is

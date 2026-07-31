@@ -162,10 +162,11 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-8 text-center text-slate-400 italic">No broadcast campaign
-                                        dispatches found.</td>
-                                </tr>
+                                <x-empty-state
+                                    colspan="5"
+                                    title="No broadcasts dispatched"
+                                    message="No broadcast campaign notifications were found in history."
+                                />
                             @endforelse
                         </tbody>
                     </table>

@@ -42,6 +42,9 @@ Route::group([
     Route::post('users', [UserController::class, 'store'])->name('users.store');
     Route::get('users/{id}', [UserController::class, 'show'])->name('users.show');
     Route::post('users/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::post('users/{id}/subscription', [UserController::class, 'updateSubscription'])->name('users.subscription');
+    Route::get('users/{id}/backup', [UserController::class, 'backup'])->name('users.backup');
+    Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::post('users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset_password');
     Route::get('users/{id}/login-as', [UserController::class, 'loginAs'])->name('users.login_as');
     Route::delete('users/{id}', [UserController::class, 'destroy'])->name('users.destroy');

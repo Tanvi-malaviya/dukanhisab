@@ -103,7 +103,7 @@
                                 </button>
 
                                 <!-- Manual Override Sub plan -->
-                                <button onclick="openPlanOverrideModal({{ $shop->id }}, '{{ $shop->name }}')" class="p-1.5 rounded-lg bg-warning/10 text-warning hover:bg-warning hover:text-white transition-colors cursor-pointer" title="Update Subscription Plan">
+                                <button onclick="openPlanOverrideModal({{ $shop->id }}, '{{ addslashes($shop->owner->name) }}')" class="p-1.5 rounded-lg bg-warning/10 text-warning hover:bg-warning hover:text-white transition-colors cursor-pointer" title="Update Subscription Plan">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
                                 </button>
 
@@ -127,9 +127,12 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">No shops registered on the platform.</td>
-                    </tr>
+                        <x-empty-state
+                            colspan="6"
+                            title="No shops found"
+                            message="We couldn't find any shop records matching your current filter criteria."
+                            resetUrl="{{ route('admin.shops.index') }}"
+                        />
                     @endforelse
                 </tbody>
             </table>
@@ -486,20 +489,53 @@
         document.getElementById('overrideModal').classList.add('hidden');
     }
 
-    function openAddShopModal() {
-        // Reset file input & error
-        document.getElementById('add_logo').value = '';
-        document.getElementById('add_logo_preview').src = '';
-        document.getElementById('add_logo_preview').classList.add('hidden');
-        document.getElementById('add_logo_placeholder').classList.remove('hidden');
-        document.getElementById('add_logo_error').classList.add('hidden');
-        document.getElementById('add_logo_error').innerText = '';
+    function clearModalFields(modal) {
+        if (!modal) return;
+        const form = modal.querySelector('form');
+        if (form) {
+            form.querySelectorAll('input:not([type="hidden"]), textarea').forEach(input => {
+                input.value = '';
+            });
+            form.querySelectorAll('select').forEach(select => {
+                select.selectedIndex = 0;
+            });
+        }
+        const errAlerts = modal.querySelectorAll('.bg-danger\\/10');
+        errAlerts.forEach(el => el.remove());
+        const previewImg = modal.querySelector('#add_logo_preview');
+        const placeholder = modal.querySelector('#add_logo_placeholder');
+        if (previewImg) { previewImg.src = ''; previewImg.classList.add('hidden'); }
+        if (placeholder) { placeholder.classList.remove('hidden'); }
+    }
 
-        document.getElementById('addShopModal').classList.remove('hidden');
+    function openAddShopModal(clearForm = false) {
+        const modal = document.getElementById('addShopModal');
+        if (modal) {
+            if (clearForm) {
+                clearModalFields(modal);
+            }
+            // Reset file input & error
+            if (document.getElementById('add_logo')) document.getElementById('add_logo').value = '';
+            if (document.getElementById('add_logo_preview')) {
+                document.getElementById('add_logo_preview').src = '';
+                document.getElementById('add_logo_preview').classList.add('hidden');
+            }
+            if (document.getElementById('add_logo_placeholder')) document.getElementById('add_logo_placeholder').classList.remove('hidden');
+            if (document.getElementById('add_logo_error')) {
+                document.getElementById('add_logo_error').classList.add('hidden');
+                document.getElementById('add_logo_error').innerText = '';
+            }
+
+            modal.classList.remove('hidden');
+        }
     }
 
     function closeAddShopModal() {
-        document.getElementById('addShopModal').classList.add('hidden');
+        const modal = document.getElementById('addShopModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            clearModalFields(modal);
+        }
     }
 
     function openEditShopModal(elementOrShop) {

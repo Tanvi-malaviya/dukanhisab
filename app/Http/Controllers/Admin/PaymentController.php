@@ -74,12 +74,12 @@ class PaymentController extends Controller
         if ($status === 'successful') {
             $payment->update(['status' => 'refunded']);
 
-            // Update Shop's active subscription if needed (revert back to Free)
+            // Update User's active subscription if needed (revert back to Free)
             $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
-            if ($freePlan) {
-                $payment->shop->update(['active_plan_id' => $freePlan->id]);
+            if ($freePlan && $payment->user) {
+                $payment->user->update(['active_plan_id' => $freePlan->id]);
                 // Revert active subscription statuses
-                \App\Models\Subscription::where('shop_id', $payment->shop_id)
+                \App\Models\Subscription::where('user_id', $payment->user_id)
                     ->where('status', 'active')
                     ->update(['status' => 'expired']);
             }
@@ -90,7 +90,8 @@ class PaymentController extends Controller
             $payment->update(['status' => 'refunded']);
         }
 
-        AuditLog::log("Processed refund #{$refund->id} (status: {$status}) for payment #{$payment->id} of shop '{$payment->shop->name}'", [
+        $shopName = $payment->shop ? $payment->shop->name : 'N/A';
+        AuditLog::log("Processed refund #{$refund->id} (status: {$status}) for payment #{$payment->id} of shop '{$shopName}'", [
             'refund_id' => $refund->id,
             'amount' => $payment->amount,
             'status' => $status,
@@ -115,14 +116,14 @@ class PaymentController extends Controller
             return back()->with('info', 'Refund status is already ' . $newStatus);
         }
 
-        // If transitioning to successful, demote shop subscription to free
+        // If transitioning to successful, demote user subscription to free
         if ($newStatus === 'successful') {
             $payment->update(['status' => 'refunded']);
 
             $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
-            if ($freePlan) {
-                $payment->shop->update(['active_plan_id' => $freePlan->id]);
-                \App\Models\Subscription::where('shop_id', $payment->shop_id)
+            if ($freePlan && $payment->user) {
+                $payment->user->update(['active_plan_id' => $freePlan->id]);
+                \App\Models\Subscription::where('user_id', $payment->user_id)
                     ->where('status', 'active')
                     ->update(['status' => 'expired']);
             }

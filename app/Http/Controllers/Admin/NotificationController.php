@@ -29,8 +29,8 @@ class NotificationController extends Controller
 
         $userCounts = [
             'all' => User::count(),
-            'free' => Shop::whereNull('active_plan_id')->orWhereHas('activePlan', function($q) { $q->where('slug', 'free'); })->count(),
-            'premium' => Shop::whereHas('activePlan', function($q) { $q->where('slug', 'premium'); })->count(),
+            'free' => User::whereNull('active_plan_id')->orWhereHas('activePlan', function($q) { $q->where('slug', 'free'); })->count(),
+            'premium' => User::whereHas('activePlan', function($q) { $q->where('slug', 'premium'); })->count(),
         ];
 
         return view('admin.notifications.index', compact('notifications', 'userCounts'));
@@ -53,16 +53,14 @@ class NotificationController extends Controller
         $query = User::query();
 
         if ($target === 'free') {
-            $query->whereHas('shops', function($q) {
+            $query->where(function($q) {
                 $q->whereNull('active_plan_id')->orWhereHas('activePlan', function($pq) {
                     $pq->where('slug', 'free');
                 });
             });
         } elseif ($target === 'premium') {
-            $query->whereHas('shops', function($q) {
-                $q->whereHas('activePlan', function($pq) {
-                    $pq->where('slug', 'premium');
-                });
+            $query->whereHas('activePlan', function($pq) {
+                $pq->where('slug', 'premium');
             });
         }
 

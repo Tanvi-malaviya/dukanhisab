@@ -22,7 +22,7 @@ class DashboardController extends Controller
         $premiumPlan = SubscriptionPlan::where('slug', 'premium')->first();
         $premiumPlanId = $premiumPlan ? $premiumPlan->id : 0;
         
-        $premiumUsers = Shop::where('active_plan_id', $premiumPlanId)->count();
+        $premiumUsers = User::where('active_plan_id', $premiumPlanId)->count();
         $totalShops = Shop::count();
         
         $todayRevenue = Payment::where('status', 'successful')

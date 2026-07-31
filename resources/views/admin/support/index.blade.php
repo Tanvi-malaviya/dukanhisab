@@ -94,10 +94,12 @@
                                             </td>
                                         </tr>
                         @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No support tickets found
-                                    matching filters.</td>
-                            </tr>
+                            <x-empty-state
+                                colspan="5"
+                                title="No support tickets found"
+                                message="We couldn't find any helpdesk support tickets matching your search or status filter."
+                                resetUrl="{{ route('admin.support.index') }}"
+                            />
                         @endforelse
                     </tbody>
                 </table>

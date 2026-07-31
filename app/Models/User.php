@@ -38,6 +38,7 @@ class User extends Authenticatable
         'time_format',
         'theme',
         'notification_preferences',
+        'active_plan_id',
     ];
 
     /**
@@ -72,6 +73,21 @@ class User extends Authenticatable
         return $this->hasMany(Shop::class, 'owner_id');
     }
 
+    public function activePlan()
+    {
+        return $this->belongsTo(SubscriptionPlan::class, 'active_plan_id');
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function currentSubscription()
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
     public function payments()
     {
         return $this->hasMany(Payment::class);
@@ -90,5 +106,41 @@ class User extends Authenticatable
     public function isSuspended(): bool
     {
         return $this->status === 'suspended';
+    }
+
+    public function maxShops(): int
+    {
+        if ($this->activePlan && isset($this->activePlan->features['max_shops'])) {
+            return (int) $this->activePlan->features['max_shops'];
+        }
+        return 1;
+    }
+
+    public function canAddShop(): bool
+    {
+        $max = $this->maxShops();
+        if ($max === -1) return true;
+        return $this->shops()->count() < $max;
+    }
+
+    public function maxDevices(): int
+    {
+        if ($this->activePlan && isset($this->activePlan->features['max_devices'])) {
+            return (int) $this->activePlan->features['max_devices'];
+        }
+        return 1;
+    }
+
+    public function issueDeviceToken(string $tokenName = 'auth-token'): string
+    {
+        $maxDevices = $this->maxDevices();
+        if ($maxDevices <= 1) {
+            $this->tokens()->delete();
+        } else {
+            while ($this->tokens()->count() >= $maxDevices) {
+                $this->tokens()->oldest()->first()?->delete();
+            }
+        }
+        return $this->createToken($tokenName)->plainTextToken;
     }
 }

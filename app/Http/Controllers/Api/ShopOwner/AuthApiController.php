@@ -31,6 +31,8 @@ class AuthApiController extends Controller
 
         $otpCode = (string) rand(100000, 999999);
 
+        $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
+
         $user = User::create([
             'name' => $request->first_name . ' ' . $request->last_name,
             'email' => $request->email,
@@ -39,6 +41,7 @@ class AuthApiController extends Controller
             'otp_code' => $otpCode,
             'otp_expires_at' => Carbon::now()->addMinutes(10),
             'status' => 'active',
+            'active_plan_id' => $freePlan ? $freePlan->id : null,
         ]);
 
         try {
@@ -93,7 +96,7 @@ class AuthApiController extends Controller
         $user->otp_expires_at = null;
         $user->save();
 
-        $token = $user->createToken('shopowner-auth-token')->plainTextToken;
+        $token = $user->issueDeviceToken('shopowner-auth-token');
         $user->load('shops');
         $shop = $user->shops()->first();
 
@@ -184,7 +187,7 @@ class AuthApiController extends Controller
         $user->last_login_at = Carbon::now();
         $user->save();
 
-        $token = $user->createToken('shopowner-auth-token')->plainTextToken;
+        $token = $user->issueDeviceToken('shopowner-auth-token');
         $user->load('shops');
         $shop = $user->shops()->first();
 
@@ -308,7 +311,7 @@ class AuthApiController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
-        $user->load('shops');
+        $user->load(['shops', 'activePlan', 'currentSubscription']);
         $shop = $user->shops()->first();
         return response()->json([
             'user' => $user,
@@ -409,6 +412,11 @@ class AuthApiController extends Controller
         $user->save();
 
         $existingShop = $user->shops()->first();
+        if (!$existingShop && !$user->canAddShop()) {
+            return response()->json([
+                'message' => "Your active subscription plan allows maximum {$user->maxShops()} shop(s). Please upgrade your subscription plan."
+            ], 403);
+        }
 
         // Handle Shop Logo Upload
         $logoPath = null;
