@@ -35,11 +35,13 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     // Product CRUD
     Route::apiResource('products', \App\Http\Controllers\Api\ProductApiController::class);
 
-    // Customer CRUD
+    // Customer CRUD & Due Payments
     Route::apiResource('customers', \App\Http\Controllers\Api\CustomerApiController::class);
+    Route::post('/customers/{id}/collect-payment', [\App\Http\Controllers\Api\CustomerApiController::class, 'recordPayment']);
 
-    // Supplier CRUD
+    // Supplier CRUD & Due Payments
     Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierApiController::class);
+    Route::post('/suppliers/{id}/pay-due', [\App\Http\Controllers\Api\SupplierApiController::class, 'recordPayment']);
 
     // Sale CRUD
     Route::apiResource('sales', \App\Http\Controllers\Api\SaleApiController::class);

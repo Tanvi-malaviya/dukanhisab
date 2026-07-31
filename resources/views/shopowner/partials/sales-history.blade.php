@@ -61,6 +61,7 @@
                 <select x-model="salesFilter.status" @change="loadSales()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                     <option value="">All Statuses</option>
                     <option value="Completed">Completed</option>
+                    <option value="Unpaid">Unpaid</option>
                     <option value="Partially Returned">Partially Returned</option>
                 </select>
             </div>
@@ -93,7 +94,7 @@
                         <div>
                             <span class="text-xs font-bold text-primary" x-text="sale.sale_number"></span>
                         </div>
-                        <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : (sale.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block" x-text="sale.status"></span>
+                        <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : (sale.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800' : (sale.status === 'Unpaid' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-800'))" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block" x-text="sale.status"></span>
                     </div>
 
                     {{-- Card Body --}}

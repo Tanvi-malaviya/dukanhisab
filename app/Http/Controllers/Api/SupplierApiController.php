@@ -101,4 +101,56 @@ class SupplierApiController extends Controller
         $supplier->delete();
         return response()->json(null, 204);
     }
+
+    /**
+     * Record payment / settlement paid to a Supplier for outstanding due (Udhar).
+     */
+    public function recordPayment(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $supplier = Supplier::where('shop_id', $shopId)->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:0.01',
+            'payment_method' => 'required|string|in:Cash,Bank,UPI,cash,bank,upi',
+            'note' => 'nullable|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $amount = (float) $request->amount;
+        $currentDue = (float) $supplier->due_amount;
+
+        if ($amount > $currentDue) {
+            return response()->json([
+                'message' => 'Payment amount (₹' . number_format($amount, 2) . ') cannot exceed current supplier due balance (₹' . number_format($currentDue, 2) . ').'
+            ], 422);
+        }
+
+        // 1. Decrement Supplier Due Balance
+        $supplier->decrement('due_amount', $amount);
+        $supplier->refresh();
+
+        // 2. Add CashBook Entry (Cash Out)
+        $paymentMethod = strtolower($request->payment_method);
+        \App\Models\CashBook::create([
+            'shop_id' => $shopId,
+            'type' => 'cash_out',
+            'amount' => $amount,
+            'payment_method' => $paymentMethod,
+            'description' => 'Supplier Udhar Payment: ' . $supplier->name . ($request->filled('note') ? ' (' . $request->note . ')' : ''),
+            'reference_id' => $supplier->id,
+            'reference_type' => 'supplier_payment',
+            'transaction_date' => Carbon::now(),
+        ]);
+
+        return response()->json([
+            'message' => 'Supplier due payment recorded successfully.',
+            'supplier' => $supplier,
+            'paid_amount' => $amount,
+            'remaining_due' => $supplier->due_amount
+        ], 200);
+    }
 }
