@@ -325,32 +325,7 @@
                     </div>
                 </div>
 
-                <!-- Inquiry Form -->
-                @if(!isset($settings['show_inquiry']) || $settings['show_inquiry'])
-                    <div class="bg-white rounded-2xl border border-slate-200/70 p-6 shadow-sm space-y-4">
-                        <h3 class="font-extrabold text-slate-900 border-b border-slate-100 pb-2">Send an Inquiry</h3>
-                        
-                        <form id="inquiryForm" onsubmit="sendInquiry(event)" class="space-y-3.5">
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Your Name</label>
-                                <input type="text" id="inqName" required placeholder="John Doe"
-                                       class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Message</label>
-                                <textarea id="inqMessage" rows="3" required placeholder="Hi, I would like to get a quote on..."
-                                          class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"></textarea>
-                            </div>
-                            <button type="submit" 
-                                    class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center justify-center gap-1.5">
-                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.42 9.864-9.864.002-2.637-1.03-5.116-2.905-6.993-1.876-1.878-4.36-2.911-7.004-2.912-5.445 0-9.87 4.42-9.873 9.864 0 1.69.444 3.34 1.288 4.793L1.085 22.91l6.562-1.722zM17.487 14.39c-.3-.15-1.774-.875-2.049-.976-.276-.1-.476-.15-.676.15-.2.3-.775.976-.95 1.176-.175.2-.35.225-.65.075-.3-.15-1.267-.467-2.413-1.49-1.146-1.023-1.92-2.285-2.145-2.686-.225-.4-.024-.615.126-.764.135-.135.3-.35.45-.525.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.676-1.628-.926-2.228-.244-.588-.493-.507-.676-.516-.175-.008-.375-.01-.575-.01-.2 0-.525.075-.8.376-.275.3-1.05 1.026-1.05 2.502 0 1.476 1.075 2.903 1.225 3.102.15.2 2.115 3.23 5.124 4.53.715.31 1.273.495 1.708.633.717.227 1.37.195 1.887.118.575-.085 1.775-.725 2.025-1.425.25-.7.25-1.3 1.75-1.425-.075-.125-.275-.225-.575-.375z"/>
-                                </svg>
-                                Send on WhatsApp
-                            </button>
-                        </form>
-                    </div>
-                @endif
+
 
                 <!-- Follow Us Card -->
                 @if(isset($settings['social_facebook']) || isset($settings['social_instagram']) || isset($settings['social_twitter']))
