@@ -46,12 +46,45 @@
             background: rgba(17,24,39,0.85);
             border-color: rgba(31,41,55,0.5);
         }
+        /* Invoice Themed Header Contrast Overrides */
+        .invoice-theme-header.text-white,
+        .invoice-theme-header.text-white * {
+            color: #ffffff !important;
+        }
+        .invoice-theme-header.text-slate-900,
+        .invoice-theme-header.text-slate-900 * {
+            color: #0f172a !important;
+        }
         /* Test Print: while active, print only the invoice preview area */
         @media print {
             * {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
+            /* Force light backgrounds and dark text for all invoice areas when printing, regardless of dark mode */
+            .dark #print-area,
+            .dark #purchase-print-area,
+            .dark #invoicePreviewPrintArea {
+                background-color: #ffffff !important;
+                color: #0f172a !important;
+            }
+            .dark #print-area *,
+            .dark #purchase-print-area *,
+            .dark #invoicePreviewPrintArea * {
+                border-color: #e2e8f0 !important;
+            }
+            .dark #print-area td, .dark #print-area th, .dark #print-area p, .dark #print-area span,
+            .dark #purchase-print-area td, .dark #purchase-print-area th, .dark #purchase-print-area p, .dark #purchase-print-area span,
+            .dark #invoicePreviewPrintArea td, .dark #invoicePreviewPrintArea th, .dark #invoicePreviewPrintArea p, .dark #invoicePreviewPrintArea span {
+                color: #1e293b !important;
+            }
+            /* Preserve text colors inside dynamic themed header boxes */
+            .dark #print-area [style*="background-color"] *,
+            .dark #purchase-print-area [style*="background-color"] *,
+            .dark #invoicePreviewPrintArea [style*="background-color"] * {
+                color: currentColor !important;
+            }
+
             body.printing-invoice-preview * { visibility: hidden; }
             body.printing-invoice-preview #invoicePreviewPrintArea,
             body.printing-invoice-preview #invoicePreviewPrintArea * { visibility: visible; }
@@ -60,6 +93,7 @@
                 inset: 0;
                 margin: auto;
                 z-index: 99999;
+                background: white !important;
             }
 
             body.printing-sale-invoice * { visibility: hidden; }

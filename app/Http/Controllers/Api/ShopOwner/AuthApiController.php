@@ -395,6 +395,8 @@ class AuthApiController extends Controller
             'invoice_footer' => 'nullable|string',
             'logo' => 'nullable|image|max:2048', // max 2MB
             'signature' => 'nullable|image|max:2048', // max 2MB
+            'shop_image' => 'nullable|image|max:4096', // max 4MB
+            'website_settings' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -422,6 +424,26 @@ class AuthApiController extends Controller
             $signaturePath = $request->file('signature')->store('signatures', 'public');
         }
 
+        // Handle Shop Image Upload
+        $shopImagePath = null;
+        if ($request->hasFile('shop_image')) {
+            $shopImagePath = $request->file('shop_image')->store('shop_images', 'public');
+        }
+
+        // Parse website settings JSON string if sent
+        $websiteSettings = null;
+        if ($request->has('website_settings')) {
+            $websiteSettings = json_decode($request->website_settings, true);
+            if (is_array($websiteSettings)) {
+                $websiteSettings['subdomain'] = \Illuminate\Support\Str::slug($request->name);
+                if ($shopImagePath) {
+                    $websiteSettings['shop_image'] = $shopImagePath;
+                } else {
+                    $websiteSettings['shop_image'] = $existingShop?->website_settings['shop_image'] ?? null;
+                }
+            }
+        }
+
         // Create or update Shop (we assume one shop per owner for setup module)
         $shop = \App\Models\Shop::updateOrCreate(
             ['owner_id' => $user->id],
@@ -441,6 +463,7 @@ class AuthApiController extends Controller
                 'invoice_footer' => $request->invoice_footer,
                 'logo' => $logoPath ?: ($existingShop?->logo),
                 'signature' => $signaturePath ?: ($existingShop?->signature),
+                'website_settings' => $request->has('website_settings') ? $websiteSettings : ($existingShop?->website_settings),
             ]
         );
 

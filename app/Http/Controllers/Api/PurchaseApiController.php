@@ -89,9 +89,10 @@ class PurchaseApiController extends Controller
         }
 
         return DB::transaction(function () use ($request, $shopId) {
-            $todayStr = Carbon::now()->format('Ymd');
-            $randomHex = strtoupper(substr(md5(uniqid()), 0, 4));
-            $purchaseNumber = 'PUR-' . $todayStr . '-' . $randomHex;
+            $today = Carbon::now();
+            $todayStr = $today->format('Ymd');
+            $nextNumber = \App\Models\InvoiceCounter::nextNumber($shopId, 'purchase', $today);
+            $purchaseNumber = 'PUR-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
             $purchase = Purchase::create([
                 'shop_id' => $shopId,
@@ -152,6 +153,170 @@ class PurchaseApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
         return response()->json($purchase);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $purchase = Purchase::where('shop_id', $shopId)->with('items')->findOrFail($id);
+
+        $validator = Validator::make($request->all(), [
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'payment_type' => 'sometimes|required|string|in:Cash,UPI,Bank,Credit',
+            'purchase_date' => 'sometimes|required|date',
+            'items' => 'sometimes|array|min:1',
+            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.quantity' => 'required_with:items|integer|min:1',
+            'items.*.purchase_price' => 'required_with:items|numeric|min:0',
+            'total_amount' => 'sometimes|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if ($request->has('items')) {
+            if ($purchase->status !== 'Completed') {
+                return response()->json(['message' => 'Cannot edit items of a returned purchase.'], 400);
+            }
+
+            return DB::transaction(function () use ($request, $purchase, $shopId) {
+                $oldPaymentType = $purchase->payment_type;
+                $oldSupplierId = $purchase->supplier_id;
+
+                // Revert stock for the items currently on this purchase
+                foreach ($purchase->items as $item) {
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $product->decrement('stock', $item->quantity);
+                    }
+                }
+
+                // Revert old payment effects
+                if ($oldPaymentType === 'Credit' && $oldSupplierId) {
+                    $oldSupplier = Supplier::find($oldSupplierId);
+                    if ($oldSupplier) {
+                        $oldSupplier->decrement('due_amount', $purchase->total_amount);
+                    }
+                } else {
+                    CashBook::where('shop_id', $shopId)
+                        ->where('reference_type', 'purchase')
+                        ->where('reference_id', $purchase->id)
+                        ->delete();
+                }
+
+                // Replace items with the new set
+                $purchase->items()->delete();
+                foreach ($request->items as $item) {
+                    PurchaseItem::create([
+                        'purchase_id' => $purchase->id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity'],
+                        'purchase_price' => $item['purchase_price'],
+                    ]);
+                    $product = Product::findOrFail($item['product_id']);
+                    $product->increment('stock', $item['quantity']);
+                    $product->update(['purchase_price' => $item['purchase_price']]);
+                }
+
+                if ($request->has('supplier_id')) {
+                    $purchase->supplier_id = $request->supplier_id;
+                }
+                if ($request->has('payment_type')) {
+                    $purchase->payment_type = $request->payment_type;
+                }
+                $purchase->total_amount = $request->input('total_amount', $purchase->total_amount);
+                $purchase->save();
+
+                $newPaymentType = $purchase->payment_type;
+                $newSupplierId = $purchase->supplier_id;
+
+                // Apply new payment effects
+                if ($newPaymentType === 'Credit' && $newSupplierId) {
+                    $newSupplier = Supplier::find($newSupplierId);
+                    if ($newSupplier) {
+                        $newSupplier->increment('due_amount', $purchase->total_amount);
+                    }
+                } elseif ($newPaymentType !== 'Credit') {
+                    $methodMap = [
+                        'Cash' => 'cash',
+                        'Bank' => 'bank',
+                        'UPI' => 'upi'
+                    ];
+                    CashBook::create([
+                        'shop_id' => $shopId,
+                        'type' => 'cash_out',
+                        'amount' => $purchase->total_amount,
+                        'payment_method' => $methodMap[$newPaymentType] ?? 'cash',
+                        'description' => 'Purchase updated: ' . $purchase->purchase_number,
+                        'reference_id' => $purchase->id,
+                        'reference_type' => 'purchase',
+                        'transaction_date' => $purchase->purchase_date,
+                    ]);
+                }
+
+                return response()->json($purchase->load('items.product', 'supplier'));
+            });
+        }
+
+        return DB::transaction(function () use ($request, $purchase, $shopId) {
+            $oldPaymentType = $purchase->payment_type;
+            $oldSupplierId = $purchase->supplier_id;
+            $oldTotalAmount = $purchase->total_amount;
+
+            if ($request->has('supplier_id')) {
+                $purchase->supplier_id = $request->supplier_id;
+            }
+            if ($request->has('payment_type')) {
+                $purchase->payment_type = $request->payment_type;
+            }
+            if ($request->has('purchase_date')) {
+                $purchase->purchase_date = Carbon::parse($request->purchase_date);
+            }
+            $purchase->save();
+
+            $newPaymentType = $purchase->payment_type;
+            $newSupplierId = $purchase->supplier_id;
+
+            // Revert old payment effects
+            if ($oldPaymentType === 'Credit' && $oldSupplierId) {
+                $oldSupplier = Supplier::find($oldSupplierId);
+                if ($oldSupplier) {
+                    $oldSupplier->decrement('due_amount', $oldTotalAmount);
+                }
+            } else {
+                CashBook::where('shop_id', $shopId)
+                    ->where('reference_type', 'purchase')
+                    ->where('reference_id', $purchase->id)
+                    ->delete();
+            }
+
+            // Apply new payment effects
+            if ($newPaymentType === 'Credit' && $newSupplierId) {
+                $newSupplier = Supplier::find($newSupplierId);
+                if ($newSupplier) {
+                    $newSupplier->increment('due_amount', $oldTotalAmount);
+                }
+            } elseif ($newPaymentType !== 'Credit') {
+                $methodMap = [
+                    'Cash' => 'cash',
+                    'Bank' => 'bank',
+                    'UPI' => 'upi'
+                ];
+                CashBook::create([
+                    'shop_id' => $shopId,
+                    'type' => 'cash_out',
+                    'amount' => $oldTotalAmount,
+                    'payment_method' => $methodMap[$newPaymentType] ?? 'cash',
+                    'description' => 'Purchase updated: ' . $purchase->purchase_number,
+                    'reference_id' => $purchase->id,
+                    'reference_type' => 'purchase',
+                    'transaction_date' => $purchase->purchase_date,
+                ]);
+            }
+
+            return response()->json($purchase->load('supplier'));
+        });
     }
 
     public function destroy(Request $request, $id)

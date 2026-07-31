@@ -2,6 +2,86 @@
     function appState() {
         return {
             dark: localStorage.getItem('darkMode') === 'true',
+            getContrastColor(hexColor) {
+                if (!hexColor) return 'text-slate-900';
+                const str = hexColor.trim().toLowerCase();
+                const cleanHex = str.replace('#', '').trim();
+                if (cleanHex.length !== 6 && cleanHex.length !== 3) return 'text-slate-900';
+                let r, g, b;
+                if (cleanHex.length === 6) {
+                    r = parseInt(cleanHex.substring(0, 2), 16) || 0;
+                    g = parseInt(cleanHex.substring(2, 4), 16) || 0;
+                    b = parseInt(cleanHex.substring(4, 6), 16) || 0;
+                } else {
+                    r = parseInt(cleanHex.substring(0, 1) + cleanHex.substring(0, 1), 16) || 0;
+                    g = parseInt(cleanHex.substring(1, 2) + cleanHex.substring(1, 2), 16) || 0;
+                    b = parseInt(cleanHex.substring(2, 3) + cleanHex.substring(2, 3), 16) || 0;
+                }
+                const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                // Only genuinely dark shades (black, dark chocolate/brown, navy, etc.)
+                // should get white text — everything else defaults to dark text.
+                return (yiq >= 60) ? 'text-slate-900' : 'text-white';
+            },
+            printHtmlBlock(elementId, title = 'Print') {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                const html = el.innerHTML;
+                const w = window.open('', '', 'width=800,height=600');
+                w.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>${title}</title>
+                        <link rel="preconnect" href="https://fonts.googleapis.com">
+                        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+                        <script src="https://cdn.tailwindcss.com"><\/script>
+                        <script>
+                            tailwind.config = {
+                                theme: {
+                                    extend: {
+                                        colors: {
+                                            primary: { DEFAULT: '#0F766E', hover: '#115E59', light: '#CCFBF1' },
+                                            secondary: { DEFAULT: '#14B8A6', hover: '#0D9488' }
+                                        },
+                                        fontFamily: { sans: ['"Poppins"', 'system-ui', 'sans-serif'] }
+                                    }
+                                }
+                            }
+                        <\/script>
+                        <style>
+                            body { font-family: 'Poppins', sans-serif; background-color: #ffffff !important; color: #0f172a !important; padding: 20px; }
+                            .invoice-theme-header.text-white,
+                            .invoice-theme-header.text-white * {
+                                color: #ffffff !important;
+                            }
+                            .invoice-theme-header.text-slate-900,
+                            .invoice-theme-header.text-slate-900 * {
+                                color: #0f172a !important;
+                            }
+                            @media print {
+                                * {
+                                    -webkit-print-color-adjust: exact !important;
+                                    print-color-adjust: exact !important;
+                                }
+                            }
+                        </style>
+                    </head>
+                    <body class="bg-white">
+                        <div class="max-w-[700px] mx-auto">
+                            ${html}
+                        </div>
+                        <script>
+                            setTimeout(() => {
+                                window.print();
+                                window.close();
+                            }, 500);
+                        <\/script>
+                    </body>
+                    </html>
+                `);
+                w.document.close();
+            },
             page: 'dashboard',
 
             // URL Route map
@@ -123,12 +203,16 @@
             newPurchase: { supplier_id: '', payment_type: 'Cash', items: [] },
             selectedSale: null,
             showInvoiceModal: false,
+            sendingSaleEmail: false,
+            sendingPurchaseEmail: false,
             showReturnModal: false,
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
             showPurchaseReturnModal: false,
             purchaseReturnForm: { purchaseId: null, purchase_number: '', payment_type: '', items: [] },
-            showEditSaleModal: false,
-            editSaleForm: { id: null, customer_id: '', payment_type: '', sale_date: '' },
+            showEditSaleItemsModal: false,
+            editingSaleId: null,
+            showEditPurchaseItemsModal: false,
+            editingPurchaseId: null,
             selectedPurchase: null,
             showPurchaseDetailsModal: false,
             confirmModal: { show: false, title: '', message: '', onConfirm: null },
@@ -199,6 +283,7 @@
 
                 if (this.token && this.hasShop) {
                     this.loadAllData();
+                    this.loadInvoiceSettings();
                     // Trigger page-specific data load based on current URL
                     this._loadPageData(this.page);
                 }
@@ -860,7 +945,7 @@
                 w.document.close(); w.print();
             },
 
-            submitShopProfileUpdate(logoFile = null, signatureFile = null) {
+            submitShopProfileUpdate(logoFile = null, signatureFile = null, shopImageFile = null) {
                 this.loading = true;
                 const fd = new FormData();
                 fd.append('name', this.shopUpdateForm.name);
@@ -872,13 +957,14 @@
                 if (this.shopUpdateForm.city) fd.append('city', this.shopUpdateForm.city);
                 if (this.shopUpdateForm.state) fd.append('state', this.shopUpdateForm.state);
                 if (this.shopUpdateForm.pincode) fd.append('pincode', this.shopUpdateForm.pincode);
-                if (this.shopUpdateForm.invoice_prefix) fd.append('invoice_prefix', this.shopUpdateForm.invoice_prefix);
                 if (this.shopUpdateForm.currency) fd.append('currency', this.shopUpdateForm.currency);
                 if (this.shopUpdateForm.upi_id) fd.append('upi_id', this.shopUpdateForm.upi_id);
                 if (this.shopUpdateForm.bank_details) fd.append('bank_details', this.shopUpdateForm.bank_details);
                 if (this.shopUpdateForm.invoice_footer) fd.append('invoice_footer', this.shopUpdateForm.invoice_footer);
+                if (this.shopUpdateForm.website_settings) fd.append('website_settings', JSON.stringify(this.shopUpdateForm.website_settings));
                 if (logoFile) fd.append('logo', logoFile);
                 if (signatureFile) fd.append('signature', signatureFile);
+                if (shopImageFile) fd.append('shop_image', shopImageFile);
                 fetch('/api/v1/shopowner/shop-setup', {
                     method: 'POST',
                     headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token },
@@ -1430,51 +1516,125 @@
             },
 
             openEditSaleModal(sale) {
-                this.editSaleForm.id = sale.id;
-                this.editSaleForm.customer_id = sale.customer_id || '';
-                this.editSaleForm.payment_type = sale.payment_type;
-                
-                const d = new Date(sale.sale_date);
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                this.editSaleForm.sale_date = `${year}-${month}-${day}`;
-                
-                this.showEditSaleModal = true;
+                this.pos.items = sale.items.map(item => {
+                    const liveProduct = this.products.find(p => p.id === item.product_id);
+                    return {
+                        product_id: item.product_id,
+                        name: item.product ? item.product.name : (liveProduct ? liveProduct.name : 'Unknown Product'),
+                        selling_price: parseFloat(item.selling_price),
+                        quantity: item.quantity,
+                        stock: (liveProduct ? liveProduct.stock : 0) + item.quantity
+                    };
+                });
+                this.pos.selectedCustomer = sale.customer_id || '';
+                this.pos.discount = parseFloat(sale.discount) || 0;
+                this.pos.paymentType = sale.payment_type;
+                this.pos.searchQuery = '';
+                this.pos.barcodeInput = '';
+                this.posCustomerSearchQuery = '';
+                this.posFilteredCustomers = this.customers;
+                this.editingSaleId = sale.id;
+                this.showEditSaleItemsModal = true;
             },
 
-            updateSale() {
+            saveEditedSale() {
+                if (this.pos.items.length === 0) return;
+                if (this.pos.paymentType === 'Credit' && !this.pos.selectedCustomer) {
+                    this.showConfirm('Validation Error', 'Customer selection is required for Credit (udhaar) transactions.', () => { });
+                    return;
+                }
                 this.loading = true;
-                fetch('/api/v1/sales/' + this.editSaleForm.id, {
-                    method: 'PUT',
-                    headers: this.getHeaders(),
-                    body: JSON.stringify({
-                        customer_id: this.editSaleForm.customer_id || null,
-                        payment_type: this.editSaleForm.payment_type,
-                        sale_date: this.editSaleForm.sale_date
-                    })
-                })
-                .then(r => r.json().then(data => ({ ok: r.ok, data })))
-                .then(({ ok, data }) => {
-                    this.loading = false;
-                    if (ok) {
-                        this.showToast('Sale updated successfully.', 'success');
-                        this.showEditSaleModal = false;
-                        this.loadSales();
-                        this.loadAllData();
-                    } else {
-                        if (data.errors) {
-                            let msg = Object.values(data.errors).flat().join('\n');
-                            this.showToast(msg, 'error');
+                const body = {
+                    customer_id: this.pos.selectedCustomer || null,
+                    subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: this.calculateGrandTotal(),
+                    payment_type: this.pos.paymentType,
+                    items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price }))
+                };
+                fetch('/api/v1/sales/' + this.editingSaleId, { method: 'PUT', headers: this.getHeaders(), body: JSON.stringify(body) })
+                    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                    .then(({ ok, data }) => {
+                        this.loading = false;
+                        if (ok && data.sale_number) {
+                            this.showToast('Sale updated!');
+                            this.showEditSaleItemsModal = false;
+                            this.selectedSale = data;
+                            this.showInvoiceModal = true;
+                            this.resetPOS();
+                            this.editingSaleId = null;
+                            this.loadAllData();
+                            this.loadSales();
                         } else {
-                            this.showToast(data.message || 'Failed to update sale.', 'error');
+                            if (data.errors) {
+                                let msg = Object.values(data.errors).flat().join('\n');
+                                this.showToast(msg, 'error');
+                            } else {
+                                this.showToast(data.message || 'Failed to update sale.', 'error');
+                            }
                         }
-                    }
-                })
-                .catch(() => {
-                    this.loading = false;
-                    this.showToast('Error updating sale.', 'error');
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error updating sale.', 'error');
+                    });
+            },
+
+            openEditPurchaseModal(purchase) {
+                this.newPurchase.items = purchase.items.map(item => {
+                    const liveProduct = this.products.find(p => p.id === item.product_id);
+                    return {
+                        product_id: item.product_id,
+                        name: item.product ? item.product.name : (liveProduct ? liveProduct.name : 'Unknown Product'),
+                        quantity: item.quantity,
+                        purchase_price: parseFloat(item.purchase_price)
+                    };
                 });
+                this.newPurchase.supplier_id = purchase.supplier_id || '';
+                this.newPurchase.payment_type = purchase.payment_type;
+                this.purchaseSupplierSearchQuery = '';
+                this.purchaseFilteredSuppliers = this.suppliers;
+                this.editingPurchaseId = purchase.id;
+                this.showEditPurchaseItemsModal = true;
+            },
+
+            saveEditedPurchase() {
+                if (this.newPurchase.items.length === 0) return;
+                if (this.newPurchase.payment_type === 'Credit' && !this.newPurchase.supplier_id) {
+                    this.showConfirm('Validation Error', 'Supplier selection is required for Credit (udhaar) purchases.', () => { });
+                    return;
+                }
+                this.loading = true;
+                const body = {
+                    supplier_id: this.newPurchase.supplier_id || null,
+                    total_amount: this.calculatePurchaseTotal(),
+                    payment_type: this.newPurchase.payment_type,
+                    items: this.newPurchase.items.map(i => ({ product_id: i.product_id, quantity: i.quantity, purchase_price: i.purchase_price }))
+                };
+                fetch('/api/v1/purchases/' + this.editingPurchaseId, { method: 'PUT', headers: this.getHeaders(), body: JSON.stringify(body) })
+                    .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                    .then(({ ok, data }) => {
+                        this.loading = false;
+                        if (ok && data.purchase_number) {
+                            this.showToast('Purchase updated!');
+                            this.showEditPurchaseItemsModal = false;
+                            this.selectedPurchase = data;
+                            this.showPurchaseDetailsModal = true;
+                            this.resetNewPurchase();
+                            this.editingPurchaseId = null;
+                            this.loadAllData();
+                            this.loadPurchases();
+                        } else {
+                            if (data.errors) {
+                                let msg = Object.values(data.errors).flat().join('\n');
+                                this.showToast(msg, 'error');
+                            } else {
+                                this.showToast(data.message || 'Failed to update purchase.', 'error');
+                            }
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error updating purchase.', 'error');
+                    });
             },
 
             deleteSale(saleId) {
@@ -1486,9 +1646,7 @@
             },
 
             printInvoice() {
-                document.body.classList.add('printing-sale-invoice');
-                window.print();
-                setTimeout(() => document.body.classList.remove('printing-sale-invoice'), 500);
+                this.printHtmlBlock('print-area', 'Sale Invoice');
             },
 
             downloadPDF() {
@@ -1512,18 +1670,20 @@
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
             },
 
-            emailShareLink() {
-                if (!this.selectedSale) return '#';
-                const email = this.selectedSale.customer ? this.selectedSale.customer.email : '';
-                const subject = `Invoice - ${this.selectedSale.sale_number}`;
-                const body = `Dear Customer, your invoice total is ₹${this.selectedSale.grand_total}. Invoice: ${this.selectedSale.sale_number}.`;
-                return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            sendSaleInvoiceEmail() {
+                if (!this.selectedSale || this.sendingSaleEmail) return;
+                this.sendingSaleEmail = true;
+                fetch('/api/v1/sales/' + this.selectedSale.id + '/email-invoice', { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json().then(d => ({ status: r.status, body: d })))
+                    .then(({ status, body }) => {
+                        this.sendingSaleEmail = false;
+                        if (status === 200) { this.showToast(body.message || 'Invoice emailed successfully!'); }
+                        else { this.showToast(body.message || 'Failed to email invoice.', 'error'); }
+                    }).catch(() => { this.sendingSaleEmail = false; this.showToast('Error sending invoice email.', 'error'); });
             },
 
             printPurchase() {
-                document.body.classList.add('printing-purchase-invoice');
-                window.print();
-                setTimeout(() => document.body.classList.remove('printing-purchase-invoice'), 500);
+                this.printHtmlBlock('purchase-print-area', 'Purchase Invoice');
             },
 
             downloadPurchasePDF() {
@@ -1547,12 +1707,16 @@
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
             },
 
-            emailPurchaseShareLink() {
-                if (!this.selectedPurchase) return '#';
-                const email = this.selectedPurchase.supplier ? this.selectedPurchase.supplier.email : '';
-                const subject = `Purchase Invoice - ${this.selectedPurchase.purchase_number}`;
-                const body = `Dear Supplier, the purchase invoice total is ₹${this.selectedPurchase.total_amount}. Invoice: ${this.selectedPurchase.purchase_number}.`;
-                return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            sendPurchaseInvoiceEmail() {
+                if (!this.selectedPurchase || this.sendingPurchaseEmail) return;
+                this.sendingPurchaseEmail = true;
+                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/email-invoice', { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json().then(d => ({ status: r.status, body: d })))
+                    .then(({ status, body }) => {
+                        this.sendingPurchaseEmail = false;
+                        if (status === 200) { this.showToast(body.message || 'Invoice emailed successfully!'); }
+                        else { this.showToast(body.message || 'Failed to email invoice.', 'error'); }
+                    }).catch(() => { this.sendingPurchaseEmail = false; this.showToast('Error sending invoice email.', 'error'); });
             },
 
             // ── INLINE CREATE ─────────────────────────────────────────
@@ -1886,6 +2050,10 @@
             calculatePurchaseTotal() { return this.newPurchase.items.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0); },
             savePurchase() {
                 if (this.newPurchase.items.length === 0) return;
+                if (this.newPurchase.payment_type === 'Credit' && !this.newPurchase.supplier_id) {
+                    this.showConfirm('Validation Error', 'Supplier selection is required for Credit (udhaar) purchases.', () => { });
+                    return;
+                }
                 this.loading = true;
                 const body = {
                     supplier_id: this.newPurchase.supplier_id || null, total_amount: this.calculatePurchaseTotal(),
@@ -1899,6 +2067,8 @@
                             this.showToast('Purchase recorded!');
                             this.showPurchaseModal = false;
                             this.resetNewPurchase();
+                            this.selectedPurchase = d;
+                            this.showPurchaseDetailsModal = true;
                             this.loadPurchases();
                             this.loadExpenses();
                             this.loadDashboard();

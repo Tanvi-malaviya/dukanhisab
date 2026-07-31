@@ -103,23 +103,13 @@
         {{-- Cards Grid --}}
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
             <template x-for="pur in (purchasesLoading ? [] : filteredPurchases())" :key="pur.id">
-                <div @click="viewPurchase(pur.id)"
-                    class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-white dark:bg-gray-800 hover:shadow-md cursor-pointer hover:border-primary relative group space-y-3">
-                    
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="font-bold text-sm text-slate-800 dark:text-white truncate font-sans" x-text="pur.purchase_number"></span>
-                            <div class="flex items-center gap-1.5 shrink-0">
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans"
-                                    :class="pur.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'"
-                                    x-text="pur.status"></span>
-                                <button @click.stop="deletePurchase(pur.id)" 
-                                    title="Delete Record"
-                                    class="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-all cursor-pointer">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm p-3.5 hover:shadow-md transition-all flex flex-col justify-between space-y-3">
+                    {{-- Card Header --}}
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold text-primary font-sans" x-text="pur.purchase_number"></span>
                         </div>
+                        <span :class="pur.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="pur.status"></span>
                     </div>
 
                     {{-- Card Body --}}
@@ -131,6 +121,10 @@
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans">Date:</span>
                             <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="new Date(pur.purchase_date).toLocaleDateString()"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400 font-sans">Payment:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-medium font-sans" x-text="pur.payment_type"></span>
                         </div>
                     </div>
 
@@ -147,7 +141,7 @@
                                 </template>
                             </template>
                         </div>
-                        
+
                         <div class="flex justify-between items-center pt-2 border-t border-rose-100 dark:border-rose-900/20 mt-1">
                             <span class="text-[11px] font-bold text-rose-600 dark:text-rose-400 font-sans">Returned Value:</span>
                             <span class="text-sm font-extrabold text-rose-700 dark:text-rose-300 font-mono">
@@ -158,6 +152,32 @@
                                 ).toFixed(2)"></span>
                             </span>
                         </div>
+                    </div>
+
+                    {{-- Actions --}}
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700/50 gap-2 w-full">
+                        <!-- Invoice Button -->
+                        <button @click="viewPurchase(pur.id)"
+                            title="View Invoice"
+                            class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white rounded-lg transition-all cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </button>
+
+                        <!-- Return Button (Only for Partially Returned to allow further returns) -->
+                        <button @click="returnPurchase(pur.id)"
+                            title="Return Purchase"
+                            :disabled="pur.status === 'Returned'"
+                            :class="pur.status === 'Returned' ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 cursor-pointer'"
+                            class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                        </button>
+
+                        <!-- Delete Button -->
+                        <button @click="deletePurchase(pur.id)"
+                            title="Delete Purchase"
+                            class="flex-1 flex justify-center items-center py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white rounded-lg transition-all cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
                 </div>
             </template>
