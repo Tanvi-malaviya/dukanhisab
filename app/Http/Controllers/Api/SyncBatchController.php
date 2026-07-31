@@ -25,6 +25,7 @@ class SyncBatchController extends Controller
         'create' => 'POST',
         'update' => 'PUT',
         'delete' => 'DELETE',
+        'return' => 'POST',
     ];
 
     public function batch(Request $request)
@@ -35,9 +36,9 @@ class SyncBatchController extends Controller
         $validator = Validator::make($request->all(), [
             'operations' => "required|array|min:1|max:{$maxOps}",
             'operations.*.resource' => 'required|string|in:' . implode(',', array_keys($this->controllerMap)),
-            'operations.*.action' => 'required|string|in:create,update,delete',
-            'operations.*.id' => 'nullable|integer|required_if:operations.*.action,update,delete',
-            'operations.*.data' => 'nullable|array|required_if:operations.*.action,create,update',
+            'operations.*.action' => 'required|string|in:create,update,delete,return',
+            'operations.*.id' => 'nullable|integer|required_if:operations.*.action,update,delete,return',
+            'operations.*.data' => 'nullable|array|required_if:operations.*.action,create,update,return',
             'operations.*.op_id' => 'nullable|string|max:255',
         ]);
 
@@ -72,6 +73,9 @@ class SyncBatchController extends Controller
                     'create' => $controller->store($subRequest),
                     'update' => $controller->update($subRequest, $id),
                     'delete' => $controller->destroy($subRequest, $id),
+                    'return' => method_exists($controller, 'returnSale')
+                        ? $controller->returnSale($subRequest, $id)
+                        : $controller->returnPurchase($subRequest, $id),
                 };
             });
 
