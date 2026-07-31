@@ -13,37 +13,41 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('shops.activePlan');
+        $query = User::with(['activePlan', 'currentSubscription', 'shops']);
 
-        // Search
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('mobile', 'like', "%{$search}%");
+                  ->orWhere('mobile', 'like', "%{$search}%")
+                  ->orWhereHas('shops', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%")
+                        ->orWhere('gst_number', 'like', "%{$search}%");
+                  });
             });
         }
 
-        // Filter status
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
-        $users = $query->latest()->paginate(10)->withQueryString();
+        $users = $query->latest()->paginate(9)->withQueryString();
 
         $stats = [
             'total' => User::count(),
             'active' => User::where('status', 'active')->count(),
             'suspended' => User::where('status', 'suspended')->count(),
-            'premium' => User::whereHas('shops', function($q) {
-                $q->whereHas('activePlan', function($qp) {
-                    $qp->where('slug', 'premium');
-                });
+            'total_shops' => \App\Models\Shop::count(),
+            'premium' => User::whereHas('activePlan', function($qp) {
+                $qp->where('slug', 'premium');
             })->count(),
         ];
 
-        return view('admin.users.index', compact('users', 'stats'));
+        $plans = \App\Models\SubscriptionPlan::where('status', 'active')->get();
+        $allUsers = User::orderBy('name')->get();
+
+        return view('admin.users.index', compact('users', 'stats', 'plans', 'allUsers'));
     }
 
     public function store(Request $request)
@@ -195,11 +199,72 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User account deleted successfully.');
     }
 
+    public function updateSubscription(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'plan_id' => 'required|exists:subscription_plans,id',
+            'duration_days' => 'required|integer|min:1',
+        ]);
+
+        $plan = \App\Models\SubscriptionPlan::findOrFail($request->input('plan_id'));
+        $days = (int) $request->input('duration_days');
+
+        $startsAt = now();
+        $endsAt = now()->addDays($days);
+
+        // Deactivate past active subscriptions
+        \App\Models\Subscription::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->update(['status' => 'expired']);
+
+        $firstShop = $user->shops()->first();
+
+        // Create new subscription record
+        $subscription = \App\Models\Subscription::create([
+            'user_id' => $user->id,
+            'shop_id' => $firstShop ? $firstShop->id : null,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+        ]);
+
+        // Create manual payment record if it is a paid plan
+        if ($plan->price > 0) {
+            \App\Models\Payment::create([
+                'user_id' => $user->id,
+                'shop_id' => $firstShop ? $firstShop->id : null,
+                'plan_id' => $plan->id,
+                'amount' => $plan->price,
+                'payment_gateway' => 'manual',
+                'transaction_id' => 'tx_manual_' . strtoupper(\Illuminate\Support\Str::random(10)),
+                'status' => 'successful',
+                'payment_date' => now(),
+            ]);
+        }
+
+        // Link active_plan_id on user table
+        $user->update([
+            'active_plan_id' => $plan->id,
+        ]);
+
+        AuditLog::log("Manually updated subscription for user #{$user->id} ({$user->name}) to plan {$plan->name}", [
+            'plan_id' => $plan->id,
+            'ends_at' => $endsAt->toDateString()
+        ]);
+
+        return back()->with('success', "Subscription for user '{$user->name}' successfully updated to {$plan->name} for {$days} days.");
+    }
+
     public function show($id)
     {
         $user = User::with([
-            'shops.activePlan',
-            'shops.subscriptions.plan'
+            'activePlan',
+            'currentSubscription',
+            'subscriptions.plan',
+            'shops'
         ])->findOrFail($id);
 
         // Fetch User audit logs
@@ -275,7 +340,9 @@ class UserController extends Controller
             'supplier_due' => $shopsData->sum('supplier_due'),
         ];
 
-        return view('admin.users.show', compact('user', 'logs', 'devices', 'shopsData', 'overallStats'));
+        $plans = \App\Models\SubscriptionPlan::where('status', 'active')->get();
+
+        return view('admin.users.show', compact('user', 'logs', 'devices', 'shopsData', 'overallStats', 'plans'));
     }
 
     public function revokeDevice($id)
@@ -291,5 +358,105 @@ class UserController extends Controller
         AuditLog::log("Revoked active device session #{$id}");
 
         return back()->with('success', 'Device session revoked successfully.');
+    }
+
+    public function backup($id)
+    {
+        $user = User::with(['shops.activePlan', 'shops.subscriptions'])->findOrFail($id);
+
+        $backupData = [
+            'app' => 'DukanHisab',
+            'type' => 'user_backup',
+            'exported_at' => now()->toDateTimeString(),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'mobile' => $user->mobile,
+                'status' => $user->status,
+                'avatar' => $user->avatar,
+                'created_at' => $user->created_at ? $user->created_at->toDateTimeString() : null,
+            ],
+            'shops' => $user->shops->map(function ($shop) {
+                return [
+                    'id' => $shop->id,
+                    'name' => $shop->name,
+                    'email' => $shop->email,
+                    'mobile' => $shop->mobile,
+                    'gst_number' => $shop->gst_number,
+                    'address' => $shop->address,
+                    'status' => $shop->status,
+                    'logo' => $shop->logo,
+                    'active_plan' => $shop->activePlan ? $shop->activePlan->name : 'None',
+                    'subscriptions' => $shop->subscriptions->map(function ($sub) {
+                        return [
+                            'id' => $sub->id,
+                            'plan_id' => $sub->plan_id,
+                            'starts_at' => $sub->starts_at,
+                            'ends_at' => $sub->ends_at,
+                            'status' => $sub->status,
+                        ];
+                    })->toArray(),
+                ];
+            })->toArray(),
+        ];
+
+        $json = json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $fileName = 'user-backup-' . $user->id . '-' . \Illuminate\Support\Str::slug($user->name ?: 'user') . '-' . date('Y-m-d') . '.json';
+
+        AuditLog::log("Exported full backup file for User #{$user->id} ({$user->name})", ['filename' => $fileName]);
+
+        return response()->streamDownload(function () use ($json) {
+            echo $json;
+        }, $fileName, ['Content-Type' => 'application/json']);
+    }
+
+    public function restore(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'backup_file' => 'required|file|max:5120',
+        ], [
+            'backup_file.required' => 'Please select a valid user backup JSON file.',
+        ]);
+
+        $file = $request->file('backup_file');
+        $content = file_get_contents($file->getRealPath());
+        $data = json_decode($content, true);
+
+        if (!$data || !isset($data['user'])) {
+            return back()->with('error', 'Invalid backup file format. Expected a valid DukanHisab User Backup JSON.');
+        }
+
+        $userData = $data['user'];
+        if (isset($userData['name'])) $user->name = $userData['name'];
+        if (isset($userData['mobile'])) $user->mobile = $userData['mobile'];
+        if (isset($userData['status']) && in_array($userData['status'], ['active', 'suspended'])) {
+            $user->status = $userData['status'];
+        }
+        $user->save();
+
+        if (isset($data['shops']) && is_array($data['shops'])) {
+            foreach ($data['shops'] as $sData) {
+                if (!empty($sData['name'])) {
+                    \App\Models\Shop::updateOrCreate(
+                        ['id' => $sData['id'] ?? null, 'owner_id' => $user->id],
+                        [
+                            'name' => $sData['name'],
+                            'email' => $sData['email'] ?? null,
+                            'mobile' => $sData['mobile'] ?? null,
+                            'gst_number' => $sData['gst_number'] ?? null,
+                            'address' => $sData['address'] ?? null,
+                            'status' => $sData['status'] ?? 'active',
+                        ]
+                    );
+                }
+            }
+        }
+
+        AuditLog::log("Restored user profile and shop details from backup file for User #{$user->id} ({$user->name})");
+
+        return back()->with('success', 'User profile & shop data restored successfully from backup!');
     }
 }

@@ -50,7 +50,7 @@
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2.5">
                                 <!-- Download -->
-                                <a href="{{ route('admin.backups.download', $file['filename']) }}" class="px-2.5 py-1 bg-primary text-xs text-slate-300 hover:text-white rounded-lg transition-all" title="Download SQL Dump">
+                                <a href="{{ route('admin.backups.download', $file['filename']) }}" download class="px-2.5 py-1 bg-primary text-xs text-slate-300 hover:text-white rounded-lg transition-all" title="Download SQL Dump">
                                     Download
                                 </a>
 
@@ -79,9 +79,11 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">No backup archives generated yet.</td>
-                    </tr>
+                        <x-empty-state
+                            colspan="4"
+                            title="No backup archives found"
+                            message="No database backup archives have been generated yet."
+                        />
                     @endforelse
                 </tbody>
             </table>

@@ -83,6 +83,8 @@ class SaaSDataSeeder extends Seeder
 
             $plan = $u['plan'] === 'premium' ? $premiumPlan : $freePlan;
 
+            $user->update(['active_plan_id' => $plan->id]);
+
             $shop = Shop::create([
                 'owner_id' => $user->id,
                 'name' => $u['shop'],
@@ -91,13 +93,13 @@ class SaaSDataSeeder extends Seeder
                 'address' => 'SaaS Avenue, Plot ' . (10 + $index) . ', Metro City',
                 'gst_number' => '27AAAAA' . (1111 + $index) . 'A1Z' . $index,
                 'status' => 'active',
-                'active_plan_id' => $plan->id,
                 'created_at' => $createdAt,
                 'updated_at' => $createdAt,
             ]);
 
             // Add subscription
             Subscription::create([
+                'user_id' => $user->id,
                 'shop_id' => $shop->id,
                 'plan_id' => $plan->id,
                 'status' => 'active',
@@ -133,7 +135,7 @@ class SaaSDataSeeder extends Seeder
                         'created_at' => $createdAt->copy()->addDay(),
                     ]);
                     $payment->update(['status' => 'refunded']);
-                    $shop->update(['active_plan_id' => $freePlan->id]);
+                    $user->update(['active_plan_id' => $freePlan->id]);
                 }
             }
 

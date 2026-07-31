@@ -1,7 +1,8 @@
 @props([
     'action',
     'placeholder' => 'Search...',
-    'showReset' => true
+    'showReset' => true,
+    'showApply' => false
 ])
 <div class="bg-card-dark border border-border-dark p-3 rounded-2xl shadow-sm">
     <form action="{{ $action }}" method="GET" class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -22,9 +23,11 @@
             {{ $slot }}
         </div>
 
-        <div class="flex gap-2">
-            <x-button type="submit" variant="primary">Apply</x-button>
-            @if($showReset)
+        <div class="flex items-center gap-2">
+            @if($showApply)
+                <x-button type="submit" variant="primary">Apply</x-button>
+            @endif
+            @if($showReset && (request()->filled('search') || request()->filled('status')))
                 <x-button type="link" :href="$action" variant="secondary">Reset</x-button>
             @endif
             @if(isset($actions))

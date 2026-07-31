@@ -41,15 +41,15 @@ class ReportController extends Controller
         $activeUsers = User::where('status', 'active')->count();
 
         // 3. Premium Conversion analytics
-        $totalShops = Shop::count();
-        $freeShopsCount = Shop::where(function($q) {
+        $totalShops = User::count();
+        $freeShopsCount = User::where(function($q) {
             $q->whereNull('active_plan_id')
               ->orWhereIn('active_plan_id', function($sub) {
                   $sub->select('id')->from('subscription_plans')->where('price', 0);
               });
         })->count();
         
-        $premiumShopsCount = Shop::whereHas('activePlan', function($q) {
+        $premiumShopsCount = User::whereHas('activePlan', function($q) {
             $q->where('price', '>', 0);
         })->count();
         
@@ -57,7 +57,7 @@ class ReportController extends Controller
 
         // 4. Plan performance table
         $plansPerformance = SubscriptionPlan::all()->map(function($plan) {
-            $shopsCount = Shop::where('active_plan_id', $plan->id)->count();
+            $shopsCount = User::where('active_plan_id', $plan->id)->count();
             $totalRevenue = Payment::where('status', 'successful')
                 ->where('plan_id', $plan->id)
                 ->sum('amount');

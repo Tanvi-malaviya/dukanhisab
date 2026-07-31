@@ -14,33 +14,7 @@ class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Shop::with(['owner', 'activePlan', 'currentSubscription']);
-
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('mobile', 'like', "%{$search}%")
-                  ->orWhereHas('owner', function($uq) use ($search) {
-                      $uq->where('name', 'like', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->filled('plan')) {
-            $query->where('active_plan_id', $request->input('plan'));
-        }
-
-        $shops = $query->latest()->paginate(10)->withQueryString();
-        $plans = SubscriptionPlan::where('status', 'active')->get();
-        $users = User::orderBy('name')->get();
-
-        return view('admin.shops.index', compact('shops', 'plans', 'users'));
+        return redirect()->route('admin.users.index', $request->query());
     }
 
     public function store(Request $request)
@@ -66,6 +40,14 @@ class ShopController extends Controller
         }
 
         $validated = $validator->validated();
+
+        $owner = User::find($validated['owner_id']);
+        if ($owner && !$owner->canAddShop()) {
+            return back()
+                ->withErrors(['owner_id' => "User '{$owner->name}' has reached their plan limit of maximum {$owner->maxShops()} shop(s). Please upgrade their subscription plan."])
+                ->withInput()
+                ->with('modal_open', 'add_shop');
+        }
 
         if ($request->hasFile('logo')) {
             $validated['logo'] = $request->file('logo')->store('logos', 'public');
@@ -169,22 +151,29 @@ class ShopController extends Controller
         $startsAt = now();
         $endsAt = now()->addDays($days);
 
-        // Deactivate past active subscriptions
-        Subscription::where('shop_id', $shop->id)
-            ->where('status', 'active')
-            ->update(['status' => 'expired']);
+        if ($shop->owner) {
+            // Deactivate past active subscriptions for owner
+            Subscription::where('user_id', $shop->owner_id)
+                ->where('status', 'active')
+                ->update(['status' => 'expired']);
 
-        // Create new subscription record
-        $subscription = Subscription::create([
-            'shop_id' => $shop->id,
-            'plan_id' => $plan->id,
-            'status' => 'active',
-            'starts_at' => $startsAt,
-            'ends_at' => $endsAt,
-        ]);
+            // Create new subscription record
+            Subscription::create([
+                'user_id' => $shop->owner_id,
+                'shop_id' => $shop->id,
+                'plan_id' => $plan->id,
+                'status' => 'active',
+                'starts_at' => $startsAt,
+                'ends_at' => $endsAt,
+            ]);
+
+            $shop->owner->update([
+                'active_plan_id' => $plan->id,
+            ]);
+        }
 
         // Create manual payment record if it is a paid plan
-        if ($plan->price > 0) {
+        if ($plan->price > 0 && $shop->owner_id) {
             \App\Models\Payment::create([
                 'user_id' => $shop->owner_id,
                 'shop_id' => $shop->id,
@@ -197,16 +186,11 @@ class ShopController extends Controller
             ]);
         }
 
-        // Link on shop table
-        $shop->update([
-            'active_plan_id' => $plan->id,
-        ]);
-
-        AuditLog::log("Manually updated subscription for shop #{$shop->id} to plan {$plan->name}", [
+        AuditLog::log("Manually updated subscription for shop #{$shop->id} owner to plan {$plan->name}", [
             'plan_id' => $plan->id,
             'ends_at' => $endsAt->toDateString()
         ]);
 
-        return back()->with('success', "Subscription for shop '{$shop->name}' successfully updated to {$plan->name} for {$days} days.");
+        return back()->with('success', "Subscription for user '{$shop->owner->name}' successfully updated to {$plan->name} for {$days} days.");
     }
 }

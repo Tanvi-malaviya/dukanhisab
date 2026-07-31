@@ -31,8 +31,13 @@ class SubscriptionPlan extends Model
         return $this->hasMany(Payment::class, 'plan_id');
     }
 
+    public function users()
+    {
+        return $this->hasMany(User::class, 'active_plan_id');
+    }
+
     public function shops()
     {
-        return $this->hasMany(Shop::class, 'active_plan_id');
+        return $this->hasMany(User::class, 'active_plan_id');
     }
 }

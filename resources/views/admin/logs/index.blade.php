@@ -69,9 +69,12 @@
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">No audit logs recorded.</td>
-                    </tr>
+                        <x-empty-state
+                            colspan="5"
+                            title="No audit logs recorded"
+                            message="No audit trail entries or logs were found for your current filter."
+                            resetUrl="{{ route('admin.logs.index') }}"
+                        />
                     @endforelse
                 </tbody>
             </table>

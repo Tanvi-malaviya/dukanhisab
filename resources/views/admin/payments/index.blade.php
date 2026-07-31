@@ -138,24 +138,24 @@
                                 class="bg-secondary/40 border-b border-border-dark text-[11px] font-semibold uppercase text-slate-400 tracking-wider">
                                 <th class="px-6 py-4">Refund Details</th>
                                 <th class="px-6 py-4">Shop details</th>
-                                <th class="px-6 py-4">Refund Reason</th>
-                                <th class="px-6 py-4">Amount Reversed</th>
+                                <th class="px-6 py-4">Original TXN</th>
+                                <th class="px-6 py-4">Amount</th>
                                 <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-border-dark text-sm text-slate-300">
                             @forelse($refunds as $ref)
-                                <tr class="hover:bg-secondary/10 transition-colors">
+                                <tr class="hover:bg-secondary/20 transition-colors">
                                     <td class="px-6 py-4">
-                                        <p class="text-xs font-mono text-slate-500">Refund ID: #{{ $ref->id }}</p>
-                                        <p class="text-xs text-slate-500">Date: {{ $ref->refund_date->format('Y-m-d') }}</p>
+                                        <p class="font-semibold text-white">#REF-{{ $ref->id }}</p>
+                                        <p class="text-xs text-slate-500">{{ $ref->created_at->format('M d, Y') }}</p>
                                     </td>
                                     <td class="px-6 py-4">
                                         <p class="font-semibold text-white">{{ $ref->payment->shop->name }}</p>
                                     </td>
-                                    <td class="px-6 py-4 text-xs text-slate-400 max-w-xs truncate" title="{{ $ref->reason }}">
-                                        {{ $ref->reason }}
+                                    <td class="px-6 py-4 font-mono text-xs text-slate-400">
+                                        {{ $ref->payment->transaction_id ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 font-semibold text-white">
                                         ₹{{ number_format($ref->amount, 2) }}
@@ -163,7 +163,7 @@
                                     <td class="px-6 py-4">
                                         @if($ref->status === 'successful')
                                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-success/15 text-success">
-                                                Refunded
+                                                Successful
                                             </span>
                                         @elseif($ref->status === 'failed')
                                             <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-danger/15 text-danger">
@@ -199,10 +199,11 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-slate-500 italic">No refunds processed.
-                                    </td>
-                                </tr>
+                                <x-empty-state
+                                    colspan="6"
+                                    title="No refunds processed"
+                                    message="No refund requests or records were found in the log history."
+                                />
                             @endforelse
                         </tbody>
                     </table>

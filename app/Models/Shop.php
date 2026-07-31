@@ -34,12 +34,12 @@ class Shop extends Model
 
     public function activePlan()
     {
-        return $this->belongsTo(SubscriptionPlan::class, 'active_plan_id');
+        return $this->hasOneThrough(SubscriptionPlan::class, User::class, 'id', 'id', 'owner_id', 'active_plan_id');
     }
 
     public function subscriptions()
     {
-        return $this->hasMany(Subscription::class);
+        return $this->hasManyThrough(Subscription::class, User::class, 'id', 'user_id', 'owner_id', 'id');
     }
 
     public function payments()
@@ -49,6 +49,6 @@ class Shop extends Model
 
     public function currentSubscription()
     {
-        return $this->hasOne(Subscription::class)->latestOfMany();
+        return $this->hasOneThrough(Subscription::class, User::class, 'id', 'user_id', 'owner_id', 'id')->latestOfMany('id');
     }
 }

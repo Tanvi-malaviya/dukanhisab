@@ -30,10 +30,12 @@
 <body class="h-full flex overflow-hidden">
 
     <!-- Sidebar Overlay for mobile -->
-    <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm hidden md:hidden" onclick="toggleSidebar()"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm hidden md:hidden"
+        onclick="toggleSidebar()"></div>
 
     <!-- Sidebar Navigation -->
-    <div id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 transform -translate-x-full md:translate-x-0 md:static md:flex md:flex-shrink-0 transition-transform duration-300 ease-in-out flex overflow-hidden">
+    <div id="sidebar"
+        class="fixed inset-y-0 left-0 z-40 w-64 transform -translate-x-full md:translate-x-0 md:static md:flex md:flex-shrink-0 transition-transform duration-300 ease-in-out flex overflow-hidden">
         <div class="flex flex-col w-full border-r border-border-dark bg-card-dark text-slate-300 relative h-full">
             <!-- Brand Logo -->
             <div class="flex items-center h-16 px-4 md:px-6 border-b border-border-dark justify-between gap-2 md:gap-3">
@@ -51,9 +53,11 @@
                         class="text-[10px] uppercase font-semibold bg-primary/20 text-primary px-1.5 py-0.5 rounded">Super</span>
                 </div>
                 <!-- Close button for mobile -->
-                <button onclick="toggleSidebar()" class="md:hidden p-1 rounded-xl text-slate-400 hover:text-white hover:bg-secondary cursor-pointer shrink-0">
+                <button onclick="toggleSidebar()"
+                    class="md:hidden p-1 rounded-xl text-slate-400 hover:text-white hover:bg-secondary cursor-pointer shrink-0">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
@@ -74,23 +78,13 @@
                 </a>
 
                 <a href="{{ route('admin.users.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.users') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
+                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.users') || str_contains($route, 'admin.shops') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
                         </path>
                     </svg>
-                    Users Management
-                </a>
-
-                <a href="{{ route('admin.shops.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.shops') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
-                        </path>
-                    </svg>
-                    Shops Directory
+                    Users & Shops
                 </a>
 
                 <a href="{{ route('admin.subscriptions.index') }}"
@@ -222,11 +216,13 @@
     <!-- Main Workspace Container -->
     <div class="flex-1 flex flex-col overflow-hidden">
 
-        <header class="flex items-center justify-between h-16 px-6 border-b border-border-dark bg-card-dark text-slate-300">
+        <header
+            class="flex items-center justify-between h-16 px-6 border-b border-border-dark bg-card-dark text-slate-300">
             <!-- Left Side: Mobile Menu & Page Title -->
             <div class="flex items-center gap-3">
                 <!-- Mobile Menu Toggle Button -->
-                <button onclick="toggleSidebar()" class="md:hidden p-1 rounded-md text-slate-400 hover:text-white hover:bg-secondary cursor-pointer shrink-0">
+                <button onclick="toggleSidebar()"
+                    class="md:hidden p-1 rounded-md text-slate-400 hover:text-white hover:bg-secondary cursor-pointer shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 6h16M4 12h16M4 18h16">
@@ -514,6 +510,95 @@
                 </div>
             </div>
         </div>
+
+        <!-- REUSABLE COMMON LOADER COMPONENT (OVERLAY) -->
+        <x-loader id="global-page-loader" type="overlay" text="Processing request..." />
+
+        <script>
+            let loaderTimeout = null;
+
+            window.showGlobalLoader = function(autoHideDelay = 0) {
+                const loader = document.getElementById('global-page-loader');
+                if (loader) {
+                    loader.classList.remove('opacity-0', 'pointer-events-none');
+                    loader.classList.add('opacity-100');
+                }
+                if (autoHideDelay > 0) {
+                    clearTimeout(loaderTimeout);
+                    loaderTimeout = setTimeout(hideGlobalLoader, autoHideDelay);
+                }
+            };
+
+            window.hideGlobalLoader = function() {
+                clearTimeout(loaderTimeout);
+                const loader = document.getElementById('global-page-loader');
+                if (loader) {
+                    loader.classList.remove('opacity-100');
+                    loader.classList.add('opacity-0', 'pointer-events-none');
+                }
+            };
+
+            // Intercept Form Submissions
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (form && (form.hasAttribute('download') || form.getAttribute('action')?.includes('download') || form.getAttribute('action')?.includes('backup'))) {
+                    showGlobalLoader(1500);
+                } else {
+                    showGlobalLoader();
+                }
+            });
+
+            // Intercept Link Clicks for File Downloads
+            document.addEventListener('click', function (e) {
+                const link = e.target.closest('a');
+                if (link) {
+                    const href = link.getAttribute('href') || '';
+                    if (link.hasAttribute('download') || href.includes('/download') || href.includes('/backup') || href.endsWith('.sql') || href.endsWith('.json') || href.endsWith('.csv') || href.endsWith('.pdf')) {
+                        setTimeout(hideGlobalLoader, 1000);
+                    }
+                }
+            });
+
+            // Intercept Page Transitions with auto-hide fallback for file downloads
+            window.addEventListener('beforeunload', function () {
+                showGlobalLoader();
+                // If page response is a file download attachment, the page won't unload.
+                // Auto hide loader after 2 seconds as fallback.
+                setTimeout(hideGlobalLoader, 2000);
+            });
+
+            window.addEventListener('pageshow', hideGlobalLoader);
+            window.addEventListener('focus', function() {
+                setTimeout(hideGlobalLoader, 500);
+            });
+
+            // Intercept Native Fetch API Calls globally
+            const originalFetch = window.fetch;
+            if (originalFetch) {
+                window.fetch = async function(...args) {
+                    showGlobalLoader();
+                    try {
+                        const response = await originalFetch.apply(this, args);
+                        return response;
+                    } finally {
+                        hideGlobalLoader();
+                    }
+                };
+            }
+
+            // Intercept XMLHttpRequest (XHR) API Calls globally
+            const originalOpen = XMLHttpRequest.prototype.open;
+            const originalSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function(...args) {
+                this.addEventListener('loadstart', function() {
+                    showGlobalLoader();
+                });
+                this.addEventListener('loadend', function() {
+                    hideGlobalLoader();
+                });
+                return originalOpen.apply(this, args);
+            };
+        </script>
 </body>
 
 </html>
