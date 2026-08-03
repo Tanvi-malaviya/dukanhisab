@@ -179,7 +179,9 @@ class SupplierApiController extends Controller
             $total = (float) $purchase->total_amount;
             if ($rem >= $total) {
                 if ($purchase->status !== 'Completed') {
-                    $purchase->update(['status' => 'Completed']);
+                    $purchase->update([
+                        'status' => 'Completed',
+                    ]);
                 }
                 $rem -= $total;
             } else {

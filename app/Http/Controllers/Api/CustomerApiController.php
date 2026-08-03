@@ -179,7 +179,9 @@ class CustomerApiController extends Controller
             $total = (float) $sale->grand_total;
             if ($rem >= $total) {
                 if ($sale->status !== 'Completed') {
-                    $sale->update(['status' => 'Completed']);
+                    $sale->update([
+                        'status' => 'Completed',
+                    ]);
                 }
                 $rem -= $total;
             } else {

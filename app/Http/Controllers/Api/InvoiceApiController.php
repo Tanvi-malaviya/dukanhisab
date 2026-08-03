@@ -306,7 +306,8 @@ class InvoiceApiController extends Controller
                             INVOICE
                             <div class="invoice-meta">
                                 <strong>Invoice No:</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
-                                <strong>Date:</strong> ' . $sale->sale_date->format('d M, Y h:i A') . '
+                                <strong>Date:</strong> ' . $sale->sale_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
+                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && $sale->updated_at) ? '<br><strong>Paid Date:</strong> ' . $sale->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
                             </div>
                         </td>
                     </tr>
@@ -325,7 +326,17 @@ class InvoiceApiController extends Controller
                         <td style="text-align: right;">
                             <div class="section-title">Payment Info</div>
                             <div class="party-info">
-                                <strong>Payment Status:</strong> ' . ($sale->status === 'Returned' ? '<span style="color:#ef4444;">Returned</span>' : 'Paid') . '<br>
+                                <strong>Payment Status:</strong> ' . (
+                                    $sale->status === 'Returned'
+                                        ? '<span style="color:#ef4444;">Returned</span>'
+                                        : ($sale->status === 'Partially Returned'
+                                            ? '<span style="color:#f59e0b;">Partially Returned</span>'
+                                            : ($sale->status === 'Unpaid'
+                                                ? '<span style="color:#f59e0b;font-weight:bold;">Unpaid</span>'
+                                                : ($sale->payment_type === 'Credit'
+                                                    ? '<span style="color:#10b981;font-weight:bold;">Completed</span>'
+                                                    : '<span style="color:#10b981;font-weight:bold;">Paid</span>')))
+                                ) . '<br>
                                 <strong>Method:</strong> ' . htmlspecialchars($sale->payment_type) . '
                             </div>
                         </td>
@@ -661,7 +672,8 @@ class InvoiceApiController extends Controller
                             PURCHASE INVOICE
                             <div class="invoice-meta">
                                 <strong>Invoice No:</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
-                                <strong>Date:</strong> ' . $purchase->purchase_date->format('d M, Y h:i A') . '
+                                <strong>Date:</strong> ' . $purchase->purchase_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
+                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && $purchase->updated_at) ? '<br><strong>Paid Date:</strong> ' . $purchase->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
                             </div>
                         </td>
                     </tr>
@@ -680,7 +692,17 @@ class InvoiceApiController extends Controller
                         <td style="text-align: right;">
                             <div class="section-title">Payment Info</div>
                             <div class="party-info">
-                                <strong>Payment Status:</strong> ' . ($purchase->status === 'Returned' ? '<span style="color:#ef4444;">Returned</span>' : 'Paid') . '<br>
+                                <strong>Payment Status:</strong> ' . (
+                                    $purchase->status === 'Returned'
+                                        ? '<span style="color:#ef4444;">Returned</span>'
+                                        : ($purchase->status === 'Partially Returned'
+                                            ? '<span style="color:#f59e0b;">Partially Returned</span>'
+                                            : ($purchase->status === 'Unpaid'
+                                                ? '<span style="color:#f59e0b;font-weight:bold;">Unpaid</span>'
+                                                : ($purchase->payment_type === 'Credit'
+                                                    ? '<span style="color:#10b981;font-weight:bold;">Completed</span>'
+                                                    : '<span style="color:#10b981;font-weight:bold;">Paid</span>')))
+                                ) . '<br>
                                 <strong>Method:</strong> ' . htmlspecialchars($purchase->payment_type) . '
                             </div>
                         </td>
