@@ -112,7 +112,7 @@ class SaleApiController extends Controller
                 'grand_total' => $request->grand_total,
                 'payment_type' => $request->payment_type,
                 'status' => $request->payment_type === 'Credit' ? 'Unpaid' : 'Completed',
-                'sale_date' => Carbon::now(),
+                'sale_date' => $request->filled('sale_date') ? Carbon::parse($request->sale_date) : Carbon::now(),
             ]);
 
             foreach ($request->items as $item) {

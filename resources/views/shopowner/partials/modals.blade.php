@@ -44,6 +44,9 @@
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
                             <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
+                            <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && selectedSale.updated_at">
+                                <p class="opacity-90"><span class="font-normal opacity-80">Paid Date:</span> <span x-text="new Date(selectedSale.updated_at).toLocaleString()"></span></p>
+                            </template>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
@@ -59,7 +62,7 @@
                             <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal">Payment Status:</span>
-                                <span :class="selectedSale.status === 'Returned' ? 'text-rose-600' : ''" x-text="selectedSale.status === 'Returned' ? 'Returned' : 'Paid'"></span>
+                                <span :class="selectedSale.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedSale.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="selectedSale.status === 'Completed' ? (selectedSale.payment_type === 'Credit' ? 'Completed' : 'Paid') : (selectedSale.status || 'Paid')"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal">Method:</span>
@@ -399,6 +402,9 @@
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
                             <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
+                            <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && selectedPurchase.updated_at">
+                                <p class="opacity-90"><span class="font-normal opacity-80">Paid Date:</span> <span x-text="new Date(selectedPurchase.updated_at).toLocaleString()"></span></p>
+                            </template>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
@@ -416,7 +422,7 @@
                             <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal">Payment Status:</span>
-                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="selectedPurchase.status || 'Paid'"></span>
+                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="selectedPurchase.status === 'Completed' ? (selectedPurchase.payment_type === 'Credit' ? 'Completed' : 'Paid') : (selectedPurchase.status || 'Paid')"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal">Method:</span>
