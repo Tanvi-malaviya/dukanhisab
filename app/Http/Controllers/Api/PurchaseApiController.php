@@ -18,6 +18,13 @@ class PurchaseApiController extends Controller
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
+
+        // Automatically sync purchase statuses with current supplier due balances
+        $supplierIds = Supplier::where('shop_id', $shopId)->pluck('id');
+        foreach ($supplierIds as $supId) {
+            SupplierApiController::syncSupplierPurchaseStatuses($supId, $shopId);
+        }
+
         $query = Purchase::where('shop_id', $shopId)->with(['supplier', 'items.product']);
 
         if ($request->filled('updated_since')) {
@@ -43,7 +50,7 @@ class PurchaseApiController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'Completed') {
-                $query->whereIn('status', ['Completed', 'Partially Returned']);
+                $query->whereIn('status', ['Completed', 'Unpaid', 'Partially Returned']);
             } elseif ($request->status === 'Returned') {
                 $query->whereIn('status', ['Returned', 'Partially Returned']);
             } else {

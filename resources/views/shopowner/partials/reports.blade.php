@@ -6,11 +6,11 @@
         <div class="flex flex-wrap gap-3 items-end">
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1">From Date</label>
-                <input type="date" x-model="reportDates.start" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                <input type="date" x-model="reportDates.start" onclick="this.showPicker()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1">To Date</label>
-                <input type="date" x-model="reportDates.end" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                <input type="date" x-model="reportDates.end" onclick="this.showPicker()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
             </div>
             <div class="flex gap-2">
                 <button @click="loadReports(reportDates.start, reportDates.end)" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-all">Generate</button>

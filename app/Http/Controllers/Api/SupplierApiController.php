@@ -146,11 +146,47 @@ class SupplierApiController extends Controller
             'transaction_date' => Carbon::now(),
         ]);
 
+        // 3. Sync Purchase Statuses based on Supplier Due Balance
+        static::syncSupplierPurchaseStatuses($supplier->id, $shopId);
+
         return response()->json([
             'message' => 'Supplier due payment recorded successfully.',
             'supplier' => $supplier,
             'paid_amount' => $amount,
             'remaining_due' => $supplier->due_amount
         ], 200);
+    }
+
+    public static function syncSupplierPurchaseStatuses($supplierId, $shopId)
+    {
+        $supplier = Supplier::where('shop_id', $shopId)->find($supplierId);
+        if (!$supplier) return;
+
+        $creditPurchases = \App\Models\Purchase::where('shop_id', $shopId)
+            ->where('supplier_id', $supplierId)
+            ->whereIn('status', ['Unpaid', 'Completed'])
+            ->where('payment_type', 'Credit')
+            ->orderBy('purchase_date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $totalCredit = $creditPurchases->sum('total_amount');
+        $due = (float) $supplier->due_amount;
+        $paidAmount = max(0, $totalCredit - $due);
+
+        $rem = $paidAmount;
+        foreach ($creditPurchases as $purchase) {
+            $total = (float) $purchase->total_amount;
+            if ($rem >= $total) {
+                if ($purchase->status !== 'Completed') {
+                    $purchase->update(['status' => 'Completed']);
+                }
+                $rem -= $total;
+            } else {
+                if ($purchase->status !== 'Unpaid') {
+                    $purchase->update(['status' => 'Unpaid']);
+                }
+            }
+        }
     }
 }

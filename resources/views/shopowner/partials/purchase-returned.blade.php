@@ -24,8 +24,8 @@
         {{-- Month --}}
         <div class="w-full sm:w-auto">
             <label class="block text-xs font-semibold text-slate-400 mb-1">Month</label>
-            <input type="month" x-model="purchaseReturnedFilter.month" @change="loadPurchases()"
-                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+            <input type="month" x-model="purchaseReturnedFilter.month" onclick="this.showPicker()" @change="loadPurchases()"
+                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
         </div>
         {{-- Supplier --}}
         <div class="w-full sm:w-auto min-w-[200px] relative" x-data="{ open: false }" @click.away="open = false">

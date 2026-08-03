@@ -146,11 +146,47 @@ class CustomerApiController extends Controller
             'transaction_date' => Carbon::now(),
         ]);
 
+        // 3. Sync Sale Statuses based on Customer Due Balance
+        static::syncCustomerSaleStatuses($customer->id, $shopId);
+
         return response()->json([
             'message' => 'Udhar repayment recorded successfully.',
             'customer' => $customer,
             'paid_amount' => $amount,
             'remaining_due' => $customer->due_amount
         ], 200);
+    }
+
+    public static function syncCustomerSaleStatuses($customerId, $shopId)
+    {
+        $customer = Customer::where('shop_id', $shopId)->find($customerId);
+        if (!$customer) return;
+
+        $creditSales = \App\Models\Sale::where('shop_id', $shopId)
+            ->where('customer_id', $customerId)
+            ->whereIn('status', ['Unpaid', 'Completed'])
+            ->where('payment_type', 'Credit')
+            ->orderBy('sale_date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $totalCredit = $creditSales->sum('grand_total');
+        $due = (float) $customer->due_amount;
+        $paidAmount = max(0, $totalCredit - $due);
+
+        $rem = $paidAmount;
+        foreach ($creditSales as $sale) {
+            $total = (float) $sale->grand_total;
+            if ($rem >= $total) {
+                if ($sale->status !== 'Completed') {
+                    $sale->update(['status' => 'Completed']);
+                }
+                $rem -= $total;
+            } else {
+                if ($sale->status !== 'Unpaid') {
+                    $sale->update(['status' => 'Unpaid']);
+                }
+            }
+        }
     }
 }

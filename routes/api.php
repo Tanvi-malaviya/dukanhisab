@@ -22,6 +22,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardApiController::class, 'index']);
 
+    // Backup & Restore for Shop Owner
+    Route::get('/backup/export', [\App\Http\Controllers\Api\ShopOwner\BackupApiController::class, 'export']);
+    Route::post('/backup/restore', [\App\Http\Controllers\Api\ShopOwner\BackupApiController::class, 'restore']);
+
     // Sync
     Route::post('/sync/batch', [\App\Http\Controllers\Api\SyncBatchController::class, 'batch']);
 

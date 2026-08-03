@@ -1,6 +1,5 @@
 {{-- SETTINGS PANEL --}}
-<div x-show="page === 'settings'" class="space-y-6"
-    x-data="{
+<div x-show="page === 'settings'" class="space-y-6" x-data="{
         settingsTab: 'shop',
         showPreviewModal: false,
         shopUpdateForm: {
@@ -151,8 +150,7 @@
             const dd = String(d.getDate()).padStart(2, '0');
             return 'INV-' + yyyy + mm + dd + '-0001';
         }
-    }"
-    x-init="
+    }" x-init="
     if (shop) {
         shopUpdateForm.bank_details = shop.bank_details || '';
         parseBankDetails();
@@ -248,46 +246,69 @@
             :class="settingsTab === 'website' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
             Website Settings
         </button>
+        <button type="button" @click="settingsTab = 'backup'"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            :class="settingsTab === 'backup' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+            Backup & Restore
+        </button>
     </div>
 
     {{-- Shop Profile Settings --}}
-    <div x-show="settingsTab === 'shop'" class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
-        <form @submit.prevent="submitShopProfileUpdate(logoFile, signatureFile)" class="flex flex-col lg:flex-row gap-6">
+    <div x-show="settingsTab === 'shop'"
+        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+        <form @submit.prevent="submitShopProfileUpdate(logoFile, signatureFile)"
+            class="flex flex-col lg:flex-row gap-6">
 
             {{-- Left Side: Logo Upload card (Compact) --}}
-            <div class="w-full lg:w-1/4 flex flex-col items-center justify-start p-4 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0">
-                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Shop Branding</span>
+            <div
+                class="w-full lg:w-1/4 flex flex-col items-center justify-start p-4 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0">
+                <span
+                    class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Shop
+                    Branding</span>
 
-                <div class="relative w-22 h-22 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
+                <div
+                    class="relative w-22 h-22 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
                     <!-- Preview selected file -->
                     <template x-if="logoPreview">
                         <img :src="logoPreview" class="w-full h-full object-cover">
                     </template>
                     <!-- Or existing shop logo -->
                     <template x-if="!logoPreview">
-                        <img :src="shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
+                        <img :src="shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff'"
+                            class="w-full h-full object-cover">
                     </template>
 
                     <!-- Hover Edit Overlay -->
-                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer">
+                    <div
+                        class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                         <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider">Change Logo</span>
                     </div>
 
-                    <input type="file" accept="image/*" @change="onSettingsLogoChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
+                        class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
 
-                <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-3" x-text="shopUpdateForm.name || 'My Shop'"></h5>
-                <p class="text-[9px] text-slate-400 mt-0.5 uppercase font-semibold tracking-widest" x-text="'GSTIN: ' + (shopUpdateForm.gst_number || 'None')"></p>
+                <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-3"
+                    x-text="shopUpdateForm.name || 'My Shop'"></h5>
+                <p class="text-[9px] text-slate-400 mt-0.5 uppercase font-semibold tracking-widest"
+                    x-text="'GSTIN: ' + (shopUpdateForm.gst_number || 'None')"></p>
                 <p class="text-[10px] text-slate-400 mt-1 max-w-[200px]">Format: JPG, PNG. Max 2MB.</p>
 
                 {{-- Shop Signature Upload (Optional) --}}
-                <div class="w-full mt-4 pt-3 border-t border-slate-100 dark:border-gray-700/50 flex flex-col items-center">
-                    <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Shop Signature (Optional)</span>
-                    <div class="relative w-full h-14 rounded-xl border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 group transition-all hover:border-primary">
+                <div
+                    class="w-full mt-4 pt-3 border-t border-slate-100 dark:border-gray-700/50 flex flex-col items-center">
+                    <span
+                        class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Shop
+                        Signature (Optional)</span>
+                    <div
+                        class="relative w-full h-14 rounded-xl border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 group transition-all hover:border-primary">
                         <template x-if="signaturePreview">
                             <img :src="signaturePreview" class="w-full h-full object-contain p-1">
                         </template>
@@ -298,11 +319,13 @@
                             <span class="text-[9px] text-slate-400">No signature uploaded</span>
                         </template>
 
-                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                        <div
+                            class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                             <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider">Change</span>
                         </div>
 
-                        <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                        <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)"
+                            class="absolute inset-0 opacity-0 cursor-pointer">
                     </div>
                 </div>
             </div>
@@ -311,12 +334,14 @@
             <div class="flex-1 space-y-3.5">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                     <div class="md:col-span-6">
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Name</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop
+                            Name</label>
                         <input type="text" required x-model="shopUpdateForm.name"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
                     <div class="md:col-span-6">
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">GSTIN Number (Optional)</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">GSTIN Number
+                            (Optional)</label>
                         <input type="text" placeholder="22AAAAA0000A1Z5" x-model="shopUpdateForm.gst_number"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
@@ -324,7 +349,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                     <div class="md:col-span-6">
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mobile Number</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mobile
+                            Number</label>
                         <input type="text" required x-model="shopUpdateForm.mobile" maxlength="10"
                             x-on:input="shopUpdateForm.mobile = shopUpdateForm.mobile.replace(/\D/g, '').slice(0, 10)"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
@@ -338,7 +364,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                     <div class="md:col-span-6">
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Address</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop
+                            Address</label>
                         <input type="text" placeholder="Street Address..." x-model="shopUpdateForm.address"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
@@ -353,7 +380,8 @@
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Pincode</label>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Pincode</label>
                         <input type="text" maxlength="10" x-model="shopUpdateForm.pincode"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
@@ -363,7 +391,9 @@
                     <button type="submit" :disabled="loading"
                         class="w-full sm:w-auto px-5 py-2 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                         <template x-if="loading">
-                            <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <div
+                                class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent">
+                            </div>
                         </template>
                         <span x-text="loading ? 'Saving...' : 'Save Changes'"></span>
                     </button>
@@ -377,12 +407,14 @@
         <form @submit.prevent="submitUserProfileUpdate(profileAvatarFile)" class="space-y-6">
 
             {{-- Basic Information --}}
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+            <div
+                class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
                 <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mb-4">Basic Information</h4>
                 <div class="flex flex-col lg:flex-row gap-8">
 
                     {{-- Profile Photo --}}
-                    <div class="w-full lg:w-1/3 flex flex-col items-center justify-center p-6 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0 relative">
+                    <div
+                        class="w-full lg:w-1/3 flex flex-col items-center justify-center p-6 border border-slate-100 dark:border-gray-700/50 rounded-2xl bg-slate-50/50 dark:bg-gray-900/20 text-center shrink-0 relative">
                         <!-- Account Status (Top Right) -->
                         <div class="absolute top-3 right-3">
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
@@ -390,28 +422,39 @@
                                 x-text="user && user.status ? user.status : 'active'"></span>
                         </div>
 
-                        <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Profile Photo</span>
+                        <span
+                            class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Profile
+                            Photo</span>
 
-                        <div class="relative w-28 h-28 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
+                        <div
+                            class="relative w-28 h-28 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
                             <template x-if="profileAvatarPreview">
                                 <img :src="profileAvatarPreview" class="w-full h-full object-cover">
                             </template>
                             <template x-if="!profileAvatarPreview">
-                                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userProfileForm.name || 'User') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
+                                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userProfileForm.name || 'User') + '&background=0d9488&color=fff'"
+                                    class="w-full h-full object-cover">
                             </template>
 
-                            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer">
+                            <div
+                                class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
-                                <span class="text-[9px] text-slate-200 font-bold uppercase tracking-wider">Change Photo</span>
+                                <span class="text-[9px] text-slate-200 font-bold uppercase tracking-wider">Change
+                                    Photo</span>
                             </div>
 
-                            <input type="file" accept="image/*" @change="onProfileAvatarChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                            <input type="file" accept="image/*" @change="onProfileAvatarChange($event)"
+                                class="absolute inset-0 opacity-0 cursor-pointer">
                         </div>
 
-                        <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4" x-text="userProfileForm.display_name || userProfileForm.name || 'My Account'"></h5>
+                        <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4"
+                            x-text="userProfileForm.display_name || userProfileForm.name || 'My Account'"></h5>
                         <p class="text-xs text-slate-400 mt-2 max-w-[200px]">Format: JPG, PNG. Max size 2MB.</p>
                     </div>
 
@@ -419,37 +462,48 @@
                     <div class="flex-1 space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Full Name</label>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Full
+                                    Name</label>
                                 <input type="text" required x-model="userProfileForm.name"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Display Name</label>
-                                <input type="text" placeholder="How you'd like to be shown" x-model="userProfileForm.display_name"
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Display
+                                    Name</label>
+                                <input type="text" placeholder="How you'd like to be shown"
+                                    x-model="userProfileForm.display_name"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mobile Number</label>
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Mobile
+                                    Number</label>
                                 <input type="text" x-model="userProfileForm.mobile" maxlength="10"
                                     x-on:input="userProfileForm.mobile = userProfileForm.mobile.replace(/\D/g, '').slice(0, 10)"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Email Address</label>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Email
+                                    Address</label>
                                 <input type="email" required x-model="userProfileForm.email"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date of Birth (Optional)</label>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date
+                                    of Birth (Optional)</label>
                                 <input type="date" x-model="userProfileForm.date_of_birth"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    onclick="this.showPicker()"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all cursor-pointer">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Gender (Optional)</label>
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Gender
+                                    (Optional)</label>
                                 <select x-model="userProfileForm.gender"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                                     <option value="">Prefer not to say</option>
@@ -459,17 +513,21 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-gray-700/50">
+                        <div
+                            class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-gray-700/50">
                             <div>
-                                <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Registration Date</span>
+                                <span
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Registration
+                                    Date</span>
                                 <div class="px-3 py-2 bg-slate-50 dark:bg-gray-900/30 border border-slate-200 dark:border-gray-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-semibold"
-                                     x-text="user && user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'">
+                                    x-text="user && user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'">
                                 </div>
                             </div>
                             <div>
-                                <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Last Login</span>
+                                <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Last
+                                    Login</span>
                                 <div class="px-3 py-2 bg-slate-50 dark:bg-gray-900/30 border border-slate-200 dark:border-gray-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-semibold"
-                                     x-text="user && user.last_login_at ? new Date(user.last_login_at).toLocaleString() : '-'">
+                                    x-text="user && user.last_login_at ? new Date(user.last_login_at).toLocaleString() : '-'">
                                 </div>
                             </div>
                         </div>
@@ -478,12 +536,14 @@
             </div>
 
             {{-- Preferences --}}
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+            <div
+                class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
                 <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mb-4">Preferences</h4>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Currency</label>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Currency</label>
                         <select x-model="userProfileForm.currency"
                             class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             <option value="INR">INR (₹)</option>
@@ -493,7 +553,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date Format</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date
+                            Format</label>
                         <select x-model="userProfileForm.date_format"
                             class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -502,7 +563,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Time Format</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Time
+                            Format</label>
                         <select x-model="userProfileForm.time_format"
                             class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             <option value="12h">12-hour</option>
@@ -512,22 +574,31 @@
                 </div>
 
                 <div class="mt-5 pt-4 border-t border-slate-100 dark:border-gray-700/50">
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">Notification Preferences</label>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3">Notification
+                        Preferences</label>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
-                            <input type="checkbox" x-model="userProfileForm.notification_preferences.email" class="rounded border-slate-300 text-primary focus:ring-primary">
+                        <label
+                            class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.email"
+                                class="rounded border-slate-300 text-primary focus:ring-primary">
                             Email
                         </label>
-                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
-                            <input type="checkbox" x-model="userProfileForm.notification_preferences.sms" class="rounded border-slate-300 text-primary focus:ring-primary">
+                        <label
+                            class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.sms"
+                                class="rounded border-slate-300 text-primary focus:ring-primary">
                             SMS
                         </label>
-                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
-                            <input type="checkbox" x-model="userProfileForm.notification_preferences.whatsapp" class="rounded border-slate-300 text-primary focus:ring-primary">
+                        <label
+                            class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.whatsapp"
+                                class="rounded border-slate-300 text-primary focus:ring-primary">
                             WhatsApp
                         </label>
-                        <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
-                            <input type="checkbox" x-model="userProfileForm.notification_preferences.push" class="rounded border-slate-300 text-primary focus:ring-primary">
+                        <label
+                            class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <input type="checkbox" x-model="userProfileForm.notification_preferences.push"
+                                class="rounded border-slate-300 text-primary focus:ring-primary">
                             Push
                         </label>
                     </div>
@@ -538,7 +609,9 @@
                 <button type="submit" :disabled="loading"
                     class="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                     <template x-if="loading">
-                        <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        <div
+                            class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent">
+                        </div>
                     </template>
                     <span x-text="loading ? 'Saving...' : 'Save Changes'"></span>
                 </button>
@@ -549,41 +622,50 @@
     {{-- Website Settings --}}
     <div x-show="settingsTab === 'website'" class="w-full space-y-6" x-cloak>
         <form @submit.prevent="saveWebsiteSettings()" class="w-full space-y-6">
-            
+
             <!-- Quick Link / Status Banner -->
-            <div class="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-transparent p-5 rounded-2xl border border-primary/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div
+                class="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-transparent p-5 rounded-2xl border border-primary/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="space-y-1">
                     <h4 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full" :class="shopUpdateForm.website_settings.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
-                        Business Website Status: 
-                        <span x-text="shopUpdateForm.website_settings.enabled ? 'Live & Online' : 'Offline / Private'"></span>
+                        <span class="w-2.5 h-2.5 rounded-full"
+                            :class="shopUpdateForm.website_settings.enabled ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'"></span>
+                        Business Website Status:
+                        <span
+                            x-text="shopUpdateForm.website_settings.enabled ? 'Live & Online' : 'Offline / Private'"></span>
                     </h4>
                     <p class="text-xs text-slate-500 dark:text-slate-400">
                         Launch a responsive, SEO-ready storefront web page to showcase your store and catalog.
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" x-model="shopUpdateForm.website_settings.enabled" class="sr-only peer">
-                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                    <label class="relative inline-flex items-center cursor-pointer select-none">
+                        <input type="checkbox" x-model="shopUpdateForm.website_settings.enabled" class="sr-only">
+                        <div class="w-12 h-6.5 rounded-full p-1 transition-colors duration-200 flex items-center shadow-inner"
+                            :class="shopUpdateForm.website_settings.enabled ? 'bg-primary justify-end' : 'bg-slate-300 dark:bg-gray-700 justify-start'">
+                            <div class="w-4.5 h-4.5 bg-white rounded-full shadow-md"></div>
+                        </div>
                     </label>
                 </div>
             </div>
 
             <!-- Public URL Copy Card -->
             <template x-if="shopUpdateForm.website_settings.enabled && shopUpdateForm.name">
-                <div class="bg-white dark:bg-gray-850 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                <div
+                    class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
                     <div class="flex-1 min-w-0">
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Your Store Address</label>
-                        <div class="text-sm font-semibold text-primary truncate" x-text="getStoreUrl()"></div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Your Store
+                            Address</label>
+                        <div class="text-sm font-bold text-primary truncate" x-text="getStoreUrl()"></div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        <button type="button" @click="navigator.clipboard.writeText(getStoreUrl()); showToast('Link copied to clipboard!')"
-                            class="px-3.5 py-2 border border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-700/50 text-xs font-bold rounded-xl transition-all text-slate-600 dark:text-slate-300 flex items-center gap-1.5 shadow-sm">
+                        <button type="button"
+                            @click="navigator.clipboard.writeText(getStoreUrl()); showToast('Link copied to clipboard!')"
+                            class="px-4 py-2 border border-slate-300 dark:border-gray-600 bg-slate-50 dark:bg-gray-700 hover:bg-slate-100 dark:hover:bg-gray-600 text-xs font-bold rounded-xl transition-all text-slate-800 dark:text-white flex items-center gap-1.5 shadow-sm cursor-pointer">
                             Copy Link
                         </button>
                         <button type="button" @click="window.open(getStoreUrl(), '_blank')"
-                            class="px-3.5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm">
+                            class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer">
                             Visit Site
                         </button>
                     </div>
@@ -594,41 +676,63 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Left 2 columns: Config Form -->
                 <div class="lg:col-span-2 space-y-6">
-                    
+
                     <!-- Branding Card -->
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
                         <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Branding</h4>
 
                         <!-- Accent Color Picker & Presets -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Theme Accent Color</label>
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Theme
+                                    Accent Color</label>
                                 <div class="flex items-center gap-2">
                                     <input type="color" x-model="shopUpdateForm.website_settings.theme_color"
-                                           class="w-10 h-10 border-0 rounded-xl cursor-pointer p-0 overflow-hidden shadow-sm">
+                                        class="w-10 h-10 border-0 rounded-xl cursor-pointer p-0 overflow-hidden shadow-sm">
                                     <input type="text" x-model="shopUpdateForm.website_settings.theme_color"
-                                           class="w-24 px-2 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white text-center font-mono">
+                                        class="w-24 px-2 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white text-center font-mono">
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Color Presets</label>
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">Color
+                                    Presets</label>
                                 <div class="flex flex-wrap gap-1.5">
-                                    <button type="button" @click="shopUpdateForm.website_settings.theme_color = '#0F766E'" class="w-6 h-6 rounded-full bg-[#0F766E] border border-white dark:border-gray-800 shadow-sm" title="Teal"></button>
-                                    <button type="button" @click="shopUpdateForm.website_settings.theme_color = '#1D4ED8'" class="w-6 h-6 rounded-full bg-[#1D4ED8] border border-white dark:border-gray-800 shadow-sm" title="Sapphire Blue"></button>
-                                    <button type="button" @click="shopUpdateForm.website_settings.theme_color = '#7C3AED'" class="w-6 h-6 rounded-full bg-[#7C3AED] border border-white dark:border-gray-800 shadow-sm" title="Purple"></button>
-                                    <button type="button" @click="shopUpdateForm.website_settings.theme_color = '#B91C1C'" class="w-6 h-6 rounded-full bg-[#B91C1C] border border-white dark:border-gray-800 shadow-sm" title="Rose Red"></button>
-                                    <button type="button" @click="shopUpdateForm.website_settings.theme_color = '#D97706'" class="w-6 h-6 rounded-full bg-[#D97706] border border-white dark:border-gray-800 shadow-sm" title="Amber"></button>
+                                    <button type="button"
+                                        @click="shopUpdateForm.website_settings.theme_color = '#0F766E'"
+                                        class="w-6 h-6 rounded-full bg-[#0F766E] border border-white dark:border-gray-800 shadow-sm"
+                                        title="Teal"></button>
+                                    <button type="button"
+                                        @click="shopUpdateForm.website_settings.theme_color = '#1D4ED8'"
+                                        class="w-6 h-6 rounded-full bg-[#1D4ED8] border border-white dark:border-gray-800 shadow-sm"
+                                        title="Sapphire Blue"></button>
+                                    <button type="button"
+                                        @click="shopUpdateForm.website_settings.theme_color = '#7C3AED'"
+                                        class="w-6 h-6 rounded-full bg-[#7C3AED] border border-white dark:border-gray-800 shadow-sm"
+                                        title="Purple"></button>
+                                    <button type="button"
+                                        @click="shopUpdateForm.website_settings.theme_color = '#B91C1C'"
+                                        class="w-6 h-6 rounded-full bg-[#B91C1C] border border-white dark:border-gray-800 shadow-sm"
+                                        title="Rose Red"></button>
+                                    <button type="button"
+                                        @click="shopUpdateForm.website_settings.theme_color = '#D97706'"
+                                        class="w-6 h-6 rounded-full bg-[#D97706] border border-white dark:border-gray-800 shadow-sm"
+                                        title="Amber"></button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Business Information Bio & SEO -->
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Store Profile & SEO Settings</h4>
-                        
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Store Profile & SEO Settings
+                        </h4>
+
                         <div>
-                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">About Store / Business Bio</label>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">About
+                                Store / Business Bio</label>
                             <textarea rows="4" x-model="shopUpdateForm.website_settings.about_us"
                                 placeholder="Describe what your shop does, what you sell, and your business philosophy. This will be featured prominently on your home page."
                                 class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all"></textarea>
@@ -636,43 +740,61 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">SEO Page Title</label>
-                                <input type="text" placeholder="Online Catalog & Store" x-model="shopUpdateForm.website_settings.seo_title"
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">SEO
+                                    Page Title</label>
+                                <input type="text" placeholder="Online Catalog & Store"
+                                    x-model="shopUpdateForm.website_settings.seo_title"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">SEO Description</label>
-                                <input type="text" placeholder="Browse our wide selection of items..." x-model="shopUpdateForm.website_settings.seo_description"
+                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">SEO
+                                    Description</label>
+                                <input type="text" placeholder="Browse our wide selection of items..."
+                                    x-model="shopUpdateForm.website_settings.seo_description"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                         </div>
                     </div>
 
                     <!-- Social Media Links -->
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Social Media & Communication</h4>
-                        
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Social Media & Communication
+                        </h4>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Facebook Profile Link</label>
-                                <input type="url" placeholder="https://facebook.com/my-page" x-model="shopUpdateForm.website_settings.social_facebook"
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Facebook
+                                    Profile Link</label>
+                                <input type="url" placeholder="https://facebook.com/my-page"
+                                    x-model="shopUpdateForm.website_settings.social_facebook"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Instagram Profile Link</label>
-                                <input type="url" placeholder="https://instagram.com/my-page" x-model="shopUpdateForm.website_settings.social_instagram"
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Instagram
+                                    Profile Link</label>
+                                <input type="url" placeholder="https://instagram.com/my-page"
+                                    x-model="shopUpdateForm.website_settings.social_instagram"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Twitter / X Link</label>
-                                <input type="url" placeholder="https://twitter.com/my-page" x-model="shopUpdateForm.website_settings.social_twitter"
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Twitter
+                                    / X Link</label>
+                                <input type="url" placeholder="https://twitter.com/my-page"
+                                    x-model="shopUpdateForm.website_settings.social_twitter"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">WhatsApp Number Link</label>
-                                <input type="text" placeholder="https://wa.me/919999999999" x-model="shopUpdateForm.website_settings.social_whatsapp"
+                                <label
+                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">WhatsApp
+                                    Number Link</label>
+                                <input type="text" placeholder="https://wa.me/919999999999"
+                                    x-model="shopUpdateForm.website_settings.social_whatsapp"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                         </div>
@@ -681,52 +803,76 @@
 
                 <!-- Right 1 column: Features Toggles & Options -->
                 <div class="space-y-6">
-                    <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Active Storefront Features</h4>
-                        
+                    <div
+                        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Active Storefront Features
+                        </h4>
+
                         <div class="space-y-4 pt-1 border-b border-slate-100 dark:border-gray-700 pb-4">
-                            <label class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <label
+                                class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
                                 <span>Show Product Catalog</span>
-                                <input type="checkbox" x-model="shopUpdateForm.website_settings.show_catalog" class="rounded border-slate-300 text-primary focus:ring-primary">
+                                <input type="checkbox" x-model="shopUpdateForm.website_settings.show_catalog"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary">
                             </label>
-                            
-                            <label class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
+
+                            <label
+                                class="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer">
                                 <span>Show Address & Contact Details</span>
-                                <input type="checkbox" x-model="shopUpdateForm.website_settings.show_contact" class="rounded border-slate-300 text-primary focus:ring-primary">
+                                <input type="checkbox" x-model="shopUpdateForm.website_settings.show_contact"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary">
                             </label>
                         </div>
 
                         <!-- Shop Image Upload -->
                         <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400">Shop Cover Image</label>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400">Shop Cover
+                                Image</label>
                             <div class="flex flex-col gap-3">
                                 <!-- Preview block -->
-                                <div class="relative w-full h-32 rounded-xl overflow-hidden bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 flex items-center justify-center">
+                                <div
+                                    class="relative w-full h-32 rounded-xl overflow-hidden bg-white dark:bg-gray-700 border border-slate-200 dark:border-gray-600 flex items-center justify-center">
                                     <template x-if="shopImagePreview">
                                         <img :src="shopImagePreview" class="w-full h-full object-contain bg-white">
                                     </template>
-                                    <template x-if="!shopImagePreview && shop && shop.website_settings && shop.website_settings.shop_image">
-                                        <img :src="'/storage/' + shop.website_settings.shop_image" class="w-full h-full object-contain bg-white">
+                                    <template
+                                        x-if="!shopImagePreview && shop && shop.website_settings && shop.website_settings.shop_image">
+                                        <img :src="'/storage/' + shop.website_settings.shop_image"
+                                            class="w-full h-full object-contain bg-white">
                                     </template>
-                                    <template x-if="!shopImagePreview && (!shop || !shop.website_settings || !shop.website_settings.shop_image)">
-                                        <div class="text-center text-slate-400 dark:text-slate-500 flex flex-col items-center">
-                                            <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                    <template
+                                        x-if="!shopImagePreview && (!shop || !shop.website_settings || !shop.website_settings.shop_image)">
+                                        <div
+                                            class="text-center text-slate-400 dark:text-slate-500 flex flex-col items-center">
+                                            <svg class="w-8 h-8 mb-1" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                </path>
+                                            </svg>
                                             <span class="text-[10px]">No cover uploaded</span>
                                         </div>
                                     </template>
                                 </div>
-                                <label class="relative cursor-pointer bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600/80 border border-slate-300 dark:border-gray-600 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-all">
+                                <label
+                                    class="relative cursor-pointer bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600/80 border border-slate-300 dark:border-gray-600 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-all">
                                     <span>Upload Shop Image</span>
-                                    <input type="file" accept="image/*" @change="onSettingsShopImageChange" class="sr-only">
+                                    <input type="file" accept="image/*" @change="onSettingsShopImageChange"
+                                        class="sr-only">
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-transparent p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 shadow-sm space-y-3">
-                        <h4 class="text-xs font-extrabold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">How it works</h4>
+                    <div
+                        class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-950/20 dark:to-transparent p-5 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 shadow-sm space-y-3">
+                        <h4
+                            class="text-xs font-extrabold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">
+                            How it works</h4>
                         <p class="text-xs text-emerald-700/80 dark:text-emerald-300/80 leading-relaxed">
-                            Once enabled, DukanHisab dynamically maps your stored business details, contact information, and current catalog items from your inventory directly to your storefront. Customers can view your menu, prices, and send direct orders via WhatsApp.
+                            Once enabled, DukanHisab dynamically maps your stored business details, contact information,
+                            and current catalog items from your inventory directly to your storefront. Customers can
+                            view your menu, prices, and send direct orders via WhatsApp.
                         </p>
                     </div>
                 </div>
@@ -737,7 +883,9 @@
                 <button type="submit" :disabled="loading"
                     class="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                     <template x-if="loading">
-                        <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        <div
+                            class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent">
+                        </div>
                     </template>
                     <span x-text="loading ? 'Saving Settings...' : 'Save Website Settings'"></span>
                 </button>
@@ -750,12 +898,14 @@
         <form @submit.prevent="saveInvoiceSettings()" class="w-full space-y-6">
 
             {{-- General, Layout & Branding --}}
-            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+            <div
+                class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
                 <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Invoice Details & Branding</h4>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date Format</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Date
+                            Format</label>
                         <select x-model="invoiceConfigForm.date_format"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             <option value="DD/MM/YYYY">DD/MM/YYYY</option>
@@ -768,7 +918,8 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Paper Size</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Paper
+                            Size</label>
                         <div class="flex gap-1">
                             <template x-for="size in ['A4', '58mm', '80mm']" :key="size">
                                 <button type="button" @click="invoiceConfigForm.paper_size = size"
@@ -779,23 +930,30 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Theme Color</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Theme
+                            Color</label>
                         <div class="flex items-center gap-2">
-                            <input type="color" x-model="invoiceConfigForm.theme_color" class="h-8 w-10 rounded border border-slate-300 dark:border-gray-600 cursor-pointer bg-transparent">
+                            <input type="color" x-model="invoiceConfigForm.theme_color"
+                                class="h-8 w-10 rounded border border-slate-300 dark:border-gray-600 cursor-pointer bg-transparent">
                             <input type="text" x-model="invoiceConfigForm.theme_color"
                                 class="flex-1 min-w-0 px-2.5 py-1 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                         </div>
                     </div>
                     <div class="pt-4 flex items-center justify-between gap-4">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
-                            <input type="checkbox" x-model="invoiceConfigForm.auto_increment" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            <input type="checkbox" x-model="invoiceConfigForm.auto_increment"
+                                class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             <span class="text-xs font-semibold text-slate-500 dark:text-slate-400">Auto Increment</span>
                         </label>
                         <button type="button" @click="showPreviewModal = true"
                             class="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 border border-slate-300 dark:border-gray-600 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-200 transition-all flex items-center gap-1.5 shrink-0 shadow-sm">
-                            <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            <svg class="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                </path>
                             </svg>
                             Preview
                         </button>
@@ -803,23 +961,30 @@
                 </div>
 
                 {{-- Logo and Signature (Branding Row) --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-gray-700/50">
+                <div
+                    class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-gray-700/50">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop Logo</label>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Shop
+                            Logo</label>
                         <div class="flex items-center gap-2.5">
-                            <div class="w-10 h-10 rounded border border-slate-200 dark:border-gray-600 overflow-hidden bg-slate-50 dark:bg-gray-900/30 shrink-0">
-                                <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff')" class="w-full h-full object-cover">
+                            <div
+                                class="w-10 h-10 rounded border border-slate-200 dark:border-gray-600 overflow-hidden bg-slate-50 dark:bg-gray-900/30 shrink-0">
+                                <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff')"
+                                    class="w-full h-full object-cover">
                             </div>
                             <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
                                 class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Signature</label>
+                        <label
+                            class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Signature</label>
                         <div class="flex items-center gap-2.5">
-                            <div class="w-10 h-10 rounded border border-slate-200 dark:border-gray-600 overflow-hidden bg-slate-50 dark:bg-gray-900/30 shrink-0 flex items-center justify-center">
+                            <div
+                                class="w-10 h-10 rounded border border-slate-200 dark:border-gray-600 overflow-hidden bg-slate-50 dark:bg-gray-900/30 shrink-0 flex items-center justify-center">
                                 <template x-if="signaturePreview || (shop && shop.signature)">
-                                    <img :src="signaturePreview || ('/storage/' + shop.signature)" class="w-full h-full object-contain p-0.5">
+                                    <img :src="signaturePreview || ('/storage/' + shop.signature)"
+                                        class="w-full h-full object-contain p-0.5">
                                 </template>
                                 <template x-if="!signaturePreview && !(shop && shop.signature)">
                                     <span class="text-[8px] text-slate-400">None</span>
@@ -832,93 +997,124 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Invoice Footer</label>
-                    <input type="text" placeholder="Thank you for your business!" x-model="shopUpdateForm.invoice_footer"
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Invoice
+                        Footer</label>
+                    <input type="text" placeholder="Thank you for your business!"
+                        x-model="shopUpdateForm.invoice_footer"
                         class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                 </div>
             </div>
 
             {{-- Invoice Features & Preferences --}}
-            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+            <div
+                class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
                 <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Invoice Features & Preferences</h4>
 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 md:divide-x md:divide-slate-200 md:dark:divide-gray-700/50">
+                <div
+                    class="grid grid-cols-1 md:grid-cols-4 gap-6 md:divide-x md:divide-slate-200 md:dark:divide-gray-700/50">
                     <!-- Column 1: Customer Info -->
                     <div class="space-y-2">
-                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Customer Info</h5>
+                        <h5
+                            class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                            Customer Info</h5>
                         <div class="space-y-1.5">
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Address</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.show_customer_address" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.show_customer_address"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show GST Number</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.show_customer_gst" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show GST
+                                    Number</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_customer_gst"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                         </div>
                     </div>
 
                     <!-- Column 2: Products -->
                     <div class="space-y-2 md:pl-6">
-                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Products</h5>
+                        <h5
+                            class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                            Products</h5>
                         <div class="space-y-1.5">
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show HSN Code</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.show_hsn_code" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show HSN
+                                    Code</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_hsn_code"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Discount</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.show_discount" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show
+                                    Discount</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.show_discount"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Tax</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.show_tax" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.show_tax"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show SKU</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.show_sku" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.show_sku"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                         </div>
                     </div>
 
                     <!-- Column 3: Print & Share -->
                     <div class="space-y-2 md:pl-6">
-                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Print & Share</h5>
+                        <h5
+                            class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                            Print & Share</h5>
                         <div class="space-y-1.5">
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Auto Print</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.auto_print" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.auto_print"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">WhatsApp Share</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.whatsapp_share" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">WhatsApp
+                                    Share</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.whatsapp_share"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">PDF Download</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.pdf_download" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.pdf_download"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Email Invoice</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.email_invoice" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Email
+                                    Invoice</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.email_invoice"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                         </div>
                     </div>
 
                     <!-- Column 4: Tax Settings -->
                     <div class="space-y-2 md:pl-6">
-                        <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Tax Settings</h5>
+                        <h5
+                            class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                            Tax Settings</h5>
                         <div class="space-y-1.5">
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">GST Enable/Disable</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.gst_enabled" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">GST
+                                    Enable/Disable</span>
+                                <input type="checkbox" x-model="invoiceConfigForm.gst_enabled"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Round Off</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.round_off" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.round_off"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
                                 <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Tax Summary</span>
-                                <input type="checkbox" x-model="invoiceConfigForm.tax_summary" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                <input type="checkbox" x-model="invoiceConfigForm.tax_summary"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                         </div>
                     </div>
@@ -926,45 +1122,65 @@
 
                 {{-- Payment options inside the same card (to minimize vertical space/cards) --}}
                 <div class="pt-3 border-t border-slate-100 dark:border-gray-700/50">
-                    <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Payment Info</h5>
+                    <h5 class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                        Payment Info</h5>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 mb-2">
                         <label class="flex items-center justify-between gap-3 py-1 cursor-pointer">
                             <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show UPI QR</span>
-                            <input type="checkbox" x-model="invoiceConfigForm.show_upi_qr" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            <input type="checkbox" x-model="invoiceConfigForm.show_upi_qr"
+                                class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                         </label>
                         <label class="flex items-center justify-between gap-3 py-1 cursor-pointer">
-                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Bank Details</span>
-                            <input type="checkbox" x-model="invoiceConfigForm.show_bank_details" class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Bank
+                                Details</span>
+                            <input type="checkbox" x-model="invoiceConfigForm.show_bank_details"
+                                class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                         </label>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                         <div x-show="invoiceConfigForm.show_upi_qr" class="md:col-span-4">
-                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">UPI ID</label>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">UPI
+                                ID</label>
                             <input type="text" placeholder="shopname@upi" x-model="shopUpdateForm.upi_id"
                                 class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                         </div>
-                        <div x-show="invoiceConfigForm.show_bank_details" class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3" :class="!invoiceConfigForm.show_upi_qr && 'md:col-span-12'">
+                        <div x-show="invoiceConfigForm.show_bank_details"
+                            class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3"
+                            :class="!invoiceConfigForm.show_upi_qr && 'md:col-span-12'">
                             <div class="sm:col-span-2">
-                                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Bank Account Details</span>
+                                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">Bank Account
+                                    Details</span>
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Account Holder Name</label>
-                                <input type="text" placeholder="John Doe" x-model="bank_holder" @input="updateBankDetailsString()"
+                                <label
+                                    class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Account
+                                    Holder Name</label>
+                                <input type="text" placeholder="John Doe" x-model="bank_holder"
+                                    @input="updateBankDetailsString()"
                                     class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Bank Name</label>
-                                <input type="text" placeholder="State Bank of India" x-model="bank_name" @input="updateBankDetailsString()"
+                                <label
+                                    class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Bank
+                                    Name</label>
+                                <input type="text" placeholder="State Bank of India" x-model="bank_name"
+                                    @input="updateBankDetailsString()"
                                     class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Account Number</label>
-                                <input type="text" placeholder="1234567890" x-model="bank_account" @input="updateBankDetailsString()"
+                                <label
+                                    class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Account
+                                    Number</label>
+                                <input type="text" placeholder="1234567890" x-model="bank_account"
+                                    @input="updateBankDetailsString()"
                                     class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">IFSC Code</label>
-                                <input type="text" placeholder="SBIN0001234" x-model="bank_ifsc" @input="updateBankDetailsString()"
+                                <label
+                                    class="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">IFSC
+                                    Code</label>
+                                <input type="text" placeholder="SBIN0001234" x-model="bank_ifsc"
+                                    @input="updateBankDetailsString()"
                                     class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             </div>
                         </div>
@@ -976,7 +1192,9 @@
                 <button type="submit" :disabled="loading"
                     class="w-full sm:w-auto px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
                     <template x-if="loading">
-                        <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        <div
+                            class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent">
+                        </div>
                     </template>
                     <span x-text="loading ? 'Saving...' : 'Save Invoice Settings'"></span>
                 </button>
@@ -984,57 +1202,147 @@
         </form>
     </div>
 
+    {{-- Backup & Restore Settings --}}
+    <div x-show="settingsTab === 'backup'"
+        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-6">
+        <div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                    </path>
+                </svg>
+                Backup & Restore Shop Data
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">Export a complete JSON backup of your shop products, inventory,
+                customers, suppliers, sales, purchases, and settings, or restore from a previous backup file.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {{-- Export Card --}}
+            <div
+                class="p-5 border border-slate-200 dark:border-gray-700 rounded-2xl bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between space-y-4">
+                <div>
+                    <div
+                        class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center mb-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-800 dark:text-white">Download Data Backup</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete JSON
+                        file containing all products, sales history, customer dues, supplier records, expenses, and
+                        settings.</p>
+                </div>
+                <button type="button" @click="downloadShopBackup()"
+                    class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download Backup JSON
+                </button>
+            </div>
+
+            {{-- Restore Card --}}
+            <div
+                class="p-5 border border-slate-200 dark:border-gray-700 rounded-2xl bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between space-y-4">
+                <div>
+                    <div
+                        class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mb-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
+                        </svg>
+                    </div>
+                    <h4 class="text-sm font-bold text-slate-800 dark:text-white">Restore Data Backup</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Select a previously saved
+                        DukanHisab backup JSON file to restore all your shop records and settings.</p>
+                </div>
+
+                <div class="space-y-2">
+                    <input type="file" id="shop-restore-file-input" accept=".json"
+                        class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
+                    <button type="button" @click="restoreShopBackup(document.getElementById('shop-restore-file-input'))"
+                        class="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
+                        </svg>
+                        Restore From Backup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Preview Modal Popup -->
     <template x-teleport="body">
-        <div x-show="showPreviewModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-             x-transition:enter="transition ease-out duration-300"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-200"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95">
+        <div x-show="showPreviewModal" x-cloak
+            class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
+            x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95"
+            x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
             <div class="relative w-full max-w-lg bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
-                 @click.outside="showPreviewModal = false">
-                
+                @click.outside="showPreviewModal = false">
+
                 <!-- Modal Header -->
-                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900">
+                <div
+                    class="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900">
                     <h3 class="text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
                         <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                            </path>
                         </svg>
                         Invoice Live Preview
                     </h3>
-                    <button type="button" @click="showPreviewModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                    <button type="button" @click="showPreviewModal = false"
+                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
                     </button>
                 </div>
-    
+
                 <!-- Modal Content (Preview Area) -->
                 <div class="p-6 overflow-y-auto bg-slate-50 dark:bg-gray-900/40 flex-1 flex justify-center items-start">
-                    <div id="invoicePreviewPrintArea" class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-md p-5 w-full max-w-sm overflow-hidden text-slate-800 dark:text-slate-200"
+                    <div id="invoicePreviewPrintArea"
+                        class="bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 shadow-md p-5 w-full max-w-sm overflow-hidden text-slate-800 dark:text-slate-200"
                         :class="invoiceConfigForm.paper_size === 'A4' ? '' : 'max-w-[280px]'">
                         {{-- Themed Header: Logo/Shop info left, INVOICE title + number + date right --}}
                         <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all invoice-theme-header"
-                             :class="getContrastColor(invoiceConfigForm.theme_color || '#0F766E')"
-                             :style="'background-color: ' + (invoiceConfigForm.theme_color || '#0F766E')">
+                            :class="getContrastColor(invoiceConfigForm.theme_color || '#0F766E')"
+                            :style="'background-color: ' + (invoiceConfigForm.theme_color || '#0F766E')">
                             <div class="flex items-start gap-2">
-                                <div x-show="logoPreview || (shop && shop.logo)" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
-                                    <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : '')" class="w-full h-full object-cover">
+                                <div x-show="logoPreview || (shop && shop.logo)"
+                                    class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                                    <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : '')"
+                                        class="w-full h-full object-cover">
                                 </div>
                                 <div class="flex flex-col items-start gap-0.5">
-                                    <span class="text-xs font-bold leading-tight" x-text="shopUpdateForm.name || 'My Shop'"></span>
-                                    <p x-show="shopUpdateForm.mobile" class="text-[9px] opacity-90" x-text="'Mobile: ' + (shopUpdateForm.mobile || '')"></p>
-                                    <p x-show="shopUpdateForm.address" class="text-[9px] opacity-90" x-text="shopUpdateForm.address || ''"></p>
-                                    <p x-show="shopUpdateForm.gst_number" class="text-[9px] opacity-90" x-text="shopUpdateForm.gst_number ? 'GSTIN: ' + shopUpdateForm.gst_number : ''"></p>
+                                    <span class="text-xs font-bold leading-tight"
+                                        x-text="shopUpdateForm.name || 'My Shop'"></span>
+                                    <p x-show="shopUpdateForm.mobile" class="text-[9px] opacity-90"
+                                        x-text="'Mobile: ' + (shopUpdateForm.mobile || '')"></p>
+                                    <p x-show="shopUpdateForm.address" class="text-[9px] opacity-90"
+                                        x-text="shopUpdateForm.address || ''"></p>
+                                    <p x-show="shopUpdateForm.gst_number" class="text-[9px] opacity-90"
+                                        x-text="shopUpdateForm.gst_number ? 'GSTIN: ' + shopUpdateForm.gst_number : ''">
+                                    </p>
                                 </div>
                             </div>
-                            <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[55%]">
+                            <div
+                                class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[55%]">
                                 <h3 class="font-bold text-sm">INVOICE</h3>
-                                <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="previewInvoiceNumber()"></span></p>
-                                <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="previewDateTime()"></span></p>
+                                <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span
+                                        x-text="previewInvoiceNumber()"></span></p>
+                                <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span
+                                        x-text="previewDateTime()"></span></p>
                             </div>
                         </div>
 
@@ -1046,8 +1354,10 @@
                             </div>
                             <div class="text-right">
                                 <p class="text-[8px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
-                                <p class="font-bold text-slate-800 dark:text-white"><span class="text-slate-500 font-normal">Payment Status:</span> Paid</p>
-                                <p class="font-bold text-slate-800 dark:text-white"><span class="text-slate-500 font-normal">Method:</span> Cash</p>
+                                <p class="font-bold text-slate-800 dark:text-white"><span
+                                        class="text-slate-500 font-normal">Payment Status:</span> Paid</p>
+                                <p class="font-bold text-slate-800 dark:text-white"><span
+                                        class="text-slate-500 font-normal">Method:</span> Cash</p>
                             </div>
                         </div>
 
@@ -1056,39 +1366,58 @@
                             <thead>
                                 <tr class="text-slate-400">
                                     <th class="text-left py-1">Item</th>
-                                    <template x-if="invoiceConfigForm.show_sku"><th class="text-left">SKU</th></template>
-                                    <template x-if="invoiceConfigForm.show_hsn_code"><th class="text-left">HSN</th></template>
+                                    <template x-if="invoiceConfigForm.show_sku">
+                                        <th class="text-left">SKU</th>
+                                    </template>
+                                    <template x-if="invoiceConfigForm.show_hsn_code">
+                                        <th class="text-left">HSN</th>
+                                    </template>
                                     <th class="text-right">Price</th>
                                     <th class="text-right">Qty</th>
-                                    <template x-if="invoiceConfigForm.show_discount"><th class="text-right">Disc</th></template>
-                                    <template x-if="invoiceConfigForm.show_tax"><th class="text-right">Tax</th></template>
+                                    <template x-if="invoiceConfigForm.show_discount">
+                                        <th class="text-right">Disc</th>
+                                    </template>
+                                    <template x-if="invoiceConfigForm.show_tax">
+                                        <th class="text-right">Tax</th>
+                                    </template>
                                     <th class="text-right">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="text-slate-600 dark:text-slate-300">
                                     <td class="py-1.5 font-semibold">Sample Item</td>
-                                    <template x-if="invoiceConfigForm.show_sku"><td>SKU001</td></template>
-                                    <template x-if="invoiceConfigForm.show_hsn_code"><td>1234</td></template>
+                                    <template x-if="invoiceConfigForm.show_sku">
+                                        <td>SKU001</td>
+                                    </template>
+                                    <template x-if="invoiceConfigForm.show_hsn_code">
+                                        <td>1234</td>
+                                    </template>
                                     <td class="text-right">₹100.00</td>
                                     <td class="text-right">1</td>
-                                    <template x-if="invoiceConfigForm.show_discount"><td class="text-right">0</td></template>
-                                    <template x-if="invoiceConfigForm.show_tax"><td class="text-right">18%</td></template>
+                                    <template x-if="invoiceConfigForm.show_discount">
+                                        <td class="text-right">0</td>
+                                    </template>
+                                    <template x-if="invoiceConfigForm.show_tax">
+                                        <td class="text-right">18%</td>
+                                    </template>
                                     <td class="text-right font-bold">₹100.00</td>
                                 </tr>
                             </tbody>
                         </table>
 
                         {{-- QR/Bank (left) + Totals (right), side by side like the real invoice --}}
-                        <div class="border-t border-slate-100 dark:border-gray-700 pt-3 mt-1 flex justify-between items-start gap-3 text-[10px]">
+                        <div
+                            class="border-t border-slate-100 dark:border-gray-700 pt-3 mt-1 flex justify-between items-start gap-3 text-[10px]">
                             <div class="flex flex-col items-start gap-1.5 max-w-[50%]">
                                 <template x-if="invoiceConfigForm.show_upi_qr">
                                     <div class="flex flex-col items-center gap-0.5">
                                         <template x-if="shopUpdateForm.upi_id">
-                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shopUpdateForm.upi_id + '&pn=' + (shopUpdateForm.name || 'Shop') + '&am=100.00&cu=INR')" class="w-16 h-16 bg-white p-0.5 rounded border border-slate-200 shadow-sm">
+                                            <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shopUpdateForm.upi_id + '&pn=' + (shopUpdateForm.name || 'Shop') + '&am=100.00&cu=INR')"
+                                                class="w-16 h-16 bg-white p-0.5 rounded border border-slate-200 shadow-sm">
                                         </template>
                                         <template x-if="!shopUpdateForm.upi_id">
-                                            <div class="w-16 h-16 border border-dashed border-slate-300 dark:border-gray-600 rounded flex items-center justify-center text-[6px] text-slate-400 text-center px-1">
+                                            <div
+                                                class="w-16 h-16 border border-dashed border-slate-300 dark:border-gray-600 rounded flex items-center justify-center text-[6px] text-slate-400 text-center px-1">
                                                 Enter UPI ID
                                             </div>
                                         </template>
@@ -1096,39 +1425,52 @@
                                     </div>
                                 </template>
                                 <template x-if="invoiceConfigForm.show_bank_details && shopUpdateForm.bank_details">
-                                    <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full" x-text="shopUpdateForm.bank_details"></p>
+                                    <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full"
+                                        x-text="shopUpdateForm.bank_details"></p>
                                 </template>
                             </div>
                             <div class="flex flex-col items-end gap-0.5">
-                                <div class="flex justify-between w-32"><span class="text-slate-500">Subtotal:</span><span class="font-semibold">₹100.00</span></div>
+                                <div class="flex justify-between w-32"><span
+                                        class="text-slate-500">Subtotal:</span><span
+                                        class="font-semibold">₹100.00</span></div>
                                 <template x-if="invoiceConfigForm.show_discount">
-                                    <div class="flex justify-between w-32"><span class="text-slate-500">Discount:</span><span class="font-semibold">-₹0.00</span></div>
+                                    <div class="flex justify-between w-32"><span
+                                            class="text-slate-500">Discount:</span><span
+                                            class="font-semibold">-₹0.00</span></div>
                                 </template>
                                 <template x-if="invoiceConfigForm.tax_summary && invoiceConfigForm.gst_enabled">
-                                    <div class="flex justify-between w-32"><span class="text-slate-500">GST:</span><span class="font-semibold">₹18.00</span></div>
+                                    <div class="flex justify-between w-32"><span class="text-slate-500">GST:</span><span
+                                            class="font-semibold">₹18.00</span></div>
                                 </template>
                                 <template x-if="invoiceConfigForm.round_off">
-                                    <div class="flex justify-between w-32"><span class="text-slate-500">Round Off:</span><span class="font-semibold">₹0.00</span></div>
+                                    <div class="flex justify-between w-32"><span class="text-slate-500">Round
+                                            Off:</span><span class="font-semibold">₹0.00</span></div>
                                 </template>
-                                <div class="flex justify-between w-32 text-xs font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-0.5">
+                                <div
+                                    class="flex justify-between w-32 text-xs font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-0.5">
                                     <span>Total:</span><span class="text-primary">₹100.00</span>
                                 </div>
                             </div>
                         </div>
 
-                        <p class="mt-3 text-[9px] text-center text-slate-400" x-text="shopUpdateForm.invoice_footer || 'Thank you for your business!'"></p>
+                        <p class="mt-3 text-[9px] text-center text-slate-400"
+                            x-text="shopUpdateForm.invoice_footer || 'Thank you for your business!'"></p>
                         <template x-if="signaturePreview || (shop && shop.signature)">
-                            <img :src="signaturePreview || ('/storage/' + shop.signature)" class="mt-2 h-8 ml-auto object-contain">
+                            <img :src="signaturePreview || ('/storage/' + shop.signature)"
+                                class="mt-2 h-8 ml-auto object-contain">
                         </template>
                     </div>
                 </div>
-    
+
                 <!-- Modal Footer -->
-                <div class="px-5 py-4 border-t border-slate-100 dark:border-gray-700/50 bg-slate-50 dark:bg-gray-800 flex flex-col sm:flex-row gap-2 justify-end">
+                <div
+                    class="px-5 py-4 border-t border-slate-100 dark:border-gray-700/50 bg-slate-50 dark:bg-gray-800 flex flex-col sm:flex-row gap-2 justify-end">
                     <button type="button" @click="testPrintInvoice()"
                         class="w-full sm:w-auto px-4 py-2 border border-primary text-primary hover:bg-primary/5 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-sm">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z">
+                            </path>
                         </svg>
                         Test Print
                     </button>
@@ -1137,7 +1479,5 @@
                         Close
                     </button>
                 </div>
-            </div>
-        </div>
     </template>
 </div>

@@ -26,17 +26,17 @@
                         </td>
                     </tr>
                 </template>
-                <template x-for="cust in (customersLoading ? [] : customers)" :key="cust.id">
+                <template x-for="cust in (customersLoading ? [] : customers.slice((customersPage - 1) * customersPerPage, customersPage * customersPerPage))" :key="cust.id">
                     <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50">
                         <td class="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white" x-text="cust.name"></td>
                         <td class="px-6 py-4 text-sm text-slate-500" x-text="cust.mobile || 'N/A'"></td>
                         <td class="px-6 py-4 text-sm text-slate-500" x-text="cust.email || 'N/A'"></td>
                         <td class="px-6 py-4 text-sm font-bold text-rose-600">₹<span x-text="cust.due_amount"></span></td>
-                        <td class="px-6 py-4 text-right text-sm space-x-2">
+                        <td class="px-6 py-4 text-right text-sm whitespace-nowrap space-x-2">
                             <template x-if="parseFloat(cust.due_amount) > 0">
                                 <button @click="openCollectCustomerPaymentModal(cust)"
-                                    class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-600 text-emerald-800 hover:text-white rounded-lg text-xs font-bold transition-all shadow-2xs mr-1">
-                                    Collect Payment (જમા કરો)
+                                    class="px-2.5 py-1 bg-emerald-100 hover:bg-emerald-600 text-emerald-900 hover:text-white rounded-lg text-xs font-bold transition-all shadow-2xs mr-1">
+                                    Collect Payment
                                 </button>
                             </template>
                             <button @click="openEditCustomerModal(cust)" class="text-xs font-bold text-primary hover:text-primary-hover">Edit</button>
