@@ -184,8 +184,8 @@
         {{-- Month --}}
         <div class="w-full sm:w-auto">
             <label class="block text-xs font-semibold text-slate-400 mb-1">Month</label>
-            <input type="month" x-model="purchaseFilter.month" @change="loadPurchases()"
-                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+            <input type="month" x-model="purchaseFilter.month" onclick="this.showPicker()" @change="loadPurchases()"
+                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
         </div>
         {{-- Supplier --}}
         <div class="w-full sm:w-auto min-w-[200px] relative" x-data="{ open: false }" @click.away="open = false">
@@ -269,7 +269,7 @@
                         <div>
                             <span class="text-xs font-bold text-primary font-sans" x-text="pur.purchase_number"></span>
                         </div>
-                        <span :class="pur.status === 'Returned' ? 'bg-rose-100 text-rose-800' : (pur.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800')" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="pur.status || 'Completed'"></span>
+                        <span :class="pur.status === 'Returned' ? 'bg-rose-100 text-rose-800' : (pur.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800' : (pur.status === 'Unpaid' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-800'))" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="pur.status || 'Completed'"></span>
                     </div>
 
                     {{-- Card Body --}}

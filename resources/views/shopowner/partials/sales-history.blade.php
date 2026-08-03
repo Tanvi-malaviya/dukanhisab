@@ -10,7 +10,7 @@
             </div>
             <div class="w-full md:w-44 shrink-0">
                 <label class="block text-xs font-semibold text-slate-400 mb-1">Date</label>
-                <input type="date" x-model="salesFilter.date" @change="loadSales()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                <input type="date" x-model="salesFilter.date" onclick="this.showPicker()" @change="loadSales()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
             </div>
             <div class="w-full md:w-52 shrink-0 relative" x-data="{ open: false }" @click.away="open = false">
                 <label class="block text-xs font-semibold text-slate-400 mb-1">Customer</label>

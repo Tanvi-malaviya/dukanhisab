@@ -416,7 +416,7 @@
                             <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal">Payment Status:</span>
-                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600' : ''" x-text="selectedPurchase.status === 'Returned' ? 'Returned' : 'Paid'"></span>
+                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="selectedPurchase.status || 'Paid'"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal">Method:</span>

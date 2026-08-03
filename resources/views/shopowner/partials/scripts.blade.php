@@ -275,6 +275,14 @@
                     }
                 };
 
+                if (this.dark) {
+                    document.documentElement.classList.add('dark');
+                    if (document.body) document.body.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    if (document.body) document.body.classList.remove('dark');
+                }
+
                 // Read URL on first load and set correct page
                 this._syncPageFromUrl();
 
@@ -283,6 +291,20 @@
                     this._syncPageFromUrl();
                     this.setPageLoading(this.page, true);
                     this._loadPageData(this.page);
+                });
+
+                // Global event listener to automatically open native datepicker when clicking date/month inputs
+                document.addEventListener('click', (e) => {
+                    const target = e.target;
+                    if (target && (target.type === 'date' || target.type === 'month' || target.type === 'datetime-local')) {
+                        try {
+                            if (typeof target.showPicker === 'function') {
+                                target.showPicker();
+                            }
+                        } catch (err) {
+                            // Picker is already open
+                        }
+                    }
                 });
 
                 if (this.token && this.hasShop) {
@@ -371,7 +393,13 @@
             toggleTheme() {
                 this.dark = !this.dark;
                 localStorage.setItem('darkMode', this.dark);
-                this.dark ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
+                if (this.dark) {
+                    document.documentElement.classList.add('dark');
+                    document.body.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.body.classList.remove('dark');
+                }
             },
 
             showToast(msg, type = 'success') {
@@ -1889,7 +1917,7 @@
                         this.collectCustomerModalOpen = false;
                         this.showToast(res.body.message || 'Payment collected successfully!');
                         this.loadCustomers();
-                        this.loadCashbook();
+                        this.loadSales();
                         this.loadDashboard();
                     } else if (res.body && res.body.errors) {
                         let messages = [];
@@ -1903,9 +1931,10 @@
                         this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
                     }
                 })
-                .catch(() => {
+                .catch((err) => {
                     this.loading = false;
-                    this.showConfirm('Error', 'An error occurred while saving payment.', () => { });
+                    console.error(err);
+                    this.showConfirm('Error', (err && err.message) ? err.message : 'An error occurred while saving payment.', () => { });
                 });
             },
 
@@ -1944,7 +1973,7 @@
                         this.paySupplierModalOpen = false;
                         this.showToast(res.body.message || 'Supplier payment recorded!');
                         this.loadSuppliers();
-                        this.loadCashbook();
+                        this.loadPurchases();
                         this.loadDashboard();
                     } else if (res.body && res.body.errors) {
                         let messages = [];
@@ -1958,9 +1987,10 @@
                         this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
                     }
                 })
-                .catch(() => {
+                .catch((err) => {
                     this.loading = false;
-                    this.showConfirm('Error', 'An error occurred while saving payment.', () => { });
+                    console.error(err);
+                    this.showConfirm('Error', (err && err.message) ? err.message : 'An error occurred while saving payment.', () => { });
                 });
             },
 
@@ -2190,6 +2220,82 @@
                         }
                         else { this.showToast('Failed to record purchase.', 'error'); }
                     });
+            },
+
+            downloadShopBackup() {
+                this.loading = true;
+                const headers = this.getHeaders();
+                fetch('/api/v1/backup/export', { headers: headers })
+                    .then(res => {
+                        this.loading = false;
+                        if (!res.ok) {
+                            return res.text().then(text => {
+                                let msg = 'Failed to export backup.';
+                                try {
+                                    const d = JSON.parse(text);
+                                    if (d && d.message) msg = d.message;
+                                } catch(e){}
+                                throw new Error(msg);
+                            });
+                        }
+                        return res.blob().then(blob => ({ blob, filename: res.headers.get('content-disposition') }));
+                    })
+                    .then(({ blob, filename }) => {
+                        let name = 'dukanhisab-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                        if (filename && filename.includes('filename=')) {
+                            name = filename.split('filename=')[1].replace(/["']/g, '');
+                        }
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = name;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                        this.showToast('Backup JSON downloaded successfully!');
+                    })
+                    .catch(err => {
+                        this.loading = false;
+                        this.showConfirm('Error', err.message || 'Failed to download backup.', () => { });
+                    });
+            },
+
+            restoreShopBackup(fileInput) {
+                const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+                if (!file) {
+                    this.showConfirm('Validation Error', 'Please select a backup JSON file.', () => { });
+                    return;
+                }
+                this.showConfirm('Restore Data Backup', 'Are you sure you want to restore data from this backup file? Existing matching records will be updated.', () => {
+                    this.loading = true;
+                    const formData = new FormData();
+                    formData.append('backup_file', file);
+
+                    const headers = this.getHeaders();
+                    delete headers['Content-Type'];
+
+                    fetch('/api/v1/backup/restore', {
+                        method: 'POST',
+                        headers: headers,
+                        body: formData
+                    })
+                    .then(r => r.json().then(d => ({ ok: r.ok, body: d })))
+                    .then(res => {
+                        this.loading = false;
+                        if (res.ok) {
+                            this.showToast(res.body.message || 'Data restored successfully!');
+                            fileInput.value = '';
+                            this.loadAllData();
+                        } else {
+                            this.showConfirm('Restore Failed', res.body.message || 'Failed to restore backup.', () => { });
+                        }
+                    })
+                    .catch(err => {
+                        this.loading = false;
+                        this.showConfirm('Error', err.message || 'Failed to restore backup.', () => { });
+                    });
+                });
             }
         };
     }

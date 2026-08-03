@@ -22,14 +22,16 @@
         <div class="w-full sm:w-auto">
             <label class="block text-xs font-semibold text-slate-400 mb-1">Start Date</label>
             <input type="date" x-model="startDate" 
+                onclick="this.showPicker()"
                 @change="loadCashBook('', '', searchQuery, startDate, endDate)" 
-                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
         </div>
         <div class="w-full sm:w-auto">
             <label class="block text-xs font-semibold text-slate-400 mb-1">End Date</label>
             <input type="date" x-model="endDate" 
+                onclick="this.showPicker()"
                 @change="loadCashBook('', '', searchQuery, startDate, endDate)" 
-                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
         </div>
         <div class="flex gap-2 w-full sm:w-auto">
             <button @click="filterType = ''; searchQuery = ''; startDate = ''; endDate = ''; loadCashBook('', '', '', '', '');" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all">Clear</button>

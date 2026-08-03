@@ -276,6 +276,10 @@ class InvoiceApiController extends Controller
                     border-top: 1px solid #e5e7eb;
                     padding-top: 15px;
                 }
+                .brand-highlight {
+                    color: ' . $themeColor . ';
+                    font-weight: bold;
+                }
             </style>
         </head>
         <body>
@@ -429,7 +433,7 @@ class InvoiceApiController extends Controller
 
                 $html .= '
                 <div class="footer">
-                    Powered by DukanHisab
+                    Powered by <span class="brand-highlight">DukanHisab</span>
                 </div>
             </div>
         </body>
@@ -627,6 +631,10 @@ class InvoiceApiController extends Controller
                     border-top: 1px solid #e5e7eb;
                     padding-top: 15px;
                 }
+                .brand-highlight {
+                    color: ' . $themeColor . ';
+                    font-weight: bold;
+                }
             </style>
         </head>
         <body>
@@ -772,7 +780,7 @@ class InvoiceApiController extends Controller
 
                 $html .= '
                 <div class="footer">
-                    Powered by DukanHisab
+                    Powered by <span class="brand-highlight">DukanHisab</span>
                 </div>
             </div>
         </body>

@@ -18,6 +18,12 @@ class SaleApiController extends Controller
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
+
+        // Automatically sync sale statuses with current customer due balances
+        $customerIds = Customer::where('shop_id', $shopId)->pluck('id');
+        foreach ($customerIds as $custId) {
+            CustomerApiController::syncCustomerSaleStatuses($custId, $shopId);
+        }
         
         $query = Sale::where('shop_id', $shopId)->with(['customer', 'items.product']);
 

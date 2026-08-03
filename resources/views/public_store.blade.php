@@ -361,8 +361,8 @@
         <p class="font-medium">&copy; {{ date('Y') }} {{ $shop->name }}. All rights reserved.</p>
         <p class="mt-1 font-semibold flex items-center justify-center gap-1">
             Powered by 
-            <a href="https://dukanhisab.com" target="_blank" class="text-primary hover:underline">
-                Dukan<span class="text-emerald-500 font-extrabold">Hisab</span>
+            <a href="https://dukanhisab.com" target="_blank" class="text-primary font-bold hover:underline">
+                DukanHisab
             </a>
         </p>
     </footer>
