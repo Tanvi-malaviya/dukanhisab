@@ -82,6 +82,13 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
+        $badgeHtml = '';
+        if ($sale->status === 'Returned') {
+            $badgeHtml = ' <span class="status-badge">RETURNED</span>';
+        } elseif ($sale->status === 'Partially Returned') {
+            $badgeHtml = ' <span class="status-badge">PARTIALLY RETURNED</span>';
+        }
+
         $logoUrl = '';
         if ($shop->logo) {
             $logoUrl = public_path('storage/' . $shop->logo);
@@ -147,6 +154,18 @@ class InvoiceApiController extends Controller
                     font-weight: bold;
                     color: ' . $textColor . ';
                     text-align: right;
+                    white-space: nowrap;
+                }
+                .status-badge {
+                    display: inline-block;
+                    font-size: 11px;
+                    font-weight: bold;
+                    border: 1px solid ' . $textColor . ';
+                    color: ' . $textColor . ';
+                    padding: 3px 12px;
+                    border-radius: 12px;
+                    text-transform: uppercase;
+                    line-height: 1;
                 }
                 .invoice-meta {
                     text-align: right;
@@ -303,8 +322,14 @@ class InvoiceApiController extends Controller
                             </tr></table>
                         </td>
                         <td class="invoice-title" style="vertical-align: middle;">
-                            INVOICE
-                            <div class="invoice-meta">
+                            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; float: right;">
+                                <tr>
+                                    <td style="font-size: 26px; font-weight: bold; color: ' . $textColor . '; vertical-align: middle; padding: 0; line-height: 1;">INVOICE</td>
+                                    ' . ($badgeHtml ? '<td style="vertical-align: middle; padding: 0 0 0 8px; line-height: 1;">' . $badgeHtml . '</td>' : '') . '
+                                </tr>
+                            </table>
+                            <div style="clear: both;"></div>
+                            <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>Invoice No:</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
                                 <strong>Date:</strong> ' . $sale->sale_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
                                 ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && $sale->updated_at) ? '<br><strong>Paid Date:</strong> ' . $sale->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
@@ -461,6 +486,13 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
+        $badgeHtml = '';
+        if ($purchase->status === 'Returned') {
+            $badgeHtml = ' <span class="status-badge">RETURNED</span>';
+        } elseif ($purchase->status === 'Partially Returned') {
+            $badgeHtml = ' <span class="status-badge">PARTIALLY RETURNED</span>';
+        }
+
         $logoUrl = '';
         if ($shop->logo) {
             $logoUrl = public_path('storage/' . $shop->logo);
@@ -526,6 +558,18 @@ class InvoiceApiController extends Controller
                     font-weight: bold;
                     color: ' . $textColor . ';
                     text-align: right;
+                    white-space: nowrap;
+                }
+                .status-badge {
+                    display: inline-block;
+                    font-size: 11px;
+                    font-weight: bold;
+                    border: 1px solid ' . $textColor . ';
+                    color: ' . $textColor . ';
+                    padding: 3px 12px;
+                    border-radius: 12px;
+                    text-transform: uppercase;
+                    line-height: 1;
                 }
                 .invoice-meta {
                     text-align: right;
@@ -669,8 +713,14 @@ class InvoiceApiController extends Controller
                             </tr></table>
                         </td>
                         <td class="invoice-title" style="vertical-align: middle;">
-                            PURCHASE INVOICE
-                            <div class="invoice-meta">
+                            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; float: right;">
+                                <tr>
+                                    <td style="font-size: 26px; font-weight: bold; color: ' . $textColor . '; vertical-align: middle; padding: 0; line-height: 1;">PURCHASE INVOICE</td>
+                                    ' . ($badgeHtml ? '<td style="vertical-align: middle; padding: 0 0 0 8px; line-height: 1;">' . $badgeHtml . '</td>' : '') . '
+                                </tr>
+                            </table>
+                            <div style="clear: both;"></div>
+                            <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>Invoice No:</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
                                 <strong>Date:</strong> ' . $purchase->purchase_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
                                 ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && $purchase->updated_at) ? '<br><strong>Paid Date:</strong> ' . $purchase->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
