@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
 use Illuminate\Http\Request;
 use App\Models\AuditLog;
+use Illuminate\Support\Facades\Mail;
 
 class SupportTicketController extends Controller
 {
@@ -51,7 +52,21 @@ class SupportTicketController extends Controller
             'replied_at' => now(),
         ]);
 
-        // Simulating sending reply email notification to the user
+        $ticket->load('user');
+        if ($ticket->user) {
+            try {
+                Mail::send('shopowner.emails.support-ticket-replied', [
+                    'user' => $ticket->user,
+                    'ticket' => $ticket,
+                ], function ($message) use ($ticket) {
+                    $message->to($ticket->user->email)
+                            ->subject('Reply to Your Support Ticket #' . $ticket->id);
+                });
+            } catch (\Exception $e) {
+                \Log::error('Support ticket reply email failed: ' . $e->getMessage());
+            }
+        }
+
         AuditLog::log("Replied to support ticket #{$ticket->id} (Subject: {$ticket->subject})");
 
         return back()->with('success', 'Reply submitted and ticket status updated to In Progress.');

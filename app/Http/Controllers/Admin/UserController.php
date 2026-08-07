@@ -40,7 +40,7 @@ class UserController extends Controller
             'suspended' => User::where('status', 'suspended')->count(),
             'total_shops' => \App\Models\Shop::count(),
             'premium' => User::whereHas('activePlan', function($qp) {
-                $qp->where('slug', 'premium');
+                $qp->where('slug', '!=', 'free');
             })->count(),
         ];
 

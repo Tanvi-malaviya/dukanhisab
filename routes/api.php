@@ -91,6 +91,11 @@ Route::prefix('v1/shopowner')->group(function () {
         // Subscription plans & current plan status
         Route::get('/subscription-plans', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'plans']);
         Route::get('/subscription', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'current']);
+        Route::post('/subscription/cancel', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'cancel']);
+
+        // Support tickets (own tickets only)
+        Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
+            ->except(['edit', 'create']);
     });
 });
 

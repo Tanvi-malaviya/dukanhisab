@@ -76,7 +76,7 @@
                         <td class="px-4 py-3">
                             @if($shop->activePlan)
                                 <div class="space-y-0.5">
-                                    <span class="inline-flex px-2.5 py-0.5 rounded text-[11px] font-semibold {{ $shop->activePlan->slug === 'premium' ? 'bg-warning/20 text-warning border border-warning/30' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30' }}">
+                                    <span class="inline-flex px-2.5 py-0.5 rounded text-[11px] font-semibold {{ $shop->activePlan->slug !== 'free' ? 'bg-warning/20 text-warning border border-warning/30' : 'bg-slate-500/20 text-slate-400 border border-slate-500/30' }}">
                                         {{ $shop->activePlan->name }}
                                     </span>
                                     @if($shop->currentSubscription && $shop->currentSubscription->status === 'expired')

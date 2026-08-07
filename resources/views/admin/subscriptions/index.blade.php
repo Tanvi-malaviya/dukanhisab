@@ -19,7 +19,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         @foreach($plans as $plan)
         <div class="bg-card-dark border border-border-dark rounded-2xl p-6 relative flex flex-col justify-between hover:border-primary/50 transition-all shadow-sm">
-            @if($plan->slug === 'premium')
+            @if($plan->slug === 'yearly')
                 <div class="absolute top-4 right-4 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-warning/20 text-warning border border-warning/30">Popular</div>
             @endif
 
@@ -179,6 +179,7 @@
                         <option value="free">Free</option>
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
+                        <option value="lifetime">Lifetime</option>
                     </select>
                 </div>
             </div>
@@ -230,6 +231,7 @@
                         <option value="free">Free</option>
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
+                        <option value="lifetime">Lifetime</option>
                     </select>
                 </div>
             </div>
