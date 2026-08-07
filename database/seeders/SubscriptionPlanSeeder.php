@@ -16,7 +16,7 @@ class SubscriptionPlanSeeder extends Seeder
             ['slug' => 'free'],
             [
                 'name' => 'Free Plan',
-                'description' => 'Perfect for small shop owners starting their business.',
+                'description' => 'Free tier with basic shop website, barcode scanner, and ads.',
                 'price' => 0.00,
                 'billing_period' => 'free',
                 'features' => [
@@ -30,50 +30,32 @@ class SubscriptionPlanSeeder extends Seeder
         );
 
         SubscriptionPlan::updateOrCreate(
-            ['slug' => 'monthly'],
-            [
-                'name' => 'Monthly Plan',
-                'description' => 'Monthly plan for 1 shop with single device login.',
-                'price' => 49.00,
-                'billing_period' => 'monthly',
-                'features' => [
-                    'max_shops' => 1,
-                    'max_devices' => 1,
-                    'advanced_reports' => true,
-                    'backup' => true,
-                ],
-                'status' => 'active',
-            ]
-        );
-
-        SubscriptionPlan::updateOrCreate(
-            ['slug' => 'yearly'],
-            [
-                'name' => 'Yearly Plan',
-                'description' => 'Best value yearly plan for up to 3 shops with 3 device logins.',
-                'price' => 499.00,
-                'billing_period' => 'yearly',
-                'features' => [
-                    'max_shops' => 3,
-                    'max_devices' => 3,
-                    'advanced_reports' => true,
-                    'backup' => true,
-                ],
-                'status' => 'active',
-            ]
-        );
-
-        // Keep premium updated for legacy reference
-        SubscriptionPlan::updateOrCreate(
             ['slug' => 'premium'],
             [
-                'name' => 'Yearly Plan (Premium)',
-                'description' => 'Yearly plan for up to 3 shops with 3 device logins.',
-                'price' => 499.00,
+                'name' => 'Premium Plan',
+                'description' => 'Ad-free experience, advanced exports, WhatsApp/Email invoices, and cloud backup.',
+                'price' => 365.00,
                 'billing_period' => 'yearly',
                 'features' => [
-                    'max_shops' => 3,
-                    'max_devices' => 3,
+                    'max_shops' => 2,
+                    'max_devices' => 2,
+                    'advanced_reports' => true,
+                    'backup' => true,
+                ],
+                'status' => 'active',
+            ]
+        );
+
+        SubscriptionPlan::updateOrCreate(
+            ['slug' => 'business'],
+            [
+                'name' => 'Business (Lifetime)',
+                'description' => 'Lifetime updates, premium website themes, no ads, and priority support.',
+                'price' => 999.00,
+                'billing_period' => 'lifetime',
+                'features' => [
+                    'max_shops' => 5,
+                    'max_devices' => 5,
                     'advanced_reports' => true,
                     'backup' => true,
                 ],

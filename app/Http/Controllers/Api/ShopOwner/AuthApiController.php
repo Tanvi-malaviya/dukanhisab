@@ -86,14 +86,25 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'Email is already verified.'], 400);
         }
 
+        if ($user->otpAttemptsExceeded()) {
+            return response()->json([
+                'message' => 'Too many incorrect attempts. Please request a new OTP code.',
+                'otp_locked' => true,
+            ], 429);
+        }
+
         if ($user->otp_code !== $request->otp_code || Carbon::now()->isAfter($user->otp_expires_at)) {
-            return response()->json(['message' => 'Invalid or expired OTP code.'], 400);
+            $user->registerFailedOtpAttempt();
+            $remaining = max(0, User::MAX_OTP_ATTEMPTS - $user->otp_attempts);
+            return response()->json([
+                'message' => 'Invalid or expired OTP code.',
+                'attempts_remaining' => $remaining,
+            ], 400);
         }
 
         // Verify user email
         $user->email_verified_at = Carbon::now();
-        $user->otp_code = null;
-        $user->otp_expires_at = null;
+        $user->clearOtp();
         $user->save();
 
         $token = $user->issueDeviceToken('shopowner-auth-token');
@@ -132,10 +143,7 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'Email is already verified.'], 400);
         }
 
-        $otpCode = (string) rand(100000, 999999);
-        $user->otp_code = $otpCode;
-        $user->otp_expires_at = Carbon::now()->addMinutes(10);
-        $user->save();
+        $otpCode = $user->issueNewOtp();
 
         try {
             Mail::send('shopowner.emails.otp', ['user' => $user, 'otp_code' => $otpCode], function ($message) use ($user) {
@@ -216,10 +224,7 @@ class AuthApiController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if ($user) {
-            $otpCode = (string) rand(100000, 999999);
-            $user->otp_code = $otpCode;
-            $user->otp_expires_at = Carbon::now()->addMinutes(10);
-            $user->save();
+            $otpCode = $user->issueNewOtp();
 
             try {
                 Mail::send('shopowner.emails.reset', ['user' => $user, 'otp_code' => $otpCode], function ($message) use ($user) {
@@ -259,13 +264,24 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'User not found.'], 404);
         }
 
+        if ($user->otpAttemptsExceeded()) {
+            return response()->json([
+                'message' => 'Too many incorrect attempts. Please request a new reset code.',
+                'otp_locked' => true,
+            ], 429);
+        }
+
         if ($user->otp_code !== $request->otp_code || Carbon::now()->isAfter($user->otp_expires_at)) {
-            return response()->json(['message' => 'Invalid or expired reset code.'], 400);
+            $user->registerFailedOtpAttempt();
+            $remaining = max(0, User::MAX_OTP_ATTEMPTS - $user->otp_attempts);
+            return response()->json([
+                'message' => 'Invalid or expired reset code.',
+                'attempts_remaining' => $remaining,
+            ], 400);
         }
 
         $user->password = Hash::make($request->password);
-        $user->otp_code = null;
-        $user->otp_expires_at = null;
+        $user->clearOtp();
         // Auto-verify email if it wasn't verified already when they successfully reset password
         if (!$user->email_verified_at) {
             $user->email_verified_at = Carbon::now();

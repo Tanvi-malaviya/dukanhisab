@@ -15,7 +15,7 @@ class SubscriptionController extends Controller
 {
     public function index(Request $request)
     {
-        $plans = SubscriptionPlan::latest()->get();
+        $plans = SubscriptionPlan::orderBy('price', 'asc')->get();
         
         $allSubscriptions = Subscription::select('id', 'user_id', 'status')
             ->whereNotNull('user_id')
@@ -52,7 +52,7 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
-            'billing_period' => 'required|in:free,monthly,yearly',
+            'billing_period' => 'required|in:free,monthly,yearly,lifetime',
             'features' => 'nullable|array',
             'description' => 'nullable|string',
         ]);
@@ -81,7 +81,7 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
-            'billing_period' => 'required|in:free,monthly,yearly',
+            'billing_period' => 'required|in:free,monthly,yearly,lifetime',
             'features' => 'nullable|array',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
@@ -194,13 +194,18 @@ class SubscriptionController extends Controller
             $newEndsAt = $subscription->ends_at;
             $msg = "Subscription reactivated successfully using the remaining coverage days.";
         } else {
-            // Otherwise, calculate new ends_at based on the plan's billing period
-            $days = 30; // Default monthly
-            if ($plan && $plan->billing_period === 'yearly') {
-                $days = 365;
+            if ($plan && $plan->billing_period === 'lifetime') {
+                $newEndsAt = null;
+                $msg = "Subscription reactivated successfully with lifetime validity.";
+            } else {
+                // Otherwise, calculate new ends_at based on the plan's billing period
+                $days = 30; // Default monthly
+                if ($plan && $plan->billing_period === 'yearly') {
+                    $days = 365;
+                }
+                $newEndsAt = now()->addDays($days);
+                $msg = "Subscription reactivated successfully. New expiry: {$newEndsAt->format('Y-m-d')}.";
             }
-            $newEndsAt = now()->addDays($days);
-            $msg = "Subscription reactivated successfully. New expiry: {$newEndsAt->format('Y-m-d')}.";
 
             // If it is a paid plan, record a manual payment
             if ($plan && $plan->price > 0 && $user) {

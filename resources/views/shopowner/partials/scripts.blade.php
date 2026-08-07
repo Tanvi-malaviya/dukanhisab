@@ -2241,7 +2241,7 @@
                         return res.blob().then(blob => ({ blob, filename: res.headers.get('content-disposition') }));
                     })
                     .then(({ blob, filename }) => {
-                        let name = 'dukanhisab-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+                        let name = 'dukanhisab-backup-' + new Date().toISOString().slice(0, 10) + '.dhbak';
                         if (filename && filename.includes('filename=')) {
                             name = filename.split('filename=')[1].replace(/["']/g, '');
                         }
@@ -2253,7 +2253,7 @@
                         a.click();
                         a.remove();
                         window.URL.revokeObjectURL(url);
-                        this.showToast('Backup JSON downloaded successfully!');
+                        this.showToast('Backup downloaded successfully!');
                     })
                     .catch(err => {
                         this.loading = false;
@@ -2264,7 +2264,7 @@
             restoreShopBackup(fileInput) {
                 const file = fileInput && fileInput.files ? fileInput.files[0] : null;
                 if (!file) {
-                    this.showConfirm('Validation Error', 'Please select a backup JSON file.', () => { });
+                    this.showConfirm('Validation Error', 'Please select a valid backup file.', () => { });
                     return;
                 }
                 this.showConfirm('Restore Data Backup', 'Are you sure you want to restore data from this backup file? Existing matching records will be updated.', () => {

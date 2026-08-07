@@ -18,11 +18,10 @@ class DashboardController extends Controller
         $totalUsers = User::count();
         $activeUsers = User::where('status', 'active')->count();
         
-        // Premium plan ID query fallback
-        $premiumPlan = SubscriptionPlan::where('slug', 'premium')->first();
-        $premiumPlanId = $premiumPlan ? $premiumPlan->id : 0;
-        
-        $premiumUsers = User::where('active_plan_id', $premiumPlanId)->count();
+        // "Premium" = any paid plan (Monthly, Yearly, ...), not a specific slug
+        $paidPlanIds = SubscriptionPlan::where('slug', '!=', 'free')->pluck('id');
+
+        $premiumUsers = User::whereIn('active_plan_id', $paidPlanIds)->count();
         $totalShops = Shop::count();
         
         $todayRevenue = Payment::where('status', 'successful')
@@ -58,7 +57,7 @@ class DashboardController extends Controller
 
         // 3. Subscription Sales Trend (Past 7 Days Premium Sales)
         $dailySalesData = Payment::where('status', 'successful')
-            ->where('plan_id', $premiumPlanId)
+            ->whereIn('plan_id', $paidPlanIds)
             ->where('payment_date', '>=', Carbon::now()->subDays(7))
             ->select(DB::raw('DATE(payment_date) as date'), DB::raw('sum(amount) as total'))
             ->groupBy('date')

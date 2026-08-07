@@ -1231,9 +1231,9 @@
                         </svg>
                     </div>
                     <h4 class="text-sm font-bold text-slate-800 dark:text-white">Download Data Backup</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete JSON
-                        file containing all products, sales history, customer dues, supplier records, expenses, and
-                        settings.</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete,
+                        encrypted backup file containing all products, sales history, customer dues, supplier
+                        records, expenses, and settings.</p>
                 </div>
                 <button type="button" @click="downloadShopBackup()"
                     class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
@@ -1241,7 +1241,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                     </svg>
-                    Download Backup JSON
+                    Download Backup
                 </button>
             </div>
 
@@ -1258,11 +1258,11 @@
                     </div>
                     <h4 class="text-sm font-bold text-slate-800 dark:text-white">Restore Data Backup</h4>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Select a previously saved
-                        DukanHisab backup JSON file to restore all your shop records and settings.</p>
+                        DukanHisab backup file to restore all your shop records and settings.</p>
                 </div>
 
                 <div class="space-y-2">
-                    <input type="file" id="shop-restore-file-input" accept=".json"
+                    <input type="file" id="shop-restore-file-input" accept=".dhbak"
                         class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
                     <button type="button" @click="restoreShopBackup(document.getElementById('shop-restore-file-input'))"
                         class="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
