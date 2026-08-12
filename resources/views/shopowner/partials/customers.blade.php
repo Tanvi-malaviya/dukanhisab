@@ -48,7 +48,7 @@
                 </template>
                 <template x-if="!customersLoading && customers.length === 0">
                     <tr>
-                        <td colspan="5" class="text-center text-slate-400 py-8 text-sm">No customers found.</td>
+                        <td colspan="5" class="text-center text-slate-400 py-8 text-sm" x-text="t('no_customers_found')">No customers found.</td>
                     </tr>
                 </template>
             </tbody>

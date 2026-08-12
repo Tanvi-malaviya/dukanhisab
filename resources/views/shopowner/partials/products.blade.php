@@ -1,7 +1,7 @@
 {{-- PRODUCTS PANEL --}}
 <div x-show="page === 'products'" class="space-y-2">
     <div class="flex justify-between items-center">
-        <h3 class="text-lg font-bold text-slate-800 dark:text-white">Stock Catalogue</h3>
+        <h3 class="text-lg font-bold text-slate-800 dark:text-white" x-text="t('stock_catalogue') || 'Stock Catalogue'">Stock Catalogue</h3>
         <button @click="openNewProductModal()"
             class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-all">
             <span x-text="t('add_product')">Add Product</span>
@@ -55,7 +55,7 @@
                 </template>
                 <template x-if="!productsLoading && products.length === 0">
                     <tr>
-                        <td colspan="7" class="text-center text-slate-400 py-8 text-sm">No products found.</td>
+                        <td colspan="7" class="text-center text-slate-400 py-8 text-sm" x-text="t('no_products_found')">No products found.</td>
                     </tr>
                 </template>
             </tbody>

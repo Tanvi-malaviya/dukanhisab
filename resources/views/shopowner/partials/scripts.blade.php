@@ -1012,10 +1012,7 @@
             },
 
             printReport() {
-                const html = document.getElementById('report-print-area').innerHTML;
-                const w = window.open('', '', 'width=800,height=600');
-                w.document.write('<html><head><title>Business Statement</title></head><body>' + html + '</body></html>');
-                w.document.close(); w.print();
+                this.printHtmlBlock('report-print-area', 'Business Statement');
             },
 
             submitShopProfileUpdate(logoFile = null, signatureFile = null, shopImageFile = null) {
@@ -1616,7 +1613,7 @@
                 else {
                     this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '' };
                     this.showProductModal = true; this.pos.barcodeInput = '';
-                    this.showToast('Product not found! Create a new product.', 'warning');
+                    this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
             },
 
@@ -2330,9 +2327,9 @@
                 this.purchaseFilteredSuppliers = this.suppliers;
             },
             getSelectedPurchaseSupplierName() {
-                if (!this.newPurchase.supplier_id) return 'Walk-In Supplier';
+                if (!this.newPurchase.supplier_id) return this.t('walk_in_supplier') || 'Walk-In Supplier';
                 const sup = this.suppliers.find(s => s.id == this.newPurchase.supplier_id);
-                return sup ? `${sup.name} (${sup.mobile || 'No Mobile'})` : 'Walk-In Supplier';
+                return sup ? `${sup.name} (${sup.mobile || 'No Mobile'})` : (this.t('walk_in_supplier') || 'Walk-In Supplier');
             },
             searchPurchaseHistorySuppliers() {
                 const q = this.purchaseHistorySupplierSearchQuery;
@@ -2419,7 +2416,7 @@
                     this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '' };
                     this.showProductModal = true;
                     this.pos.barcodeInput = '';
-                    this.showToast('Product not found! Create a new product.', 'warning');
+                    this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
             },
             calculatePurchaseTotal() { return this.newPurchase.items.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0); },

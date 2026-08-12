@@ -267,15 +267,15 @@
         <div class="mb-8 pb-8 border-b border-slate-100 dark:border-gray-700">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">My Shops</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Manage and switch between your business profiles</p>
+                    <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider" x-text="t('my_shops')">My Shops</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="t('my_shops_desc')">Manage and switch between your business profiles</p>
                 </div>
                 <button type="button" @click="openAddShopModal()"
                     class="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded-xl shadow-md transition-all">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    Add Shop
+                    <span x-text="t('add_shop')">Add Shop</span>
                     <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-300">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
@@ -1285,12 +1285,13 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                 </svg>
             </div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Cloud Backup & Restore is Locked</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6">
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2" x-text="t('backup_locked_title')">Cloud Backup & Restore is Locked</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6" x-text="t('backup_locked_desc')">
                 Protect your shop data with encrypted cloud backups. Upgrade to Premium or Business to download, restore, and schedule automatic daily backups.
             </p>
             <button type="button" @click="navigateTo('subscription')"
-                class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+                class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                x-text="t('upgrade_to_premium')">
                 Upgrade to Premium
             </button>
         </div>
@@ -1304,9 +1305,9 @@
                             d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
                         </path>
                     </svg>
-                    Backup & Restore Shop Data
+                    <span x-text="t('backup_restore_title')">Backup & Restore Shop Data</span>
                 </h3>
-                <p class="text-xs text-slate-400 mt-1">Export a complete JSON backup of your shop products, inventory,
+                <p class="text-xs text-slate-400 mt-1" x-text="t('backup_restore_desc')">Export a complete JSON backup of your shop products, inventory,
                     customers, suppliers, sales, purchases, and settings, or restore from a previous backup file.</p>
             </div>
 
@@ -1322,8 +1323,8 @@
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                             </svg>
                         </div>
-                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Download Data Backup</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete,
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white" x-text="t('download_data_backup')">Download Data Backup</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" x-text="t('download_backup_desc')">Download a complete,
                             encrypted backup file containing all products, sales history, customer dues, supplier
                             records, expenses, and settings.</p>
                     </div>
@@ -1333,7 +1334,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
-                        Download Backup
+                        <span x-text="t('download_backup_btn')">Download Backup</span>
                     </button>
                 </div>
 
@@ -1348,8 +1349,8 @@
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
                             </svg>
                         </div>
-                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Restore Data Backup</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Select a previously saved
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white" x-text="t('restore_data_backup')">Restore Data Backup</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" x-text="t('restore_backup_desc')">Select a previously saved
                             DukanHisab backup file to restore all your shop records and settings.</p>
                     </div>
 
@@ -1362,7 +1363,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
                             </svg>
-                            Restore From Backup
+                            <span x-text="t('restore_from_backup')">Restore From Backup</span>
                         </button>
                     </div>
                 </div>

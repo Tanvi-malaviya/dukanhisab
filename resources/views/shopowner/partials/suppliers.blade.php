@@ -48,7 +48,7 @@
                 </template>
                 <template x-if="!suppliersLoading && suppliers.length === 0">
                     <tr>
-                        <td colspan="5" class="text-center text-slate-400 py-8 text-sm">No suppliers found.</td>
+                        <td colspan="5" class="text-center text-slate-400 py-8 text-sm" x-text="t('no_suppliers_found')">No suppliers found.</td>
                     </tr>
                 </template>
             </tbody>
