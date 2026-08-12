@@ -143,7 +143,7 @@
                                 </div>
                             </div>
 
-                            <!-- Top Right: Status & Action Icons -->
+                            <!-- Top Right: Status & Impersonate Icon -->
                             <div class="flex items-center gap-1 shrink-0">
                                 <span
                                     class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mr-0.5 {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
@@ -161,40 +161,28 @@
                                         </svg>
                                     </a>
                                 @endif
-
-                                <!-- Edit User Icon -->
-                                <button type="button"
-                                    onclick="event.stopPropagation(); openEditModal({{ json_encode($user->only(['id', 'name', 'email', 'mobile', 'status', 'avatar'])) }})"
-                                    class="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-700  transition-all flex items-center justify-center cursor-pointer"
-                                    title="Edit User">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                        </path>
-                                    </svg>
-                                </button>
-
-                                <!-- Delete User Icon -->
-                                <button type="button"
-                                    onclick="event.stopPropagation(); confirmDelete('{{ route('admin.users.destroy', $user->id) }}', '{{ $user->name ?: 'User' }}')"
-                                    class="w-7 h-7 rounded-lg bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center cursor-pointer"
-                                    title="Delete User">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                        </path>
-                                    </svg>
-                                </button>
                             </div>
                         </div>
 
-                        <!-- Associated Shops Section (Compact Count Badge) -->
+                        <!-- Associated Shops Section & Action Buttons -->
                         <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                            <span class="text-[11px] font-semibold text-slate-500">Associated Shops</span>
                             <span
                                 class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-black bg-teal-50 text-teal-700 border border-teal-200 shadow-2xs">
                                 {{ $user->shops->count() }} {{ Str::plural('Shop', $user->shops->count()) }}
                             </span>
+
+                            <div class="flex items-center gap-3">
+                                <button type="button"
+                                    onclick="event.stopPropagation(); openEditModal({{ json_encode($user->only(['id', 'name', 'email', 'mobile', 'status', 'avatar'])) }})"
+                                    class="text-xs text-primary font-medium hover:underline cursor-pointer">
+                                    Edit User
+                                </button>
+                                <button type="button"
+                                    onclick="event.stopPropagation(); confirmDelete('{{ route('admin.users.destroy', $user->id) }}', '{{ $user->name ?: 'User' }}')"
+                                    class="text-xs text-rose-600 font-medium hover:underline cursor-pointer">
+                                    Delete
+                                </button>
+                            </div>
                         </div>
 
                     </div>

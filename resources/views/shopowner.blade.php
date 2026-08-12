@@ -406,11 +406,6 @@
                                     class="block w-full text-center tracking-[1em] text-xl font-bold px-4 py-2 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg placeholder-slate-300 focus:outline-none transition-all">
                             </div>
 
-                            <!-- Dev OTP Hint for easier local testing -->
-                            <div x-show="devOtp" class="p-2.5 bg-primary/5 border border-primary/20 rounded-lg text-xs text-primary text-center">
-                                <strong>Local Dev OTP Code:</strong> <span class="font-mono text-sm font-bold" x-text="devOtp"></span>
-                            </div>
-
                             <button type="submit" :disabled="loading" class="w-full flex justify-center py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-primary/10 cursor-pointer disabled:opacity-50">
                                 <span x-show="!loading">Verify & Sign In</span>
                                 <span x-show="loading" class="flex items-center gap-1.5">
@@ -421,7 +416,16 @@
                         </form>
 
                         <div class="mt-4 text-center space-y-2">
-                            <p class="text-xs text-slate-600">Didn't receive the code? <a href="#" @click.prevent="handleResendOtp()" class="font-semibold text-primary hover:text-primary-hover transition-colors">Resend Code</a></p>
+                            <p class="text-xs text-slate-600 flex items-center justify-center gap-1">
+                                <span>Didn't receive the code?</span>
+                                <button type="button" @click.prevent="handleResendOtp()" :disabled="resending" class="font-semibold text-primary hover:text-primary-hover transition-colors disabled:opacity-50 inline-flex items-center gap-1 cursor-pointer">
+                                    <span x-show="!resending">Resend Code</span>
+                                    <span x-show="resending" class="inline-flex items-center gap-1 text-primary">
+                                        <svg class="animate-spin h-3.5 w-3.5 text-primary" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                        Sending OTP...
+                                    </span>
+                                </button>
+                            </p>
                             <p class="text-[11px]"><a href="#" @click.prevent="setView('login')" class="text-slate-500 hover:text-slate-800 transition-colors">Back to Sign In</a></p>
                         </div>
                     </div>
@@ -472,10 +476,6 @@
                                 <label for="reset-otp" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">6-Digit Reset Code</label>
                                 <input id="reset-otp" type="text" required placeholder="000000" maxlength="6" x-model="resetForm.otp_code"
                                     class="block w-full px-3 py-2 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-xs placeholder-slate-400 focus:outline-none transition-all">
-                            </div>
-
-                            <div x-show="devOtp" class="p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 text-center">
-                                <strong>Local Reset OTP Code:</strong> <span class="font-mono text-sm font-bold" x-text="devOtp"></span>
                             </div>
 
                             <div>
@@ -689,7 +689,7 @@
                 shop: JSON.parse(localStorage.getItem('shopowner_shop')),
                 hasShop: localStorage.getItem('shopowner_has_shop') === 'true',
                 toasts: [],
-                devOtp: null,
+                resending: false,
 
                 // Forms
                 loginForm: { email: '', password: '', remember: false },
@@ -853,6 +853,7 @@
                 },
 
                 async handleResendOtp() {
+                    this.resending = true;
                     try {
                         const response = await fetch('/api/v1/shopowner/resend-otp', {
                             method: 'POST',
@@ -862,13 +863,14 @@
                         const data = await response.json();
 
                         if (response.ok) {
-                            this.addToast(data.message, 'success');
-                            if (data.dev_otp) this.devOtp = data.dev_otp;
+                            this.addToast(data.message || 'A new verification OTP code has been sent to your email.', 'success');
                         } else {
                             this.addToast(data.message || 'Failed to resend OTP.', 'error');
                         }
                     } catch (e) {
                         this.addToast('Connection error. Please try again.', 'error');
+                    } finally {
+                        this.resending = false;
                     }
                 },
 
@@ -1186,6 +1188,67 @@
                 }
             };
         }
+    </script>
+    <script>
+        (function() {
+            let lastClickedBtn = null;
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('button, input[type="submit"], a.btn, [role="button"]');
+                if (btn) { lastClickedBtn = btn; }
+            }, true);
+
+            window.showButtonLoader = function(btn) {
+                if (!btn || btn.dataset.loading === 'true') return;
+                btn.dataset.loading = 'true';
+                btn.dataset.origContent = btn.innerHTML;
+                btn.dataset.origPointer = btn.style.pointerEvents || '';
+                btn.dataset.origOpacity = btn.style.opacity || '';
+
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.75';
+
+                if (!btn.querySelector('.animate-spin')) {
+                    const spinner = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline-block text-current shrink-0 align-text-bottom" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                    btn.innerHTML = spinner + btn.innerHTML;
+                }
+            };
+
+            window.hideButtonLoader = function(btn) {
+                if (!btn) return;
+                if (btn.dataset.loading === 'true') {
+                    btn.innerHTML = btn.dataset.origContent || btn.innerHTML;
+                    btn.style.pointerEvents = btn.dataset.origPointer || '';
+                    btn.style.opacity = btn.dataset.origOpacity || '';
+                    btn.disabled = false;
+                    delete btn.dataset.loading;
+                    delete btn.dataset.origContent;
+                    delete btn.dataset.origPointer;
+                    delete btn.dataset.origOpacity;
+                }
+            };
+
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (form) {
+                    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]') || lastClickedBtn;
+                    if (submitBtn) showButtonLoader(submitBtn);
+                }
+            });
+
+            const origFetch = window.fetch;
+            if (origFetch) {
+                window.fetch = async function(...args) {
+                    const btn = lastClickedBtn;
+                    if (btn) showButtonLoader(btn);
+                    try {
+                        return await origFetch.apply(this, args);
+                    } finally {
+                        if (btn) setTimeout(() => hideButtonLoader(btn), 300);
+                    }
+                };
+            }
+        })();
     </script>
 </body>
 </html>

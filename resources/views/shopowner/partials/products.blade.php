@@ -4,7 +4,7 @@
         <h3 class="text-lg font-bold text-slate-800 dark:text-white">Stock Catalogue</h3>
         <button @click="openNewProductModal()"
             class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-all">
-            Add Product
+            <span x-text="t('add_product')">Add Product</span>
         </button>
     </div>
 
@@ -13,13 +13,13 @@
         <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700">
             <thead>
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Product Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Barcode</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Purchase Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Selling Price</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Stock</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('product_name')">Product Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('barcode')">Barcode</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('purchase_price')">Purchase Price</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('selling_price')">Selling Price</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('stock')">Stock</th>
                     <!-- <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Alert Limit</th> -->
-                    <th class="px-6 py-3 text-right text-xs font-bold text-slate-400 uppercase">Actions</th>
+                    <th class="px-6 py-3 text-right text-xs font-bold text-slate-400 uppercase" x-text="t('actions')">Actions</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
@@ -27,7 +27,7 @@
                     <tr>
                         <td colspan="7" class="text-center py-8">
                             <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-                            <p class="text-xs text-slate-400 mt-2 font-medium">Loading products...</p>
+                            <p class="text-xs text-slate-400 mt-2 font-medium" x-text="t('loading')">Loading products...</p>
                         </td>
                     </tr>
                 </template>
@@ -46,10 +46,10 @@
                         <!-- <td class="px-6 py-4 text-sm text-slate-400" x-text="prod.low_stock_threshold"></td> -->
                         <td class="px-6 py-4 text-right text-sm space-x-2">
                             <button @click="openEditProductModal(prod)"
-                                class="text-xs font-bold text-primary hover:text-primary-hover">Edit</button>
+                                class="text-xs font-bold text-primary hover:text-primary-hover" x-text="t('edit')">Edit</button>
                             <span class="text-slate-300 dark:text-slate-600">|</span>
                             <button @click="deleteProduct(prod.id)"
-                                class="text-xs font-bold text-rose-600 hover:text-rose-700">Delete</button>
+                                class="text-xs font-bold text-rose-600 hover:text-rose-700" x-text="t('delete')">Delete</button>
                         </td>
                     </tr>
                 </template>

@@ -55,6 +55,148 @@ html:not(.dark) h6 {
     color: #0F172A;
 }
 
+/* Light Theme Card & Content Text Color Overrides */
+html:not(.dark) .bg-card-dark .text-white,
+html:not(.dark) main .text-white,
+html:not(.dark) table .text-white,
+html:not(.dark) p.text-white,
+html:not(.dark) span.text-white,
+html:not(.dark) strong.text-white,
+html:not(.dark) td.text-white,
+html:not(.dark) div.text-white {
+    color: #0F172A !important;
+}
+
+/* Dashboard Multi-colored Metric Cards & Icon Styling - Light mode */
+html:not(.dark) .card-purchase {
+    background-color: #EFF6FF !important; /* soft blue-50 */
+    border-color: #BFDBFE !important; /* blue-200 */
+}
+
+html:not(.dark) .card-purchase .card-icon {
+    background-color: #DBEAFE !important; /* blue-100 */
+    border-color: #93C5FD !important;
+    color: #2563EB !important;
+}
+
+html:not(.dark) .card-sales {
+    background-color: #ECFDF5 !important; /* soft emerald-50 */
+    border-color: #A7F3D0 !important; /* emerald-200 */
+}
+
+html:not(.dark) .card-sales .card-icon {
+    background-color: #D1FAE5 !important; /* emerald-100 */
+    border-color: #6EE7B7 !important;
+    color: #059669 !important;
+}
+
+html:not(.dark) .card-customer-due {
+    background-color: #FFFBEB !important; /* soft amber-50 */
+    border-color: #FDE68A !important; /* amber-200 */
+}
+
+html:not(.dark) .card-customer-due .card-icon {
+    background-color: #FEF3C7 !important; /* amber-100 */
+    border-color: #FCD34D !important;
+    color: #D97706 !important;
+}
+
+html:not(.dark) .card-supplier-due {
+    background-color: #FEF2F2 !important; /* soft red-50 */
+    border-color: #FECACA !important; /* red-200 */
+}
+
+html:not(.dark) .card-supplier-due .card-icon {
+    background-color: #FEE2E2 !important; /* red-100 */
+    border-color: #FCA5A5 !important;
+    color: #DC2626 !important;
+}
+
+html:not(.dark) .card-cash {
+    background-color: #F0FDFA !important; /* soft teal-50 */
+    border-color: #99F6E4 !important; /* teal-200 */
+}
+
+html:not(.dark) .card-cash .card-icon {
+    background-color: #CCFBF1 !important; /* teal-100 */
+    border-color: #5EEAD4 !important;
+    color: #0D9488 !important;
+}
+
+html:not(.dark) .card-bank {
+    background-color: #F0F9FF !important; /* soft sky-50 */
+    border-color: #BAE6FD !important; /* sky-200 */
+}
+
+html:not(.dark) .card-bank .card-icon {
+    background-color: #E0F2FE !important; /* sky-100 */
+    border-color: #7DD3FC !important;
+    color: #0284C7 !important;
+}
+
+/* Card & Container Backgrounds & Borders in Light Mode */
+html:not(.dark) .bg-card-dark {
+    background-color: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) .border-border-dark {
+    border-color: #E2E8F0 !important;
+}
+
+html:not(.dark) .divide-border-dark > :not([hidden]) ~ :not([hidden]) {
+    border-color: #E2E8F0 !important;
+}
+
+/* Preserve white text on primary/colored buttons, badges, and colored backgrounds */
+html:not(.dark) .bg-primary .text-white,
+html:not(.dark) .bg-primary.text-white,
+html:not(.dark) .bg-primary *,
+html:not(.dark) .bg-secondary .text-white,
+html:not(.dark) .bg-secondary.text-white,
+html:not(.dark) .bg-danger .text-white,
+html:not(.dark) .bg-danger.text-white,
+html:not(.dark) .bg-success .text-white,
+html:not(.dark) .bg-success.text-white,
+html:not(.dark) .bg-warning .text-white,
+html:not(.dark) .bg-warning.text-white,
+html:not(.dark) .bg-info .text-white,
+html:not(.dark) .bg-info.text-white,
+html:not(.dark) button.text-white,
+html:not(.dark) button.bg-primary *,
+html:not(.dark) button.bg-danger *,
+html:not(.dark) button.bg-success *,
+html:not(.dark) a.text-white,
+html:not(.dark) a.bg-primary,
+html:not(.dark) a.bg-primary *,
+html:not(.dark) .badge {
+    color: #FFFFFF !important;
+}
+
+/* Fix faint slate text colors in Light mode */
+html:not(.dark) .text-slate-300 {
+    color: #334155 !important; /* Crisp dark slate-700 */
+}
+
+html:not(.dark) .text-slate-400 {
+    color: #475569 !important; /* Readable slate-600 */
+}
+
+html:not(.dark) .text-slate-500 {
+    color: #64748B !important; /* Readable slate-500 */
+}
+
+/* Table layout styling for Light Mode */
+html:not(.dark) thead tr {
+    background-color: #F1F5F9 !important;
+}
+
+html:not(.dark) thead th {
+    color: #334155 !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #E2E8F0 !important;
+}
+
 /* App Bar & Navigation Rules in Light mode */
 html:not(.dark) header {
     background-color: #FFFFFF !important;
@@ -88,14 +230,6 @@ html:not(.dark) .w-64 a:not(.bg-primary) {
 html:not(.dark) .w-64 a:not(.bg-primary):hover {
     background-color: #F8FAFC !important;
     color: #0F766E !important;
-}
-
-/* Active navigation link and primary buttons text color */
-a.text-white,
-button.text-white,
-a.bg-primary,
-button.bg-primary {
-    color: #FFFFFF !important;
 }
 
 /* Inputs & Form Fields Styling in Light mode */

@@ -498,7 +498,7 @@
 
                         <div class="flex justify-center gap-3">
                             <button type="button" onclick="closeConfirmModal()"
-                                class="px-4 py-2.5 bg-secondary hover:bg-secondary/80 text-slate-300 border border-border-dark rounded-xl text-xs font-semibold transition-all cursor-pointer">
+                                class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs">
                                 Cancel
                             </button>
                             <button type="submit" id="globalConfirmSubmitBtn"
@@ -515,86 +515,92 @@
         <x-loader id="global-page-loader" type="overlay" text="Processing request..." />
 
         <script>
-            let loaderTimeout = null;
+            let lastClickedBtn = null;
+
+            // Track last clicked button globally across the page
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('button, input[type="submit"], a.btn, [role="button"]');
+                if (btn) {
+                    lastClickedBtn = btn;
+                }
+            }, true);
+
+            window.showButtonLoader = function(btn) {
+                if (!btn || btn.dataset.loading === 'true') return;
+                btn.dataset.loading = 'true';
+                btn.dataset.origContent = btn.innerHTML;
+                btn.dataset.origPointer = btn.style.pointerEvents || '';
+                btn.dataset.origOpacity = btn.style.opacity || '';
+
+                btn.disabled = true;
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.75';
+
+                if (!btn.querySelector('.animate-spin')) {
+                    const spinner = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline-block text-current shrink-0 align-text-bottom" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                    btn.innerHTML = spinner + btn.innerHTML;
+                }
+            };
+
+            window.hideButtonLoader = function(btn) {
+                if (!btn) return;
+                if (btn.dataset.loading === 'true') {
+                    btn.innerHTML = btn.dataset.origContent || btn.innerHTML;
+                    btn.style.pointerEvents = btn.dataset.origPointer || '';
+                    btn.style.opacity = btn.dataset.origOpacity || '';
+                    btn.disabled = false;
+                    delete btn.dataset.loading;
+                    delete btn.dataset.origContent;
+                    delete btn.dataset.origPointer;
+                    delete btn.dataset.origOpacity;
+                }
+            };
 
             window.showGlobalLoader = function(autoHideDelay = 0) {
-                const loader = document.getElementById('global-page-loader');
-                if (loader) {
-                    loader.classList.remove('opacity-0', 'pointer-events-none');
-                    loader.classList.add('opacity-100');
-                }
-                if (autoHideDelay > 0) {
-                    clearTimeout(loaderTimeout);
-                    loaderTimeout = setTimeout(hideGlobalLoader, autoHideDelay);
-                }
+                // Kept for backward compatibility if explicitly invoked
             };
 
             window.hideGlobalLoader = function() {
-                clearTimeout(loaderTimeout);
-                const loader = document.getElementById('global-page-loader');
-                if (loader) {
-                    loader.classList.remove('opacity-100');
-                    loader.classList.add('opacity-0', 'pointer-events-none');
-                }
+                // Kept for backward compatibility if explicitly invoked
             };
 
-            // Intercept Form Submissions
+            // Intercept Form Submissions -> Show loader on submit button inside the form
             document.addEventListener('submit', function (e) {
                 const form = e.target;
-                if (form && (form.hasAttribute('download') || form.getAttribute('action')?.includes('download') || form.getAttribute('action')?.includes('backup'))) {
-                    showGlobalLoader(1500);
-                } else {
-                    showGlobalLoader();
-                }
-            });
-
-            // Intercept Link Clicks for File Downloads
-            document.addEventListener('click', function (e) {
-                const link = e.target.closest('a');
-                if (link) {
-                    const href = link.getAttribute('href') || '';
-                    if (link.hasAttribute('download') || href.includes('/download') || href.includes('/backup') || href.endsWith('.sql') || href.endsWith('.json') || href.endsWith('.csv') || href.endsWith('.pdf')) {
-                        setTimeout(hideGlobalLoader, 1000);
+                if (form) {
+                    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]') || lastClickedBtn;
+                    if (submitBtn) {
+                        showButtonLoader(submitBtn);
                     }
                 }
             });
 
-            // Intercept Page Transitions with auto-hide fallback for file downloads
-            window.addEventListener('beforeunload', function () {
-                showGlobalLoader();
-                // If page response is a file download attachment, the page won't unload.
-                // Auto hide loader after 2 seconds as fallback.
-                setTimeout(hideGlobalLoader, 2000);
-            });
-
-            window.addEventListener('pageshow', hideGlobalLoader);
-            window.addEventListener('focus', function() {
-                setTimeout(hideGlobalLoader, 500);
-            });
-
-            // Intercept Native Fetch API Calls globally
+            // Intercept Native Fetch API Calls globally -> Spin loader inside the triggered button
             const originalFetch = window.fetch;
             if (originalFetch) {
                 window.fetch = async function(...args) {
-                    showGlobalLoader();
+                    const btn = lastClickedBtn;
+                    if (btn) showButtonLoader(btn);
                     try {
                         const response = await originalFetch.apply(this, args);
                         return response;
                     } finally {
-                        hideGlobalLoader();
+                        if (btn) {
+                            setTimeout(() => hideButtonLoader(btn), 300);
+                        }
                     }
                 };
             }
 
-            // Intercept XMLHttpRequest (XHR) API Calls globally
+            // Intercept XMLHttpRequest (XHR) API Calls globally -> Spin loader inside the triggered button
             const originalOpen = XMLHttpRequest.prototype.open;
-            const originalSend = XMLHttpRequest.prototype.send;
             XMLHttpRequest.prototype.open = function(...args) {
+                const btn = lastClickedBtn;
                 this.addEventListener('loadstart', function() {
-                    showGlobalLoader();
+                    if (btn) showButtonLoader(btn);
                 });
                 this.addEventListener('loadend', function() {
-                    hideGlobalLoader();
+                    if (btn) setTimeout(() => hideButtonLoader(btn), 300);
                 });
                 return originalOpen.apply(this, args);
             };

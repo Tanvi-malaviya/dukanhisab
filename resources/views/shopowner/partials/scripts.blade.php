@@ -108,6 +108,31 @@
                 'purchase-returned': 'purchase-returned',
             },
 
+            // Multi-Language System (Loaded from separate JSON files in /lang directory)
+            currentLang: localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en',
+            translations: {
+                en: @json(json_decode(file_get_contents(base_path('lang/en.json')), true) ?? []),
+                gu: @json(json_decode(file_get_contents(base_path('lang/gu.json')), true) ?? []),
+                hi: @json(json_decode(file_get_contents(base_path('lang/hi.json')), true) ?? [])
+            },
+
+            t(key) {
+                const lang = this.currentLang || 'en';
+                if (this.translations && this.translations[lang] && this.translations[lang][key]) {
+                    return this.translations[lang][key];
+                }
+                if (this.translations && this.translations['en'] && this.translations['en'][key]) {
+                    return this.translations['en'][key];
+                }
+                return key;
+            },
+
+            setLanguage(lang) {
+                this.currentLang = lang;
+                localStorage.setItem('dukanhisab_lang', lang);
+                localStorage.setItem('locale', lang);
+            },
+
             // Auth States
             token: localStorage.getItem('shopowner_token') || localStorage.getItem('token'),
             user: JSON.parse(localStorage.getItem('shopowner_user') || 'null'),
@@ -741,10 +766,17 @@
                     });
             },
 
+            getHistoryKey() {
+                const shopId = (this.shop && this.shop.id) ? this.shop.id : 'default';
+                return 'dukanhisab_stock_history_' + shopId;
+            },
+
             loadStockHistory() {
                 this.stockHistoryPage = 1;
+                localStorage.removeItem('dukanhisab_stock_history');
+                const key = this.getHistoryKey();
                 try {
-                    this.stockHistory = JSON.parse(localStorage.getItem('dukanhisab_stock_history') || '[]');
+                    this.stockHistory = JSON.parse(localStorage.getItem(key) || '[]');
                 } catch (e) {
                     this.stockHistory = [];
                 }
@@ -771,7 +803,7 @@
                         this.loading = false;
                         if (d.id) {
                             this.showToast('Stock adjusted successfully!');
-                            // Log adjustment in local stockHistory
+                            // Log adjustment in shop-scoped stockHistory
                             const logEntry = {
                                 id: Date.now(),
                                 product_name: prod.name,
@@ -781,12 +813,13 @@
                                 reason: this.adjustForm.reason || 'Manual Update',
                                 created_at: new Date().toISOString()
                             };
+                            const key = this.getHistoryKey();
                             let history = [];
                             try {
-                                history = JSON.parse(localStorage.getItem('dukanhisab_stock_history') || '[]');
+                                history = JSON.parse(localStorage.getItem(key) || '[]');
                             } catch (e) { }
                             history.unshift(logEntry);
-                            localStorage.setItem('dukanhisab_stock_history', JSON.stringify(history));
+                            localStorage.setItem(key, JSON.stringify(history));
                             this.loadStockHistory();
                             this.loadProducts();
                         } else {
@@ -1476,9 +1509,9 @@
             },
 
             getSelectedPosCustomerName() {
-                if (!this.pos.selectedCustomer) return 'Walk-In Customer';
+                if (!this.pos.selectedCustomer) return this.t('walk_in_customer');
                 const cust = this.customers.find(c => c.id == this.pos.selectedCustomer);
-                return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : 'Walk-In Customer';
+                return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : this.t('walk_in_customer');
             },
 
             searchSalesCustomers() {
@@ -1504,9 +1537,9 @@
             },
 
             getSelectedSalesCustomerName() {
-                if (!this.salesFilter.customerId) return 'All Customers';
+                if (!this.salesFilter.customerId) return this.t('all_customers');
                 const cust = this.customers.find(c => c.id == this.salesFilter.customerId);
-                return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : 'All Customers';
+                return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : this.t('all_customers');
             },
 
             searchReturnedCustomers() {
@@ -1532,9 +1565,9 @@
             },
 
             getSelectedReturnedCustomerName() {
-                if (!this.returnedFilter.customerId) return 'All Customers';
+                if (!this.returnedFilter.customerId) return this.t('all_customers');
                 const cust = this.customers.find(c => c.id == this.returnedFilter.customerId);
-                return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : 'All Customers';
+                return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : this.t('all_customers');
             },
 
             filteredProducts() {
@@ -2018,6 +2051,26 @@
                         this.loading = false;
                         if (d.id) {
                             this.showToast(isEdit ? 'Product updated!' : 'Product added!');
+                            // Log initial stock adjustment for newly created products with stock
+                            if (!isEdit && parseInt(d.stock) > 0) {
+                                const logEntry = {
+                                    id: Date.now(),
+                                    product_name: d.name,
+                                    change_qty: parseInt(d.stock),
+                                    old_stock: 0,
+                                    new_stock: parseInt(d.stock),
+                                    reason: 'Initial Stock (New Product)',
+                                    created_at: new Date().toISOString()
+                                };
+                                const key = this.getHistoryKey();
+                                let history = [];
+                                try {
+                                    history = JSON.parse(localStorage.getItem(key) || '[]');
+                                } catch (e) { }
+                                history.unshift(logEntry);
+                                localStorage.setItem(key, JSON.stringify(history));
+                                this.loadStockHistory();
+                            }
                             this.loadProducts();
                             this.showProductModal = false;
                             if (this.page === 'sales') this.addToBill(d);
