@@ -1140,8 +1140,8 @@
             upgradeSubscription(planSlug) {
                 if (this.user && this.user.active_plan && this.user.active_plan.slug !== 'free') {
                     this.showConfirm(
-                        'Cancel Active Plan First?',
-                        'You currently have an active Premium/Business plan. You must cancel your current active plan first to switch/purchase another plan. Would you like to cancel your active plan now?',
+                        this.t('cancel_active_plan_first_title') || 'Cancel Active Plan First?',
+                        this.t('cancel_active_plan_first_desc') || 'You currently have an active Premium/Business plan. You must cancel your current active plan first to switch/purchase another plan. Would you like to cancel your active plan now?',
                         () => {
                             this.cancelSubscription();
                         }
