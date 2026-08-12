@@ -4,10 +4,10 @@
 <div x-show="showInvoiceModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="showInvoiceModal = false">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
-            <h3 class="font-bold text-slate-800 dark:text-white">Sale Invoice</h3>
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('sale_invoice')">Sale Invoice</h3>
             <button @click="showInvoiceModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -27,7 +27,7 @@
                             </div>
                             <div class="flex flex-col items-start gap-0.5">
                                 <span class="text-xs font-bold leading-tight" x-text="shop ? shop.name : 'DukanHisab'"></span>
-                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="'Mobile: ' + (shop ? (shop.mobile || '') : '')"></p>
+                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="(t('mobile') || 'Mobile') + ': ' + (shop ? (shop.mobile || '') : '')"></p>
                                 <p x-show="shop && shop.address" class="text-[9px] opacity-90" x-text="shop ? shop.address : ''"></p>
                                 <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90" x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
                             </div>
@@ -36,59 +36,59 @@
                         <!-- Right Side: Invoice Meta -->
                         <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
                             <h3 class="font-bold text-sm flex items-center justify-end gap-2">
-                                <span>INVOICE</span>
+                                <span x-text="t('invoice')">INVOICE</span>
                                 <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
                                     <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
-                                        x-text="selectedSale.status"></span>
+                                        x-text="t(selectedSale.status.toLowerCase().replace(/ /g, '_')) || selectedSale.status"></span>
                                 </template>
                             </h3>
-                            <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
+                            <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
                             <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && selectedSale.updated_at">
-                                <p class="opacity-90"><span class="font-normal opacity-80">Paid Date:</span> <span x-text="new Date(selectedSale.updated_at).toLocaleString()"></span></p>
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedSale.updated_at).toLocaleString()"></span></p>
                             </template>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
                         <div>
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Bill To</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('bill_to')">Bill To</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white"
-                                x-text="selectedSale.customer ? selectedSale.customer.name : 'Walk-In Customer'"></p>
+                                x-text="selectedSale.customer ? selectedSale.customer.name : t('walk_in_customer')"></p>
                             <template x-if="(!invoiceSettings || invoiceSettings.show_customer_address) && selectedSale.customer && selectedSale.customer.mobile">
-                                <p class="text-slate-500" x-text="'Mobile: ' + selectedSale.customer.mobile"></p>
+                                <p class="text-slate-500" x-text="(t('mobile') || 'Mobile') + ': ' + selectedSale.customer.mobile"></p>
                             </template>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('payment_info')">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
-                                <span class="text-slate-500 font-normal">Payment Status:</span>
-                                <span :class="selectedSale.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedSale.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="selectedSale.status === 'Completed' ? (selectedSale.payment_type === 'Credit' ? 'Completed' : 'Paid') : (selectedSale.status || 'Paid')"></span>
+                                <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment Status:</span>
+                                <span :class="selectedSale.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedSale.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="t(selectedSale.status ? selectedSale.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedSale.status"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
-                                <span class="text-slate-500 font-normal">Method:</span>
-                                <span x-text="selectedSale.payment_type"></span>
+                                <span class="text-slate-500 font-normal" x-text="t('payment_type') + ':'">Method:</span>
+                                <span x-text="t(selectedSale.payment_type ? selectedSale.payment_type.toLowerCase() : '') || selectedSale.payment_type"></span>
                             </p>
                         </div>
                     </div>
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700 text-xs">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-gray-700">
-                                <th class="px-4 py-2 text-left font-bold text-slate-500">Item</th>
-                                <th class="px-4 py-2 text-right font-bold text-slate-500">Price</th>
-                                <th class="px-4 py-2 text-center font-bold text-slate-500">Qty</th>
+                                <th class="px-4 py-2 text-left font-bold text-slate-500" x-text="t('product')">Item</th>
+                                <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('price')">Price</th>
+                                <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty</th>
                                 <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500">Returned</th>
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">Returned</th>
                                 </template>
                                 <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500">Net Qty</th>
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('net_qty')">Net Qty</th>
                                 </template>
-                                <th class="px-4 py-2 text-right font-bold text-slate-500">Total</th>
+                                <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('total')">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="item in selectedSale.items" :key="item.id">
                                 <tr>
-                                    <td class="px-4 py-2.5 font-semibold" x-text="item.product ? item.product.name : 'Unknown Product'"></td>
+                                    <td class="px-4 py-2.5 font-semibold" x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></td>
                                     <td class="px-4 py-2.5 text-right" x-text="'₹' + parseFloat(item.selling_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
                                     <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
@@ -142,18 +142,18 @@
                         
                         <!-- Right Side: Totals -->
                         <div class="flex flex-col items-end gap-1">
-                            <div class="flex justify-between w-48"><span class="text-slate-500">Subtotal:</span><span
+                            <div class="flex justify-between w-48"><span class="text-slate-500" x-text="t('subtotal') + ':'">Subtotal:</span><span
                                     class="font-semibold">₹<span x-text="selectedSale.subtotal"></span></span></div>
-                            <div class="flex justify-between w-48"><span class="text-slate-500">Discount:</span><span
+                            <div class="flex justify-between w-48"><span class="text-slate-500" x-text="t('discount') + ':'">Discount:</span><span
                                     class="font-semibold">-₹<span x-text="selectedSale.discount"></span></span></div>
                             <div
                                 class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                                <span>Grand Total:</span><span class="text-primary">₹<span
+                                <span x-text="t('grand_total') + ':'">Grand Total:</span><span class="text-primary">₹<span
                                         x-text="selectedSale.grand_total"></span></span>
                             </div>
                         </div>
                     </div>
-                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : 'Thank you for your business!'"></p>
+                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
                     <template x-if="shop && shop.signature">
                         <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
                     </template>
@@ -164,19 +164,19 @@
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
                 <button @click="printInvoice()"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg">Print</button>
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg" x-text="t('print')">Print</button>
                 <button @click="downloadPDF()"
-                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg">Download
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg" x-text="t('download_pdf')">Download
                     PDF</button>
             </div>
             <div class="flex gap-2">
                 <a :href="whatsappLink()" target="_blank"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Share
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg" x-text="t('share_whatsapp')">Share
                     WhatsApp</a>
                 <button type="button" @click="sendSaleInvoiceEmail()" :disabled="sendingSaleEmail"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg">
-                    <span x-show="!sendingSaleEmail">Share Email</span>
-                    <span x-show="sendingSaleEmail">Sending...</span>
+                    <span x-show="!sendingSaleEmail" x-text="t('share_email')">Share Email</span>
+                    <span x-show="sendingSaleEmail" x-text="t('sending') || 'Sending...'">Sending...</span>
                 </button>
             </div>
         </div>
@@ -186,10 +186,10 @@
 {{-- 2. ADD CUSTOMER MODAL --}}
 <div x-show="showCustomerModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showCustomerModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
-                x-text="newCustomer.id ? 'Edit Customer' : 'Add Customer'"></h3>
+                x-text="newCustomer.id ? t('edit') : t('add_customer')"></h3>
             <button @click="showCustomerModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -198,25 +198,25 @@
         </div>
         <form @submit.prevent="saveCustomer()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Customer Name</label>
-                <input type="text" required x-model="newCustomer.name" placeholder="Enter Customer Name"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('customer_name')">Customer Name</label>
+                <input type="text" required x-model="newCustomer.name" :placeholder="t('enter_customer_name') || 'Enter Customer Name'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Mobile Number</label>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('mobile')">Mobile Number</label>
                 <input type="text" x-model="newCustomer.mobile" maxlength="10"
                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                    placeholder="Enter 10-digit mobile"
+                    :placeholder="t('enter_mobile') || 'Enter 10-digit mobile'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Email Address</label>
-                <input type="email" x-model="newCustomer.email" placeholder="Enter Email Address"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('email')">Email Address</label>
+                <input type="email" x-model="newCustomer.email" :placeholder="t('enter_email') || 'Enter Email Address'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <button type="submit"
                 class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
-                x-text="newCustomer.id ? 'Update Customer' : 'Save Customer'"></button>
+                x-text="newCustomer.id ? t('save') : t('add_customer')"></button>
         </form>
     </div>
 </div>
@@ -224,10 +224,10 @@
 {{-- 3. ADD/EDIT PRODUCT MODAL --}}
 <div x-show="showProductModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showProductModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
-                x-text="newProduct.id ? 'Edit Product' : 'Add Product'"></h3>
+                x-text="newProduct.id ? t('edit') : t('add_product')"></h3>
             <button @click="showProductModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -236,47 +236,46 @@
         </div>
         <form @submit.prevent="saveProduct()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Product Name</label>
-                <input type="text" required x-model="newProduct.name" placeholder="Enter Product Name"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('product_name')">Product Name</label>
+                <input type="text" required x-model="newProduct.name" :placeholder="t('enter_product_name') || 'Enter Product Name'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">Selling Price</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('selling_price')">Selling Price</label>
                     <input type="number" step="0.01" required x-model.number="newProduct.selling_price"
-                        placeholder="Enter Selling Price"
+                        :placeholder="t('enter_selling_price') || 'Enter Selling Price'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">Purchase Price</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('purchase_price')">Purchase Price</label>
                     <input type="number" step="0.01" x-model.number="newProduct.purchase_price"
-                        placeholder="Enter Purchase Price"
+                        :placeholder="t('enter_purchase_price') || 'Enter Purchase Price'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Barcode (Leave blank to
-                    auto-generate)</label>
-                <input type="text" x-model="newProduct.barcode" placeholder="Enter Barcode" class="block w-full px-3 py-2 border border-slate-300
+                <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('barcode')">Barcode</label>
+                <input type="text" x-model="newProduct.barcode" :placeholder="t('enter_barcode') || 'Enter Barcode'" class="block w-full px-3 py-2 border border-slate-300
                      dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 mb-1"
-                        x-text="newProduct.id ? 'Current Stock' : 'Initial Stock'"></label>
-                    <input type="number" required x-model.number="newProduct.stock" placeholder="Enter Stock"
+                        x-text="newProduct.id ? t('stock') : t('initial_stock')"></label>
+                    <input type="number" required x-model.number="newProduct.stock" :placeholder="t('enter_stock') || 'Enter Stock'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1">Alert Limit</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('low_stock')">Alert Limit</label>
                     <input type="number" required x-model.number="newProduct.low_stock_threshold"
-                        placeholder="Enter Alert Limit"
+                        :placeholder="t('enter_alert_limit') || 'Enter Alert Limit'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
             </div>
             <button type="submit"
                 class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
-                x-text="newProduct.id ? 'Update Product' : 'Save Product'"></button>
+                x-text="newProduct.id ? t('save') : t('add_product')"></button>
         </form>
     </div>
 </div>
@@ -284,9 +283,9 @@
 {{-- 4. ADD EXPENSE MODAL --}}
 <div x-show="showExpenseModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showExpenseModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 class="font-bold text-slate-800 dark:text-white">Add Expense</h3>
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('add_expense')">Add Expense</h3>
             <button @click="showExpenseModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -295,26 +294,26 @@
         </div>
         <form @submit.prevent="saveExpense()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Expense Description</label>
-                <input type="text" required placeholder="Electricity, Tea, Rent..." x-model="newExpense.description"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('expense_description')">Expense Description</label>
+                <input type="text" required :placeholder="t('expense_desc_placeholder') || 'Electricity, Tea, Rent...'" x-model="newExpense.description"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Amount (₹)</label>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('amount_rs')">Amount (₹)</label>
                 <input type="number" step="0.01" required x-model.number="newExpense.amount"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Payment Method</label>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('payment_type')">Payment Method</label>
                 <select x-model="newExpense.payment_method"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-                    <option value="cash">Cash</option>
-                    <option value="upi">UPI / Wallet</option>
-                    <option value="bank">Bank Transfer</option>
+                    <option value="cash" x-text="t('cash')">Cash</option>
+                    <option value="upi" x-text="t('upi') + ' / ' + (t('wallet') || 'Wallet')">UPI / Wallet</option>
+                    <option value="bank" x-text="t('bank')">Bank Transfer</option>
                 </select>
             </div>
             <button type="submit"
-                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all">Save
+                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all" x-text="t('save_expense')">Save
                 Expense</button>
         </form>
     </div>
@@ -323,10 +322,10 @@
 {{-- 5. ADD SUPPLIER MODAL --}}
 <div x-show="showSupplierModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showSupplierModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
-                x-text="newSupplier.id ? 'Edit Supplier' : 'Add Supplier'"></h3>
+                x-text="newSupplier.id ? t('edit') : t('add_supplier')"></h3>
             <button @click="showSupplierModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -335,25 +334,25 @@
         </div>
         <form @submit.prevent="saveSupplier()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Supplier Name</label>
-                <input type="text" required x-model="newSupplier.name" placeholder="Enter Supplier Name"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('supplier_name')">Supplier Name</label>
+                <input type="text" required x-model="newSupplier.name" :placeholder="t('enter_supplier_name') || 'Enter Supplier Name'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Mobile Number</label>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('mobile')">Mobile Number</label>
                 <input type="text" x-model="newSupplier.mobile" maxlength="10"
                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
-                    placeholder="Enter Supplier Mobile"
+                    :placeholder="t('enter_supplier_mobile') || 'Enter Supplier Mobile'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1">Email Address</label>
-                <input type="email" x-model="newSupplier.email" placeholder="Enter Supplier Email"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('email')">Email Address</label>
+                <input type="email" x-model="newSupplier.email" :placeholder="t('enter_supplier_email') || 'Enter Supplier Email'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <button type="submit"
                 class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
-                x-text="newSupplier.id ? 'Update Supplier' : 'Save Supplier'"></button>
+                x-text="newSupplier.id ? t('save') : t('add_supplier')"></button>
         </form>
     </div>
 </div>
@@ -362,10 +361,10 @@
 <div x-show="showPurchaseDetailsModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="showPurchaseDetailsModal = false">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
-            <h3 class="font-bold text-slate-800 dark:text-white">Purchase Details</h3>
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('purchase_details')">Purchase Details</h3>
             <button @click="showPurchaseDetailsModal = false" class="text-slate-400 hover:text-slate-600"><svg
                     class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -385,7 +384,7 @@
                             </div>
                             <div class="flex flex-col items-start gap-0.5">
                                 <span class="text-xs font-bold leading-tight" x-text="shop ? shop.name : 'DukanHisab'"></span>
-                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="'Mobile: ' + (shop ? (shop.mobile || '') : '')"></p>
+                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="(t('mobile') || 'Mobile') + ': ' + (shop ? (shop.mobile || '') : '')"></p>
                                 <p x-show="shop && shop.address" class="text-[9px] opacity-90" x-text="shop ? shop.address : ''"></p>
                                 <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90" x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
                             </div>
@@ -394,62 +393,62 @@
                         <!-- Right Side: Invoice Meta -->
                         <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
                             <h3 class="font-bold text-sm flex items-center justify-end gap-2">
-                                <span>PURCHASE INVOICE</span>
+                                <span x-text="t('purchase_invoice')">PURCHASE INVOICE</span>
                                 <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
                                     <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
-                                        x-text="selectedPurchase.status"></span>
+                                        x-text="t(selectedPurchase.status.toLowerCase().replace(/ /g, '_')) || selectedPurchase.status"></span>
                                 </template>
                             </h3>
-                            <p class="font-bold"><span class="font-normal opacity-80">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
+                            <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
                             <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && selectedPurchase.updated_at">
-                                <p class="opacity-90"><span class="font-normal opacity-80">Paid Date:</span> <span x-text="new Date(selectedPurchase.updated_at).toLocaleString()"></span></p>
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedPurchase.updated_at).toLocaleString()"></span></p>
                             </template>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
                         <div>
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Supplier Details
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('supplier_details')">Supplier Details
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white"
-                                x-text="selectedPurchase.supplier ? selectedPurchase.supplier.name : 'Walk-In Supplier'">
+                                x-text="selectedPurchase.supplier ? selectedPurchase.supplier.name : t('walk_in_supplier')">
                             </p>
                             <p class="text-slate-500"
-                                x-text="selectedPurchase.supplier && selectedPurchase.supplier.mobile ? 'Mobile: ' + selectedPurchase.supplier.mobile : ''">
+                                x-text="selectedPurchase.supplier && selectedPurchase.supplier.mobile ? (t('mobile') || 'Mobile') + ': ' + selectedPurchase.supplier.mobile : ''">
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Payment Info</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('payment_info')">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
-                                <span class="text-slate-500 font-normal">Payment Status:</span>
-                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="selectedPurchase.status === 'Completed' ? (selectedPurchase.payment_type === 'Credit' ? 'Completed' : 'Paid') : (selectedPurchase.status || 'Paid')"></span>
+                                <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment Status:</span>
+                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="t(selectedPurchase.status ? selectedPurchase.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedPurchase.status"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
-                                <span class="text-slate-500 font-normal">Method:</span>
-                                <span x-text="selectedPurchase.payment_type"></span>
+                                <span class="text-slate-500 font-normal" x-text="t('payment_type') + ':'">Method:</span>
+                                <span x-text="t(selectedPurchase.payment_type ? selectedPurchase.payment_type.toLowerCase() : '') || selectedPurchase.payment_type"></span>
                             </p>
                         </div>
                     </div>
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700 text-xs">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-gray-700">
-                                <th class="px-4 py-2 text-left font-bold text-slate-500">Product</th>
-                                <th class="px-4 py-2 text-right font-bold text-slate-500">Unit Price</th>
-                                <th class="px-4 py-2 text-center font-bold text-slate-500">Qty</th>
+                                <th class="px-4 py-2 text-left font-bold text-slate-500" x-text="t('product')">Product</th>
+                                <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('price')">Unit Price</th>
+                                <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty</th>
                                 <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500">Returned</th>
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">Returned</th>
                                 </template>
                                 <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500">Net Qty</th>
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('net_qty')">Net Qty</th>
                                 </template>
-                                <th class="px-4 py-2 text-right font-bold text-slate-500">Total</th>
+                                <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('total')">Total</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-for="item in selectedPurchase.items" :key="item.id">
                                 <tr>
                                     <td class="px-4 py-2.5 font-semibold"
-                                        x-text="item.product ? item.product.name : 'Deleted Product'"></td>
+                                        x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></td>
                                     <td class="px-4 py-2.5 text-right"
                                         x-text="'₹' + parseFloat(item.purchase_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
@@ -483,12 +482,12 @@
                         <div class="flex flex-col items-end gap-1">
                             <div
                                 class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                                <span>Total Amount:</span><span class="text-primary font-extrabold">₹<span
+                                <span x-text="t('total') + ':'">Total Amount:</span><span class="text-primary font-extrabold">₹<span
                                         x-text="parseFloat(selectedPurchase.total_amount).toFixed(2)"></span></span>
                             </div>
                         </div>
                     </div>
-                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : 'Thank you for your business!'"></p>
+                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
                     <template x-if="shop && shop.signature">
                         <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
                     </template>
@@ -499,19 +498,19 @@
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
                 <button @click="printPurchase()"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg">Print</button>
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg" x-text="t('print')">Print</button>
                 <button @click="downloadPurchasePDF()"
-                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg">Download
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg" x-text="t('download_pdf')">Download
                     PDF</button>
             </div>
             <div class="flex gap-2">
                 <a :href="whatsappPurchaseLink()" target="_blank"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Share
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg" x-text="t('share_whatsapp')">Share
                     WhatsApp</a>
                 <button type="button" @click="sendPurchaseInvoiceEmail()" :disabled="sendingPurchaseEmail"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg">
-                    <span x-show="!sendingPurchaseEmail">Share Email</span>
-                    <span x-show="sendingPurchaseEmail">Sending...</span>
+                    <span x-show="!sendingPurchaseEmail" x-text="t('share_email')">Share Email</span>
+                    <span x-show="sendingPurchaseEmail" x-text="t('sending') || 'Sending...'">Sending...</span>
                 </button>
             </div>
         </div>
@@ -530,14 +529,14 @@
                     </path>
                 </svg>
             </div>
-            <h3 class="font-bold text-lg text-slate-800 dark:text-white" x-text="confirmModal.title"></h3>
+            <h3 class="font-bold text-lg text-slate-800 dark:text-white" x-text="t(confirmModal.title) || confirmModal.title"></h3>
         </div>
-        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="confirmModal.message"></p>
+        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="t(confirmModal.message) || confirmModal.message"></p>
         <div class="flex justify-end gap-3 pt-2">
             <button @click="confirmModal.show = false"
-                class="px-4 py-2 border border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all">Cancel</button>
+                class="px-4 py-2 border border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all" x-text="t('cancel')">Cancel</button>
             <button @click="triggerConfirm()"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all">Confirm</button>
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all" x-text="t('confirm')">Confirm</button>
         </div>
     </div>
 </div>
@@ -545,11 +544,11 @@
 {{-- 8. RETURN ITEMS MODAL --}}
 <div x-show="showReturnModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="showReturnModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-white">Return Items</h3>
-                <p class="text-xs text-slate-400 mt-0.5" x-text="'Sale Number: ' + returnForm.sale_number"></p>
+                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_items')">Return Items</h3>
+                <p class="text-xs text-slate-400 mt-0.5" x-text="t('sale_number') + ': ' + returnForm.sale_number"></p>
             </div>
             <button @click="showReturnModal = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -559,23 +558,23 @@
             </button>
         </div>
         <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="border-b border-slate-100 dark:border-gray-700">
-                        <th class="py-2 text-xs font-semibold text-slate-400">Product</th>
-                        <th class="py-2 text-xs font-semibold text-slate-400 text-center">Price</th>
-                        <th class="py-2 text-xs font-semibold text-slate-400 text-center">Purchased</th>
-                        <th class="py-2 text-xs font-semibold text-slate-400 text-right w-24">Return Qty</th>
+                        <th class="py-2 font-semibold text-slate-400" x-text="t('product')">Product</th>
+                        <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('price')">Price</th>
+                        <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('purchased')">Purchased</th>
+                        <th class="py-2 font-semibold text-slate-400 text-right w-24" x-text="t('return_qty')">Return Qty</th>
                     </tr>
                 </thead>
                 <tbody>
                     <template x-for="item in returnForm.items" :key="item.product_id">
                         <tr class="border-b border-slate-50 dark:border-gray-700/50">
-                            <td class="py-3 text-sm font-semibold text-slate-700 dark:text-white" x-text="item.name">
+                            <td class="py-3 font-semibold text-slate-700 dark:text-white" x-text="item.name">
                             </td>
-                            <td class="py-3 text-sm text-slate-500 text-center">₹<span
-                                    x-text="item.selling_price"></span></td>
-                            <td class="py-3 text-sm text-slate-500 text-center" x-text="item.purchasedQty"></td>
+                            <td class="py-3 text-slate-500 text-center">₹<span
+                                    x-text="parseFloat(item.selling_price).toFixed(2)"></span></td>
+                            <td class="py-3 text-slate-500 text-center" x-text="item.purchasedQty"></td>
                             <td class="py-3 text-right">
                                 <input type="number" min="0" :max="item.purchasedQty" x-model.number="item.returnedQty"
                                     class="w-20 px-2 py-1 text-center border border-slate-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:border-primary">
@@ -587,12 +586,12 @@
 
             <div class="bg-slate-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-2">
                 <div class="flex justify-between text-sm">
-                    <span class="text-slate-500">Refund Method:</span>
+                    <span class="text-slate-500" x-text="t('refund_method') + ':'">Refund Method:</span>
                     <span class="font-semibold text-slate-800 dark:text-white"
-                        x-text="returnForm.payment_type === 'Credit' ? 'Reduce Customer Due' : 'Refund (' + returnForm.payment_type + ')'"></span>
+                        x-text="returnForm.payment_type === 'Credit' ? t('reduce_customer_due') : (t('refund') + ' (' + (t(returnForm.payment_type ? returnForm.payment_type.toLowerCase() : '') || returnForm.payment_type) + ')')"></span>
                 </div>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
-                    <span class="font-bold text-slate-700 dark:text-white">Estimated Refund:</span>
+                    <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
                     <span class="font-bold text-primary">₹<span x-text="
                         (() => {
                             const newSubtotal = returnForm.items.reduce((sum, item) => {
@@ -613,9 +612,9 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-end gap-3">
             <button @click="showReturnModal = false"
-                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
             <button @click="submitPartialReturn()"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md">Process
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md" x-text="t('process_return')">Process
                 Return</button>
         </div>
     </div>
@@ -956,11 +955,11 @@
 {{-- 13. PURCHASE RETURN ITEMS MODAL --}}
 <div x-show="showPurchaseReturnModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="showPurchaseReturnModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-white">Return Purchase Items</h3>
-                <p class="text-xs text-slate-400 mt-0.5" x-text="'Purchase Number: ' + purchaseReturnForm.purchase_number"></p>
+                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_purchase_items')">Return Purchase Items</h3>
+                <p class="text-xs text-slate-400 mt-0.5" x-text="t('purchase_number') + ': ' + purchaseReturnForm.purchase_number"></p>
             </div>
             <button @click="showPurchaseReturnModal = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -973,10 +972,10 @@
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
                     <tr class="border-b border-slate-100 dark:border-gray-700">
-                        <th class="py-2 font-semibold text-slate-400">Product</th>
-                        <th class="py-2 font-semibold text-slate-400 text-center">Price</th>
-                        <th class="py-2 font-semibold text-slate-400 text-center">Purchased</th>
-                        <th class="py-2 font-semibold text-slate-400 text-right w-24">Return Qty</th>
+                        <th class="py-2 font-semibold text-slate-400" x-text="t('product')">Product</th>
+                        <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('price')">Price</th>
+                        <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('purchased')">Purchased</th>
+                        <th class="py-2 font-semibold text-slate-400 text-right w-24" x-text="t('return_qty')">Return Qty</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -998,12 +997,12 @@
 
             <div class="bg-slate-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-2">
                 <div class="flex justify-between text-sm">
-                    <span class="text-slate-500">Refund Method:</span>
+                    <span class="text-slate-500" x-text="t('refund_method') + ':'">Refund Method:</span>
                     <span class="font-semibold text-slate-800 dark:text-white"
-                        x-text="purchaseReturnForm.payment_type === 'Credit' ? 'Reduce Supplier Due' : 'Refund (' + purchaseReturnForm.payment_type + ')'"></span>
+                        x-text="purchaseReturnForm.payment_type === 'Credit' ? t('reduce_supplier_due') : (t('refund') + ' (' + (t(purchaseReturnForm.payment_type ? purchaseReturnForm.payment_type.toLowerCase() : '') || purchaseReturnForm.payment_type) + ')')"></span>
                 </div>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
-                    <span class="font-bold text-slate-700 dark:text-white">Estimated Refund:</span>
+                    <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
                     <span class="font-bold text-primary">₹<span x-text="
                         (() => {
                             const newTotal = purchaseReturnForm.items.reduce((sum, item) => {
@@ -1020,9 +1019,9 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-end gap-3">
             <button @click="showPurchaseReturnModal = false"
-                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
             <button @click="submitPurchasePartialReturn()"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md">Process
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md" x-text="t('process_return')">Process
                 Return</button>
         </div>
     </div>
@@ -1031,11 +1030,10 @@
 {{-- 14. COLLECT CUSTOMER PAYMENT MODAL --}}
 <div x-show="collectCustomerModalOpen" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="collectCustomerModalOpen = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-white">Collect Customer Payment</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Record customer Udhar repayment into CashBook</p>
+                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('collect_payment')">Collect Customer Payment</h3>
             </div>
             <button @click="collectCustomerModalOpen = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1047,43 +1045,43 @@
         <form @submit.prevent="submitCollectCustomerPayment()" class="p-6 space-y-4">
             <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-3.5 flex justify-between items-center">
                 <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400">Customer Name</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('customer_name')">Customer Name</span>
                     <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="collectCustomerForm.customer_name"></h4>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] uppercase font-bold text-slate-400">Outstanding Due</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('due_balance')">Outstanding Due</span>
                     <p class="font-black text-rose-600 text-base">₹<span x-text="collectCustomerForm.current_due.toFixed(2)"></span></p>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount Received (₹)</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('amount')">Amount Received (₹)</label>
                 <input type="number" step="0.01" min="0.01" :max="collectCustomerForm.current_due" x-model.number="collectCustomerForm.amount" required
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white font-bold text-lg focus:outline-none focus:border-emerald-500">
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('payment_type')">Payment Method</label>
                 <select x-model="collectCustomerForm.payment_method" required
                     class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500">
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank Transfer</option>
-                    <option value="UPI">UPI / GPay / PhonePe</option>
+                    <option value="Cash" x-text="t('cash')">Cash</option>
+                    <option value="Bank" x-text="t('bank')">Bank Transfer</option>
+                    <option value="UPI" x-text="t('upi') + ' / GPay / PhonePe'">UPI / GPay / PhonePe</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Remarks / Note (Optional)</label>
-                <input type="text" x-model="collectCustomerForm.note" placeholder="e.g. Received partial payment via Google Pay"
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('notes')">Remarks / Note</label>
+                <input type="text" x-model="collectCustomerForm.note" :placeholder="t('notes') || 'e.g. Received partial payment via Google Pay'"
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500">
             </div>
 
             <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
                 <button type="button" @click="collectCustomerModalOpen = false"
-                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
                 <button type="submit"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
-                    Collect ₹<span x-text="(collectCustomerForm.amount || 0).toFixed(2)"></span>
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md" x-text="t('collect_payment')">
+                    Collect Payment
                 </button>
             </div>
         </form>
@@ -1093,11 +1091,10 @@
 {{-- 15. PAY SUPPLIER DUE MODAL --}}
 <div x-show="paySupplierModalOpen" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="paySupplierModalOpen = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-white">Pay Supplier Due</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Record payment made to supplier into CashBook</p>
+                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('pay_supplier')">Pay Supplier Due</h3>
             </div>
             <button @click="paySupplierModalOpen = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1109,43 +1106,43 @@
         <form @submit.prevent="submitPaySupplierDue()" class="p-6 space-y-4">
             <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3.5 flex justify-between items-center">
                 <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400">Supplier Name</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('supplier_name')">Supplier Name</span>
                     <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="paySupplierForm.supplier_name"></h4>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] uppercase font-bold text-slate-400">Total Owed</span>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('due_balance')">Total Owed</span>
                     <p class="font-black text-rose-600 text-base">₹<span x-text="paySupplierForm.current_due.toFixed(2)"></span></p>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Amount Paid (₹)</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('amount')">Amount Paid (₹)</label>
                 <input type="number" step="0.01" min="0.01" :max="paySupplierForm.current_due" x-model.number="paySupplierForm.amount" required
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white font-bold text-lg focus:outline-none focus:border-amber-500">
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('payment_type')">Payment Method</label>
                 <select x-model="paySupplierForm.payment_method" required
                     class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-500">
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank Transfer</option>
-                    <option value="UPI">UPI / GPay / PhonePe</option>
+                    <option value="Cash" x-text="t('cash')">Cash</option>
+                    <option value="Bank" x-text="t('bank')">Bank Transfer</option>
+                    <option value="UPI" x-text="t('upi') + ' / GPay / PhonePe'">UPI / GPay / PhonePe</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Remarks / Note (Optional)</label>
-                <input type="text" x-model="paySupplierForm.note" placeholder="e.g. Paid balance via Net Banking"
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('notes')">Remarks / Note</label>
+                <input type="text" x-model="paySupplierForm.note" :placeholder="t('notes') || 'e.g. Paid balance via Net Banking'"
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-500">
             </div>
 
             <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
                 <button type="button" @click="paySupplierModalOpen = false"
-                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
                 <button type="submit"
-                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
-                    Pay ₹<span x-text="(paySupplierForm.amount || 0).toFixed(2)"></span>
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md" x-text="t('pay_supplier')">
+                    Pay Supplier
                 </button>
             </div>
         </form>

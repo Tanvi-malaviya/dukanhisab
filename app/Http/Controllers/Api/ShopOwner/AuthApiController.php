@@ -17,11 +17,22 @@ class AuthApiController extends Controller
      */
     public function register(Request $request)
     {
+        $existingUser = User::where('email', $request->email)->first();
+
+        // If email belongs to an already verified account, reject registration
+        if ($existingUser && $existingUser->email_verified_at !== null) {
+            return response()->json([
+                'errors' => [
+                    'email' => ['The email has already been taken.']
+                ]
+            ], 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'mobile' => 'required|string|max:20',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
@@ -30,19 +41,33 @@ class AuthApiController extends Controller
         }
 
         $otpCode = (string) rand(100000, 999999);
-
         $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
 
-        $user = User::create([
-            'name' => $request->first_name . ' ' . $request->last_name,
-            'email' => $request->email,
-            'mobile' => $request->mobile,
-            'password' => Hash::make($request->password),
-            'otp_code' => $otpCode,
-            'otp_expires_at' => Carbon::now()->addMinutes(10),
-            'status' => 'active',
-            'active_plan_id' => $freePlan ? $freePlan->id : null,
-        ]);
+        if ($existingUser && $existingUser->email_verified_at === null) {
+            // Update unverified user account details with fresh OTP code
+            $existingUser->update([
+                'name' => $request->first_name . ' ' . $request->last_name,
+                'mobile' => $request->mobile,
+                'password' => Hash::make($request->password),
+                'otp_code' => $otpCode,
+                'otp_expires_at' => Carbon::now()->addMinutes(10),
+                'status' => 'active',
+                'active_plan_id' => $freePlan ? $freePlan->id : $existingUser->active_plan_id,
+            ]);
+            $user = $existingUser;
+        } else {
+            // Create new user account
+            $user = User::create([
+                'name' => $request->first_name . ' ' . $request->last_name,
+                'email' => $request->email,
+                'mobile' => $request->mobile,
+                'password' => Hash::make($request->password),
+                'otp_code' => $otpCode,
+                'otp_expires_at' => Carbon::now()->addMinutes(10),
+                'status' => 'active',
+                'active_plan_id' => $freePlan ? $freePlan->id : null,
+            ]);
+        }
 
         try {
             Mail::send('shopowner.emails.otp', ['user' => $user, 'otp_code' => $otpCode], function ($message) use ($user) {
@@ -50,15 +75,12 @@ class AuthApiController extends Controller
                         ->subject('Verify Your Email - DukanHisab');
             });
         } catch (\Exception $e) {
-            // Log exception, but do not block user registration flow in development/local
             \Log::error('OTP email failed to send: ' . $e->getMessage());
         }
 
         return response()->json([
             'message' => 'Registration successful. A verification OTP code has been sent to your email.',
             'email' => $user->email,
-            // Including OTP in response for development convenience
-            'dev_otp' => app()->environment('local') ? $otpCode : null
         ], 201);
     }
 
@@ -148,7 +170,6 @@ class AuthApiController extends Controller
 
         return response()->json([
             'message' => 'A new verification OTP code has been sent to your email.',
-            'dev_otp' => app()->environment('local') ? $otpCode : null
         ]);
     }
 
@@ -234,7 +255,6 @@ class AuthApiController extends Controller
         // Return positive response regardless of existence to prevent email enumeration
         return response()->json([
             'message' => 'If the email exists, a password reset OTP code has been sent.',
-            'dev_otp' => (app()->environment('local') && isset($otpCode)) ? $otpCode : null
         ]);
     }
 
@@ -464,8 +484,8 @@ class AuthApiController extends Controller
                 'state' => $request->state,
                 'pincode' => $request->pincode,
                 'gst_number' => $request->gst_number,
-                'invoice_prefix' => $request->invoice_prefix,
-                'currency' => $request->currency,
+                'invoice_prefix' => $request->invoice_prefix ?: ($existingShop?->invoice_prefix ?? 'INV'),
+                'currency' => $request->currency ?: ($existingShop?->currency ?? 'INR'),
                 'upi_id' => $request->upi_id,
                 'bank_details' => $request->bank_details,
                 'invoice_footer' => $request->invoice_footer,

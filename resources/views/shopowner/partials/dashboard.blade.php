@@ -54,36 +54,36 @@
 
     {{-- QUICK ACTIONS --}}
     <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
-        <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3">Quick Actions</h3>
+        <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3" x-text="t('quick_actions')">Quick Actions</h3>
         <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
             <button @click="navigateTo('sales')" class="p-3 bg-primary/5 hover:bg-primary/10 text-primary rounded-xl flex flex-col items-center gap-2 transition-all">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                <span class="text-xs font-semibold">New Sale</span>
+                <span class="text-xs font-semibold" x-text="t('new_sale') || 'New Sale'">New Sale</span>
             </button>
             <button @click="navigateTo('purchases')" class="p-3 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 rounded-xl flex flex-col items-center gap-2 transition-all">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                <span class="text-xs font-semibold">New Purchase</span>
+                <span class="text-xs font-semibold" x-text="t('new_purchase') || 'New Purchase'">New Purchase</span>
             </button>
             <button @click="openNewProductModal()" class="p-3 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-600 rounded-xl flex flex-col items-center gap-2 transition-all">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="text-xs font-semibold">Add Product</span>
+                <span class="text-xs font-semibold" x-text="t('add_product')">Add Product</span>
             </button>
             <button @click="openNewCustomerModal()" class="p-3 bg-amber-500/5 hover:bg-amber-500/10 text-amber-600 rounded-xl flex flex-col items-center gap-2 transition-all">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                 </svg>
-                <span class="text-xs font-semibold">Add Customer</span>
+                <span class="text-xs font-semibold" x-text="t('add_customer')">Add Customer</span>
             </button>
             <button @click="openNewSupplierModal()" class="p-3 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-600 rounded-xl flex flex-col items-center gap-2 transition-all">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 17h1a2 2 0 002-2v-3a2 2 0 00-2.25-2H18M9 17h6M4 17h-1a1 1 0 01-1-1V5a1 1 0 011-1h10a1 1 0 011 1v12a1 1 0 01-1 1" />
                 </svg>
-                <span class="text-xs font-semibold">Add Supplier</span>
+                <span class="text-xs font-semibold" x-text="t('add_supplier')">Add Supplier</span>
             </button>
             <button @click="openNewExpenseModal()" class="p-3 bg-rose-500/5 hover:bg-rose-500/10 text-rose-600 rounded-xl flex flex-col items-center gap-2 transition-all">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span class="text-xs font-semibold">Add Expense</span>
+                <span class="text-xs font-semibold" x-text="t('add_expense')">Add Expense</span>
             </button>
         </div>
     </div>

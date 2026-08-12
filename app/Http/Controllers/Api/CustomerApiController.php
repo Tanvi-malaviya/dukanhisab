@@ -164,7 +164,7 @@ class CustomerApiController extends Controller
 
         $creditSales = \App\Models\Sale::where('shop_id', $shopId)
             ->where('customer_id', $customerId)
-            ->whereIn('status', ['Unpaid', 'Completed'])
+            ->whereIn('status', ['Unpaid', 'Partially Paid', 'Completed'])
             ->where('payment_type', 'Credit')
             ->orderBy('sale_date', 'asc')
             ->orderBy('id', 'asc')
@@ -178,16 +178,22 @@ class CustomerApiController extends Controller
         foreach ($creditSales as $sale) {
             $total = (float) $sale->grand_total;
             if ($rem >= $total) {
-                if ($sale->status !== 'Completed') {
-                    $sale->update([
-                        'status' => 'Completed',
-                    ]);
-                }
+                $sale->update([
+                    'status' => 'Completed',
+                    'paid_amount' => $total,
+                ]);
                 $rem -= $total;
+            } elseif ($rem > 0) {
+                $sale->update([
+                    'status' => 'Partially Paid',
+                    'paid_amount' => $rem,
+                ]);
+                $rem = 0;
             } else {
-                if ($sale->status !== 'Unpaid') {
-                    $sale->update(['status' => 'Unpaid']);
-                }
+                $sale->update([
+                    'status' => 'Unpaid',
+                    'paid_amount' => 0.00,
+                ]);
             }
         }
     }

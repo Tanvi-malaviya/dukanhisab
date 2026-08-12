@@ -46,14 +46,6 @@
                         <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                         <span>Device Limit: <strong class="text-white">{{ $plan->features['max_devices'] ?? 1 }}</strong> {{ ($plan->features['max_devices'] ?? 1) > 1 ? 'Devices Login' : 'Single Device Login' }}</span>
                     </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 {{ !empty($plan->features['advanced_reports']) ? 'text-success' : 'text-slate-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ !empty($plan->features['advanced_reports']) ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12' }}"></path></svg>
-                        <span class="{{ !empty($plan->features['advanced_reports']) ? '' : 'line-through text-slate-500' }}">Advanced Analytics Reports</span>
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <svg class="w-4 h-4 {{ !empty($plan->features['backup']) ? 'text-success' : 'text-slate-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ !empty($plan->features['backup']) ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12' }}"></path></svg>
-                        <span class="{{ !empty($plan->features['backup']) ? '' : 'line-through text-slate-500' }}">Automated Cloud Backups</span>
-                    </li>
                 </ul>
             </div>
 

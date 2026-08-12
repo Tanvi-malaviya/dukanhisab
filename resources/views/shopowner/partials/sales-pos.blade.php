@@ -5,7 +5,7 @@
     <div class="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 overflow-hidden min-h-[480px] lg:min-h-0">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             <div class="relative">
-                <input type="text" placeholder="Search product name..." x-model="pos.searchQuery"
+                <input type="text" :placeholder="t('search_product_placeholder')" x-model="pos.searchQuery"
                     @input.debounce.300ms="loadProducts(pos.searchQuery)"
                     class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
@@ -13,7 +13,7 @@
                 </span>
             </div>
             <div class="relative">
-                <input type="text" id="pos-barcode" placeholder="Scan barcode..." x-model="pos.barcodeInput"
+                <input type="text" id="pos-barcode" :placeholder="t('scan_barcode_placeholder')" x-model="pos.barcodeInput"
                     @keydown.enter.prevent="handleBarcodeScan()"
                     class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
@@ -29,13 +29,13 @@
                     class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between">
                     <div>
                         <p class="font-bold text-sm text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
-                        <p class="text-[10px] text-slate-400">Barcode: <span x-text="prod.barcode"></span></p>
+                        <p class="text-[10px] text-slate-400"><span x-text="t('barcode')">Barcode</span>: <span x-text="prod.barcode"></span></p>
                     </div>
                     <div class="flex justify-between items-center mt-3">
                         <span class="text-sm font-extrabold text-primary">₹<span x-text="prod.selling_price"></span></span>
                         <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                             :class="prod.stock <= 0 ? 'bg-rose-100 text-rose-700' : (prod.stock <= prod.low_stock_threshold ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-700')"
-                            x-text="prod.stock <= 0 ? 'Out of Stock' : 'Qty: ' + prod.stock"></span>
+                            x-text="prod.stock <= 0 ? t('out_of_stock') : (t('quantity') + ': ' + prod.stock)"></span>
                     </div>
                 </div>
             </template>
@@ -45,8 +45,8 @@
     {{-- Billing Side --}}
     <div class="w-full lg:w-96 flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 overflow-hidden min-h-[400px] lg:min-h-0">
         <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
-            Billing Cart
-            <button @click="resetPOS()" class="text-xs text-rose-500 hover:underline">Clear All</button>
+            <span x-text="t('billing_cart')">Billing Cart</span>
+            <button @click="resetPOS()" class="text-xs text-rose-500 hover:underline" x-text="t('clear_all')">Clear All</button>
         </h3>
 
         {{-- Customer Selector --}}
@@ -65,7 +65,7 @@
                 <div x-show="open" x-cloak
                     class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
                     <!-- Search Input inside Dropdown -->
-                    <input type="text" placeholder="Search customer name or mobile..." 
+                    <input type="text" :placeholder="t('search_customer_placeholder')" 
                         x-model="posCustomerSearchQuery" 
                         @input.debounce.300ms="searchPosCustomers()" 
                         @click.stop
@@ -76,7 +76,7 @@
                         <!-- Option: Walk-in -->
                         <button type="button" @click="selectPosCustomer(null); open = false;"
                             class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
-                            Walk-In Customer
+                            <span x-text="t('walk_in_customer')">Walk-In Customer</span>
                         </button>
                         
                         <!-- Filtered list of Customers -->
@@ -90,7 +90,7 @@
 
                         <!-- No customers found message -->
                         <template x-if="posFilteredCustomers.length === 0">
-                            <div class="text-center py-4 text-xs text-slate-400">No customers found.</div>
+                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_data_found')">No customers found.</div>
                         </template>
                     </div>
                 </div>
@@ -126,37 +126,38 @@
                 </div>
             </template>
             <template x-if="pos.items.length === 0">
-                <div class="text-center py-10 text-slate-400 text-sm">Cart is empty. Click products or scan barcodes to begin.</div>
+                <div class="text-center py-10 text-slate-400 text-sm" x-text="t('cart_empty')">Cart is empty. Click products or scan barcodes to begin.</div>
             </template>
         </div>
 
         {{-- Totals & Payment --}}
         <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2">
             <div class="flex justify-between text-xs text-slate-600 dark:text-slate-400">
-                <span>Subtotal</span>
+                <span x-text="t('subtotal')">Subtotal</span>
                 <span>₹<span x-text="calculateSubtotal().toFixed(2)"></span></span>
             </div>
             <div class="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
-                <span>Discount (₹)</span>
+                <span x-text="t('discount') + ' (₹)'">Discount (₹)</span>
                 <input type="number" x-model.number="pos.discount" class="w-20 px-2 py-1 border border-slate-300 dark:border-gray-600 rounded-lg text-right text-xs dark:bg-gray-700 dark:text-white">
             </div>
             <div class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                <span>Grand Total</span>
+                <span x-text="t('grand_total')">Grand Total</span>
                 <span class="text-primary">₹<span x-text="calculateGrandTotal().toFixed(2)"></span></span>
             </div>
 
             <div class="pt-2">
-                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Type</label>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1" x-text="t('payment_type')">Payment Type</label>
                 <div class="grid grid-cols-4 gap-1.5">
-                    <button @click="pos.paymentType = 'Cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
-                    <button @click="pos.paymentType = 'UPI'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
-                    <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
-                    <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                    <button @click="pos.paymentType = 'Cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('cash')">Cash</button>
+                    <button @click="pos.paymentType = 'UPI'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('upi')">UPI</button>
+                    <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
+                    <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit')">Credit</button>
                 </div>
             </div>
 
             <button @click="saveSale()" :disabled="pos.items.length === 0"
-                class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50">
+                class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50"
+                x-text="t('save_and_print_bill')">
                 Save & Print Bill
             </button>
         </div>

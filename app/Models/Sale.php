@@ -17,6 +17,7 @@ class Sale extends Model
         'subtotal',
         'discount',
         'grand_total',
+        'paid_amount',
         'payment_type',
         'status',
         'sale_date',

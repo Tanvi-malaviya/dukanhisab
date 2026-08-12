@@ -134,14 +134,28 @@
 </head>
 <body class="h-full bg-slate-50 dark:bg-gray-900 text-slate-900 dark:text-slate-100 transition-colors duration-200">
 
-    {{-- Global Loading Overlay --}}
-    <div x-show="loading" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
-        <div class="flex flex-col items-center p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
-            <svg class="animate-spin h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span class="mt-4 text-sm font-semibold text-slate-700 dark:text-slate-300">Processing...</span>
+    {{-- Global Loading Overlay (Modern Glass Pill Badge) --}}
+    <div x-show="loading" x-cloak class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/20 backdrop-blur-[3px] transition-all duration-300">
+        <!-- Top Edge Pulsing Progress Indicator -->
+        <div class="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-teal-500 via-emerald-400 to-cyan-500 animate-pulse"></div>
+
+        <!-- Modern Floating Glass Pill Badge -->
+        <div class="bg-white/95 dark:bg-gray-800/95 border border-slate-200/80 dark:border-gray-700/80 shadow-2xl rounded-full px-6 py-3 flex items-center gap-3.5 transform transition-all duration-300 scale-100">
+            <!-- Sleek Tinted Spinner Icon -->
+            <div class="w-7 h-7 rounded-full bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800/50 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                    <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-wide">Processing...</span>
+                <span class="flex h-2 w-2 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                </span>
+            </div>
         </div>
     </div>
 

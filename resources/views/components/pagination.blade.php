@@ -7,9 +7,9 @@
 @elseif($currentPage && $totalItems && $perPage)
 <div x-show="!{{ $loading ?? 'false' }} && {{ $totalItems }} > 0" x-cloak class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row justify-between items-center gap-4">
     <div class="text-xs text-slate-500">
-        Showing <span class="font-bold text-slate-800 dark:text-white" x-text="Math.min(({{ $currentPage }} - 1) * {{ $perPage }} + 1, {{ $totalItems }})"></span> 
-        to <span class="font-bold text-slate-800 dark:text-white" x-text="Math.min({{ $currentPage }} * {{ $perPage }}, {{ $totalItems }})"></span> 
-        of <span class="font-bold text-slate-800 dark:text-white" x-text="{{ $totalItems }}"></span> entries
+        <span x-text="t('showing') || 'Showing'">Showing</span> <span class="font-bold text-slate-800 dark:text-white" x-text="Math.min(({{ $currentPage }} - 1) * {{ $perPage }} + 1, {{ $totalItems }})"></span> 
+        <span x-text="t('to') || 'to'">to</span> <span class="font-bold text-slate-800 dark:text-white" x-text="Math.min({{ $currentPage }} * {{ $perPage }}, {{ $totalItems }})"></span> 
+        <span x-text="t('of') || 'of'">of</span> <span class="font-bold text-slate-800 dark:text-white" x-text="{{ $totalItems }}"></span> <span x-text="t('entries') || 'entries'">entries</span>
     </div>
     <div class="flex items-center gap-1" x-show="Math.ceil({{ $totalItems }} / {{ $perPage }}) > 1">
         <button 

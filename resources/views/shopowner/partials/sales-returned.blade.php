@@ -5,15 +5,15 @@
     <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col md:flex-row gap-4">
         <div class="flex-1 flex flex-col md:flex-row gap-3">
             <div class="flex-1 min-w-[200px]">
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Search</label>
-                <input type="text" placeholder="Search sale number, customer, status..." x-model="returnedFilter.search" @input.debounce.300ms="returnedSalesPage = 1" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('search')">Search</label>
+                <input type="text" :placeholder="t('search_placeholder')" x-model="returnedFilter.search" @input.debounce.300ms="returnedSalesPage = 1" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div class="w-full md:w-44 shrink-0">
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Date</label>
+                <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('date')">Date</label>
                 <input type="date" x-model="returnedFilter.date" onclick="this.showPicker()" @change="returnedSalesPage = 1" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
             </div>
             <div class="w-full md:w-52 shrink-0 relative" x-data="{ open: false }" @click.away="open = false">
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Customer</label>
+                <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('customers')">Customer</label>
                 <div class="relative">
                     <!-- Dropdown Trigger Button -->
                     <button type="button" @click="open = !open" 
@@ -28,7 +28,7 @@
                     <div x-show="open" x-cloak
                         class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
                         <!-- Search Input inside Dropdown -->
-                        <input type="text" placeholder="Search customer..." 
+                        <input type="text" :placeholder="t('search_customer_placeholder')" 
                             x-model="returnedCustomerSearchQuery" 
                             @input.debounce.300ms="searchReturnedCustomers()" 
                             @click.stop
@@ -37,7 +37,8 @@
                         <!-- Customer List Options -->
                         <div class="space-y-1">
                             <button type="button" @click="selectReturnedCustomer(null); open = false;"
-                                class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
+                                class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400"
+                                x-text="t('all_customers')">
                                 All Customers
                             </button>
                             
@@ -50,23 +51,23 @@
                             </template>
 
                             <template x-if="returnedFilteredCustomers.length === 0">
-                                <div class="text-center py-4 text-xs text-slate-400">No customers found.</div>
+                                <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_data_found')">No customers found.</div>
                             </template>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="w-full md:w-44 shrink-0">
-                <label class="block text-xs font-semibold text-slate-400 mb-1">Status</label>
+                <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('status')">Status</label>
                 <select x-model="returnedFilter.status" @change="returnedSalesPage = 1" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-                    <option value="">All Statuses</option>
-                    <option value="Returned">Returned</option>
-                    <option value="Partially Returned">Partially Returned</option>
+                    <option value="" x-text="t('all_statuses')">All Statuses</option>
+                    <option value="Returned" x-text="t('returned')">Returned</option>
+                    <option value="Partially Returned" x-text="t('partially_returned')">Partially Returned</option>
                 </select>
             </div>
         </div>
         <div class="flex items-end gap-2">
-            <button @click="clearReturnedFilter()" class="px-4 py-2.5 border border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all">Clear</button>
+            <button @click="clearReturnedFilter()" class="px-4 py-2.5 border border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all" x-text="t('clear')">Clear</button>
         </div>
     </div>
 
@@ -80,7 +81,7 @@
         </template>
 
         <template x-if="!salesLoading && filteredReturnedSales().length === 0">
-            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm text-center text-slate-400 text-sm">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm text-center text-slate-400 text-sm" x-text="t('no_data_found')">
                 No returned sales found.
             </div>
         </template>
@@ -93,28 +94,28 @@
                         <div>
                             <span class="text-xs font-bold text-primary" x-text="sale.sale_number"></span>
                         </div>
-                        <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block" x-text="sale.status"></span>
+                        <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block" x-text="t(sale.status.toLowerCase().replace(/ /g, '_')) || sale.status"></span>
                     </div>
 
                     {{-- Card Body --}}
                     <div class="space-y-1 text-[11px] py-1.5 border-t border-slate-100 dark:border-gray-700/50">
                         <div class="flex justify-between">
-                            <span class="text-slate-400 font-sans">Customer:</span>
-                            <span class="text-slate-700 dark:text-slate-300 font-semibold font-sans" x-text="sale.customer ? sale.customer.name : 'Walk-In'"></span>
+                            <span class="text-slate-400 font-sans" x-text="t('customer_name') + ':'">Customer:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-semibold font-sans" x-text="sale.customer ? sale.customer.name : t('walk_in_customer')"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-400 font-sans">Date:</span>
+                            <span class="text-slate-400 font-sans" x-text="t('date') + ':'">Date:</span>
                             <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="new Date(sale.sale_date).toLocaleDateString()"></span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-slate-400 font-sans">Payment:</span>
-                            <span class="text-slate-700 dark:text-slate-300 font-medium font-sans" x-text="sale.payment_type"></span>
+                            <span class="text-slate-400 font-sans" x-text="t('payment_type') + ':'">Payment:</span>
+                            <span class="text-slate-700 dark:text-slate-300 font-medium font-sans" x-text="t(sale.payment_type.toLowerCase()) || sale.payment_type"></span>
                         </div>
                     </div>
 
                     {{-- Returned Items List & Returned Value --}}
                     <div class="flex flex-col space-y-1.5 bg-rose-50/50 dark:bg-rose-950/10 p-2.5 rounded-xl border border-rose-100 dark:border-rose-900/30">
-                        <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider font-sans">Returned Items</span>
+                        <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider font-sans" x-text="t('returned_items')">Returned Items</span>
                         <div class="space-y-1 max-h-24 overflow-y-auto pr-1">
                             <template x-for="item in sale.items" :key="item.id">
                                 <template x-if="item.returned_quantity > 0 || (!sale.items.some(i => i.returned_quantity > 0) && sale.status === 'Returned')">
@@ -127,7 +128,7 @@
                         </div>
                         
                         <div class="flex justify-between items-center pt-2 border-t border-rose-100 dark:border-rose-900/20 mt-1">
-                            <span class="text-[11px] font-bold text-rose-600 dark:text-rose-400 font-sans">Returned Value:</span>
+                            <span class="text-[11px] font-bold text-rose-600 dark:text-rose-400 font-sans" x-text="t('returned_value') + ':'">Returned Value:</span>
                             <span class="text-sm font-extrabold text-rose-700 dark:text-rose-300 font-mono">
                                 ₹<span x-text="parseFloat(
                                     sale.items.some(i => i.returned_quantity > 0)
