@@ -15,11 +15,18 @@ use App\Models\CashBook;
 use App\Models\InvoiceConfig;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class BackupApiController extends Controller
 {
     public function export(Request $request)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to use Backup & Restore.'], 403);
+        }
+
         $shopId = $request->attributes->get('shop_id');
         $shop = Shop::find($shopId);
 
@@ -63,16 +70,22 @@ class BackupApiController extends Controller
             'cashbooks' => CashBook::where('shop_id', $shopId)->get(),
         ];
 
-        $json = json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        $fileName = 'dukanhisab-backup-' . Str::slug($shop->name ?: 'shop') . '-' . date('Y-m-d-His') . '.json';
+        $json = json_encode($backupData, JSON_UNESCAPED_SLASHES);
+        $encrypted = Crypt::encryptString($json);
+        $fileName = 'dukanhisab-backup-' . Str::slug($shop->name ?: 'shop') . '-' . date('Y-m-d-His') . '.dhbak';
 
-        return response()->streamDownload(function () use ($json) {
-            echo $json;
-        }, $fileName, ['Content-Type' => 'application/json']);
+        return response()->streamDownload(function () use ($encrypted) {
+            echo $encrypted;
+        }, $fileName, ['Content-Type' => 'application/octet-stream']);
     }
 
     public function restore(Request $request)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to use Backup & Restore.'], 403);
+        }
+
         $shopId = $request->attributes->get('shop_id');
         $shop = Shop::find($shopId);
 
@@ -95,10 +108,18 @@ class BackupApiController extends Controller
 
         $file = $request->file('backup_file');
         $content = file_get_contents($file->getRealPath());
-        $data = json_decode($content, true);
+
+        try {
+            $json = Crypt::decryptString($content);
+        } catch (DecryptException $e) {
+            // Fall back to legacy unencrypted backups exported before encryption was added.
+            $json = $content;
+        }
+
+        $data = json_decode($json, true);
 
         if (!$data || !isset($data['app']) || $data['app'] !== 'DukanHisab') {
-            return response()->json(['message' => 'Invalid backup file format. Expected a valid DukanHisab JSON backup file.'], 422);
+            return response()->json(['message' => 'Invalid backup file. Please select a valid DukanHisab backup file.'], 422);
         }
 
         DB::transaction(function () use ($data, $shopId, $shop) {

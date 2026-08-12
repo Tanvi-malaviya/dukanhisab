@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Carbon\Carbon;
 
 class User extends Authenticatable
 {
@@ -32,6 +33,7 @@ class User extends Authenticatable
         'last_login_at',
         'otp_code',
         'otp_expires_at',
+        'otp_attempts',
         'language',
         'currency',
         'date_format',
@@ -49,6 +51,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'otp_code',
+        'otp_attempts',
     ];
 
     /**
@@ -142,5 +146,34 @@ class User extends Authenticatable
             }
         }
         return $this->createToken($tokenName)->plainTextToken;
+    }
+
+    public const MAX_OTP_ATTEMPTS = 5;
+
+    public function otpAttemptsExceeded(): bool
+    {
+        return $this->otp_attempts >= self::MAX_OTP_ATTEMPTS;
+    }
+
+    public function registerFailedOtpAttempt(): void
+    {
+        $this->increment('otp_attempts');
+    }
+
+    public function issueNewOtp(int $expiresInMinutes = 10): string
+    {
+        $code = (string) rand(100000, 999999);
+        $this->otp_code = $code;
+        $this->otp_expires_at = Carbon::now()->addMinutes($expiresInMinutes);
+        $this->otp_attempts = 0;
+        $this->save();
+        return $code;
+    }
+
+    public function clearOtp(): void
+    {
+        $this->otp_code = null;
+        $this->otp_expires_at = null;
+        $this->otp_attempts = 0;
     }
 }

@@ -108,14 +108,25 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'Email is already verified.'], 400);
         }
 
+        if ($user->otpAttemptsExceeded()) {
+            return response()->json([
+                'message' => 'Too many incorrect attempts. Please request a new OTP code.',
+                'otp_locked' => true,
+            ], 429);
+        }
+
         if ($user->otp_code !== $request->otp_code || Carbon::now()->isAfter($user->otp_expires_at)) {
-            return response()->json(['message' => 'Invalid or expired OTP code.'], 400);
+            $user->registerFailedOtpAttempt();
+            $remaining = max(0, User::MAX_OTP_ATTEMPTS - $user->otp_attempts);
+            return response()->json([
+                'message' => 'Invalid or expired OTP code.',
+                'attempts_remaining' => $remaining,
+            ], 400);
         }
 
         // Verify user email
         $user->email_verified_at = Carbon::now();
-        $user->otp_code = null;
-        $user->otp_expires_at = null;
+        $user->clearOtp();
         $user->save();
 
         $token = $user->issueDeviceToken('shopowner-auth-token');
@@ -154,10 +165,7 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'Email is already verified.'], 400);
         }
 
-        $otpCode = (string) rand(100000, 999999);
-        $user->otp_code = $otpCode;
-        $user->otp_expires_at = Carbon::now()->addMinutes(10);
-        $user->save();
+        $otpCode = $user->issueNewOtp();
 
         try {
             Mail::send('shopowner.emails.otp', ['user' => $user, 'otp_code' => $otpCode], function ($message) use ($user) {
@@ -237,10 +245,7 @@ class AuthApiController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if ($user) {
-            $otpCode = (string) rand(100000, 999999);
-            $user->otp_code = $otpCode;
-            $user->otp_expires_at = Carbon::now()->addMinutes(10);
-            $user->save();
+            $otpCode = $user->issueNewOtp();
 
             try {
                 Mail::send('shopowner.emails.reset', ['user' => $user, 'otp_code' => $otpCode], function ($message) use ($user) {
@@ -279,13 +284,24 @@ class AuthApiController extends Controller
             return response()->json(['message' => 'User not found.'], 404);
         }
 
+        if ($user->otpAttemptsExceeded()) {
+            return response()->json([
+                'message' => 'Too many incorrect attempts. Please request a new reset code.',
+                'otp_locked' => true,
+            ], 429);
+        }
+
         if ($user->otp_code !== $request->otp_code || Carbon::now()->isAfter($user->otp_expires_at)) {
-            return response()->json(['message' => 'Invalid or expired reset code.'], 400);
+            $user->registerFailedOtpAttempt();
+            $remaining = max(0, User::MAX_OTP_ATTEMPTS - $user->otp_attempts);
+            return response()->json([
+                'message' => 'Invalid or expired reset code.',
+                'attempts_remaining' => $remaining,
+            ], 400);
         }
 
         $user->password = Hash::make($request->password);
-        $user->otp_code = null;
-        $user->otp_expires_at = null;
+        $user->clearOtp();
         // Auto-verify email if it wasn't verified already when they successfully reset password
         if (!$user->email_verified_at) {
             $user->email_verified_at = Carbon::now();
@@ -332,7 +348,16 @@ class AuthApiController extends Controller
     {
         $user = $request->user();
         $user->load(['shops', 'activePlan', 'currentSubscription']);
-        $shop = $user->shops()->first();
+        
+        $shop = null;
+        $shopId = $request->header('X-Shop-ID');
+        if ($shopId) {
+            $shop = $user->shops()->where('id', $shopId)->first();
+        }
+        if (!$shop) {
+            $shop = $user->shops()->first();
+        }
+
         return response()->json([
             'user' => $user,
             'has_shop' => $shop !== null,
@@ -402,6 +427,7 @@ class AuthApiController extends Controller
     public function shopSetup(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'shop_id' => 'nullable|integer|exists:shops,id',
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
             'mobile' => 'required|string|max:20',
@@ -433,11 +459,21 @@ class AuthApiController extends Controller
         $user->mobile = $request->mobile;
         $user->save();
 
-        $existingShop = $user->shops()->first();
-        if (!$existingShop && !$user->canAddShop()) {
-            return response()->json([
-                'message' => "Your active subscription plan allows maximum {$user->maxShops()} shop(s). Please upgrade your subscription plan."
-            ], 403);
+        $shopId = $request->input('shop_id');
+        $shop = null;
+        if ($shopId) {
+            $shop = $user->shops()->where('id', $shopId)->first();
+            if (!$shop) {
+                return response()->json(['message' => 'Shop not found or access denied.'], 403);
+            }
+        }
+
+        if (!$shop) {
+            if (!$user->canAddShop()) {
+                return response()->json([
+                    'message' => "Your active subscription plan allows maximum {$user->maxShops()} shop(s). Please upgrade your subscription plan."
+                ], 403);
+            }
         }
 
         // Handle Shop Logo Upload
@@ -467,33 +503,52 @@ class AuthApiController extends Controller
                 if ($shopImagePath) {
                     $websiteSettings['shop_image'] = $shopImagePath;
                 } else {
-                    $websiteSettings['shop_image'] = $existingShop?->website_settings['shop_image'] ?? null;
+                    $websiteSettings['shop_image'] = $shop?->website_settings['shop_image'] ?? null;
+                }
+
+                // Enforce active plan limits for Free plan
+                if ($user->activePlan && $user->activePlan->slug === 'free') {
+                    $websiteSettings['theme_color'] = '#0F766E';
+                    $websiteSettings['seo_title'] = '';
+                    $websiteSettings['seo_description'] = '';
+                    $websiteSettings['social_facebook'] = '';
+                    $websiteSettings['social_instagram'] = '';
+                    $websiteSettings['social_twitter'] = '';
+                    $websiteSettings['social_whatsapp'] = '';
+                    $websiteSettings['shop_image'] = null;
+                    $shopImagePath = null;
                 }
             }
         }
 
-        // Create or update Shop (we assume one shop per owner for setup module)
-        $shop = \App\Models\Shop::updateOrCreate(
-            ['owner_id' => $user->id],
-            [
-                'name' => $request->name,
-                'mobile' => $request->mobile,
-                'email' => $request->email,
-                'address' => $request->address,
-                'city' => $request->city,
-                'state' => $request->state,
-                'pincode' => $request->pincode,
-                'gst_number' => $request->gst_number,
-                'invoice_prefix' => $request->invoice_prefix ?: ($existingShop?->invoice_prefix ?? 'INV'),
-                'currency' => $request->currency ?: ($existingShop?->currency ?? 'INR'),
-                'upi_id' => $request->upi_id,
-                'bank_details' => $request->bank_details,
-                'invoice_footer' => $request->invoice_footer,
-                'logo' => $logoPath ?: ($existingShop?->logo),
-                'signature' => $signaturePath ?: ($existingShop?->signature),
-                'website_settings' => $request->has('website_settings') ? $websiteSettings : ($existingShop?->website_settings),
-            ]
-        );
+        // Create or update Shop
+        $shopData = [
+            'owner_id' => $user->id,
+            'name' => $request->name,
+            'mobile' => $request->mobile,
+            'email' => $request->email,
+            'address' => $request->address,
+            'city' => $request->city,
+            'state' => $request->state,
+            'pincode' => $request->pincode,
+            'gst_number' => $request->gst_number,
+            'invoice_prefix' => $request->invoice_prefix,
+            'currency' => $request->currency,
+            'upi_id' => $request->upi_id,
+            'bank_details' => $request->bank_details,
+            'invoice_footer' => $request->invoice_footer,
+            'logo' => $logoPath ?: ($shop?->logo),
+            'signature' => $signaturePath ?: ($shop?->signature),
+            'website_settings' => $request->has('website_settings') ? $websiteSettings : ($shop?->website_settings),
+        ];
+
+        if ($shop) {
+            $shop->update($shopData);
+        } else {
+            $shop = \App\Models\Shop::create($shopData);
+            // Initialize default invoice config for the new shop
+            \App\Models\InvoiceConfig::create(['shop_id' => $shop->id]);
+        }
 
         $user->load('shops');
 

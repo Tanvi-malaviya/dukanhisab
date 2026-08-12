@@ -171,6 +171,7 @@ class InvoiceApiController extends Controller
                     text-align: right;
                     font-size: 13px;
                     color: ' . $textColor . ';
+                    white-space: nowrap;
                 }
                 .details-table {
                     width: 100%;
@@ -575,6 +576,7 @@ class InvoiceApiController extends Controller
                     text-align: right;
                     font-size: 13px;
                     color: ' . $textColor . ';
+                    white-space: nowrap;
                 }
                 .details-table {
                     width: 100%;

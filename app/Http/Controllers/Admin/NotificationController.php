@@ -30,7 +30,7 @@ class NotificationController extends Controller
         $userCounts = [
             'all' => User::count(),
             'free' => User::whereNull('active_plan_id')->orWhereHas('activePlan', function($q) { $q->where('slug', 'free'); })->count(),
-            'premium' => User::whereHas('activePlan', function($q) { $q->where('slug', 'premium'); })->count(),
+            'premium' => User::whereHas('activePlan', function($q) { $q->where('slug', '!=', 'free'); })->count(),
         ];
 
         return view('admin.notifications.index', compact('notifications', 'userCounts'));
@@ -60,7 +60,7 @@ class NotificationController extends Controller
             });
         } elseif ($target === 'premium') {
             $query->whereHas('activePlan', function($pq) {
-                $pq->where('slug', 'premium');
+                $pq->where('slug', '!=', 'free');
             });
         }
 
