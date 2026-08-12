@@ -533,7 +533,7 @@ class AuthApiController extends Controller
             'pincode' => $request->pincode,
             'gst_number' => $request->gst_number,
             'invoice_prefix' => $request->invoice_prefix,
-            'currency' => $request->currency,
+            'currency' => $request->currency ?: ($shop?->currency ?: 'INR'),
             'upi_id' => $request->upi_id,
             'bank_details' => $request->bank_details,
             'invoice_footer' => $request->invoice_footer,

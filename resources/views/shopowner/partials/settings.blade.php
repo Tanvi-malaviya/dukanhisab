@@ -149,37 +149,43 @@
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
             return 'INV-' + yyyy + mm + dd + '-0001';
+        },
+        syncShopForm(targetShop) {
+            if (!targetShop) return;
+            this.shopUpdateForm = {
+                name: targetShop.name,
+                owner_name: user ? user.name : '',
+                mobile: targetShop.mobile || '',
+                email: targetShop.email || '',
+                gst_number: targetShop.gst_number || '',
+                address: targetShop.address || '',
+                city: targetShop.city || '',
+                state: targetShop.state || '',
+                pincode: targetShop.pincode || '',
+                currency: targetShop.currency || 'INR',
+                upi_id: targetShop.upi_id || '',
+                bank_details: targetShop.bank_details || '',
+                invoice_footer: targetShop.invoice_footer || '',
+                website_settings: targetShop.website_settings ? Object.assign({ enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }, targetShop.website_settings) : { enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }
+            };
+            this.logoPreview = '';
+            this.logoFile = null;
+            this.signaturePreview = '';
+            this.signatureFile = null;
+            this.shopImagePreview = '';
+            this.shopImageFile = null;
+            this.parseBankDetails();
         }
     }" x-init="
     if (shop) {
-        shopUpdateForm.bank_details = shop.bank_details || '';
-        parseBankDetails();
+        syncShopForm(shop);
     }
+    $watch('shop', value => {
+        syncShopForm(value);
+    });
     $watch('page', value => {
         if(value === 'settings' && shop) {
-            shopUpdateForm = {
-                name: shop.name,
-                owner_name: user ? user.name : '',
-                mobile: shop.mobile || '',
-                email: shop.email || '',
-                gst_number: shop.gst_number || '',
-                address: shop.address || '',
-                city: shop.city || '',
-                state: shop.state || '',
-                pincode: shop.pincode || '',
-                currency: shop.currency || 'INR',
-                upi_id: shop.upi_id || '',
-                bank_details: shop.bank_details || '',
-                invoice_footer: shop.invoice_footer || '',
-                website_settings: shop.website_settings ? Object.assign({ enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }, shop.website_settings) : { enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }
-            };
-            logoPreview = '';
-            logoFile = null;
-            signaturePreview = '';
-            signatureFile = null;
-            shopImagePreview = '';
-            shopImageFile = null;
-            parseBankDetails();
+            syncShopForm(shop);
         }
         if (value === 'settings' && user) {
             userProfileForm = {
