@@ -49,9 +49,18 @@ class InvoiceSettingApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $user = $request->user();
+        $validatedData = $validator->validated();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            $validatedData['whatsapp_share'] = false;
+            $validatedData['pdf_download'] = false;
+            $validatedData['email_invoice'] = false;
+            $validatedData['show_upi_qr'] = false;
+        }
+
         $settings = InvoiceConfig::updateOrCreate(
             ['shop_id' => $shopId],
-            $validator->validated()
+            $validatedData
         );
 
         return response()->json($settings);

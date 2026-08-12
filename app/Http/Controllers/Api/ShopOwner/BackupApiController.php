@@ -22,6 +22,11 @@ class BackupApiController extends Controller
 {
     public function export(Request $request)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to use Backup & Restore.'], 403);
+        }
+
         $shopId = $request->attributes->get('shop_id');
         $shop = Shop::find($shopId);
 
@@ -76,6 +81,11 @@ class BackupApiController extends Controller
 
     public function restore(Request $request)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to use Backup & Restore.'], 403);
+        }
+
         $shopId = $request->attributes->get('shop_id');
         $shop = Shop::find($shopId);
 

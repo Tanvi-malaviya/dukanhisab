@@ -103,6 +103,7 @@
                 'reports': 'reports',
                 'reminders': 'reminders',
                 'settings': 'settings',
+                'subscription': 'subscription',
                 'sales-returned': 'sales-returned',
                 'purchase-returned': 'purchase-returned',
             },
@@ -123,6 +124,7 @@
 
             setupForm: { name: '', owner_name: '', mobile: '', gst_number: '', logo: null },
             logoPreview: null,
+            addShopModal: { show: false, name: '', owner_name: '', mobile: '', gst_number: '', logo: null, logoPreview: null },
 
             toast: { show: false, message: '', type: 'success' },
             loading: false,
@@ -161,6 +163,8 @@
             bankAccounts: [],
             bankAccountsLoading: false,
             reportsData: { total_sales: 0, sales_count: 0, sales_by_payment_type: [], total_purchases: 0, purchases_count: 0, total_expenses: 0, expenses_count: 0, net_profit: 0 },
+            subscriptionPlans: [],
+            subscriptionLoading: false,
 
             // Pagination State
             salesPage: 1, salesPerPage: 10, returnedSalesPage: 1, returnedSalesPerPage: 10,
@@ -388,6 +392,7 @@
                 else if (pageName === 'reports') this.loadReports();
                 else if (pageName === 'reminders') { this.loadCustomers(); this.loadSuppliers(); this.loadProducts(); }
                 else if (pageName === 'settings') this.loadInvoiceSettings();
+                else if (pageName === 'subscription') this.loadSubscriptionPlans();
             },
 
             toggleTheme() {
@@ -417,7 +422,7 @@
             },
 
             // ── DATA LOADERS ──────────────────────────────────────────
-            loadAllData() { this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); this.loadInvoiceSettings(); },
+            loadAllData() { this.loadProfile(); this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); this.loadInvoiceSettings(); this.loadSubscriptionPlans(); },
 
             loadDashboard() {
                 this.dashboardLoading = true;
@@ -1068,6 +1073,97 @@
                         this.showToast('Error updating profile.', 'error');
                     });
             },
+            loadProfile() {
+                fetch('/api/v1/shopowner/profile', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.user) {
+                            this.user = d.user;
+                            localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                        }
+                        if (d.shop) {
+                            this.shop = d.shop;
+                            localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                            this.hasShop = true;
+                            localStorage.setItem('shopowner_has_shop', 'true');
+                        }
+                    })
+                    .catch(() => {});
+            },
+
+            loadSubscriptionPlans() {
+                this.subscriptionLoading = true;
+                fetch('/api/v1/shopowner/subscription-plans', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.subscriptionLoading = false;
+                        if (d.plans) {
+                            this.subscriptionPlans = d.plans;
+                        }
+                    })
+                    .catch(() => { this.subscriptionLoading = false; });
+            },
+
+            upgradeSubscription(planSlug) {
+                if (this.user && this.user.active_plan && this.user.active_plan.slug !== 'free') {
+                    this.showConfirm(
+                        'Cancel Active Plan First?',
+                        'You currently have an active Premium/Business plan. You must cancel your current active plan first to switch/purchase another plan. Would you like to cancel your active plan now?',
+                        () => {
+                            this.cancelSubscription();
+                        }
+                    );
+                    return;
+                }
+                this.subscriptionLoading = true;
+                fetch('/api/v1/shopowner/subscription/upgrade', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({ plan_slug: planSlug })
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.subscriptionLoading = false;
+                        if (d.user) {
+                            this.user = d.user;
+                            localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            this.showToast(d.message || 'Subscription upgraded successfully!');
+                            this.loadProfile();
+                        } else {
+                            this.showToast(d.message || 'Failed to upgrade subscription.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.subscriptionLoading = false;
+                        this.showToast('Error upgrading subscription.', 'error');
+                    });
+            },
+
+            cancelSubscription() {
+                this.subscriptionLoading = true;
+                fetch('/api/v1/shopowner/subscription/cancel', {
+                    method: 'POST',
+                    headers: this.getHeaders()
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.subscriptionLoading = false;
+                        if (d.plan) {
+                            if (d.user) {
+                                this.user = d.user;
+                                localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            }
+                            this.showToast(d.message || 'Subscription cancelled successfully!');
+                            this.loadProfile();
+                        } else {
+                            this.showToast(d.message || 'Failed to cancel subscription.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.subscriptionLoading = false;
+                        this.showToast('Error cancelling subscription.', 'error');
+                    });
+            },
 
             loadInvoiceSettings() {
                 this.invoiceSettingsLoading = true;
@@ -1080,10 +1176,18 @@
 
             submitInvoiceSettingsUpdate(form) {
                 this.loading = true;
+                const isFree = this.user && this.user.active_plan && this.user.active_plan.slug === 'free';
+                const payload = Object.assign({}, form);
+                if (isFree) {
+                    payload.whatsapp_share = false;
+                    payload.pdf_download = false;
+                    payload.email_invoice = false;
+                    payload.show_upi_qr = false;
+                }
                 fetch('/api/v1/invoice-settings', {
                     method: 'POST',
                     headers: this.getHeaders(),
-                    body: JSON.stringify(form)
+                    body: JSON.stringify(payload)
                 })
                     .then(r => r.json()).then(d => {
                         this.loading = false;
@@ -1269,6 +1373,77 @@
                             this.showToast('Shop created!'); this.loadAllData(); this.navigateTo('dashboard');
                         } else { this.showToast(d.message || 'Failed to setup shop.', 'error'); }
                     }).catch(() => { this.loading = false; this.showToast('Error setting up shop.', 'error'); });
+            },
+
+            switchShop(targetShop) {
+                this.shop = targetShop;
+                localStorage.setItem('shopowner_shop', JSON.stringify(targetShop));
+                this.showToast('Switched to shop: ' + targetShop.name);
+                this.loadAllData();
+            },
+
+            openAddShopModal() {
+                if (this.user && this.user.active_plan && this.user.active_plan.slug === 'free') {
+                    this.showToast('Please upgrade your plan to Premium or Business to add multiple shops.', 'error');
+                    return;
+                }
+                const max = this.user && this.user.active_plan && this.user.active_plan.features && this.user.active_plan.features.max_shops 
+                    ? parseInt(this.user.active_plan.features.max_shops) 
+                    : 1;
+                const currentCount = this.user && this.user.shops ? this.user.shops.length : 0;
+                if (max !== -1 && currentCount >= max) {
+                    this.showToast(`Your active plan allows maximum ${max} shop(s). Please upgrade to add more.`, 'error');
+                    return;
+                }
+
+                this.addShopModal.name = '';
+                this.addShopModal.owner_name = this.user ? this.user.name : '';
+                this.addShopModal.mobile = this.user ? this.user.mobile : '';
+                this.addShopModal.gst_number = '';
+                this.addShopModal.logo = null;
+                this.addShopModal.logoPreview = null;
+                this.addShopModal.show = true;
+            },
+
+            onAddShopLogoChange(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.addShopModal.logo = file;
+                    this.addShopModal.logoPreview = URL.createObjectURL(file);
+                }
+            },
+
+            handleAddShopSubmit() {
+                this.loading = true;
+                const fd = new FormData();
+                fd.append('name', this.addShopModal.name);
+                fd.append('owner_name', this.addShopModal.owner_name);
+                fd.append('mobile', this.addShopModal.mobile);
+                if (this.addShopModal.gst_number) fd.append('gst_number', this.addShopModal.gst_number);
+                if (this.addShopModal.logo) fd.append('logo', this.addShopModal.logo);
+
+                fetch('/api/v1/shopowner/shop-setup', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token },
+                    body: fd
+                })
+                .then(r => r.json())
+                .then(d => {
+                    this.loading = false;
+                    if (d.shop) {
+                        this.addShopModal.show = false;
+                        this.shop = d.shop;
+                        localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                        this.showToast('New shop successfully created!');
+                        this.loadAllData();
+                    } else {
+                        this.showToast(d.message || 'Failed to create shop.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showToast('Error creating new shop.', 'error');
+                });
             },
 
             // ── POS ───────────────────────────────────────────────────

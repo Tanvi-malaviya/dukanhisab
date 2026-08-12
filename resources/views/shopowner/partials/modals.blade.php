@@ -163,20 +163,40 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
-                <button @click="printInvoice()"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg">Print</button>
-                <button @click="downloadPDF()"
-                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg">Download
-                    PDF</button>
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printInvoice(); else showToast('Please upgrade your plan to print invoices.', 'error')"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    Print
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') downloadPDF(); else showToast('Please upgrade your plan to download PDFs.', 'error')"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    Download PDF
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
             </div>
             <div class="flex gap-2">
-                <a :href="whatsappLink()" target="_blank"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Share
-                    WhatsApp</a>
-                <button type="button" @click="sendSaleInvoiceEmail()" :disabled="sendingSaleEmail"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg">
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappLink(), '_blank'); else showToast('Please upgrade your plan to share via WhatsApp.', 'error')"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    Share WhatsApp
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
+                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showToast('Please upgrade your plan to share via Email.', 'error')" :disabled="sendingSaleEmail"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     <span x-show="!sendingSaleEmail">Share Email</span>
                     <span x-show="sendingSaleEmail">Sending...</span>
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
                 </button>
             </div>
         </div>
@@ -498,20 +518,40 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
-                <button @click="printPurchase()"
-                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg">Print</button>
-                <button @click="downloadPurchasePDF()"
-                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg">Download
-                    PDF</button>
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printPurchase(); else showToast('Please upgrade your plan to print invoices.', 'error')"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    Print
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') downloadPurchasePDF(); else showToast('Please upgrade your plan to download PDFs.', 'error')"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    Download PDF
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
             </div>
             <div class="flex gap-2">
-                <a :href="whatsappPurchaseLink()" target="_blank"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg">Share
-                    WhatsApp</a>
-                <button type="button" @click="sendPurchaseInvoiceEmail()" :disabled="sendingPurchaseEmail"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg">
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappPurchaseLink(), '_blank'); else showToast('Please upgrade your plan to share via WhatsApp.', 'error')"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    Share WhatsApp
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
+                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showToast('Please upgrade your plan to share via Email.', 'error')" :disabled="sendingPurchaseEmail"
+                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     <span x-show="!sendingPurchaseEmail">Share Email</span>
                     <span x-show="sendingPurchaseEmail">Sending...</span>
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
                 </button>
             </div>
         </div>
@@ -1146,6 +1186,69 @@
                 <button type="submit"
                     class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md">
                     Pay ₹<span x-text="(paySupplierForm.amount || 0).toFixed(2)"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ADD NEW SHOP MODAL --}}
+<div x-show="addShopModal.show" x-cloak
+    class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900/40">
+            <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Add New Shop</h3>
+            <button @click="addShopModal.show = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <form @submit.prevent="handleAddShopSubmit()" class="p-6 space-y-4 overflow-y-auto">
+            {{-- Logo Upload --}}
+            <div class="flex flex-col items-center gap-3">
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Shop Logo</label>
+                <div class="relative w-24 h-24 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-gray-700">
+                    <template x-if="addShopModal.logoPreview">
+                        <img :src="addShopModal.logoPreview" class="w-full h-full object-cover">
+                    </template>
+                    <template x-if="!addShopModal.logoPreview">
+                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </template>
+                    <input type="file" accept="image/*" @change="onAddShopLogoChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Shop Name</label>
+                <input type="text" required placeholder="e.g. My Premium Store" x-model="addShopModal.name"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Owner Name</label>
+                <input type="text" required placeholder="Owner Name" x-model="addShopModal.owner_name"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mobile Number</label>
+                <input type="text" required placeholder="Mobile" x-model="addShopModal.mobile" maxlength="10" 
+                    x-on:input="addShopModal.mobile = addShopModal.mobile.replace(/\D/g, '').slice(0, 10)"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-1">GST Number (Optional)</label>
+                <input type="text" placeholder="22AAAAA0000A1Z5" x-model="addShopModal.gst_number"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
+                <button type="button" @click="addShopModal.show = false"
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all">Cancel</button>
+                <button type="submit"
+                    class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md">
+                    Create Shop
                 </button>
             </div>
         </form>

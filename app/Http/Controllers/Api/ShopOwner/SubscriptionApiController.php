@@ -68,6 +68,53 @@ class SubscriptionApiController extends Controller
             'message' => 'Your subscription has been cancelled. You are now on the Free plan.',
             'plan' => $user->activePlan,
             'subscription' => $user->currentSubscription,
+            'user' => $user,
+            'shop_count' => $user->shops()->count(),
+        ]);
+    }
+
+    public function upgrade(Request $request)
+    {
+        $request->validate([
+            'plan_slug' => 'required|string|in:free,premium,business',
+        ]);
+
+        $user = $request->user();
+        $plan = SubscriptionPlan::where('slug', $request->plan_slug)->first();
+
+        if (!$plan) {
+            return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        $user->active_plan_id = $plan->id;
+        $user->save();
+
+        if ($plan->slug === 'free') {
+            // Cancel current active subscription if any
+            $activeSub = $user->subscriptions()->where('status', 'active')->first();
+            if ($activeSub) {
+                $this->downgradeToFree($user, $activeSub, 'cancelled');
+            }
+        } else {
+            // Create or update subscription record
+            $user->subscriptions()->updateOrCreate(
+                ['status' => 'active'],
+                [
+                    'plan_id' => $plan->id,
+                    'starts_at' => now(),
+                    'ends_at' => $plan->slug === 'business' ? now()->addYears(100) : ($plan->slug === 'premium' ? now()->addYear() : null),
+                    'status' => 'active',
+                ]
+            );
+        }
+
+        $user->load(['activePlan', 'currentSubscription']);
+
+        return response()->json([
+            'message' => 'Subscription updated successfully to ' . $plan->name,
+            'plan' => $user->activePlan,
+            'subscription' => $user->currentSubscription,
+            'user' => $user,
             'shop_count' => $user->shops()->count(),
         ]);
     }
