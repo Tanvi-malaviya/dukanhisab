@@ -108,6 +108,9 @@
                 'purchase-returned': 'purchase-returned',
             },
 
+            // Theme State
+            dark: localStorage.getItem('darkMode') === 'true',
+
             // Multi-Language System (Loaded from separate JSON files in /lang directory)
             currentLang: localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en',
             translations: {
