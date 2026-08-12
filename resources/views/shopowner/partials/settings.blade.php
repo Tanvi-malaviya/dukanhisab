@@ -256,6 +256,53 @@
     {{-- Shop Profile Settings --}}
     <div x-show="settingsTab === 'shop'"
         class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+
+        {{-- My Shops Management Section --}}
+        <div class="mb-8 pb-8 border-b border-slate-100 dark:border-gray-700">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">My Shops</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Manage and switch between your business profiles</p>
+                </div>
+                <button type="button" @click="openAddShopModal()"
+                    class="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded-xl shadow-md transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Add Shop
+                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-300">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                    </span>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <template x-for="s in (user && user.shops ? user.shops : [])" :key="s.id">
+                    <div @click="switchShop(s)"
+                        class="cursor-pointer relative p-4 rounded-2xl border transition-all duration-300 flex items-center gap-3.5 group hover:shadow-md hover:scale-[1.01]"
+                        :class="shop && shop.id === s.id 
+                            ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm' 
+                            : 'border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-slate-300 dark:hover:border-gray-600'">
+                        
+                        <div class="w-10 h-10 rounded-xl bg-teal-600 dark:bg-teal-500 text-white font-extrabold flex items-center justify-center text-sm uppercase shrink-0"
+                            x-text="s.name.charAt(0)">
+                        </div>
+                        
+                        <div class="overflow-hidden flex-1">
+                            <h4 class="text-xs font-bold text-slate-800 dark:text-white truncate" x-text="s.name"></h4>
+                            <p class="text-[10px] text-slate-400 mt-0.5 truncate" x-text="s.mobile"></p>
+                        </div>
+                        
+                        <div class="shrink-0 flex items-center">
+                            <span x-show="shop && shop.id === s.id" 
+                                class="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-white text-xs font-bold shadow-sm">✓</span>
+                            <span x-show="!shop || shop.id !== s.id" 
+                                class="w-4 h-4 rounded-full border border-slate-300 dark:border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
         <form @submit.prevent="submitShopProfileUpdate(logoFile, signatureFile)"
             class="flex flex-col lg:flex-row gap-6">
 
@@ -679,8 +726,14 @@
 
                     <!-- Branding Card -->
                     <div
-                        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Branding</h4>
+                        class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4 relative">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Branding</h4>
+                            <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                Premium
+                            </span>
+                        </div>
 
                         <!-- Accent Color Picker & Presets -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -690,9 +743,11 @@
                                     Accent Color</label>
                                 <div class="flex items-center gap-2">
                                     <input type="color" x-model="shopUpdateForm.website_settings.theme_color"
-                                        class="w-10 h-10 border-0 rounded-xl cursor-pointer p-0 overflow-hidden shadow-sm">
+                                        :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                        class="w-10 h-10 border-0 rounded-xl cursor-pointer p-0 overflow-hidden shadow-sm disabled:opacity-50">
                                     <input type="text" x-model="shopUpdateForm.website_settings.theme_color"
-                                        class="w-24 px-2 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white text-center font-mono">
+                                        :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                        class="w-24 px-2 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white text-center font-mono disabled:opacity-50">
                                 </div>
                             </div>
                             <div>
@@ -700,24 +755,29 @@
                                     Presets</label>
                                 <div class="flex flex-wrap gap-1.5">
                                     <button type="button"
-                                        @click="shopUpdateForm.website_settings.theme_color = '#0F766E'"
+                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#0F766E'"
                                         class="w-6 h-6 rounded-full bg-[#0F766E] border border-white dark:border-gray-800 shadow-sm"
+                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Teal"></button>
                                     <button type="button"
-                                        @click="shopUpdateForm.website_settings.theme_color = '#1D4ED8'"
+                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#1D4ED8'"
                                         class="w-6 h-6 rounded-full bg-[#1D4ED8] border border-white dark:border-gray-800 shadow-sm"
+                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Sapphire Blue"></button>
                                     <button type="button"
-                                        @click="shopUpdateForm.website_settings.theme_color = '#7C3AED'"
+                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#7C3AED'"
                                         class="w-6 h-6 rounded-full bg-[#7C3AED] border border-white dark:border-gray-800 shadow-sm"
+                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Purple"></button>
                                     <button type="button"
-                                        @click="shopUpdateForm.website_settings.theme_color = '#B91C1C'"
+                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#B91C1C'"
                                         class="w-6 h-6 rounded-full bg-[#B91C1C] border border-white dark:border-gray-800 shadow-sm"
+                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Rose Red"></button>
                                     <button type="button"
-                                        @click="shopUpdateForm.website_settings.theme_color = '#D97706'"
+                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#D97706'"
                                         class="w-6 h-6 rounded-full bg-[#D97706] border border-white dark:border-gray-800 shadow-sm"
+                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Amber"></button>
                                 </div>
                             </div>
@@ -727,8 +787,13 @@
                     <!-- Business Information Bio & SEO -->
                     <div
                         class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Store Profile & SEO Settings
-                        </h4>
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Store Profile & SEO Settings</h4>
+                            <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                Premium (SEO)
+                            </span>
+                        </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">About
@@ -744,14 +809,16 @@
                                     Page Title</label>
                                 <input type="text" placeholder="Online Catalog & Store"
                                     x-model="shopUpdateForm.website_settings.seo_title"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">SEO
                                     Description</label>
                                 <input type="text" placeholder="Browse our wide selection of items..."
                                     x-model="shopUpdateForm.website_settings.seo_description"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                         </div>
                     </div>
@@ -759,8 +826,13 @@
                     <!-- Social Media Links -->
                     <div
                         class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Social Media & Communication
-                        </h4>
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Social Media & Communication</h4>
+                            <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                Premium
+                            </span>
+                        </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -769,7 +841,8 @@
                                     Profile Link</label>
                                 <input type="url" placeholder="https://facebook.com/my-page"
                                     x-model="shopUpdateForm.website_settings.social_facebook"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                             <div>
                                 <label
@@ -777,7 +850,8 @@
                                     Profile Link</label>
                                 <input type="url" placeholder="https://instagram.com/my-page"
                                     x-model="shopUpdateForm.website_settings.social_instagram"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -787,7 +861,8 @@
                                     / X Link</label>
                                 <input type="url" placeholder="https://twitter.com/my-page"
                                     x-model="shopUpdateForm.website_settings.social_twitter"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                             <div>
                                 <label
@@ -795,7 +870,8 @@
                                     Number Link</label>
                                 <input type="text" placeholder="https://wa.me/919999999999"
                                     x-model="shopUpdateForm.website_settings.social_whatsapp"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                         </div>
                     </div>
@@ -855,9 +931,14 @@
                                     </template>
                                 </div>
                                 <label
-                                    class="relative cursor-pointer bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600/80 border border-slate-300 dark:border-gray-600 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-all">
+                                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''"
+                                    class="relative cursor-pointer bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600/80 border border-slate-300 dark:border-gray-600 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2">
                                     <span>Upload Shop Image</span>
+                                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                    </span>
                                     <input type="file" accept="image/*" @change="onSettingsShopImageChange"
+                                        :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
                                         class="sr-only">
                                 </label>
                             </div>
@@ -1075,21 +1156,37 @@
                                     class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">WhatsApp
-                                    Share</span>
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                                    WhatsApp Share
+                                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500" title="Premium Feature">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                    </span>
+                                </span>
                                 <input type="checkbox" x-model="invoiceConfigForm.whatsapp_share"
-                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 disabled:opacity-50">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">PDF Download</span>
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                                    PDF Download
+                                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500" title="Premium Feature">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                    </span>
+                                </span>
                                 <input type="checkbox" x-model="invoiceConfigForm.pdf_download"
-                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 disabled:opacity-50">
                             </label>
                             <label class="flex items-center justify-between gap-3 cursor-pointer py-0.5">
-                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Email
-                                    Invoice</span>
+                                <span class="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                                    Email Invoice
+                                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500" title="Premium Feature">
+                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                    </span>
+                                </span>
                                 <input type="checkbox" x-model="invoiceConfigForm.email_invoice"
-                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 disabled:opacity-50">
                             </label>
                         </div>
                     </div>
@@ -1126,9 +1223,15 @@
                         Payment Info</h5>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 mb-2">
                         <label class="flex items-center justify-between gap-3 py-1 cursor-pointer">
-                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show UPI QR</span>
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                                Show UPI QR
+                                <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500" title="Premium Feature">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                                </span>
+                            </span>
                             <input type="checkbox" x-model="invoiceConfigForm.show_upi_qr"
-                                class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4">
+                                :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 disabled:opacity-50">
                         </label>
                         <label class="flex items-center justify-between gap-3 py-1 cursor-pointer">
                             <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Show Bank
@@ -1204,74 +1307,96 @@
 
     {{-- Backup & Restore Settings --}}
     <div x-show="settingsTab === 'backup'"
-        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-6">
-        <div>
-            <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
-                    </path>
+        class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+        
+        <!-- Locked State -->
+        <div x-show="user && user.active_plan && user.active_plan.slug === 'free'"
+            class="flex flex-col items-center justify-center text-center p-12 bg-slate-50 dark:bg-gray-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-gray-700 min-h-[350px]">
+            <div class="w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                 </svg>
-                Backup & Restore Shop Data
-            </h3>
-            <p class="text-xs text-slate-400 mt-1">Export a complete JSON backup of your shop products, inventory,
-                customers, suppliers, sales, purchases, and settings, or restore from a previous backup file.</p>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Cloud Backup & Restore is Locked</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6">
+                Protect your shop data with encrypted cloud backups. Upgrade to Premium or Business to download, restore, and schedule automatic daily backups.
+            </p>
+            <button type="button" @click="navigateTo('subscription')"
+                class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
+                Upgrade to Premium
+            </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {{-- Export Card --}}
-            <div
-                class="p-5 border border-slate-200 dark:border-gray-700 rounded-2xl bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between space-y-4">
-                <div>
-                    <div
-                        class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center mb-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Unlocked State -->
+        <div x-show="!user || !user.active_plan || user.active_plan.slug !== 'free'" class="space-y-6">
+            <div>
+                <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                        </path>
+                    </svg>
+                    Backup & Restore Shop Data
+                </h3>
+                <p class="text-xs text-slate-400 mt-1">Export a complete JSON backup of your shop products, inventory,
+                    customers, suppliers, sales, purchases, and settings, or restore from a previous backup file.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- Export Card --}}
+                <div
+                    class="p-5 border border-slate-200 dark:border-gray-700 rounded-2xl bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center mb-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Download Data Backup</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete,
+                            encrypted backup file containing all products, sales history, customer dues, supplier
+                            records, expenses, and settings.</p>
+                    </div>
+                    <button type="button" @click="downloadShopBackup()"
+                        class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
-                    </div>
-                    <h4 class="text-sm font-bold text-slate-800 dark:text-white">Download Data Backup</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete,
-                        encrypted backup file containing all products, sales history, customer dues, supplier
-                        records, expenses, and settings.</p>
-                </div>
-                <button type="button" @click="downloadShopBackup()"
-                    class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg>
-                    Download Backup
-                </button>
-            </div>
-
-            {{-- Restore Card --}}
-            <div
-                class="p-5 border border-slate-200 dark:border-gray-700 rounded-2xl bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between space-y-4">
-                <div>
-                    <div
-                        class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mb-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
-                        </svg>
-                    </div>
-                    <h4 class="text-sm font-bold text-slate-800 dark:text-white">Restore Data Backup</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Select a previously saved
-                        DukanHisab backup file to restore all your shop records and settings.</p>
-                </div>
-
-                <div class="space-y-2">
-                    <input type="file" id="shop-restore-file-input" accept=".dhbak"
-                        class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
-                    <button type="button" @click="restoreShopBackup(document.getElementById('shop-restore-file-input'))"
-                        class="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
-                        </svg>
-                        Restore From Backup
+                        Download Backup
                     </button>
+                </div>
+
+                {{-- Restore Card --}}
+                <div
+                    class="p-5 border border-slate-200 dark:border-gray-700 rounded-2xl bg-slate-50/50 dark:bg-gray-900/30 flex flex-col justify-between space-y-4">
+                    <div>
+                        <div
+                            class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center mb-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
+                            </svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Restore Data Backup</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Select a previously saved
+                            DukanHisab backup file to restore all your shop records and settings.</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <input type="file" id="shop-restore-file-input" accept=".dhbak"
+                            class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
+                        <button type="button" @click="restoreShopBackup(document.getElementById('shop-restore-file-input'))"
+                            class="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
+                            </svg>
+                            Restore From Backup
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

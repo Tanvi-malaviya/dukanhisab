@@ -225,6 +225,7 @@
                     @include('shopowner.partials.reports')
                     @include('shopowner.partials.reminders')
                     @include('shopowner.partials.settings')
+                    @include('shopowner.partials.subscription')
 
                 </main>
             </div>
