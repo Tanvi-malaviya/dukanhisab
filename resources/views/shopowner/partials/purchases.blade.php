@@ -86,7 +86,7 @@
                         </template>
 
                         <template x-if="purchaseFilteredSuppliers.length === 0">
-                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_data_found')">No suppliers found.</div>
+                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_suppliers_found')">No suppliers found.</div>
                         </template>
                     </div>
                 </div>
@@ -229,7 +229,7 @@
                         </template>
 
                         <template x-if="purchaseHistoryFilteredSuppliers.length === 0">
-                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_data_found')">No suppliers found.</div>
+                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_suppliers_found')">No suppliers found.</div>
                         </template>
                     </div>
                 </div>
@@ -253,7 +253,7 @@
 
         {{-- Empty State --}}
         <template x-if="!purchasesLoading && filteredPurchases().length === 0">
-            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm text-center text-slate-400 text-sm" x-text="t('no_data_found')">
+            <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm text-center text-slate-400 text-sm" x-text="t('no_purchases_found')">
                 No purchases found.
             </div>
         </template>

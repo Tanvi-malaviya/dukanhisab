@@ -64,6 +64,9 @@ class SaleApiController extends Controller
                   ->orWhere('status', 'like', "%{$search}%")
                   ->orWhereHas('customer', function($cq) use ($search) {
                       $cq->where('name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('items.product', function($pq) use ($search) {
+                      $pq->where('name', 'like', "%{$search}%");
                   });
             });
         }

@@ -90,7 +90,7 @@
 
                         <!-- No customers found message -->
                         <template x-if="posFilteredCustomers.length === 0">
-                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_data_found')">No customers found.</div>
+                            <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_customers_found')">No customers found.</div>
                         </template>
                     </div>
                 </div>

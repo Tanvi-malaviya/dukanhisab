@@ -756,7 +756,7 @@
                                     </template>
 
                                     <template x-if="posFilteredCustomers.length === 0">
-                                        <div class="text-center py-4 text-xs text-slate-400">No customers found.</div>
+                                        <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_customers_found')">No customers found.</div>
                                     </template>
                                 </div>
                             </div>
@@ -791,7 +791,7 @@
                             </div>
                         </template>
                         <template x-if="pos.items.length === 0">
-                            <div class="text-center py-10 text-slate-400 text-sm">Cart is empty. Click products above to add.</div>
+                            <div class="text-center py-10 text-slate-400 text-sm" x-text="t('cart_empty')">Cart is empty. Click products or scan barcodes to begin.</div>
                         </template>
                     </div>
 
@@ -925,7 +925,7 @@
                                     </template>
 
                                     <template x-if="purchaseFilteredSuppliers.length === 0">
-                                        <div class="text-center py-4 text-xs text-slate-400">No suppliers found.</div>
+                                        <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_suppliers_found')">No suppliers found.</div>
                                     </template>
                                 </div>
                             </div>
