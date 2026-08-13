@@ -80,6 +80,7 @@ Route::prefix('v1/shopowner')->group(function () {
     Route::post('/login', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'login']);
     Route::post('/forgot-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'forgotPassword']);
     Route::post('/reset-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'resetPassword']);
+    Route::post('/razorpay/webhook', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'handleWebhook']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shop-setup', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'shopSetup']);
@@ -93,6 +94,7 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::get('/subscription', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'current']);
         Route::post('/subscription/cancel', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'cancel']);
         Route::post('/subscription/upgrade', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'upgrade']);
+        Route::post('/subscription/verify', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'verifyPayment']);
 
         // Support tickets (own tickets only)
         Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
