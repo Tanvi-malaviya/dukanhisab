@@ -1277,27 +1277,8 @@
     <div x-show="settingsTab === 'backup'"
         class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
         
-        <!-- Locked State -->
-        <div x-show="user && user.active_plan && user.active_plan.slug === 'free'"
-            class="flex flex-col items-center justify-center text-center p-12 bg-slate-50 dark:bg-gray-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-gray-700 min-h-[350px]">
-            <div class="w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2" x-text="t('backup_locked_title')">Cloud Backup & Restore is Locked</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6" x-text="t('backup_locked_desc')">
-                Protect your shop data with encrypted cloud backups. Upgrade to Premium or Business to download, restore, and schedule automatic daily backups.
-            </p>
-            <button type="button" @click="navigateTo('subscription')"
-                class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5"
-                x-text="t('upgrade_to_premium')">
-                Upgrade to Premium
-            </button>
-        </div>
-
-        <!-- Unlocked State -->
-        <div x-show="!user || !user.active_plan || user.active_plan.slug !== 'free'" class="space-y-6">
+        
+        <div class="space-y-6">
             <div>
                 <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

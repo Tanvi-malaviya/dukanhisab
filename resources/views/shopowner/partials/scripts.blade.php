@@ -2527,6 +2527,12 @@
             },
 
             downloadShopBackup() {
+                if (!this.user || !this.user.active_plan || this.user.active_plan.slug !== 'business') {
+                    this.showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => {
+                        this.navigateTo('subscription');
+                    });
+                    return;
+                }
                 this.loading = true;
                 const headers = this.getHeaders();
                 fetch('/api/v1/backup/export', { headers: headers })
@@ -2566,6 +2572,12 @@
             },
 
             restoreShopBackup(fileInput) {
+                if (!this.user || !this.user.active_plan || this.user.active_plan.slug !== 'business') {
+                    this.showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => {
+                        this.navigateTo('subscription');
+                    });
+                    return;
+                }
                 const file = fileInput && fileInput.files ? fileInput.files[0] : null;
                 if (!file) {
                     this.showConfirm('Validation Error', 'Please select a valid backup file.', () => { });
