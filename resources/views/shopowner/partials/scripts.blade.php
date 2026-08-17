@@ -1148,11 +1148,117 @@
                     );
                     return;
                 }
+
+                // If Free plan, upgrade directly without payment gateway
+                if (planSlug === 'free') {
+                    this.subscriptionLoading = true;
+                    fetch('/api/v1/shopowner/subscription/upgrade', {
+                        method: 'POST',
+                        headers: this.getHeaders(),
+                        body: JSON.stringify({ plan_slug: planSlug })
+                    })
+                        .then(r => r.json())
+                        .then(d => {
+                            this.subscriptionLoading = false;
+                            if (d.user) {
+                                this.user = d.user;
+                                localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                                this.showToast(d.message || 'Subscription upgraded successfully!');
+                                this.loadProfile();
+                            } else {
+                                this.showToast(d.message || 'Failed to upgrade subscription.', 'error');
+                            }
+                        })
+                        .catch(() => {
+                            this.subscriptionLoading = false;
+                            this.showToast('Error upgrading subscription.', 'error');
+                        });
+                    return;
+                }
+
+                // For Paid Plans (Premium / Business): Create Razorpay Order
                 this.subscriptionLoading = true;
-                fetch('/api/v1/shopowner/subscription/upgrade', {
+                fetch('/api/v1/shopowner/subscription/create-order', {
                     method: 'POST',
                     headers: this.getHeaders(),
                     body: JSON.stringify({ plan_slug: planSlug })
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (!d.order_id) {
+                            this.subscriptionLoading = false;
+                            this.showToast(d.message || 'Failed to initialize payment gateway.', 'error');
+                            return;
+                        }
+
+                        const self = this;
+
+                        // Check if Razorpay JS SDK is loaded and keys are ready
+                        if (typeof Razorpay !== 'undefined' && d.key && d.key !== 'rzp_test_placeholder') {
+                            const options = {
+                                key: d.key,
+                                amount: d.amount,
+                                currency: d.currency || 'INR',
+                                name: (this.shop && this.shop.name) ? this.shop.name : 'DukanHisab',
+                                description: (d.plan ? d.plan.name : planSlug.toUpperCase()) + ' Subscription Plan',
+                                order_id: d.order_id,
+                                handler: function (response) {
+                                    self.verifyRazorpayPayment(planSlug, response);
+                                },
+                                prefill: {
+                                    name: (d.user && d.user.name) ? d.user.name : (self.user ? self.user.first_name + ' ' + (self.user.last_name || '') : ''),
+                                    email: (d.user && d.user.email) ? d.user.email : (self.user ? self.user.email : ''),
+                                    contact: (d.user && d.user.mobile) ? d.user.mobile : (self.user ? self.user.mobile : '')
+                                },
+                                theme: {
+                                    color: '#0F766E'
+                                },
+                                modal: {
+                                    ondismiss: function () {
+                                        self.subscriptionLoading = false;
+                                    }
+                                }
+                            };
+
+                            const rzp = new Razorpay(options);
+                            rzp.on('payment.failed', function (response) {
+                                self.subscriptionLoading = false;
+                                self.showToast(response.error ? response.error.description : 'Payment failed. Please try again.', 'error');
+                            });
+                            rzp.open();
+                        } else {
+                            // In test mode or when keys are placeholders, confirm test payment completion
+                            this.showConfirm(
+                                'Test Payment Mode',
+                                `Razorpay order created for ₹${parseFloat(d.amount / 100).toFixed(2)} (${d.plan ? d.plan.name : planSlug}). Would you like to simulate a successful payment? (Add your RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
+                                () => {
+                                    self.verifyRazorpayPayment(planSlug, {
+                                        razorpay_order_id: d.order_id,
+                                        razorpay_payment_id: 'pay_mock_' + Math.random().toString(36).substring(2, 15),
+                                        razorpay_signature: 'sig_mock_verified'
+                                    });
+                                }
+                            );
+                            this.subscriptionLoading = false;
+                        }
+                    })
+                    .catch(() => {
+                        this.subscriptionLoading = false;
+                        this.showToast('Error connecting to payment service.', 'error');
+                    });
+            },
+
+            verifyRazorpayPayment(planSlug, rzpResponse) {
+                this.subscriptionLoading = true;
+                fetch('/api/v1/shopowner/subscription/verify-payment', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        plan_slug: planSlug,
+                        razorpay_order_id: rzpResponse.razorpay_order_id,
+                        razorpay_payment_id: rzpResponse.razorpay_payment_id,
+                        razorpay_signature: rzpResponse.razorpay_signature || ''
+                    })
                 })
                     .then(r => r.json())
                     .then(d => {
@@ -1160,15 +1266,15 @@
                         if (d.user) {
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
-                            this.showToast(d.message || 'Subscription upgraded successfully!');
+                            this.showToast(d.message || 'Payment successful! Subscription plan activated.');
                             this.loadProfile();
                         } else {
-                            this.showToast(d.message || 'Failed to upgrade subscription.', 'error');
+                            this.showToast(d.message || 'Payment verification failed.', 'error');
                         }
                     })
                     .catch(() => {
                         this.subscriptionLoading = false;
-                        this.showToast('Error upgrading subscription.', 'error');
+                        this.showToast('Error verifying payment.', 'error');
                     });
             },
 

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\ShopOwner;
 
 use App\Http\Controllers\Controller;
+use App\Models\Payment;
 use App\Models\SubscriptionPlan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionApiController extends Controller
 {
@@ -73,6 +76,155 @@ class SubscriptionApiController extends Controller
         ]);
     }
 
+    /**
+     * Create a Razorpay Order for purchasing a paid subscription plan.
+     */
+    public function createOrder(Request $request)
+    {
+        $request->validate([
+            'plan_slug' => 'required|string|in:premium,business',
+        ]);
+
+        $user = $request->user();
+        $plan = SubscriptionPlan::where('slug', $request->plan_slug)->first();
+
+        if (!$plan) {
+            return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        $amountInPaise = (int) round(((float) $plan->price) * 100);
+        $keyId = config('services.razorpay.key');
+        $keySecret = config('services.razorpay.secret');
+
+        // If Razorpay API credentials are configured, create order via Razorpay API
+        if (!empty($keyId) && !empty($keySecret)) {
+            try {
+                $response = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/orders', [
+                    'amount' => $amountInPaise,
+                    'currency' => 'INR',
+                    'receipt' => 'sub_rcpt_' . $user->id . '_' . time(),
+                    'notes' => [
+                        'user_id' => (string) $user->id,
+                        'plan_id' => (string) $plan->id,
+                        'plan_slug' => $plan->slug,
+                    ],
+                ]);
+
+                if ($response->successful()) {
+                    $order = $response->json();
+                    return response()->json([
+                        'order_id' => $order['id'],
+                        'key' => $keyId,
+                        'amount' => $amountInPaise,
+                        'currency' => 'INR',
+                        'plan' => $plan,
+                        'user' => [
+                            'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                            'email' => $user->email,
+                            'mobile' => $user->mobile,
+                        ],
+                    ]);
+                } else {
+                    Log::error('Razorpay order creation failed', ['response' => $response->body()]);
+                    return response()->json([
+                        'message' => 'Razorpay Error: ' . ($response->json('error.description') ?? 'Failed to create order.'),
+                    ], 400);
+                }
+            } catch (\Exception $e) {
+                Log::error('Razorpay connection error: ' . $e->getMessage());
+                return response()->json(['message' => 'Failed to connect to payment gateway: ' . $e->getMessage()], 500);
+            }
+        }
+
+        // Test/Sandbox fallback if Razorpay keys are not yet configured in .env
+        $mockOrderId = 'order_mock_' . bin2hex(random_bytes(8));
+        return response()->json([
+            'order_id' => $mockOrderId,
+            'key' => 'rzp_test_placeholder',
+            'amount' => $amountInPaise,
+            'currency' => 'INR',
+            'is_test_mode' => true,
+            'plan' => $plan,
+            'user' => [
+                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                'email' => $user->email,
+                'mobile' => $user->mobile,
+            ],
+        ]);
+    }
+
+    /**
+     * Verify payment signature and activate subscription.
+     */
+    public function verifyPayment(Request $request)
+    {
+        $request->validate([
+            'plan_slug' => 'required|string|in:premium,business',
+            'razorpay_order_id' => 'required|string',
+            'razorpay_payment_id' => 'required|string',
+            'razorpay_signature' => 'nullable|string',
+        ]);
+
+        $user = $request->user();
+        $plan = SubscriptionPlan::where('slug', $request->plan_slug)->first();
+
+        if (!$plan) {
+            return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        $keySecret = config('services.razorpay.secret');
+
+        // Signature verification when secret is set and not in mock mode
+        if (!empty($keySecret) && !str_starts_with($request->razorpay_order_id, 'order_mock_')) {
+            $expectedSignature = hash_hmac(
+                'sha256',
+                $request->razorpay_order_id . '|' . $request->razorpay_payment_id,
+                $keySecret
+            );
+
+            if (!hash_equals($expectedSignature, (string) $request->razorpay_signature)) {
+                return response()->json(['message' => 'Payment verification failed: Invalid signature.'], 400);
+            }
+        }
+
+        // Record successful payment in payments table
+        Payment::create([
+            'user_id' => $user->id,
+            'shop_id' => $user->shops()->first()?->id ?? 1,
+            'plan_id' => $plan->id,
+            'amount' => $plan->price,
+            'payment_gateway' => 'razorpay',
+            'transaction_id' => $request->razorpay_payment_id,
+            'status' => 'successful',
+            'payment_date' => now(),
+        ]);
+
+        // Activate Plan on User
+        $user->active_plan_id = $plan->id;
+        $user->save();
+
+        // Create or update subscription record
+        $user->subscriptions()->updateOrCreate(
+            ['status' => 'active'],
+            [
+                'plan_id' => $plan->id,
+                'starts_at' => now(),
+                'ends_at' => $plan->slug === 'premium' ? now()->addYear() : null,
+                'status' => 'active',
+            ]
+        );
+
+        $user->load(['activePlan', 'currentSubscription']);
+
+        return response()->json([
+            'message' => 'Payment successful! ' . $plan->name . ' activated successfully.',
+            'plan' => $user->activePlan,
+            'subscription' => $user->currentSubscription,
+            'user' => $user,
+            'shop_count' => $user->shops()->count(),
+        ]);
+    }
+
     public function upgrade(Request $request)
     {
         $request->validate([
@@ -102,7 +254,7 @@ class SubscriptionApiController extends Controller
                 [
                     'plan_id' => $plan->id,
                     'starts_at' => now(),
-                    'ends_at' => $plan->slug === 'business' ? now()->addYears(100) : ($plan->slug === 'premium' ? now()->addYear() : null),
+                    'ends_at' => $plan->slug === 'premium' ? now()->addYear() : null,
                     'status' => 'active',
                 ]
             );
