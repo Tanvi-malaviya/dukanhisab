@@ -108,6 +108,9 @@
                 'purchase-returned': 'purchase-returned',
             },
 
+            // Theme State
+            dark: localStorage.getItem('darkMode') === 'true',
+
             // Multi-Language System (Loaded from separate JSON files in /lang directory)
             currentLang: localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en',
             translations: {
@@ -576,7 +579,8 @@
                     const inNumber = s.sale_number && s.sale_number.toLowerCase().includes(search);
                     const inCustomer = s.customer && s.customer.name && s.customer.name.toLowerCase().includes(search);
                     const inStatus = s.status && s.status.toLowerCase().includes(search);
-                    return inNumber || inCustomer || inStatus;
+                    const inProduct = s.items && s.items.some(it => it.product && it.product.name && it.product.name.toLowerCase().includes(search));
+                    return inNumber || inCustomer || inStatus || inProduct;
                 });
             },
 
@@ -594,7 +598,8 @@
                     const inNumber = s.sale_number && s.sale_number.toLowerCase().includes(search);
                     const inCustomer = s.customer && s.customer.name && s.customer.name.toLowerCase().includes(search);
                     const inStatus = s.status && s.status.toLowerCase().includes(search);
-                    return inNumber || inCustomer || inStatus;
+                    const inProduct = s.items && s.items.some(it => it.product && it.product.name && it.product.name.toLowerCase().includes(search));
+                    return inNumber || inCustomer || inStatus || inProduct;
                 });
             },
 
@@ -1009,10 +1014,7 @@
             },
 
             printReport() {
-                const html = document.getElementById('report-print-area').innerHTML;
-                const w = window.open('', '', 'width=800,height=600');
-                w.document.write('<html><head><title>Business Statement</title></head><body>' + html + '</body></html>');
-                w.document.close(); w.print();
+                this.printHtmlBlock('report-print-area', 'Business Statement');
             },
 
             submitShopProfileUpdate(logoFile = null, signatureFile = null, shopImageFile = null) {
@@ -1122,6 +1124,20 @@
                         }
                     })
                     .catch(() => {});
+            },
+
+            getPlan(slug) {
+                const plan = this.subscriptionPlans.find(p => p.slug === slug);
+                if (plan) return plan;
+                // Fallbacks if not loaded yet
+                if (slug === 'free') {
+                    return { name: 'Free Plan', price: 0.00, billing_period: 'free', description: 'Core accounting features for single-shop owners.', features: { max_shops: 1, max_devices: 1, advanced_reports: false, backup: false } };
+                } else if (slug === 'premium') {
+                    return { name: 'Premium Plan', price: 365.00, billing_period: 'yearly', description: 'Ad-free professional experience and multi-shop.', features: { max_shops: 2, max_devices: 2, advanced_reports: true, backup: true } };
+                } else if (slug === 'business') {
+                    return { name: 'Business (Lifetime)', price: 999.00, billing_period: 'lifetime', description: 'Complete control with lifetime updates & max capacity.', features: { max_shops: 5, max_devices: 5, advanced_reports: true, backup: true } };
+                }
+                return { name: '', price: 0.00, billing_period: '', description: '', features: {} };
             },
 
             loadSubscriptionPlans() {
@@ -1263,7 +1279,66 @@
                     .then(r => r.json())
                     .then(d => {
                         this.subscriptionLoading = false;
-                        if (d.user) {
+                        if (d.requires_payment) {
+                            // Launch Razorpay Checkout
+                            const options = {
+                                key: d.key_id,
+                                amount: d.amount,
+                                currency: d.currency || "INR",
+                                name: "DukanHisab",
+                                description: "Subscription to " + d.plan.name,
+                                handler: (response) => {
+                                    this.subscriptionLoading = true;
+                                    fetch('/api/v1/shopowner/subscription/verify', {
+                                        method: 'POST',
+                                        headers: this.getHeaders(),
+                                        body: JSON.stringify({
+                                            plan_slug: planSlug,
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_signature: response.razorpay_signature,
+                                            razorpay_subscription_id: response.razorpay_subscription_id || d.subscription_id || '',
+                                            razorpay_order_id: response.razorpay_order_id || d.order_id || ''
+                                        })
+                                    })
+                                    .then(vr => vr.json())
+                                    .then(vd => {
+                                        this.subscriptionLoading = false;
+                                        if (vd.user) {
+                                            this.user = vd.user;
+                                            localStorage.setItem('shopowner_user', JSON.stringify(vd.user));
+                                            this.showToast(vd.message || 'Subscription upgraded successfully!');
+                                            this.loadProfile();
+                                        } else {
+                                            this.showToast(vd.message || 'Failed to verify subscription payment.', 'error');
+                                        }
+                                    })
+                                    .catch(() => {
+                                        this.subscriptionLoading = false;
+                                        this.showToast('Network error verifying signature.', 'error');
+                                    });
+                                },
+                                prefill: {
+                                    name: d.user.name || '',
+                                    email: d.user.email || '',
+                                    contact: d.user.mobile || ''
+                                },
+                                theme: {
+                                    color: "#0F766E"
+                                }
+                            };
+
+                            if (d.subscription_id) {
+                                options.subscription_id = d.subscription_id;
+                            } else if (d.order_id) {
+                                options.order_id = d.order_id;
+                            }
+
+                            const rzp = new Razorpay(options);
+                            rzp.on('payment.failed', (response) => {
+                                this.showToast(response.error.description || 'Payment failed.', 'error');
+                            });
+                            rzp.open();
+                        } else if (d.user) {
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             this.showToast(d.message || 'Payment successful! Subscription plan activated.');
@@ -1272,7 +1347,7 @@
                             this.showToast(d.message || 'Payment verification failed.', 'error');
                         }
                     })
-                    .catch(() => {
+                    .catch((err) => {
                         this.subscriptionLoading = false;
                         this.showToast('Error verifying payment.', 'error');
                     });
@@ -1719,7 +1794,7 @@
                 else {
                     this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '' };
                     this.showProductModal = true; this.pos.barcodeInput = '';
-                    this.showToast('Product not found! Create a new product.', 'warning');
+                    this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
             },
 
@@ -2522,7 +2597,7 @@
                     this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '' };
                     this.showProductModal = true;
                     this.pos.barcodeInput = '';
-                    this.showToast('Product not found! Create a new product.', 'warning');
+                    this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
             },
             calculatePurchaseTotal() { return this.newPurchase.items.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0); },
@@ -2557,6 +2632,12 @@
             },
 
             downloadShopBackup() {
+                if (!this.user || !this.user.active_plan || this.user.active_plan.slug !== 'business') {
+                    this.showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => {
+                        this.navigateTo('subscription');
+                    });
+                    return;
+                }
                 this.loading = true;
                 const headers = this.getHeaders();
                 fetch('/api/v1/backup/export', { headers: headers })
@@ -2596,6 +2677,12 @@
             },
 
             restoreShopBackup(fileInput) {
+                if (!this.user || !this.user.active_plan || this.user.active_plan.slug !== 'business') {
+                    this.showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => {
+                        this.navigateTo('subscription');
+                    });
+                    return;
+                }
                 const file = fileInput && fileInput.files ? fileInput.files[0] : null;
                 if (!file) {
                     this.showConfirm('Validation Error', 'Please select a valid backup file.', () => { });

@@ -13,7 +13,7 @@
 
         <div @click="navigateTo('purchase-history')" class="card-purchase p-3 border border-blue-200 rounded-2xl flex flex-col justify-between shadow-sm bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800 cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all">
             <div class="flex justify-between items-start gap-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 leading-tight" x-text="t('today_purchase')">Today Purchase</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 leading-tight" x-text="t('today_purchase') || t('today_purchases')">Today Purchase</span>
                 <div class="card-icon p-1 rounded-lg bg-white dark:bg-gray-800 text-blue-600 shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg></div>
             </div>
             <div class="mt-2"><span class="text-xl font-extrabold text-blue-900 dark:text-blue-200">₹<span x-text="dashboardStats.today_purchases"></span></span></div>
@@ -148,7 +148,7 @@
                             </tr>
                         </template>
                         <template x-if="!dashboardLoading && dashboardStats.recent_sales.length === 0">
-                            <tr><td colspan="5" class="text-sm text-slate-400 text-center py-8" x-text="t('no_recent_sales') || t('no_data_found')">No recent sales records found.</td></tr>
+                            <tr><td colspan="5" class="text-sm text-slate-400 text-center py-8" x-text="t('no_recent_sales_records_found') || t('no_recent_sales') || t('no_data_found')">No recent sales records found.</td></tr>
                         </template>
                     </tbody>
                 </table>

@@ -80,6 +80,7 @@ Route::prefix('v1/shopowner')->group(function () {
     Route::post('/login', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'login']);
     Route::post('/forgot-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'forgotPassword']);
     Route::post('/reset-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'resetPassword']);
+    Route::post('/razorpay/webhook', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'handleWebhook']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shop-setup', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'shopSetup']);

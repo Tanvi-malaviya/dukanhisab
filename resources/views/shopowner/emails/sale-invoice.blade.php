@@ -104,7 +104,7 @@
                     </tr>
                     <tr>
                         <td class="label" style="padding-top: 12px;">Grand Total</td>
-                        <td class="value amount" style="padding-top: 12px;">Rs. {{ number_format($sale->grand_total, 2) }}</td>
+                        <td class="value amount" style="padding-top: 12px;">₹ {{ number_format($sale->grand_total, 2) }}</td>
                     </tr>
                 </table>
             </div>
