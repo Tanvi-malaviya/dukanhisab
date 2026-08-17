@@ -13,7 +13,7 @@
 
         <div @click="navigateTo('purchase-history')" class="card-purchase p-3 border border-blue-200 rounded-2xl flex flex-col justify-between shadow-sm bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800 cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all">
             <div class="flex justify-between items-start gap-1">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 leading-tight" x-text="t('today_purchases')">Today Purchase</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 leading-tight" x-text="t('today_purchase') || t('today_purchases')">Today Purchase</span>
                 <div class="card-icon p-1 rounded-lg bg-white dark:bg-gray-800 text-blue-600 shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg></div>
             </div>
             <div class="mt-2"><span class="text-xl font-extrabold text-blue-900 dark:text-blue-200">₹<span x-text="dashboardStats.today_purchases"></span></span></div>
@@ -104,7 +104,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-xs font-bold text-rose-600"><span x-text="t('stock')">Stock</span>: <span x-text="prod.stock"></span></p>
-                            <p class="text-[10px] text-slate-400">Limit: <span x-text="prod.low_stock_threshold"></span></p>
+                            <p class="text-[10px] text-slate-400"><span x-text="t('limit')">Limit</span>: <span x-text="prod.low_stock_threshold"></span></p>
                         </div>
                     </div>
                 </template>
@@ -132,23 +132,23 @@
                             <tr>
                                 <td colspan="5" class="text-center py-8">
                                     <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
-                                    <p class="text-xs text-slate-400 mt-2 font-medium" x-text="t('loading_dashboard')">Loading dashboard...</p>
+                                    <p class="text-xs text-slate-400 mt-2 font-medium" x-text="t('loading_dashboard') || t('loading')">Loading dashboard...</p>
                                 </td>
                             </tr>
                         </template>
                         <template x-for="sale in (dashboardLoading ? [] : dashboardStats.recent_sales)" :key="sale.id">
                             <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50 cursor-pointer" @click="viewInvoice(sale.id)">
                                 <td class="px-3 py-2.5 text-sm font-semibold text-primary" x-text="sale.sale_number"></td>
-                                <td class="px-3 py-2.5 text-sm text-slate-700 dark:text-slate-300" x-text="sale.customer ? sale.customer.name : t('walk_in_customer')"></td>
+                                <td class="px-3 py-2.5 text-sm text-slate-700 dark:text-slate-300" x-text="sale.customer ? sale.customer.name : (t('walk_in_customer') || 'Walk-In')"></td>
                                 <td class="px-3 py-2.5 text-sm font-bold text-slate-800 dark:text-white">₹<span x-text="sale.grand_total"></span></td>
                                 <td class="px-3 py-2.5 text-sm">
-                                    <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'" class="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" x-text="t(sale.status.toLowerCase()) || sale.status"></span>
+                                    <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'" class="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" x-text="sale.status === 'Returned' ? t('returned') : (sale.status === 'Partially Paid' ? t('partially_paid') : (sale.status === 'Paid' || sale.status === 'Completed' ? t('completed') : (t(sale.status.toLowerCase().replace(/\s+/g, '_')) || sale.status)))"></span>
                                 </td>
-                                <td class="px-3 py-2.5 text-xs text-slate-500" x-text="new Date(sale.sale_date).toLocaleDateString()"></td>
+                                <td class="px-3 py-2.5 text-xs text-slate-500" x-text="new Date(sale.sale_date).toLocaleDateString(currentLang === 'gu' ? 'gu-IN' : (currentLang === 'hi' ? 'hi-IN' : 'en-US'))"></td>
                             </tr>
                         </template>
                         <template x-if="!dashboardLoading && dashboardStats.recent_sales.length === 0">
-                            <tr><td colspan="5" class="text-sm text-slate-400 text-center py-8" x-text="t('no_recent_sales_records_found')">No recent sales records found.</td></tr>
+                            <tr><td colspan="5" class="text-sm text-slate-400 text-center py-8" x-text="t('no_recent_sales_records_found') || t('no_recent_sales') || t('no_data_found')">No recent sales records found.</td></tr>
                         </template>
                     </tbody>
                 </table>

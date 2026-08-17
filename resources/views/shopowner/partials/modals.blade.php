@@ -743,7 +743,8 @@
 
                                 <div class="space-y-1">
                                     <button type="button" @click="selectPosCustomer(null); open = false;"
-                                        class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
+                                        class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400"
+                                        x-text="t('walk_in_customer')">
                                         Walk-In Customer
                                     </button>
 
@@ -912,7 +913,8 @@
 
                                 <div class="space-y-1">
                                     <button type="button" @click="selectPurchaseSupplier(null); open = false;"
-                                        class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400">
+                                        class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-slate-50 dark:hover:bg-gray-700/50 font-medium text-slate-500 dark:text-slate-400"
+                                        x-text="t('walk_in_supplier')">
                                         Walk-In Supplier
                                     </button>
 
