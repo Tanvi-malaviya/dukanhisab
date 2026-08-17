@@ -2433,9 +2433,9 @@
                 this.purchaseFilteredSuppliers = this.suppliers;
             },
             getSelectedPurchaseSupplierName() {
-                if (!this.newPurchase.supplier_id) return 'Walk-In Supplier';
+                if (!this.newPurchase.supplier_id) return this.t('walk_in_supplier');
                 const sup = this.suppliers.find(s => s.id == this.newPurchase.supplier_id);
-                return sup ? `${sup.name} (${sup.mobile || 'No Mobile'})` : 'Walk-In Supplier';
+                return sup ? `${sup.name} (${sup.mobile || 'No Mobile'})` : this.t('walk_in_supplier');
             },
             searchPurchaseHistorySuppliers() {
                 const q = this.purchaseHistorySupplierSearchQuery;

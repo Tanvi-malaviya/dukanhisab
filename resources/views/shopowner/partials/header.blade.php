@@ -17,7 +17,7 @@
             /dukanhisab/<span x-text="page === 'dashboard' ? '' : page"></span>
         </span> -->
         <span class="text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:inline"
-            x-text="new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })">
+            x-text="new Date().toLocaleDateString(currentLang === 'gu' ? 'gu-IN' : (currentLang === 'hi' ? 'hi-IN' : 'en-US'), { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })">
         </span>
 
         {{-- Language Selector Dropdown --}}
@@ -69,7 +69,7 @@
                 <div class="w-7 h-7 rounded-lg bg-teal-600 text-white font-extrabold flex items-center justify-center text-xs uppercase"
                     x-text="shop && shop.name ? shop.name.charAt(0) : 'S'">
                 </div>
-                <span class="text-xs font-bold hidden md:inline-block max-w-[100px] truncate" x-text="shop ? shop.name : 'Select Shop'"></span>
+                <span class="text-xs font-bold hidden md:inline-block max-w-[100px] truncate" x-text="shop ? shop.name : (t('select_shop') || 'Select Shop')"></span>
                 <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path>
                 </svg>
@@ -78,7 +78,7 @@
             <div x-show="open" x-cloak
                 class="absolute right-0 mt-1.5 w-64 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl shadow-xl z-[100] py-2 overflow-hidden transition-all">
                 <div class="px-4 py-2 border-b border-slate-100 dark:border-gray-700">
-                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">My Shops</p>
+                    <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400" x-text="t('my_shops') || 'My Shops'">My Shops</p>
                 </div>
                 
                 {{-- Shop List --}}
@@ -107,7 +107,7 @@
                         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
-                        Add New Shop
+                        <span x-text="t('add_new_shop') || 'Add New Shop'">Add New Shop</span>
                         <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
                             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                         </span>
