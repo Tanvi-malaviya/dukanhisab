@@ -149,37 +149,43 @@
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
             return 'INV-' + yyyy + mm + dd + '-0001';
+        },
+        syncShopForm(targetShop) {
+            if (!targetShop) return;
+            this.shopUpdateForm = {
+                name: targetShop.name,
+                owner_name: user ? user.name : '',
+                mobile: targetShop.mobile || '',
+                email: targetShop.email || '',
+                gst_number: targetShop.gst_number || '',
+                address: targetShop.address || '',
+                city: targetShop.city || '',
+                state: targetShop.state || '',
+                pincode: targetShop.pincode || '',
+                currency: targetShop.currency || 'INR',
+                upi_id: targetShop.upi_id || '',
+                bank_details: targetShop.bank_details || '',
+                invoice_footer: targetShop.invoice_footer || '',
+                website_settings: targetShop.website_settings ? Object.assign({ enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }, targetShop.website_settings) : { enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }
+            };
+            this.logoPreview = '';
+            this.logoFile = null;
+            this.signaturePreview = '';
+            this.signatureFile = null;
+            this.shopImagePreview = '';
+            this.shopImageFile = null;
+            this.parseBankDetails();
         }
     }" x-init="
     if (shop) {
-        shopUpdateForm.bank_details = shop.bank_details || '';
-        parseBankDetails();
+        syncShopForm(shop);
     }
+    $watch('shop', value => {
+        syncShopForm(value);
+    });
     $watch('page', value => {
         if(value === 'settings' && shop) {
-            shopUpdateForm = {
-                name: shop.name,
-                owner_name: user ? user.name : '',
-                mobile: shop.mobile || '',
-                email: shop.email || '',
-                gst_number: shop.gst_number || '',
-                address: shop.address || '',
-                city: shop.city || '',
-                state: shop.state || '',
-                pincode: shop.pincode || '',
-                currency: shop.currency || 'INR',
-                upi_id: shop.upi_id || '',
-                bank_details: shop.bank_details || '',
-                invoice_footer: shop.invoice_footer || '',
-                website_settings: shop.website_settings ? Object.assign({ enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }, shop.website_settings) : { enabled: false, subdomain: '', theme_color: '#0F766E', seo_title: '', seo_description: '', social_facebook: '', social_instagram: '', social_twitter: '', social_whatsapp: '', show_catalog: true, show_contact: true, show_inquiry: true, about_us: '' }
-            };
-            logoPreview = '';
-            logoFile = null;
-            signaturePreview = '';
-            signatureFile = null;
-            shopImagePreview = '';
-            shopImageFile = null;
-            parseBankDetails();
+            syncShopForm(shop);
         }
         if (value === 'settings' && user) {
             userProfileForm = {
@@ -261,15 +267,15 @@
         <div class="mb-8 pb-8 border-b border-slate-100 dark:border-gray-700">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">My Shops</h3>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Manage and switch between your business profiles</p>
+                    <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider" x-text="t('my_shops')">My Shops</h3>
+                    <p class="text-[11px] text-slate-400 mt-0.5" x-text="t('my_shops_desc')">Manage and switch between your business profiles</p>
                 </div>
                 <button type="button" @click="openAddShopModal()"
                     class="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary-hover text-white text-[11px] font-bold rounded-xl shadow-md transition-all">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    Add Shop
+                    <span x-text="t('add_shop')">Add Shop</span>
                     <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-300">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
@@ -1271,26 +1277,8 @@
     <div x-show="settingsTab === 'backup'"
         class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
         
-        <!-- Locked State -->
-        <div x-show="user && user.active_plan && user.active_plan.slug === 'free'"
-            class="flex flex-col items-center justify-center text-center p-12 bg-slate-50 dark:bg-gray-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-gray-700 min-h-[350px]">
-            <div class="w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Cloud Backup & Restore is Locked</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mb-6">
-                Protect your shop data with encrypted cloud backups. Upgrade to Premium or Business to download, restore, and schedule automatic daily backups.
-            </p>
-            <button type="button" @click="navigateTo('subscription')"
-                class="px-5 py-2.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5">
-                Upgrade to Premium
-            </button>
-        </div>
-
-        <!-- Unlocked State -->
-        <div x-show="!user || !user.active_plan || user.active_plan.slug !== 'free'" class="space-y-6">
+        
+        <div class="space-y-6">
             <div>
                 <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1298,9 +1286,9 @@
                             d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
                         </path>
                     </svg>
-                    Backup & Restore Shop Data
+                    <span x-text="t('backup_restore_title')">Backup & Restore Shop Data</span>
                 </h3>
-                <p class="text-xs text-slate-400 mt-1">Export a complete JSON backup of your shop products, inventory,
+                <p class="text-xs text-slate-400 mt-1" x-text="t('backup_restore_desc')">Export a complete JSON backup of your shop products, inventory,
                     customers, suppliers, sales, purchases, and settings, or restore from a previous backup file.</p>
             </div>
 
@@ -1316,8 +1304,8 @@
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                             </svg>
                         </div>
-                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Download Data Backup</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Download a complete,
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white" x-text="t('download_data_backup')">Download Data Backup</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" x-text="t('download_backup_desc')">Download a complete,
                             encrypted backup file containing all products, sales history, customer dues, supplier
                             records, expenses, and settings.</p>
                     </div>
@@ -1327,7 +1315,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                         </svg>
-                        Download Backup
+                        <span x-text="t('download_backup_btn')">Download Backup</span>
                     </button>
                 </div>
 
@@ -1342,8 +1330,8 @@
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
                             </svg>
                         </div>
-                        <h4 class="text-sm font-bold text-slate-800 dark:text-white">Restore Data Backup</h4>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">Select a previously saved
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-white" x-text="t('restore_data_backup')">Restore Data Backup</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed" x-text="t('restore_backup_desc')">Select a previously saved
                             DukanHisab backup file to restore all your shop records and settings.</p>
                     </div>
 
@@ -1356,7 +1344,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
                             </svg>
-                            Restore From Backup
+                            <span x-text="t('restore_from_backup')">Restore From Backup</span>
                         </button>
                     </div>
                 </div>
