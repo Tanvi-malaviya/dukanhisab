@@ -12,7 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-                $middleware->alias([
+        $middleware->append(\App\Http\Middleware\SetUserLocale::class);
+        $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'audit' => \App\Http\Middleware\AuditLogMiddleware::class,
             'shop.scope' => \App\Http\Middleware\ShopScopeMiddleware::class,
