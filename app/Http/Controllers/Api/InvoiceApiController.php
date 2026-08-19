@@ -18,7 +18,7 @@ class InvoiceApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $sale = Sale::where('shop_id', $shopId)->with('items.product', 'customer')->findOrFail($id);
         $html = $this->buildSaleInvoiceHtml($sale);
-        return $this->renderMpdf($html, 'Invoice-' . $sale->sale_number . '.pdf', true);
+        return $this->renderPdf($html, 'Invoice-' . $sale->sale_number . '.pdf', true);
     }
 
     public function emailSaleInvoice(Request $request, $id)
@@ -32,7 +32,7 @@ class InvoiceApiController extends Controller
 
         $shop = Shop::findOrFail($shopId);
         $html = $this->buildSaleInvoiceHtml($sale);
-        $pdfContent = $this->renderMpdf($html, 'Invoice-' . $sale->sale_number . '.pdf', false);
+        $pdfContent = $this->renderPdf($html, 'Invoice-' . $sale->sale_number . '.pdf', false);
 
         Mail::send('shopowner.emails.sale-invoice', ['sale' => $sale, 'shop' => $shop], function ($message) use ($sale, $shop, $pdfContent) {
             $message->to($sale->customer->email)
@@ -48,7 +48,7 @@ class InvoiceApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
         $html = $this->buildPurchaseInvoiceHtml($purchase);
-        return $this->renderMpdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', true);
+        return $this->renderPdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', true);
     }
 
     public function emailPurchaseInvoice(Request $request, $id)
@@ -62,7 +62,7 @@ class InvoiceApiController extends Controller
 
         $shop = Shop::findOrFail($shopId);
         $html = $this->buildPurchaseInvoiceHtml($purchase);
-        $pdfContent = $this->renderMpdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', false);
+        $pdfContent = $this->renderPdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', false);
 
         Mail::send('shopowner.emails.purchase-invoice', ['purchase' => $purchase, 'shop' => $shop], function ($message) use ($purchase, $shop, $pdfContent) {
             $message->to($purchase->supplier->email)
@@ -73,56 +73,17 @@ class InvoiceApiController extends Controller
         return response()->json(['message' => 'Invoice emailed to ' . $purchase->supplier->email . ' successfully.']);
     }
 
-    private function renderMpdf(string $html, string $filename, bool $stream = true)
+    private function renderPdf(string $html, string $filename, bool $stream = true)
     {
-        $tempDir = storage_path('app/tmp_mpdf');
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0777, true);
-        }
-
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
-
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
-
-        $mpdf = new \Mpdf\Mpdf([
-            'fontDir' => array_merge($fontDirs, [
-                public_path('fonts'),
-            ]),
-            'fontdata' => $fontData + [
-                'notosansgujarati' => [
-                    'R' => 'NotoSansGujarati-Regular.ttf',
-                    'B' => 'NotoSansGujarati-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-                'notosansdevanagari' => [
-                    'R' => 'NotoSansDevanagari-Regular.ttf',
-                    'B' => 'NotoSansDevanagari-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-            ],
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'tempDir' => $tempDir,
-            'margin_left' => 0,
-            'margin_right' => 0,
-            'margin_top' => 0,
-            'margin_bottom' => 0,
-            'margin_header' => 0,
-            'margin_footer' => 0,
-            'autoScriptToLang' => false,
-            'autoLangToFont' => false,
-        ]);
-
-        $mpdf->WriteHTML($html);
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
 
         if ($stream) {
-            return response($mpdf->Output($filename, 'S'))
+            return response($pdf->output())
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
         } else {
-            return $mpdf->Output($filename, 'S');
+            return $pdf->output();
         }
     }
 
@@ -144,8 +105,36 @@ class InvoiceApiController extends Controller
 
         if ($locale === 'gu') {
             $fontFamily = 'notosansgujarati, sans-serif';
+            $fontFaceHtml = '
+                @font-face {
+                    font-family: "notosansgujarati";
+                    font-style: normal;
+                    font-weight: normal;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "notosansgujarati";
+                    font-style: normal;
+                    font-weight: bold;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
+                }
+            ';
         } elseif ($locale === 'hi') {
             $fontFamily = 'notosansdevanagari, sans-serif';
+            $fontFaceHtml = '
+                @font-face {
+                    font-family: "notosansdevanagari";
+                    font-style: normal;
+                    font-weight: normal;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "notosansdevanagari";
+                    font-style: normal;
+                    font-weight: bold;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
+                }
+            ';
         }
 
         $badgeHtml = '';
@@ -564,8 +553,36 @@ class InvoiceApiController extends Controller
 
         if ($locale === 'gu') {
             $fontFamily = 'notosansgujarati, sans-serif';
+            $fontFaceHtml = '
+                @font-face {
+                    font-family: "notosansgujarati";
+                    font-style: normal;
+                    font-weight: normal;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "notosansgujarati";
+                    font-style: normal;
+                    font-weight: bold;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
+                }
+            ';
         } elseif ($locale === 'hi') {
             $fontFamily = 'notosansdevanagari, sans-serif';
+            $fontFaceHtml = '
+                @font-face {
+                    font-family: "notosansdevanagari";
+                    font-style: normal;
+                    font-weight: normal;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "notosansdevanagari";
+                    font-style: normal;
+                    font-weight: bold;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
+                }
+            ';
         }
 
         $badgeHtml = '';

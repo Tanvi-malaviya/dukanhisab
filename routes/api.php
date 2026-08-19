@@ -96,6 +96,7 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::post('/subscription/upgrade', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'upgrade']);
         Route::post('/subscription/create-order', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'createOrder']);
         Route::post('/subscription/verify-payment', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'verifyPayment']);
+        Route::post('/subscription/verify', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'verifyPayment']);
 
         // Support tickets (own tickets only)
         Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
