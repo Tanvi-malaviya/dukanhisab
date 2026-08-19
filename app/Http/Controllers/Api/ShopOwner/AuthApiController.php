@@ -130,7 +130,7 @@ class AuthApiController extends Controller
         $user->save();
 
         $token = $user->issueDeviceToken('shopowner-auth-token');
-        $user->load('shops');
+        $user->load(['shops', 'activePlan', 'currentSubscription']);
         $shop = $user->shops()->first();
 
         return response()->json([
@@ -217,7 +217,7 @@ class AuthApiController extends Controller
         $user->save();
 
         $token = $user->issueDeviceToken('shopowner-auth-token');
-        $user->load('shops');
+        $user->load(['shops', 'activePlan', 'currentSubscription']);
         $shop = $user->shops()->first();
 
         return response()->json([
@@ -550,7 +550,7 @@ class AuthApiController extends Controller
             \App\Models\InvoiceConfig::create(['shop_id' => $shop->id]);
         }
 
-        $user->load('shops');
+        $user->load(['shops', 'activePlan', 'currentSubscription']);
 
         return response()->json([
             'message' => 'Shop setup successfully completed.',

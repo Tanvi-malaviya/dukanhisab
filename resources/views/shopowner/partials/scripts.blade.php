@@ -1020,6 +1020,8 @@
             submitShopProfileUpdate(logoFile = null, signatureFile = null, shopImageFile = null) {
                 this.loading = true;
                 const fd = new FormData();
+                // Always send shop_id so backend treats this as an UPDATE, not a new shop creation
+                if (this.shop && this.shop.id) fd.append('shop_id', this.shop.id);
                 fd.append('name', this.shopUpdateForm.name);
                 fd.append('owner_name', this.shopUpdateForm.owner_name);
                 fd.append('mobile', this.shopUpdateForm.mobile);
@@ -1584,6 +1586,7 @@
                         if (d.shop) {
                             this.shop = d.shop; this.hasShop = true;
                             localStorage.setItem('shopowner_has_shop', 'true'); localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                            if (d.user) { this.user = d.user; localStorage.setItem('shopowner_user', JSON.stringify(d.user)); }
                             this.showToast('Shop created!'); this.loadAllData(); this.navigateTo('dashboard');
                         } else { this.showToast(d.message || 'Failed to setup shop.', 'error'); }
                     }).catch(() => { this.loading = false; this.showToast('Error setting up shop.', 'error'); });
@@ -1648,6 +1651,11 @@
                         this.addShopModal.show = false;
                         this.shop = d.shop;
                         localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                        // Update user with refreshed shops list so dropdown shows the new shop
+                        if (d.user) {
+                            this.user = d.user;
+                            localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                        }
                         this.showToast('New shop successfully created!');
                         this.loadAllData();
                     } else {
