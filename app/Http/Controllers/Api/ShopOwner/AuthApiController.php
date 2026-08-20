@@ -459,7 +459,10 @@ class AuthApiController extends Controller
         $user->mobile = $request->mobile;
         $user->save();
 
-        $shopId = $request->input('shop_id');
+        $shopId = $request->input('shop_id') ?: $request->header('X-Shop-ID');
+        if ($shopId === 'none') {
+            $shopId = null;
+        }
         $shop = null;
         if ($shopId) {
             $shop = $user->shops()->where('id', $shopId)->first();
