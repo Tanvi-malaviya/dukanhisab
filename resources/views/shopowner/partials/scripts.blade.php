@@ -479,7 +479,7 @@
             },
 
             getHeaders() {
-                return { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token, 'X-Shop-ID': this.shop ? this.shop.id : '' };
+                return { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token, 'X-Shop-ID': this.shop ? this.shop.id : '', 'X-Locale': this.currentLang || 'en' };
             },
 
             // ── DATA LOADERS ──────────────────────────────────────────
@@ -2117,7 +2117,7 @@
             downloadPDF() {
                 if (!this.selectedSale) return;
                 this.loading = true;
-                fetch('/api/v1/sales/' + this.selectedSale.id + '/invoice', { headers: this.getHeaders() })
+                fetch('/api/v1/sales/' + this.selectedSale.id + '/invoice?locale=' + this.currentLang, { headers: this.getHeaders() })
                     .then(r => r.blob()).then(blob => {
                          this.loading = false;
                          const link = document.createElement('a');
@@ -2138,7 +2138,7 @@
             sendSaleInvoiceEmail() {
                 if (!this.selectedSale || this.sendingSaleEmail) return;
                 this.sendingSaleEmail = true;
-                fetch('/api/v1/sales/' + this.selectedSale.id + '/email-invoice', { method: 'POST', headers: this.getHeaders() })
+                fetch('/api/v1/sales/' + this.selectedSale.id + '/email-invoice?locale=' + this.currentLang, { method: 'POST', headers: this.getHeaders() })
                     .then(r => r.json().then(d => ({ status: r.status, body: d })))
                     .then(({ status, body }) => {
                         this.sendingSaleEmail = false;
@@ -2154,7 +2154,7 @@
             downloadPurchasePDF() {
                 if (!this.selectedPurchase) return;
                 this.loading = true;
-                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/invoice', { headers: this.getHeaders() })
+                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/invoice?locale=' + this.currentLang, { headers: this.getHeaders() })
                     .then(r => r.blob()).then(blob => {
                         this.loading = false;
                         const link = document.createElement('a');
@@ -2175,7 +2175,7 @@
             sendPurchaseInvoiceEmail() {
                 if (!this.selectedPurchase || this.sendingPurchaseEmail) return;
                 this.sendingPurchaseEmail = true;
-                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/email-invoice', { method: 'POST', headers: this.getHeaders() })
+                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/email-invoice?locale=' + this.currentLang, { method: 'POST', headers: this.getHeaders() })
                     .then(r => r.json().then(d => ({ status: r.status, body: d })))
                     .then(({ status, body }) => {
                         this.sendingPurchaseEmail = false;

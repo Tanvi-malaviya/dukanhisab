@@ -17,10 +17,12 @@ class Purchase extends Model
         'payment_type',
         'purchase_date',
         'status',
+        'paid_date',
     ];
 
     protected $casts = [
         'purchase_date' => 'datetime',
+        'paid_date' => 'datetime',
     ];
 
     public function shop()

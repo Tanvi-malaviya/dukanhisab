@@ -178,21 +178,31 @@ class CustomerApiController extends Controller
         foreach ($creditSales as $sale) {
             $total = (float) $sale->grand_total;
             if ($rem >= $total) {
-                $sale->update([
-                    'status' => 'Completed',
-                    'paid_amount' => $total,
-                ]);
+                if ($sale->status !== 'Completed') {
+                    $sale->update([
+                        'status' => 'Completed',
+                        'paid_amount' => $total,
+                        'paid_date' => Carbon::now(),
+                    ]);
+                } else {
+                    $sale->update([
+                        'paid_amount' => $total,
+                        'paid_date' => $sale->paid_date ?? Carbon::now(),
+                    ]);
+                }
                 $rem -= $total;
             } elseif ($rem > 0) {
                 $sale->update([
                     'status' => 'Partially Paid',
                     'paid_amount' => $rem,
+                    'paid_date' => null,
                 ]);
                 $rem = 0;
             } else {
                 $sale->update([
                     'status' => 'Unpaid',
                     'paid_amount' => 0.00,
+                    'paid_date' => null,
                 ]);
             }
         }

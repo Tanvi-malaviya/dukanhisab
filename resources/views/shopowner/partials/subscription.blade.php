@@ -94,7 +94,7 @@
                                     <span class="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300 rounded-full">Offer Expired</span>
                                 </template>
                                 <template x-if="plan.slug === 'business' && !plan.is_expired && plan.days_left !== null && !(user && user.active_plan && user.active_plan.id == plan.id)">
-                                    <span class="px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300 rounded-full" x-text="plan.days_left + ' Days Left'"></span>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300 rounded-full" x-text="Math.ceil(plan.days_left) + ' Days Left'"></span>
                                 </template>
                             </div>
                         </div>

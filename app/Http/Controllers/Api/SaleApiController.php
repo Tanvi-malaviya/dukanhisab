@@ -106,6 +106,7 @@ class SaleApiController extends Controller
             $nextNumber = \App\Models\InvoiceCounter::nextNumber($shopId, 'sale', $today);
             $saleNumber = 'INV-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
+            $saleDate = $request->filled('sale_date') ? Carbon::parse($request->sale_date) : Carbon::now();
             $sale = Sale::create([
                 'shop_id' => $shopId,
                 'customer_id' => $request->customer_id,
@@ -116,7 +117,8 @@ class SaleApiController extends Controller
                 'paid_amount' => $request->payment_type === 'Credit' ? 0.00 : $request->grand_total,
                 'payment_type' => $request->payment_type,
                 'status' => $request->payment_type === 'Credit' ? 'Unpaid' : 'Completed',
-                'sale_date' => $request->filled('sale_date') ? Carbon::parse($request->sale_date) : Carbon::now(),
+                'sale_date' => $saleDate,
+                'paid_date' => $request->payment_type === 'Credit' ? null : $saleDate,
             ]);
 
             foreach ($request->items as $item) {

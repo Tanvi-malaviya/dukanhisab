@@ -286,10 +286,18 @@
                         </div>
                     </div>
 
-                    {{-- Total Amount --}}
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold text-slate-500 font-sans" x-text="t('total') + ':'">Total:</span>
-                        <span class="text-base font-extrabold text-slate-900 dark:text-white font-sans">₹<span x-text="parseFloat(pur.total_amount).toFixed(2)"></span></span>
+                    {{-- Total & Paid/Due Amounts --}}
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-semibold text-slate-500 font-sans" x-text="t('total') + ':'">Total:</span>
+                            <span class="text-base font-extrabold text-slate-900 dark:text-white font-sans">₹<span x-text="parseFloat(pur.total_amount).toFixed(2)"></span></span>
+                        </div>
+                        <template x-if="pur.payment_type === 'Credit' || pur.status === 'Unpaid'">
+                            <div class="flex justify-between items-center text-xs pt-1.5 border-t border-dashed border-slate-200 dark:border-gray-700">
+                                <span class="text-emerald-600 dark:text-emerald-400 font-semibold"><span x-text="t('paid')">Paid</span>: ₹<span x-text="parseFloat(pur.status === 'Completed' ? pur.total_amount : 0).toFixed(2)"></span></span>
+                                <span class="text-rose-600 dark:text-rose-400 font-semibold"><span x-text="t('due')">Due</span>: ₹<span x-text="parseFloat(pur.status === 'Completed' ? 0 : pur.total_amount).toFixed(2)"></span></span>
+                            </div>
+                        </template>
                     </div>
 
                     {{-- Actions --}}

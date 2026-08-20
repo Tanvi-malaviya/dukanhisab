@@ -101,6 +101,7 @@ class PurchaseApiController extends Controller
             $nextNumber = \App\Models\InvoiceCounter::nextNumber($shopId, 'purchase', $today);
             $purchaseNumber = 'PUR-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
 
+            $purchaseDate = $request->filled('purchase_date') ? Carbon::parse($request->purchase_date) : Carbon::now();
             $purchase = Purchase::create([
                 'shop_id' => $shopId,
                 'supplier_id' => $request->supplier_id,
@@ -108,7 +109,8 @@ class PurchaseApiController extends Controller
                 'total_amount' => $request->total_amount,
                 'payment_type' => $request->payment_type,
                 'status' => $request->payment_type === 'Credit' ? 'Unpaid' : 'Completed',
-                'purchase_date' => $request->filled('purchase_date') ? Carbon::parse($request->purchase_date) : Carbon::now(),
+                'purchase_date' => $purchaseDate,
+                'paid_date' => $request->payment_type === 'Credit' ? null : $purchaseDate,
             ]);
 
             foreach ($request->items as $item) {
