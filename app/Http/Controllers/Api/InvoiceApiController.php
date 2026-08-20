@@ -427,7 +427,7 @@ class InvoiceApiController extends Controller
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $sale->sale_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && $sale->updated_at) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $sale->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($sale->paid_date ?? $sale->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
                             </div>
                         </td>
                     </tr>
@@ -892,7 +892,7 @@ class InvoiceApiController extends Controller
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $purchase->purchase_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && $purchase->updated_at) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $purchase->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($purchase->paid_date ?? $purchase->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
                             </div>
                         </td>
                     </tr>

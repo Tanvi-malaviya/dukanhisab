@@ -44,8 +44,8 @@
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
                             <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
-                            <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && selectedSale.updated_at">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedSale.updated_at).toLocaleString()"></span></p>
+                            <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && (selectedSale.paid_date || selectedSale.updated_at)">
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedSale.paid_date || selectedSale.updated_at).toLocaleString()"></span></p>
                             </template>
                         </div>
                     </div>
@@ -413,8 +413,8 @@
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
                             <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
-                            <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && selectedPurchase.updated_at">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedPurchase.updated_at).toLocaleString()"></span></p>
+                            <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && (selectedPurchase.paid_date || selectedPurchase.updated_at)">
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedPurchase.paid_date || selectedPurchase.updated_at).toLocaleString()"></span></p>
                             </template>
                         </div>
                     </div>
@@ -509,21 +509,13 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printPurchase(); else showConfirm('Upgrade Plan Required', 'Invoice printing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
-                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                <button @click="printPurchase()"
                     class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Print
-                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                    </span>
                 </button>
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') downloadPurchasePDF(); else showConfirm('Upgrade Plan Required', 'PDF Invoice download is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
-                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                <button @click="downloadPurchasePDF()"
                     class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Download PDF
-                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                    </span>
                 </button>
             </div>
             <div class="flex gap-2">
@@ -1249,14 +1241,14 @@
 {{-- 17. LIFETIME OFFER POPUP MODAL --}}
 <div x-show="showLifetimeOfferPopup" x-cloak
     class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-indigo-500/30" @click.outside="closeLifetimeOfferPopup()">
+    <div class="bg-white dark:bg-gray-800 text-slate-800 dark:text-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-slate-200 dark:border-gray-700" @click.outside="closeLifetimeOfferPopup()">
         <!-- Decorative Glow -->
-        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 rounded-full blur-xl pointer-events-none"></div>
-        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-teal-500/20 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-teal-500/10 rounded-full blur-xl pointer-events-none"></div>
 
         <div class="p-6 text-center space-y-6">
             <!-- Icon -->
-            <div class="w-16 h-16 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25 rotate-3 hover:rotate-6 transition-all duration-300">
+            <div class="w-16 h-16 bg-gradient-to-tr from-amber-500 to-yellow-400 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25 rotate-3 hover:rotate-6 transition-all duration-300">
                 <svg class="w-9 h-9 text-slate-950" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
                 </svg>
@@ -1264,17 +1256,17 @@
 
             <!-- Content -->
             <div class="space-y-2">
-                <h3 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 bg-clip-text text-transparent uppercase">Limited Time Offer</h3>
-                <h4 class="text-base font-bold text-slate-100">Business (Lifetime) Plan</h4>
-                <p class="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase">Limited Time Offer</h3>
+                <h4 class="text-base font-bold text-slate-800 dark:text-white">Business (Lifetime) Plan</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-xs mx-auto">
                     Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup & restore. No monthly or yearly charges, ever!
                 </p>
             </div>
 
             <!-- Days Remaining Badge -->
-            <div class="bg-indigo-950/60 border border-indigo-500/20 rounded-2xl py-3 px-4 inline-block">
-                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider mb-0.5">Time Remaining</span>
-                <span class="text-lg font-black text-amber-400" x-text="lifetimeOfferDaysLeft + ' Days Left'"></span>
+            <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl py-3 px-6 inline-block">
+                <span class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5">Time Remaining</span>
+                <span class="text-lg font-black text-amber-600 dark:text-amber-500" x-text="Math.ceil(lifetimeOfferDaysLeft) + ' Days Left'"></span>
             </div>
 
             <!-- Action Button -->
@@ -1285,12 +1277,12 @@
                 </button>
 
                 <!-- Checkbox and Close -->
-                <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-slate-400 text-xs">
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700 text-slate-500 dark:text-slate-400 text-xs">
                     <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" x-model="lifetimeOfferDontShowAgain" class="rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-0 focus:ring-offset-0 w-4 h-4">
+                        <input type="checkbox" x-model="lifetimeOfferDontShowAgain" class="rounded border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-4 h-4">
                         <span>Don't show again</span>
                     </label>
-                    <button type="button" @click="closeLifetimeOfferPopup()" class="hover:text-white transition-colors font-medium">
+                    <button type="button" @click="closeLifetimeOfferPopup()" class="hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium">
                         Close
                     </button>
                 </div>

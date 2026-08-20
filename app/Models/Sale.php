@@ -21,10 +21,12 @@ class Sale extends Model
         'payment_type',
         'status',
         'sale_date',
+        'paid_date',
     ];
 
     protected $casts = [
         'sale_date' => 'datetime',
+        'paid_date' => 'datetime',
     ];
 
     public function shop()

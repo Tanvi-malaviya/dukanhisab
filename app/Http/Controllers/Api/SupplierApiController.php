@@ -181,12 +181,20 @@ class SupplierApiController extends Controller
                 if ($purchase->status !== 'Completed') {
                     $purchase->update([
                         'status' => 'Completed',
+                        'paid_date' => Carbon::now(),
+                    ]);
+                } else {
+                    $purchase->update([
+                        'paid_date' => $purchase->paid_date ?? Carbon::now(),
                     ]);
                 }
                 $rem -= $total;
             } else {
                 if ($purchase->status !== 'Unpaid') {
-                    $purchase->update(['status' => 'Unpaid']);
+                    $purchase->update([
+                        'status' => 'Unpaid',
+                        'paid_date' => null,
+                    ]);
                 }
             }
         }
