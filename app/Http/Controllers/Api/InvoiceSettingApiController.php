@@ -20,6 +20,11 @@ class InvoiceSettingApiController extends Controller
 
     public function update(Request $request)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to unlock invoice customization.'], 403);
+        }
+
         $shopId = $request->attributes->get('shop_id');
 
         $validator = Validator::make($request->all(), [

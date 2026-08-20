@@ -16,8 +16,7 @@ try {
         echo "No sales found in database!\n";
         exit;
     }
-    echo "Found sale ID: " . $sale->id . " for shop ID: " . $sale->shop_id . "\n";
-
+    
     // Set locale to gu
     app()->setLocale('gu');
     echo "App Locale set to: " . app()->getLocale() . "\n";
@@ -30,13 +29,17 @@ try {
     $request->attributes->set('shop_id', $sale->shop_id);
     $app->instance('request', $request);
 
-    echo "Attempting to generate PDF...\n";
-    $response = $controller->generatePDF($request, $sale->id);
-    echo "PDF generated successfully!\n";
+    // Call private buildSaleInvoiceHtml using reflection
+    $reflector = new \ReflectionClass(InvoiceApiController::class);
+    $method = $reflector->getMethod('buildSaleInvoiceHtml');
+    $method->setAccessible(true);
     
-    // Write output to file
-    file_put_contents('test_output.pdf', $response->getContent());
-    echo "Saved to test_output.pdf\n";
+    $html = $method->invoke($controller, $sale);
+    
+    // Save to test_output.html
+    file_put_contents('test_output.html', $html);
+    echo "Saved to test_output.html\n";
+    
 } catch (\Exception $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
     echo $e->getTraceAsString() . "\n";

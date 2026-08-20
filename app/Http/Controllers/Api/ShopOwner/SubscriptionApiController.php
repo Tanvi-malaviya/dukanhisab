@@ -20,9 +20,24 @@ class SubscriptionApiController extends Controller
      */
     public function plans(Request $request)
     {
+        $user = $request->user();
         $plans = SubscriptionPlan::where('status', 'active')
             ->orderBy('price')
             ->get();
+
+        $user->load(['activePlan']);
+        $hasLifetimeActive = ($user->activePlan && $user->activePlan->slug === 'business');
+        $daysSinceRegistration = $user->created_at->diffInDays(now());
+
+        foreach ($plans as $plan) {
+            if ($plan->slug === 'business') {
+                $plan->setAttribute('days_left', max(0, 7 - $daysSinceRegistration));
+                $plan->setAttribute('is_expired', ($daysSinceRegistration >= 7) && !$hasLifetimeActive);
+            } else {
+                $plan->setAttribute('days_left', null);
+                $plan->setAttribute('is_expired', false);
+            }
+        }
 
         return response()->json(['plans' => $plans]);
     }
@@ -91,6 +106,15 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        if ($plan->slug === 'business') {
+            $user->load(['activePlan']);
+            $hasLifetimeActive = ($user->activePlan && $user->activePlan->slug === 'business');
+            $daysSinceRegistration = $user->created_at->diffInDays(now());
+            if ($daysSinceRegistration >= 7 && !$hasLifetimeActive) {
+                return response()->json(['message' => 'Lifetime plan offer has expired.'], 403);
+            }
         }
 
         $amountInPaise = (int) round(((float) $plan->price) * 100);
@@ -165,6 +189,15 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        if ($plan->slug === 'business') {
+            $user->load(['activePlan']);
+            $hasLifetimeActive = ($user->activePlan && $user->activePlan->slug === 'business');
+            $daysSinceRegistration = $user->created_at->diffInDays(now());
+            if ($daysSinceRegistration >= 7 && !$hasLifetimeActive) {
+                return response()->json(['message' => 'Lifetime plan offer has expired.'], 403);
+            }
         }
 
         $keyId = config('services.razorpay.key');

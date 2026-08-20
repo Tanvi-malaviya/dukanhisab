@@ -4,7 +4,7 @@
 <div x-show="showInvoiceModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="showInvoiceModal = false">
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="if (!confirmModal.show) showInvoiceModal = false">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('sale_invoice')">Sale Invoice</h3>
@@ -163,25 +163,17 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printInvoice(); else showToast('Please upgrade your plan to print invoices.', 'error')"
-                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                <button @click="printInvoice()"
                     class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Print
-                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                    </span>
                 </button>
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') downloadPDF(); else showToast('Please upgrade your plan to download PDFs.', 'error')"
-                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                <button @click="downloadPDF()"
                     class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Download PDF
-                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                    </span>
                 </button>
             </div>
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappLink(), '_blank'); else showToast('Please upgrade your plan to share via WhatsApp.', 'error')"
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Share WhatsApp
@@ -189,7 +181,7 @@
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
                 </button>
-                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showToast('Please upgrade your plan to share via Email.', 'error')" :disabled="sendingSaleEmail"
+                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })" :disabled="sendingSaleEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     <span x-show="!sendingSaleEmail">Share Email</span>
@@ -206,7 +198,7 @@
 {{-- 2. ADD CUSTOMER MODAL --}}
 <div x-show="showCustomerModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showCustomerModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showCustomerModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
                 x-text="newCustomer.id ? t('edit') : t('add_customer')"></h3>
@@ -244,7 +236,7 @@
 {{-- 3. ADD/EDIT PRODUCT MODAL --}}
 <div x-show="showProductModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showProductModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showProductModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
                 x-text="newProduct.id ? t('edit') : t('add_product')"></h3>
@@ -303,7 +295,7 @@
 {{-- 4. ADD EXPENSE MODAL --}}
 <div x-show="showExpenseModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showExpenseModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showExpenseModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('add_expense')">Add Expense</h3>
             <button @click="showExpenseModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
@@ -342,7 +334,7 @@
 {{-- 5. ADD SUPPLIER MODAL --}}
 <div x-show="showSupplierModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="showSupplierModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showSupplierModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
                 x-text="newSupplier.id ? t('edit') : t('add_supplier')"></h3>
@@ -381,7 +373,7 @@
 <div x-show="showPurchaseDetailsModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="showPurchaseDetailsModal = false">
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="if (!confirmModal.show) showPurchaseDetailsModal = false">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('purchase_details')">Purchase Details</h3>
@@ -517,7 +509,7 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-between gap-3">
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printPurchase(); else showToast('Please upgrade your plan to print invoices.', 'error')"
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printPurchase(); else showConfirm('Upgrade Plan Required', 'Invoice printing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Print
@@ -525,7 +517,7 @@
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
                 </button>
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') downloadPurchasePDF(); else showToast('Please upgrade your plan to download PDFs.', 'error')"
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') downloadPurchasePDF(); else showConfirm('Upgrade Plan Required', 'PDF Invoice download is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Download PDF
@@ -535,7 +527,7 @@
                 </button>
             </div>
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappPurchaseLink(), '_blank'); else showToast('Please upgrade your plan to share via WhatsApp.', 'error')"
+                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappPurchaseLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Share WhatsApp
@@ -543,7 +535,7 @@
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
                 </button>
-                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showToast('Please upgrade your plan to share via Email.', 'error')" :disabled="sendingPurchaseEmail"
+                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })" :disabled="sendingPurchaseEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     <span x-show="!sendingPurchaseEmail">Share Email</span>
@@ -558,7 +550,7 @@
 </div>
 
 {{-- 7. CONFIRMATION MODAL --}}
-<div x-show="confirmModal.show" x-cloak
+<div x-show="confirmModal.show" x-cloak @click.stop=""
     class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-6 space-y-4">
         <div class="flex items-center gap-3">
@@ -584,7 +576,7 @@
 {{-- 8. RETURN ITEMS MODAL --}}
 <div x-show="showReturnModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="showReturnModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="if (!confirmModal.show) showReturnModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <div>
                 <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_items')">Return Items</h3>
@@ -997,7 +989,7 @@
 {{-- 13. PURCHASE RETURN ITEMS MODAL --}}
 <div x-show="showPurchaseReturnModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="showPurchaseReturnModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="if (!confirmModal.show) showPurchaseReturnModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
                 <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_purchase_items')">Return Purchase Items</h3>
@@ -1072,7 +1064,7 @@
 {{-- 14. COLLECT CUSTOMER PAYMENT MODAL --}}
 <div x-show="collectCustomerModalOpen" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="collectCustomerModalOpen = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) collectCustomerModalOpen = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
                 <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('collect_payment')">Collect Customer Payment</h3>
@@ -1133,7 +1125,7 @@
 {{-- 15. PAY SUPPLIER DUE MODAL --}}
 <div x-show="paySupplierModalOpen" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="paySupplierModalOpen = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) paySupplierModalOpen = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
                 <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('pay_supplier')">Pay Supplier Due</h3>
@@ -1251,5 +1243,58 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+{{-- 17. LIFETIME OFFER POPUP MODAL --}}
+<div x-show="showLifetimeOfferPopup" x-cloak
+    class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-indigo-500/30" @click.outside="closeLifetimeOfferPopup()">
+        <!-- Decorative Glow -->
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-teal-500/20 rounded-full blur-xl pointer-events-none"></div>
+
+        <div class="p-6 text-center space-y-6">
+            <!-- Icon -->
+            <div class="w-16 h-16 bg-gradient-to-tr from-amber-400 to-yellow-300 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25 rotate-3 hover:rotate-6 transition-all duration-300">
+                <svg class="w-9 h-9 text-slate-950" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                </svg>
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-2">
+                <h3 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 bg-clip-text text-transparent uppercase">Limited Time Offer</h3>
+                <h4 class="text-base font-bold text-slate-100">Business (Lifetime) Plan</h4>
+                <p class="text-xs text-slate-300 leading-relaxed max-w-xs mx-auto">
+                    Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup & restore. No monthly or yearly charges, ever!
+                </p>
+            </div>
+
+            <!-- Days Remaining Badge -->
+            <div class="bg-indigo-950/60 border border-indigo-500/20 rounded-2xl py-3 px-4 inline-block">
+                <span class="text-xs font-semibold text-slate-400 block uppercase tracking-wider mb-0.5">Time Remaining</span>
+                <span class="text-lg font-black text-amber-400" x-text="lifetimeOfferDaysLeft + ' Days Left'"></span>
+            </div>
+
+            <!-- Action Button -->
+            <div class="space-y-4">
+                <button type="button" @click="navigateTo('subscription'); closeLifetimeOfferPopup();"
+                    class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-amber-500/20 transition-all">
+                    Upgrade Now & Save
+                </button>
+
+                <!-- Checkbox and Close -->
+                <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-slate-400 text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" x-model="lifetimeOfferDontShowAgain" class="rounded border-slate-700 bg-slate-800 text-amber-500 focus:ring-0 focus:ring-offset-0 w-4 h-4">
+                        <span>Don't show again</span>
+                    </label>
+                    <button type="button" @click="closeLifetimeOfferPopup()" class="hover:text-white transition-colors font-medium">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
