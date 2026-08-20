@@ -253,6 +253,17 @@
             showPurchaseDetailsModal: false,
             confirmModal: { show: false, title: '', message: '', onConfirm: null },
 
+            showLifetimeOfferPopup: false,
+            lifetimeOfferDaysLeft: 7,
+            lifetimeOfferDontShowAgain: false,
+
+            closeLifetimeOfferPopup() {
+                if (this.lifetimeOfferDontShowAgain) {
+                    localStorage.setItem('lifetime_offer_dismissed', 'true');
+                }
+                this.showLifetimeOfferPopup = false;
+            },
+
             showConfirm(title, message, callback) {
                 this.confirmModal.title = title;
                 this.confirmModal.message = message;
@@ -344,6 +355,25 @@
                     this.loadInvoiceSettings();
                     // Trigger page-specific data load based on current URL
                     this._loadPageData(this.page);
+
+                    // Check for Lifetime Offer Popup
+                    if (this.user && localStorage.getItem('lifetime_offer_dismissed') !== 'true') {
+                        const hasLifetime = this.user.active_plan && this.user.active_plan.slug === 'business';
+                        if (!hasLifetime && this.user.created_at) {
+                            const createdAt = new Date(this.user.created_at);
+                            const now = new Date();
+                            const diffTime = now.getTime() - createdAt.getTime();
+                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            const daysLeft = 7 - diffDays;
+                            if (daysLeft > 0 && daysLeft <= 7) {
+                                this.lifetimeOfferDaysLeft = daysLeft;
+                                // Wait a little bit for page render/UX before popping up
+                                setTimeout(() => {
+                                    this.showLifetimeOfferPopup = true;
+                                }, 1200);
+                            }
+                        }
+                    }
                 }
 
                 this.$watch('customersPage', () => {
@@ -398,6 +428,9 @@
                 history.pushState({ page: pageName }, '', url);
                 if (extraFn) extraFn();
                 this._loadPageData(pageName);
+                if (pageName === 'settings') {
+                    window.dispatchEvent(new CustomEvent('sync-settings-form'));
+                }
             },
 
             // Load data needed for a specific page
@@ -1054,6 +1087,7 @@
                                 localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             }
                             this.showToast('Shop profile updated successfully!');
+                            window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         } else {
                             if (d.errors) {
                                 const firstKey = Object.keys(d.errors)[0];
@@ -1097,6 +1131,7 @@
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             this.showToast('Profile updated successfully!');
+                            window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         } else {
                             if (d.errors) {
                                 const firstKey = Object.keys(d.errors)[0];
@@ -1597,6 +1632,7 @@
                 localStorage.setItem('shopowner_shop', JSON.stringify(targetShop));
                 this.showToast('Switched to shop: ' + targetShop.name);
                 this.loadAllData();
+                window.dispatchEvent(new CustomEvent('sync-settings-form'));
             },
 
             openAddShopModal() {

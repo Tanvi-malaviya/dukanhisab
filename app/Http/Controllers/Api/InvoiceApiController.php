@@ -23,6 +23,10 @@ class InvoiceApiController extends Controller
 
     public function emailSaleInvoice(Request $request, $id)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to unlock email invoice sharing.'], 403);
+        }
         $shopId = $request->attributes->get('shop_id');
         $sale = Sale::where('shop_id', $shopId)->with('items.product', 'customer')->findOrFail($id);
 
@@ -53,6 +57,10 @@ class InvoiceApiController extends Controller
 
     public function emailPurchaseInvoice(Request $request, $id)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to unlock email invoice sharing.'], 403);
+        }
         $shopId = $request->attributes->get('shop_id');
         $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
 
@@ -75,6 +83,7 @@ class InvoiceApiController extends Controller
 
     private function renderPdf(string $html, string $filename, bool $stream = true)
     {
+        $html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8');
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('A4', 'portrait');
 
@@ -94,12 +103,37 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
-        \Log::info('buildSaleInvoiceHtml locale checked', [
-            'app_locale' => app()->getLocale(),
-            'lang_in_config' => config('app.locale'),
-        ]);
+        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        $request = request();
+        $locale = $request->input('locale')
+            ?? $request->header('X-Locale')
+            ?? $request->header('Accept-Language')
+            ?? app()->getLocale();
+
+        // Clean and validate locale
+        $locale = strtolower(trim($locale));
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        if (str_contains($locale, '-')) {
+            $locale = explode('-', $locale)[0];
+        }
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
+
+        if (in_array($locale, ['en', 'gu', 'hi'])) {
+            app()->setLocale($locale);
+        } else {
+            app()->setLocale('en');
+        }
 
         $locale = app()->getLocale();
+
+        \Log::info('buildSaleInvoiceHtml locale checked and forced', [
+            'app_locale' => $locale,
+            'lang_in_config' => config('app.locale'),
+        ]);
         $fontFamily = 'DejaVu Sans, Helvetica Neue, Helvetica, Arial, sans-serif';
         $fontFaceHtml = '';
 
@@ -420,7 +454,7 @@ class InvoiceApiController extends Controller
                                             : ($sale->status === 'Unpaid'
                                                 ? '<span style="color:#f59e0b;font-weight:bold;">' . __('unpaid') . '</span>'
                                                 : ($sale->payment_type === 'Credit'
-                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('completed') . '</span>'
+                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>'
                                                     : '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>')))
                                 ) . '<br>
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower($sale->payment_type)) . '
@@ -547,7 +581,37 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
+        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        $request = request();
+        $locale = $request->input('locale')
+            ?? $request->header('X-Locale')
+            ?? $request->header('Accept-Language')
+            ?? app()->getLocale();
+
+        // Clean and validate locale
+        $locale = strtolower(trim($locale));
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        if (str_contains($locale, '-')) {
+            $locale = explode('-', $locale)[0];
+        }
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
+
+        if (in_array($locale, ['en', 'gu', 'hi'])) {
+            app()->setLocale($locale);
+        } else {
+            app()->setLocale('en');
+        }
+
         $locale = app()->getLocale();
+
+        \Log::info('buildPurchaseInvoiceHtml locale checked and forced', [
+            'app_locale' => $locale,
+            'lang_in_config' => config('app.locale'),
+        ]);
         $fontFamily = 'DejaVu Sans, Helvetica Neue, Helvetica, Arial, sans-serif';
         $fontFaceHtml = '';
 
@@ -855,7 +919,7 @@ class InvoiceApiController extends Controller
                                             : ($purchase->status === 'Unpaid'
                                                 ? '<span style="color:#f59e0b;font-weight:bold;">' . __('unpaid') . '</span>'
                                                 : ($purchase->payment_type === 'Credit'
-                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('completed') . '</span>'
+                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>'
                                                     : '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>')))
                                 ) . '<br>
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower($purchase->payment_type)) . '

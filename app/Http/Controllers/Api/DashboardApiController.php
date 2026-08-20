@@ -64,6 +64,7 @@ class DashboardApiController extends Controller
 
         // 7. Low Stock Products
         $lowStockQuery = Product::where('shop_id', $shopId)
+            ->where('low_stock_threshold', '>', 0)
             ->whereRaw('stock <= low_stock_threshold');
             
         $lowStockCount = $lowStockQuery->count();
@@ -74,7 +75,15 @@ class DashboardApiController extends Controller
             ->with('customer')
             ->orderBy('sale_date', 'desc')
             ->take(5)
-            ->get();
+            ->get()
+            ->map(fn($s) => [
+                'id'          => $s->id,
+                'sale_number' => $s->sale_number,
+                'grand_total' => (string) $s->grand_total,
+                'status'      => $s->status,
+                'sale_date'   => $s->sale_date,
+                'customer'    => $s->customer ? ['name' => $s->customer->name] : null,
+            ]);
 
         // 9. Recent Purchases
         $recentPurchases = Purchase::where('shop_id', $shopId)
