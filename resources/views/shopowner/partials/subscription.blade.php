@@ -126,16 +126,16 @@
                                 <span x-text="t('plan_feature_unlimited_sales_purchases')">Unlimited Sales & Purchases</span>
                             </li>
                             <!-- Cloud Backup -->
-                            <li class="flex items-center gap-2" :class="plan.features && plan.features.backup ? '' : 'opacity-40 line-through'">
-                                <svg class="w-4 h-4 shrink-0" :class="plan.features && plan.features.backup ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.features && plan.features.backup ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                            <li class="flex items-center gap-2" :class="plan.slug !== 'free' ? '' : 'opacity-40 line-through'">
+                                <svg class="w-4 h-4 shrink-0" :class="plan.slug !== 'free' ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.slug !== 'free' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
                                 </svg>
                                 <span x-text="t('cloud_backup_restore')">Cloud Backup & Restore</span>
                             </li>
                             <!-- Advanced Reports -->
-                            <li class="flex items-center gap-2" :class="plan.features && plan.features.advanced_reports ? '' : 'opacity-40 line-through'">
-                                <svg class="w-4 h-4 shrink-0" :class="plan.features && plan.features.advanced_reports ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.features && plan.features.advanced_reports ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                            <li class="flex items-center gap-2" :class="plan.slug !== 'free' ? '' : 'opacity-40 line-through'">
+                                <svg class="w-4 h-4 shrink-0" :class="plan.slug !== 'free' ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.slug !== 'free' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
                                 </svg>
                                 <span x-text="t('plan_feature_advanced_reports') || 'Advanced Reports'"></span>
                             </li>
