@@ -125,6 +125,37 @@ class InvoiceApiController extends Controller
         app()->setLocale('en');
         $locale = 'en';
 
+        $fontFaceStyles = '';
+        if ($locale === 'gu') {
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
+                }';
+        } elseif ($locale === 'hi') {
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
+                }';
+        }
+
         $badgeHtml = '';
         if ($sale->status === 'Returned') {
             $badgeHtml = ' <span class="status-badge">' . __('returned') . '</span>';
@@ -156,30 +187,7 @@ class InvoiceApiController extends Controller
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
             <title>' . __('invoice') . ' - ' . $sale->sale_number . '</title>
             <style>
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
-                }
+                ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
                 }
@@ -608,6 +616,37 @@ class InvoiceApiController extends Controller
         app()->setLocale('en');
         $locale = 'en';
 
+        $fontFaceStyles = '';
+        if ($locale === 'gu') {
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
+                }';
+        } elseif ($locale === 'hi') {
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
+                }';
+        }
+
         $badgeHtml = '';
         if ($purchase->status === 'Returned') {
             $badgeHtml = ' <span class="status-badge">' . __('returned') . '</span>';
@@ -639,30 +678,7 @@ class InvoiceApiController extends Controller
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
             <title>' . __('purchase_invoice') . ' - ' . $purchase->purchase_number . '</title>
             <style>
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
-                }
+                ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
                 }
