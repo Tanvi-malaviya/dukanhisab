@@ -121,13 +121,9 @@ class InvoiceApiController extends Controller
             $locale = explode('_', $locale)[0];
         }
 
-        if (in_array($locale, ['en', 'gu', 'hi'])) {
-            app()->setLocale($locale);
-        } else {
-            app()->setLocale('en');
-        }
-
-        $locale = app()->getLocale();
+        // Force English locale for all PDF invoices for now to bypass font cache permissions issues
+        app()->setLocale('en');
+        $locale = 'en';
 
         $badgeHtml = '';
         if ($sale->status === 'Returned') {
@@ -608,13 +604,9 @@ class InvoiceApiController extends Controller
             $locale = explode('_', $locale)[0];
         }
 
-        if (in_array($locale, ['en', 'gu', 'hi'])) {
-            app()->setLocale($locale);
-        } else {
-            app()->setLocale('en');
-        }
-
-        $locale = app()->getLocale();
+        // Force English locale for all PDF invoices for now to bypass font cache permissions issues
+        app()->setLocale('en');
+        $locale = 'en';
 
         $badgeHtml = '';
         if ($purchase->status === 'Returned') {
