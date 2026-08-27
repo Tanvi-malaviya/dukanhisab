@@ -37,8 +37,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'price' => 365.00,
                 'billing_period' => 'yearly',
                 'features' => [
-                    'max_shops' => 2,
-                    'max_devices' => 2,
+                    'max_shops' => 5,
+                    'max_devices' => 5,
                     'advanced_reports' => true,
                     'backup' => true,
                 ],
