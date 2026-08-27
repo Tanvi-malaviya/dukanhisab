@@ -431,7 +431,7 @@ class AuthApiController extends Controller
             'shop_id' => 'nullable|integer|exists:shops,id',
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
-            'mobile' => 'required|string|max:20',
+            'mobile' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
@@ -577,7 +577,7 @@ class AuthApiController extends Controller
         }
 
         try {
-            $response = Http::get("https://api.postalpincode.in/pincode/{$pincode}");
+            $response = Http::timeout(8)->get("https://api.postalpincode.in/pincode/{$pincode}");
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -620,7 +620,7 @@ class AuthApiController extends Controller
             ], 502);
 
         } catch (\Exception $e) {
-            \Log::error('Pincode fetch error: ' . $e->getMessage());
+            \Log::error('Pincode fetch error [' . get_class($e) . ']: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching pincode details.'

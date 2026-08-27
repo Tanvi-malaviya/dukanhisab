@@ -1062,6 +1062,7 @@
                     localStorage.removeItem('shopowner_shop');
                     localStorage.removeItem('shopowner_has_shop');
                     localStorage.removeItem('token');
+                    localStorage.removeItem('lifetime_offer_dismissed');
                     this.token = null;
                     this.user = null;
                     this.shop = null;
