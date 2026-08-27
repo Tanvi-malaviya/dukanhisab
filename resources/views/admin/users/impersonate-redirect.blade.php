@@ -10,7 +10,7 @@
         // "Login As" or a different account on this browser) so the SPA is
         // forced to fetch fresh profile/shop data for this user instead of
         // reusing stale cached values.
-        ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop'].forEach(k => localStorage.removeItem(k));
+        ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
         localStorage.setItem('shopowner_token', @json($token));
         window.location.href = '/shopowner/';
     </script>

@@ -264,6 +264,28 @@
                 this.showLifetimeOfferPopup = false;
             },
 
+            checkLifetimeOffer() {
+                if (this.user && localStorage.getItem('lifetime_offer_dismissed') !== 'true') {
+                    const hasLifetime = this.user.active_plan && this.user.active_plan.slug === 'business';
+                    if (!hasLifetime && this.user.created_at) {
+                        const createdAt = new Date(this.user.created_at);
+                        if (!isNaN(createdAt.getTime())) {
+                            const now = new Date();
+                            const diffTime = now.getTime() - createdAt.getTime();
+                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            const daysLeft = 7 - diffDays;
+                            if (daysLeft > 0 && daysLeft <= 7) {
+                                this.lifetimeOfferDaysLeft = daysLeft;
+                                // Wait a little bit for page render/UX before popping up
+                                setTimeout(() => {
+                                    this.showLifetimeOfferPopup = true;
+                                }, 1200);
+                            }
+                        }
+                    }
+                }
+            },
+
             showConfirm(title, message, callback) {
                 this.confirmModal.title = title;
                 this.confirmModal.message = message;
@@ -357,23 +379,7 @@
                     this._loadPageData(this.page);
 
                     // Check for Lifetime Offer Popup
-                    if (this.user && localStorage.getItem('lifetime_offer_dismissed') !== 'true') {
-                        const hasLifetime = this.user.active_plan && this.user.active_plan.slug === 'business';
-                        if (!hasLifetime && this.user.created_at) {
-                            const createdAt = new Date(this.user.created_at);
-                            const now = new Date();
-                            const diffTime = now.getTime() - createdAt.getTime();
-                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                            const daysLeft = 7 - diffDays;
-                            if (daysLeft > 0 && daysLeft <= 7) {
-                                this.lifetimeOfferDaysLeft = daysLeft;
-                                // Wait a little bit for page render/UX before popping up
-                                setTimeout(() => {
-                                    this.showLifetimeOfferPopup = true;
-                                }, 1200);
-                            }
-                        }
-                    }
+                    this.checkLifetimeOffer();
                 }
 
                 this.$watch('customersPage', () => {
@@ -1152,6 +1158,7 @@
                         if (d.user) {
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            this.checkLifetimeOffer();
                         }
                         if (d.shop) {
                             this.shop = d.shop;
@@ -1592,7 +1599,7 @@
 
             handleLogout() {
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
-                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop'].forEach(k => localStorage.removeItem(k));
+                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
                     let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
                     if (redirectUrl === window.location.pathname) {
@@ -1651,7 +1658,7 @@
 
                 this.addShopModal.name = '';
                 this.addShopModal.owner_name = this.user ? this.user.name : '';
-                this.addShopModal.mobile = this.user ? this.user.mobile : '';
+                this.addShopModal.mobile = '';
                 this.addShopModal.gst_number = '';
                 this.addShopModal.logo = null;
                 this.addShopModal.logoPreview = null;

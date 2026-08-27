@@ -47,6 +47,14 @@
             if (file) {
                 this.logoFile = file;
                 this.logoPreview = URL.createObjectURL(file);
+                
+                const shopInput = document.getElementById('shop-settings-logo-input');
+                const invoiceInput = document.getElementById('invoice-settings-logo-input');
+                if (e.target === shopInput && invoiceInput) {
+                    invoiceInput.files = e.target.files;
+                } else if (e.target === invoiceInput && shopInput) {
+                    shopInput.files = e.target.files;
+                }
             }
         },
         signaturePreview: '',
@@ -56,6 +64,14 @@
             if (file) {
                 this.signatureFile = file;
                 this.signaturePreview = URL.createObjectURL(file);
+                
+                const shopInput = document.getElementById('shop-settings-signature-input');
+                const invoiceInput = document.getElementById('invoice-settings-signature-input');
+                if (e.target === shopInput && invoiceInput) {
+                    invoiceInput.files = e.target.files;
+                } else if (e.target === invoiceInput && shopInput) {
+                    shopInput.files = e.target.files;
+                }
             }
         },
         shopImagePreview: '',
@@ -196,6 +212,17 @@
             this.signatureFile = null;
             this.shopImagePreview = '';
             this.shopImageFile = null;
+            
+            // Reset file input DOM values
+            const shopLogo = document.getElementById('shop-settings-logo-input');
+            const invLogo = document.getElementById('invoice-settings-logo-input');
+            const shopSig = document.getElementById('shop-settings-signature-input');
+            const invSig = document.getElementById('invoice-settings-signature-input');
+            if (shopLogo) shopLogo.value = '';
+            if (invLogo) invLogo.value = '';
+            if (shopSig) shopSig.value = '';
+            if (invSig) invSig.value = '';
+
             this.parseBankDetails();
         }
     }" x-init="
@@ -358,7 +385,7 @@
                         <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider" x-text="t('change_logo')">Change Logo</span>
                     </div>
 
-                    <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
+                    <input type="file" id="shop-settings-logo-input" accept="image/*" @change="onSettingsLogoChange($event)"
                         class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
 
@@ -391,7 +418,7 @@
                             <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider" x-text="t('change')">Change</span>
                         </div>
 
-                        <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)"
+                        <input type="file" id="shop-settings-signature-input" accept="image/*" @change="onSettingsSignatureChange($event)"
                             class="absolute inset-0 opacity-0 cursor-pointer">
                     </div>
                 </div>
@@ -1042,7 +1069,7 @@
                                 <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff')"
                                     class="w-full h-full object-cover">
                             </div>
-                            <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
+                            <input type="file" id="invoice-settings-logo-input" accept="image/*" @change="onSettingsLogoChange($event)"
                                 class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
                         </div>
                     </div>
@@ -1060,7 +1087,7 @@
                                     <span class="text-[8px] text-slate-400" x-text="t('none')">None</span>
                                 </template>
                             </div>
-                            <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)"
+                            <input type="file" id="invoice-settings-signature-input" accept="image/*" @change="onSettingsSignatureChange($event)"
                                 class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
                         </div>
                     </div>

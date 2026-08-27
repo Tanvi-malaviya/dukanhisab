@@ -832,7 +832,7 @@
 
                             // Prepopulate shopSetupForm from current user details
                             this.shopSetupForm.owner_name = this.user.name;
-                            this.shopSetupForm.mobile = this.user.mobile || '';
+                            this.shopSetupForm.mobile = '';
 
                             if (this.hasShop) {
                                 localStorage.setItem('token', data.token);
@@ -911,7 +911,7 @@
 
                             // Prepopulate shopSetupForm from current user details
                             this.shopSetupForm.owner_name = this.user.name;
-                            this.shopSetupForm.mobile = this.user.mobile || '';
+                            this.shopSetupForm.mobile = '';
 
                             if (this.hasShop) {
                                 localStorage.setItem('token', data.token);
@@ -1062,6 +1062,7 @@
                     localStorage.removeItem('shopowner_shop');
                     localStorage.removeItem('shopowner_has_shop');
                     localStorage.removeItem('token');
+                    localStorage.removeItem('lifetime_offer_dismissed');
                     this.token = null;
                     this.user = null;
                     this.shop = null;
@@ -1102,7 +1103,7 @@
 
                             // Prepopulate shopSetupForm from current user details
                             this.shopSetupForm.owner_name = this.user.name;
-                            this.shopSetupForm.mobile = this.user.mobile || '';
+                            this.shopSetupForm.mobile = '';
 
                             if (this.hasShop) {
                                 localStorage.setItem('token', this.token);

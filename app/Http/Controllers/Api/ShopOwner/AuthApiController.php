@@ -431,7 +431,7 @@ class AuthApiController extends Controller
             'shop_id' => 'nullable|integer|exists:shops,id',
             'name' => 'required|string|max:255',
             'owner_name' => 'required|string|max:255',
-            'mobile' => 'required|string|max:20',
+            'mobile' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'city' => 'nullable|string|max:100',
@@ -577,7 +577,7 @@ class AuthApiController extends Controller
         }
 
         try {
-            $response = Http::get("https://api.postalpincode.in/pincode/{$pincode}");
+            $response = Http::timeout(8)->get("https://api.postalpincode.in/pincode/{$pincode}");
 
             if ($response->successful()) {
                 $data = $response->json();
@@ -606,26 +606,62 @@ class AuthApiController extends Controller
                         ]
                     ]);
                 }
-
-                return response()->json([
-                    'success' => false,
-                    'status' => 'Error',
-                    'message' => $data[0]['Message'] ?? 'No records found.'
-                ], 404);
             }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch pincode details from provider.'
-            ], 502);
-
         } catch (\Exception $e) {
-            \Log::error('Pincode fetch error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while fetching pincode details.'
-            ], 500);
+            \Log::error('Pincode fetch error [' . get_class($e) . ']: ' . $e->getMessage());
         }
+
+        // Live lookup (api.postalpincode.in) failed or returned no match — fall back
+        // to a locally bundled India post-office dataset so this still works even
+        // when the server's outbound internet to that provider is blocked/unreliable.
+        $fallback = $this->lookupPincodeFallback($pincode);
+        if ($fallback) {
+            return response()->json([
+                'success' => true,
+                'status' => 'Success',
+                'message' => 'Details retrieved successfully.',
+                'data' => [
+                    'pincode' => $pincode,
+                    'city' => $fallback['city'] ?? null,
+                    'state' => $fallback['state'] ?? null,
+                    'post_offices' => array_map(function ($name) use ($fallback) {
+                        return [
+                            'name' => $name,
+                            'branch_type' => null,
+                            'delivery_status' => null,
+                            'district' => $fallback['city'] ?? null,
+                            'state' => $fallback['state'] ?? null,
+                        ];
+                    }, $fallback['offices'] ?? []),
+                ],
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'status' => 'Error',
+            'message' => 'No records found for this pincode.'
+        ], 404);
+    }
+
+    /**
+     * Local fallback lookup for when the live api.postalpincode.in call is
+     * unreachable (e.g. host outbound internet restrictions). Sourced from a
+     * bundled snapshot, so it's less complete than the live API but keeps the
+     * shop-setup/shop-settings pincode flow working regardless of network.
+     */
+    private static ?array $pincodeFallbackData = null;
+
+    private function lookupPincodeFallback(string $pincode): ?array
+    {
+        if (self::$pincodeFallbackData === null) {
+            $path = resource_path('data/pincode_fallback.json');
+            self::$pincodeFallbackData = file_exists($path)
+                ? (json_decode(file_get_contents($path), true) ?? [])
+                : [];
+        }
+
+        return self::$pincodeFallbackData[$pincode] ?? null;
     }
 }
 
