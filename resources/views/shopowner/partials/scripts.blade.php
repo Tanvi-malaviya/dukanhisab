@@ -1658,7 +1658,7 @@
 
                 this.addShopModal.name = '';
                 this.addShopModal.owner_name = this.user ? this.user.name : '';
-                this.addShopModal.mobile = this.user ? this.user.mobile : '';
+                this.addShopModal.mobile = '';
                 this.addShopModal.gst_number = '';
                 this.addShopModal.logo = null;
                 this.addShopModal.logoPreview = null;
