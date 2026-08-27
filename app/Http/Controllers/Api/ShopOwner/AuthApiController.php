@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -454,9 +455,8 @@ class AuthApiController extends Controller
 
         $user = $request->user();
 
-        // Update User's name & mobile if changed
+        // Update User's name if changed
         $user->name = $request->owner_name;
-        $user->mobile = $request->mobile;
         $user->save();
 
         $shopId = $request->input('shop_id') ?: $request->header('X-Shop-ID');
@@ -562,4 +562,70 @@ class AuthApiController extends Controller
             'shop' => $shop
         ]);
     }
+
+    /**
+     * Get postal address details by pincode.
+     */
+    public function getPincodeDetails($pincode)
+    {
+        $validator = Validator::make(['pincode' => $pincode], [
+            'pincode' => 'required|numeric|digits:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        try {
+            $response = Http::get("https://api.postalpincode.in/pincode/{$pincode}");
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if (is_array($data) && isset($data[0]) && $data[0]['Status'] === 'Success') {
+                    $postOffices = $data[0]['PostOffice'];
+                    $firstOffice = $postOffices[0] ?? null;
+
+                    return response()->json([
+                        'success' => true,
+                        'status' => 'Success',
+                        'message' => $data[0]['Message'] ?? 'Details retrieved successfully.',
+                        'data' => [
+                            'pincode' => $pincode,
+                            'city' => $firstOffice ? $firstOffice['District'] : null,
+                            'state' => $firstOffice ? $firstOffice['State'] : null,
+                            'post_offices' => array_map(function ($office) {
+                                return [
+                                    'name' => $office['Name'],
+                                    'branch_type' => $office['BranchType'],
+                                    'delivery_status' => $office['DeliveryStatus'],
+                                    'district' => $office['District'],
+                                    'state' => $office['State'],
+                                ];
+                            }, $postOffices)
+                        ]
+                    ]);
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'status' => 'Error',
+                    'message' => $data[0]['Message'] ?? 'No records found.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch pincode details from provider.'
+            ], 502);
+
+        } catch (\Exception $e) {
+            \Log::error('Pincode fetch error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching pincode details.'
+            ], 500);
+        }
+    }
 }
+
