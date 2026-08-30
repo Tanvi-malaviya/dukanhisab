@@ -577,7 +577,7 @@ class AuthApiController extends Controller
         }
 
         try {
-            $response = Http::timeout(8)->get("https://api.postalpincode.in/pincode/{$pincode}");
+            $response = Http::withoutVerifying()->timeout(8)->get("https://api.postalpincode.in/pincode/{$pincode}");
 
             if ($response->successful()) {
                 $data = $response->json();
