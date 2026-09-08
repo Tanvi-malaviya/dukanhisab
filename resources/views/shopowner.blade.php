@@ -707,8 +707,7 @@
                 init() {
                     // Check if token and shop exist, if so redirect to dashboard
                     if (this.token && this.hasShop) {
-                        const redirectUrl = window.location.pathname.replace(/\/shopowner(\/.*)?$/, '/dukanhisab/');
-                        window.location.href = redirectUrl;
+                        window.location.href = '/shop/dashboard';
                         return;
                     }
                     // Check if token exists, if so fetch latest status
@@ -737,9 +736,13 @@
                 setView(newView) {
                     this.view = newView;
                     this.devOtp = null;
+                    if (newView === 'dashboard') {
+                        window.location.href = '/shop/dashboard';
+                        return;
+                    }
                     // Update URL state without reloading
-                    const base = '/shopowner/';
-                    const suffix = (newView === 'dashboard' || newView === 'shop-setup') ? '' : newView;
+                    const base = '/shop/';
+                    const suffix = (newView === 'shop-setup') ? 'shop-setup' : newView;
                     window.history.pushState(null, '', base + suffix);
                 },
 
@@ -832,12 +835,11 @@
 
                             // Prepopulate shopSetupForm from current user details
                             this.shopSetupForm.owner_name = this.user.name;
-                            this.shopSetupForm.mobile = this.user.mobile || '';
+                            this.shopSetupForm.mobile = '';
 
                             if (this.hasShop) {
                                 localStorage.setItem('token', data.token);
-                                const redirectUrl = window.location.pathname.replace(/\/shopowner(\/.*)?$/, '/dukanhisab/');
-                                window.location.href = redirectUrl;
+                                window.location.href = '/shop/dashboard';
                             } else {
                                 this.setView('shop-setup');
                             }
@@ -911,12 +913,11 @@
 
                             // Prepopulate shopSetupForm from current user details
                             this.shopSetupForm.owner_name = this.user.name;
-                            this.shopSetupForm.mobile = this.user.mobile || '';
+                            this.shopSetupForm.mobile = '';
 
                             if (this.hasShop) {
                                 localStorage.setItem('token', data.token);
-                                const redirectUrl = window.location.pathname.replace(/\/shopowner(\/.*)?$/, '/dukanhisab/');
-                                window.location.href = redirectUrl;
+                                window.location.href = '/shop/dashboard';
                             } else {
                                 this.setView('shop-setup');
                             }
@@ -1062,6 +1063,7 @@
                     localStorage.removeItem('shopowner_shop');
                     localStorage.removeItem('shopowner_has_shop');
                     localStorage.removeItem('token');
+                    localStorage.removeItem('lifetime_offer_dismissed');
                     this.token = null;
                     this.user = null;
                     this.shop = null;
@@ -1102,12 +1104,11 @@
 
                             // Prepopulate shopSetupForm from current user details
                             this.shopSetupForm.owner_name = this.user.name;
-                            this.shopSetupForm.mobile = this.user.mobile || '';
+                            this.shopSetupForm.mobile = '';
 
                             if (this.hasShop) {
                                 localStorage.setItem('token', this.token);
-                                const redirectUrl = window.location.pathname.replace(/\/shopowner(\/.*)?$/, '/dukanhisab/');
-                                window.location.href = redirectUrl;
+                                window.location.href = '/shop/dashboard';
                             } else {
                                 this.setView('shop-setup');
                             }
@@ -1117,8 +1118,7 @@
                     } catch (e) {
                         if (this.hasShop) {
                             localStorage.setItem('token', this.token);
-                            const redirectUrl = window.location.pathname.replace(/\/shopowner(\/.*)?$/, '/dukanhisab/');
-                            window.location.href = redirectUrl;
+                            window.location.href = '/shop/dashboard';
                         } else {
                             this.setView('shop-setup');
                         }
@@ -1168,9 +1168,7 @@
                             localStorage.setItem('shopowner_has_shop', 'true');
                             localStorage.setItem('shopowner_shop', JSON.stringify(data.shop));
                             localStorage.setItem('token', this.token);
-                            
-                            const redirectUrl = window.location.pathname.replace(/\/shopowner(\/.*)?$/, '/dukanhisab/');
-                            window.location.href = redirectUrl;
+                            window.location.href = '/shop/dashboard';
                         } else {
                             if (data.errors) {
                                 Object.values(data.errors).forEach(errs => {

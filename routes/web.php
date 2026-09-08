@@ -111,14 +111,50 @@ Route::group([
     Route::get('logs', [AuditLogController::class, 'index'])->name('logs.index');
 });
 
-// Add SPA wildcard route for the Shop Web Panel
-Route::get('/dukanhisab/{any?}', function () {
+// Shop Owner Auth Routes (Login, Register, Forgot Password, Reset Password)
+Route::get('/shop/login', function () {
+    return view('shopowner');
+})->name('shop.login');
+
+Route::get('/shop/register', function () {
+    return view('shopowner');
+})->name('shop.register');
+
+Route::get('/shop/forgot-password', function () {
+    return view('shopowner');
+});
+
+Route::get('/shop/reset-password', function () {
+    return view('shopowner');
+});
+
+Route::get('/shop/verify-otp', function () {
+    return view('shopowner');
+});
+
+Route::get('/shop/shop-setup', function () {
+    return view('shopowner');
+});
+
+// Shop Owner Main App Panel SPA Route (Dashboard, Sales, Inventory, etc.)
+Route::get('/shop/{any?}', function () {
     return view('app');
 })->where('any', '.*');
 
-// ShopOwner Web Panel SPA route
+// Backward compatibility redirects
+Route::get('/web/{any?}', function () {
+    $any = request()->route('any');
+    return redirect('/shop' . ($any ? '/' . $any : ''));
+})->where('any', '.*');
+
+Route::get('/dukanhisab/{any?}', function () {
+    $any = request()->route('any');
+    return redirect('/shop' . ($any ? '/' . $any : ''));
+})->where('any', '.*');
+
 Route::get('/shopowner/{any?}', function () {
-    return view('shopowner');
+    $any = request()->route('any');
+    return redirect('/shop' . ($any ? '/' . $any : ''));
 })->where('any', '.*');
 
 // Public Storefront routes
@@ -127,4 +163,4 @@ Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::c
 // Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!admin|api|shopowner|store).*$');
+})->where('any', '^(?!admin|api|shopowner|shop|store).*$');

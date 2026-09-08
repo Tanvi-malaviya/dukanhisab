@@ -253,6 +253,39 @@
             showPurchaseDetailsModal: false,
             confirmModal: { show: false, title: '', message: '', onConfirm: null },
 
+            showLifetimeOfferPopup: false,
+            lifetimeOfferDaysLeft: 7,
+            lifetimeOfferDontShowAgain: false,
+
+            closeLifetimeOfferPopup() {
+                if (this.lifetimeOfferDontShowAgain) {
+                    localStorage.setItem('lifetime_offer_dismissed', 'true');
+                }
+                this.showLifetimeOfferPopup = false;
+            },
+
+            checkLifetimeOffer() {
+                if (this.user && localStorage.getItem('lifetime_offer_dismissed') !== 'true') {
+                    const hasLifetime = this.user.active_plan && this.user.active_plan.slug === 'business';
+                    if (!hasLifetime && this.user.created_at) {
+                        const createdAt = new Date(this.user.created_at);
+                        if (!isNaN(createdAt.getTime())) {
+                            const now = new Date();
+                            const diffTime = now.getTime() - createdAt.getTime();
+                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            const daysLeft = 7 - diffDays;
+                            if (daysLeft > 0 && daysLeft <= 7) {
+                                this.lifetimeOfferDaysLeft = daysLeft;
+                                // Wait a little bit for page render/UX before popping up
+                                setTimeout(() => {
+                                    this.showLifetimeOfferPopup = true;
+                                }, 1200);
+                            }
+                        }
+                    }
+                }
+            },
+
             showConfirm(title, message, callback) {
                 this.confirmModal.title = title;
                 this.confirmModal.message = message;
@@ -272,11 +305,7 @@
 
                 // Redirect to login page if unauthenticated
                 if (!this.token || !this.hasShop) {
-                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                    if (redirectUrl === window.location.pathname) {
-                        redirectUrl = '/shopowner/';
-                    }
-                    window.location.href = redirectUrl;
+                    window.location.href = '/shop/login';
                     return;
                 }
 
@@ -294,11 +323,7 @@
                             this.authPage = 'login';
                             this.showToast('Session expired. Please log in again.', 'error');
                             setTimeout(() => {
-                                let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                                if (redirectUrl === window.location.pathname) {
-                                    redirectUrl = '/shopowner/';
-                                }
-                                window.location.href = redirectUrl;
+                                window.location.href = '/shop/login';
                             }, 1500);
                         }
                         return response;
@@ -344,6 +369,9 @@
                     this.loadInvoiceSettings();
                     // Trigger page-specific data load based on current URL
                     this._loadPageData(this.page);
+
+                    // Check for Lifetime Offer Popup
+                    this.checkLifetimeOffer();
                 }
 
                 this.$watch('customersPage', () => {
@@ -374,8 +402,8 @@
             // Read current URL path segment and set this.page
             _syncPageFromUrl() {
                 const path = window.location.pathname;
-                // Extract last segment: /dukanhisab/sales-history → 'sales-history'
-                const segment = path.replace(/^\/dukanhisab\/?/, '').replace(/\/$/, '') || '';
+                // Extract segment: /shop/sales-history → 'sales-history'
+                const segment = path.replace(/^\/(shop|web|dukanhisab)\/?/, '').replace(/\/$/, '') || '';
                 this.page = this.routeMap[segment] || 'dashboard';
             },
 
@@ -394,10 +422,13 @@
             navigateTo(pageName, extraFn = null) {
                 this.setPageLoading(pageName, true);
                 this.page = pageName;
-                const url = '/dukanhisab/' + (pageName === 'dashboard' ? '' : pageName);
+                const url = '/shop/' + (pageName === 'dashboard' ? 'dashboard' : pageName);
                 history.pushState({ page: pageName }, '', url);
                 if (extraFn) extraFn();
                 this._loadPageData(pageName);
+                if (pageName === 'settings') {
+                    window.dispatchEvent(new CustomEvent('sync-settings-form'));
+                }
             },
 
             // Load data needed for a specific page
@@ -446,7 +477,7 @@
             },
 
             getHeaders() {
-                return { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token, 'X-Shop-ID': this.shop ? this.shop.id : '' };
+                return { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token, 'X-Shop-ID': this.shop ? this.shop.id : '', 'X-Locale': this.currentLang || 'en' };
             },
 
             // ── DATA LOADERS ──────────────────────────────────────────
@@ -1020,6 +1051,8 @@
             submitShopProfileUpdate(logoFile = null, signatureFile = null, shopImageFile = null) {
                 this.loading = true;
                 const fd = new FormData();
+                // Always send shop_id so backend treats this as an UPDATE, not a new shop creation
+                if (this.shop && this.shop.id) fd.append('shop_id', this.shop.id);
                 fd.append('name', this.shopUpdateForm.name);
                 fd.append('owner_name', this.shopUpdateForm.owner_name);
                 fd.append('mobile', this.shopUpdateForm.mobile);
@@ -1052,6 +1085,7 @@
                                 localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             }
                             this.showToast('Shop profile updated successfully!');
+                            window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         } else {
                             if (d.errors) {
                                 const firstKey = Object.keys(d.errors)[0];
@@ -1095,6 +1129,7 @@
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             this.showToast('Profile updated successfully!');
+                            window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         } else {
                             if (d.errors) {
                                 const firstKey = Object.keys(d.errors)[0];
@@ -1115,6 +1150,7 @@
                         if (d.user) {
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            this.checkLifetimeOffer();
                         }
                         if (d.shop) {
                             this.shop = d.shop;
@@ -1555,13 +1591,9 @@
 
             handleLogout() {
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
-                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop'].forEach(k => localStorage.removeItem(k));
+                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
-                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                    if (redirectUrl === window.location.pathname) {
-                        redirectUrl = '/shopowner/';
-                    }
-                    window.location.href = redirectUrl;
+                    window.location.href = '/shop/login';
                 });
             },
 
@@ -1584,6 +1616,7 @@
                         if (d.shop) {
                             this.shop = d.shop; this.hasShop = true;
                             localStorage.setItem('shopowner_has_shop', 'true'); localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                            if (d.user) { this.user = d.user; localStorage.setItem('shopowner_user', JSON.stringify(d.user)); }
                             this.showToast('Shop created!'); this.loadAllData(); this.navigateTo('dashboard');
                         } else { this.showToast(d.message || 'Failed to setup shop.', 'error'); }
                     }).catch(() => { this.loading = false; this.showToast('Error setting up shop.', 'error'); });
@@ -1594,6 +1627,7 @@
                 localStorage.setItem('shopowner_shop', JSON.stringify(targetShop));
                 this.showToast('Switched to shop: ' + targetShop.name);
                 this.loadAllData();
+                window.dispatchEvent(new CustomEvent('sync-settings-form'));
             },
 
             openAddShopModal() {
@@ -1612,7 +1646,7 @@
 
                 this.addShopModal.name = '';
                 this.addShopModal.owner_name = this.user ? this.user.name : '';
-                this.addShopModal.mobile = this.user ? this.user.mobile : '';
+                this.addShopModal.mobile = '';
                 this.addShopModal.gst_number = '';
                 this.addShopModal.logo = null;
                 this.addShopModal.logoPreview = null;
@@ -1648,6 +1682,11 @@
                         this.addShopModal.show = false;
                         this.shop = d.shop;
                         localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                        // Update user with refreshed shops list so dropdown shows the new shop
+                        if (d.user) {
+                            this.user = d.user;
+                            localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                        }
                         this.showToast('New shop successfully created!');
                         this.loadAllData();
                     } else {
@@ -2073,7 +2112,7 @@
             downloadPDF() {
                 if (!this.selectedSale) return;
                 this.loading = true;
-                fetch('/api/v1/sales/' + this.selectedSale.id + '/invoice', { headers: this.getHeaders() })
+                fetch('/api/v1/sales/' + this.selectedSale.id + '/invoice?locale=' + this.currentLang, { headers: this.getHeaders() })
                     .then(r => r.blob()).then(blob => {
                          this.loading = false;
                          const link = document.createElement('a');
@@ -2094,7 +2133,7 @@
             sendSaleInvoiceEmail() {
                 if (!this.selectedSale || this.sendingSaleEmail) return;
                 this.sendingSaleEmail = true;
-                fetch('/api/v1/sales/' + this.selectedSale.id + '/email-invoice', { method: 'POST', headers: this.getHeaders() })
+                fetch('/api/v1/sales/' + this.selectedSale.id + '/email-invoice?locale=' + this.currentLang, { method: 'POST', headers: this.getHeaders() })
                     .then(r => r.json().then(d => ({ status: r.status, body: d })))
                     .then(({ status, body }) => {
                         this.sendingSaleEmail = false;
@@ -2110,7 +2149,7 @@
             downloadPurchasePDF() {
                 if (!this.selectedPurchase) return;
                 this.loading = true;
-                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/invoice', { headers: this.getHeaders() })
+                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/invoice?locale=' + this.currentLang, { headers: this.getHeaders() })
                     .then(r => r.blob()).then(blob => {
                         this.loading = false;
                         const link = document.createElement('a');
@@ -2131,7 +2170,7 @@
             sendPurchaseInvoiceEmail() {
                 if (!this.selectedPurchase || this.sendingPurchaseEmail) return;
                 this.sendingPurchaseEmail = true;
-                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/email-invoice', { method: 'POST', headers: this.getHeaders() })
+                fetch('/api/v1/purchases/' + this.selectedPurchase.id + '/email-invoice?locale=' + this.currentLang, { method: 'POST', headers: this.getHeaders() })
                     .then(r => r.json().then(d => ({ status: r.status, body: d })))
                     .then(({ status, body }) => {
                         this.sendingPurchaseEmail = false;
