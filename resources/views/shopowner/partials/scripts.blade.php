@@ -305,11 +305,7 @@
 
                 // Redirect to login page if unauthenticated
                 if (!this.token || !this.hasShop) {
-                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                    if (redirectUrl === window.location.pathname) {
-                        redirectUrl = '/shopowner/';
-                    }
-                    window.location.href = redirectUrl;
+                    window.location.href = '/shop/login';
                     return;
                 }
 
@@ -327,11 +323,7 @@
                             this.authPage = 'login';
                             this.showToast('Session expired. Please log in again.', 'error');
                             setTimeout(() => {
-                                let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                                if (redirectUrl === window.location.pathname) {
-                                    redirectUrl = '/shopowner/';
-                                }
-                                window.location.href = redirectUrl;
+                                window.location.href = '/shop/login';
                             }, 1500);
                         }
                         return response;
@@ -410,8 +402,8 @@
             // Read current URL path segment and set this.page
             _syncPageFromUrl() {
                 const path = window.location.pathname;
-                // Extract last segment: /dukanhisab/sales-history → 'sales-history'
-                const segment = path.replace(/^\/dukanhisab\/?/, '').replace(/\/$/, '') || '';
+                // Extract segment: /shop/sales-history → 'sales-history'
+                const segment = path.replace(/^\/(shop|web|dukanhisab)\/?/, '').replace(/\/$/, '') || '';
                 this.page = this.routeMap[segment] || 'dashboard';
             },
 
@@ -430,7 +422,7 @@
             navigateTo(pageName, extraFn = null) {
                 this.setPageLoading(pageName, true);
                 this.page = pageName;
-                const url = '/dukanhisab/' + (pageName === 'dashboard' ? '' : pageName);
+                const url = '/shop/' + (pageName === 'dashboard' ? 'dashboard' : pageName);
                 history.pushState({ page: pageName }, '', url);
                 if (extraFn) extraFn();
                 this._loadPageData(pageName);
@@ -1601,11 +1593,7 @@
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
                     ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
-                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                    if (redirectUrl === window.location.pathname) {
-                        redirectUrl = '/shopowner/';
-                    }
-                    window.location.href = redirectUrl;
+                    window.location.href = '/shop/login';
                 });
             },
 

@@ -11,11 +11,7 @@
     </div>
 
     <div class="flex items-center gap-4">
-        {{-- Current URL badge (small, shown in dev) --}}
-        <!-- <span class="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-mono font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-gray-700 rounded-full">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-            /dukanhisab/<span x-text="page === 'dashboard' ? '' : page"></span>
-        </span> -->
+       
         <span class="text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:inline"
             x-text="new Date().toLocaleDateString(currentLang === 'gu' ? 'gu-IN' : (currentLang === 'hi' ? 'hi-IN' : 'en-US'), { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })">
         </span>
@@ -119,7 +115,7 @@
         {{-- User Profile & Logout Group Box --}}
         <div class="flex items-center gap-2 pl-2 py-0.5 pr-0.5 border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/40 rounded-xl">
             {{-- User Profile Image --}}
-            <a href="/dukanhisab/settings" @click.prevent="navigateTo('settings')" title="My Profile" class="block w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600 shrink-0 hover:opacity-90 transition-opacity">
+            <a href="/shop/settings" @click.prevent="navigateTo('settings')" title="My Profile" class="block w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600 shrink-0 hover:opacity-90 transition-opacity">
                 <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
             </a>
 
