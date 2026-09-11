@@ -16,9 +16,9 @@ class SetUserLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $locale = $request->header('X-Locale') 
+        $locale = $request->input('locale')
+            ?? $request->header('X-Locale') 
             ?? $request->header('Accept-Language') 
-            ?? $request->input('locale') 
             ?? 'en';
 
         // Clean and validate locale

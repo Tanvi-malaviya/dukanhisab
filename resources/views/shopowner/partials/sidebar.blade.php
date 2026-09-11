@@ -101,7 +101,7 @@
                             :class="page === 'purchases' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
                             class="flex items-center px-3 py-2 text-xs rounded-lg transition-all gap-2">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            <span x-text="t('purchases-list')">Purchase</span>
+                            <span x-text="t('purchase')">Purchase</span>
                         </a>
  
                         {{-- Purchase History --}}
@@ -110,7 +110,7 @@
                             :class="page === 'purchase-history' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
                             class="flex items-center px-3 py-2 text-xs rounded-lg transition-all gap-2">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            <span x-text="t('purchases-list')">Purchase History</span>
+                            <span x-text="t('purchase-history')">Purchase History</span>
                         </a>
 
                         {{-- Purchase Returned --}}
@@ -397,7 +397,7 @@
                                    :class="page === 'purchases' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
                                    class="flex items-center px-3 py-2 text-xs rounded-lg transition-all gap-2">
                                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                   <span x-text="t('purchases')">Purchase</span>
+                                   <span x-text="t('purchase')">Purchase</span>
                                </a>
 
                                <!-- Purchase History -->

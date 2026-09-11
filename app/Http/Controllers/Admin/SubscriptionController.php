@@ -57,7 +57,15 @@ class SubscriptionController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $validated['slug'] = Str::slug($validated['name']);
+        if ($validated['billing_period'] === 'lifetime') {
+            $validated['slug'] = 'business';
+        } elseif ($validated['billing_period'] === 'yearly') {
+            $validated['slug'] = 'premium';
+        } elseif ($validated['billing_period'] === 'free') {
+            $validated['slug'] = 'free';
+        } else {
+            $validated['slug'] = Str::slug($validated['name']);
+        }
         
         // Ensure features structure has defaults
         $features = $validated['features'] ?? [];

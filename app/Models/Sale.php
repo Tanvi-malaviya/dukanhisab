@@ -25,11 +25,13 @@ class Sale extends Model
         'cancelled_at',
         'cancelled_by',
         'sale_date',
+        'paid_date',
     ];
 
     protected $casts = [
         'sale_date' => 'datetime',
         'cancelled_at' => 'datetime',
+        'paid_date' => 'datetime',
     ];
 
     protected static function booted()

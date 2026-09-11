@@ -140,6 +140,7 @@ class SaleApiController extends Controller
                 $saleStatus = ($remDue <= 0) ? 'Completed' : (($usedCredit > 0) ? 'Partially Paid' : 'Unpaid');
             }
 
+            $saleDate = $request->filled('sale_date') ? Carbon::parse($request->sale_date) : Carbon::now();
             $sale = Sale::create([
                 'shop_id' => $shopId,
                 'customer_id' => $request->customer_id,
@@ -151,7 +152,8 @@ class SaleApiController extends Controller
                 'store_credit' => $usedCredit,
                 'payment_type' => $request->payment_type,
                 'status' => $saleStatus,
-                'sale_date' => $request->filled('sale_date') ? Carbon::parse($request->sale_date) : Carbon::now(),
+                'sale_date' => $saleDate,
+                'paid_date' => $saleStatus === 'Completed' ? $saleDate : null,
             ]);
 
             foreach ($request->items as $item) {

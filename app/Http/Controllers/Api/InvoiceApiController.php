@@ -18,11 +18,15 @@ class InvoiceApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $sale = Sale::where('shop_id', $shopId)->with('items.product', 'customer')->findOrFail($id);
         $html = $this->buildSaleInvoiceHtml($sale);
-        return $this->renderMpdf($html, 'Invoice-' . $sale->sale_number . '.pdf', true);
+        return $this->renderPdf($html, 'Invoice-' . $sale->sale_number . '.pdf', true);
     }
 
     public function emailSaleInvoice(Request $request, $id)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to unlock email invoice sharing.'], 403);
+        }
         $shopId = $request->attributes->get('shop_id');
         $sale = Sale::where('shop_id', $shopId)->with('items.product', 'customer')->findOrFail($id);
 
@@ -32,7 +36,7 @@ class InvoiceApiController extends Controller
 
         $shop = Shop::findOrFail($shopId);
         $html = $this->buildSaleInvoiceHtml($sale);
-        $pdfContent = $this->renderMpdf($html, 'Invoice-' . $sale->sale_number . '.pdf', false);
+        $pdfContent = $this->renderPdf($html, 'Invoice-' . $sale->sale_number . '.pdf', false);
 
         Mail::send('shopowner.emails.sale-invoice', ['sale' => $sale, 'shop' => $shop], function ($message) use ($sale, $shop, $pdfContent) {
             $message->to($sale->customer->email)
@@ -48,11 +52,15 @@ class InvoiceApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
         $html = $this->buildPurchaseInvoiceHtml($purchase);
-        return $this->renderMpdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', true);
+        return $this->renderPdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', true);
     }
 
     public function emailPurchaseInvoice(Request $request, $id)
     {
+        $user = $request->user();
+        if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
+            return response()->json(['message' => 'Please upgrade your plan to unlock email invoice sharing.'], 403);
+        }
         $shopId = $request->attributes->get('shop_id');
         $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
 
@@ -62,7 +70,7 @@ class InvoiceApiController extends Controller
 
         $shop = Shop::findOrFail($shopId);
         $html = $this->buildPurchaseInvoiceHtml($purchase);
-        $pdfContent = $this->renderMpdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', false);
+        $pdfContent = $this->renderPdf($html, 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', false);
 
         Mail::send('shopowner.emails.purchase-invoice', ['purchase' => $purchase, 'shop' => $shop], function ($message) use ($purchase, $shop, $pdfContent) {
             $message->to($purchase->supplier->email)
@@ -73,56 +81,17 @@ class InvoiceApiController extends Controller
         return response()->json(['message' => 'Invoice emailed to ' . $purchase->supplier->email . ' successfully.']);
     }
 
-    private function renderMpdf(string $html, string $filename, bool $stream = true)
+    private function renderPdf(string $html, string $filename, bool $stream = true)
     {
-        $tempDir = storage_path('app/tmp_mpdf');
-        if (!file_exists($tempDir)) {
-            mkdir($tempDir, 0777, true);
-        }
-
-        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
-        $fontDirs = $defaultConfig['fontDir'];
-
-        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
-        $fontData = $defaultFontConfig['fontdata'];
-
-        $mpdf = new \Mpdf\Mpdf([
-            'fontDir' => array_merge($fontDirs, [
-                public_path('fonts'),
-            ]),
-            'fontdata' => $fontData + [
-                'notosansgujarati' => [
-                    'R' => 'NotoSansGujarati-Regular.ttf',
-                    'B' => 'NotoSansGujarati-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-                'notosansdevanagari' => [
-                    'R' => 'NotoSansDevanagari-Regular.ttf',
-                    'B' => 'NotoSansDevanagari-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-            ],
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'tempDir' => $tempDir,
-            'margin_left' => 0,
-            'margin_right' => 0,
-            'margin_top' => 0,
-            'margin_bottom' => 0,
-            'margin_header' => 0,
-            'margin_footer' => 0,
-            'autoScriptToLang' => false,
-            'autoLangToFont' => false,
-        ]);
-
-        $mpdf->WriteHTML($html);
+        $pdf = Pdf::loadHTML($html);
+        $pdf->setPaper('A4', 'portrait');
 
         if ($stream) {
-            return response($mpdf->Output($filename, 'S'))
+            return response($pdf->output())
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
         } else {
-            return $mpdf->Output($filename, 'S');
+            return $pdf->output();
         }
     }
 
@@ -133,19 +102,58 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
-        \Log::info('buildSaleInvoiceHtml locale checked', [
-            'app_locale' => app()->getLocale(),
-            'lang_in_config' => config('app.locale'),
-        ]);
+        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        $request = request();
+        $locale = $request->input('locale')
+            ?? $request->header('X-Locale')
+            ?? $request->header('Accept-Language')
+            ?? app()->getLocale();
 
-        $locale = app()->getLocale();
-        $fontFamily = 'DejaVu Sans, Helvetica Neue, Helvetica, Arial, sans-serif';
-        $fontFaceHtml = '';
+        // Clean and validate locale
+        $locale = strtolower(trim($locale));
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        if (str_contains($locale, '-')) {
+            $locale = explode('-', $locale)[0];
+        }
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
 
+        // Force English locale for all PDF invoices for now to bypass font cache permissions issues
+        app()->setLocale('en');
+        $locale = 'en';
+
+        $fontFaceStyles = '';
         if ($locale === 'gu') {
-            $fontFamily = 'notosansgujarati, sans-serif';
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
+                }';
         } elseif ($locale === 'hi') {
-            $fontFamily = 'notosansdevanagari, sans-serif';
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
+                }';
         }
 
         $badgeHtml = '';
@@ -170,26 +178,34 @@ class InvoiceApiController extends Controller
             $qrBase64 = $this->fetchQrCodeBase64($shop->upi_id, $shop->name, $sale->grand_total);
         }
 
-        $langCode = $locale === 'gu' ? 'gu' : ($locale === 'hi' ? 'hi' : 'en');
         // Build premium styled HTML for PDF invoice
         $html = '
         <!DOCTYPE html>
-        <html lang="' . $langCode . '">
+        <html lang="' . $locale . '">
         <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
             <title>' . __('invoice') . ' - ' . $sale->sale_number . '</title>
             <style>
-                ' . $fontFaceHtml . '
+                ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
-                    font-family: ' . $fontFamily . ';
+                    font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
                 }
                 body {
                     color: #111;
-                    font-size: ' . ($locale === 'en' ? '14px' : '15px') . ';
+                    font-size: 14px;
                     line-height: 1.6;
                     margin: 0;
                     padding: 0;
+                }
+                .font-default {
+                    font-family: "DejaVu Sans", sans-serif;
+                }
+                .font-gujarati {
+                    font-family: "NotoSansGujarati", sans-serif;
+                }
+                .font-devanagari {
+                    font-family: "NotoSansDevanagari", sans-serif;
                 }
                 .container {
                     padding: 30px;
@@ -384,10 +400,10 @@ class InvoiceApiController extends Controller
                         }
                         $html .= '
                                 <td style="vertical-align: top; padding: 0;">
-                                    <span class="shop-name">' . htmlspecialchars($shop->name) . '</span><br>
+                                    <span class="shop-name">' . $this->renderMultilingualText($shop->name) . '</span><br>
                                     <span class="shop-details">
                                         ' . __('mobile') . ': ' . htmlspecialchars($shop->mobile ?? $shop->owner->mobile ?? '') . '<br>
-                                        ' . ($shop->address ? htmlspecialchars($shop->address) . '<br>' : '') . '
+                                        ' . ($shop->address ? $this->renderMultilingualText($shop->address) . '<br>' : '') . '
                                         ' . ($shop->gst_number ? __('gstin_label') . ': ' . htmlspecialchars($shop->gst_number) : '') . '
                                     </span>
                                 </td>
@@ -404,7 +420,7 @@ class InvoiceApiController extends Controller
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $sale->sale_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && $sale->updated_at) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $sale->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($sale->paid_date ?? $sale->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
                             </div>
                         </td>
                     </tr>
@@ -414,7 +430,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td>
                             <div class="section-title">' . __('bill_to') . '</div>
-                            <div class="party-name">' . htmlspecialchars($sale->customer->name ?? __('walk_in_customer')) . '</div>
+                            <div class="party-name">' . $this->renderMultilingualText($sale->customer->name ?? __('walk_in_customer')) . '</div>
                             <div class="party-info">
                                 ' . ($sale->customer && $sale->customer->mobile ? __('mobile') . ': ' . htmlspecialchars($sale->customer->mobile) . '<br>' : '') . '
                                 ' . ($sale->customer && $sale->customer->email ? __('email') . ': ' . htmlspecialchars($sale->customer->email) : '') . '
@@ -431,7 +447,7 @@ class InvoiceApiController extends Controller
                                             : ($sale->status === 'Unpaid'
                                                 ? '<span style="color:#f59e0b;font-weight:bold;">' . __('unpaid') . '</span>'
                                                 : ($sale->payment_type === 'Credit'
-                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('completed') . '</span>'
+                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>'
                                                     : '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>')))
                                 ) . '<br>
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower($sale->payment_type)) . '
@@ -484,7 +500,7 @@ class InvoiceApiController extends Controller
                         $html .= '
                         <tr>
                             <td style="text-align: center;">' . $i++ . '</td>
-                            <td>' . htmlspecialchars($item->product->name ?? __('unknown_product')) . '</td>
+                            <td>' . $this->renderMultilingualText($item->product->name ?? __('unknown_product')) . '</td>
                             <td style="text-align: right;">&#8377; ' . number_format($item->selling_price, 2) . '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>';
 
@@ -546,7 +562,7 @@ class InvoiceApiController extends Controller
                     </tr>
                 </table>
 
-                <div class="invoice-footer-text">' . htmlspecialchars($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
+                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
 
                 if ($shop->signature && file_exists($signatureUrl)) {
                     $html .= '<div class="signature-img"><img src="data:image/png;base64,' . base64_encode(file_get_contents($signatureUrl)) . '" /></div>';
@@ -571,14 +587,77 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
-        $locale = app()->getLocale();
-        $fontFamily = 'DejaVu Sans, Helvetica Neue, Helvetica, Arial, sans-serif';
-        $fontFaceHtml = '';
+        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        $request = request();
+        $locale = $request->input('locale')
+            ?? $request->header('X-Locale')
+            ?? $request->header('Accept-Language')
+            ?? app()->getLocale();
 
+        // Clean and validate locale
+        $locale = strtolower(trim($locale));
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        if (str_contains($locale, '-')) {
+            $locale = explode('-', $locale)[0];
+        }
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
+
+        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        $request = request();
+        $locale = $request->input('locale')
+            ?? $request->header('X-Locale')
+            ?? $request->header('Accept-Language')
+            ?? app()->getLocale();
+
+        // Clean and validate locale
+        $locale = strtolower(trim($locale));
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        if (str_contains($locale, '-')) {
+            $locale = explode('-', $locale)[0];
+        }
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
+
+        // Force English locale for all PDF invoices for now to bypass font cache permissions issues
+        app()->setLocale('en');
+        $locale = 'en';
+
+        $fontFaceStyles = '';
         if ($locale === 'gu') {
-            $fontFamily = 'notosansgujarati, sans-serif';
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansGujarati";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
+                }';
         } elseif ($locale === 'hi') {
-            $fontFamily = 'notosansdevanagari, sans-serif';
+            $fontFaceStyles = '
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 400;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
+                }
+                @font-face {
+                    font-family: "NotoSansDevanagari";
+                    font-style: normal;
+                    font-weight: 700;
+                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
+                }';
         }
 
         $badgeHtml = '';
@@ -603,23 +682,22 @@ class InvoiceApiController extends Controller
             $qrBase64 = $this->fetchQrCodeBase64($shop->upi_id, $shop->name, $purchase->total_amount);
         }
 
-        $langCode = $locale === 'gu' ? 'gu' : ($locale === 'hi' ? 'hi' : 'en');
         // Build premium styled HTML for PDF invoice
         $html = '
         <!DOCTYPE html>
-        <html lang="' . $langCode . '">
+        <html lang="' . $locale . '">
         <head>
             <meta charset="utf-8">
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
             <title>' . __('purchase_invoice') . ' - ' . $purchase->purchase_number . '</title>
             <style>
-                ' . $fontFaceHtml . '
+                ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
-                    font-family: ' . $fontFamily . ';
+                    font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
                 }
                 body {
                     color: #111;
-                    font-size: ' . ($locale === 'en' ? '14px' : '15px') . ';
+                    font-size: 14px;
                     line-height: 1.6;
                     margin: 0;
                     padding: 0;
@@ -804,10 +882,10 @@ class InvoiceApiController extends Controller
                         }
                         $html .= '
                                 <td style="vertical-align: top; padding: 0;">
-                                    <span class="shop-name">' . htmlspecialchars($shop->name) . '</span><br>
+                                    <span class="shop-name">' . $this->renderMultilingualText($shop->name) . '</span><br>
                                     <span class="shop-details">
                                         ' . __('mobile') . ': ' . htmlspecialchars($shop->mobile ?? $shop->owner->mobile ?? '') . '<br>
-                                        ' . ($shop->address ? htmlspecialchars($shop->address) . '<br>' : '') . '
+                                        ' . ($shop->address ? $this->renderMultilingualText($shop->address) . '<br>' : '') . '
                                         ' . ($shop->gst_number ? __('gstin_label') . ': ' . htmlspecialchars($shop->gst_number) : '') . '
                                     </span>
                                 </td>
@@ -824,7 +902,7 @@ class InvoiceApiController extends Controller
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $purchase->purchase_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && $purchase->updated_at) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $purchase->updated_at->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($purchase->paid_date ?? $purchase->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
                             </div>
                         </td>
                     </tr>
@@ -834,7 +912,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td>
                             <div class="section-title">' . __('supplier_name') . '</div>
-                            <div class="party-name">' . htmlspecialchars($purchase->supplier->name ?? __('walk_in_supplier')) . '</div>
+                            <div class="party-name">' . $this->renderMultilingualText($purchase->supplier->name ?? __('walk_in_supplier')) . '</div>
                             <div class="party-info">
                                 ' . ($purchase->supplier && $purchase->supplier->mobile ? __('mobile') . ': ' . htmlspecialchars($purchase->supplier->mobile) . '<br>' : '') . '
                                 ' . ($purchase->supplier && $purchase->supplier->email ? __('email') . ': ' . htmlspecialchars($purchase->supplier->email) : '') . '
@@ -843,7 +921,7 @@ class InvoiceApiController extends Controller
                         <td style="text-align: right;">
                             <div class="section-title">' . __('payment_info') . '</div>
                             <div class="party-info">
-                                <strong>' . __('payment_status') . ':</strong>                                ' . (
+                                <strong>' . __('payment_status') . ':</strong> ' . (
                                     $purchase->status === 'Returned'
                                         ? '<span class="badge badge-returned">' . strtoupper(__('returned')) . '</span>'
                                         : ($purchase->status === 'Partially Returned'
@@ -897,7 +975,7 @@ class InvoiceApiController extends Controller
                         <tr>
                             <td>' . $rowNum++ . '</td>
                             <td>
-                                <strong>' . htmlspecialchars($item->product->name ?? 'Unknown') . '</strong>' .
+                                <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
                                 ($lineDiscount > 0 ? '<br><small style="color:#059669;">' . __('scheme_discount', [], 'Scheme Disc') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</small>' : '') .
                             '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>
@@ -962,7 +1040,7 @@ class InvoiceApiController extends Controller
                     </tr>
                 </table>
 
-                <div class="invoice-footer-text">' . htmlspecialchars($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
+                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
 
                 if ($shop->signature && file_exists($signatureUrl)) {
                     $html .= '<div class="signature-img"><img src="data:image/png;base64,' . base64_encode(file_get_contents($signatureUrl)) . '" /></div>';
@@ -1008,5 +1086,26 @@ class InvoiceApiController extends Controller
         } catch (\Throwable $e) {
             return null;
         }
+    }
+
+    private function renderMultilingualText(?string $text): string
+    {
+        $text = (string) ($text ?? '');
+        if ($text === '') {
+            return '';
+        }
+        $escaped = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        // Gujarati Unicode block: U+0A80 - U+0AFF
+        if (preg_match('/[\x{0A80}-\x{0AFF}]/u', $text)) {
+            return '<span class="font-gujarati">' . $escaped . '</span>';
+        }
+
+        // Devanagari Unicode block: U+0900 - U+097F
+        if (preg_match('/[\x{0900}-\x{097F}]/u', $text)) {
+            return '<span class="font-devanagari">' . $escaped . '</span>';
+        }
+
+        return '<span class="font-default">' . $escaped . '</span>';
     }
 }

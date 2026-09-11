@@ -198,6 +198,11 @@ class SupplierApiController extends Controller
                     $purchase->update([
                         'status' => 'Completed',
                         'paid_amount' => $total,
+                        'paid_date' => $purchase->paid_date ?? Carbon::now(),
+                    ]);
+                } else {
+                    $purchase->update([
+                        'paid_date' => $purchase->paid_date ?? Carbon::now(),
                     ]);
                 }
                 $rem -= $total;
@@ -214,6 +219,7 @@ class SupplierApiController extends Controller
                     $purchase->update([
                         'status' => 'Unpaid',
                         'paid_amount' => 0,
+                        'paid_date' => null,
                     ]);
                 }
             }

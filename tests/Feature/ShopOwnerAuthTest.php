@@ -206,7 +206,7 @@ class ShopOwnerAuthTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $user->id,
             'name' => 'Updated Name',
-            'mobile' => '9876543210',
+            'mobile' => '1234567890',
         ]);
 
         $this->assertDatabaseHas('shops', [

@@ -1,17 +1,16 @@
 <?php
 
-namespace Database\Seeders;
-
-use Illuminate\Database\Seeder;
+use Illuminate\Database\Migrations\Migration;
 use App\Models\SubscriptionPlan;
 
-class SubscriptionPlanSeeder extends Seeder
+return new class extends Migration
 {
     /**
-     * Run the database seeds.
+     * Run the migrations.
      */
-    public function run(): void
+    public function up(): void
     {
+        // 1. Sync Free Plan
         SubscriptionPlan::updateOrCreate(
             ['slug' => 'free'],
             [
@@ -29,6 +28,7 @@ class SubscriptionPlanSeeder extends Seeder
             ]
         );
 
+        // 2. Sync Premium Plan
         SubscriptionPlan::updateOrCreate(
             ['slug' => 'premium'],
             [
@@ -37,8 +37,8 @@ class SubscriptionPlanSeeder extends Seeder
                 'price' => 365.00,
                 'billing_period' => 'yearly',
                 'features' => [
-                    'max_shops' => 5,
-                    'max_devices' => 5,
+                    'max_shops' => 2,
+                    'max_devices' => 2,
                     'advanced_reports' => true,
                     'backup' => true,
                 ],
@@ -46,6 +46,7 @@ class SubscriptionPlanSeeder extends Seeder
             ]
         );
 
+        // 3. Sync Business Plan
         SubscriptionPlan::updateOrCreate(
             ['slug' => 'business'],
             [
@@ -63,4 +64,12 @@ class SubscriptionPlanSeeder extends Seeder
             ]
         );
     }
-}
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        // No rollback needed for static plan synchronization
+    }
+};

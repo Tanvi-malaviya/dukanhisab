@@ -130,6 +130,7 @@ class PurchaseApiController extends Controller
                 $purchaseNumber = 'PUR-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
             } while (Purchase::withTrashed()->where('shop_id', $shopId)->where('purchase_number', $purchaseNumber)->exists());
 
+            $purchaseDate = $request->filled('purchase_date') ? Carbon::parse($request->purchase_date) : Carbon::now();
             $purchase = Purchase::create([
                 'shop_id' => $shopId,
                 'supplier_id' => $request->supplier_id,
@@ -139,7 +140,8 @@ class PurchaseApiController extends Controller
                 'paid_amount' => $paidAmount,
                 'payment_type' => $request->payment_type,
                 'status' => $status,
-                'purchase_date' => $request->filled('purchase_date') ? Carbon::parse($request->purchase_date) : Carbon::now(),
+                'purchase_date' => $purchaseDate,
+                'paid_date' => $status === 'Completed' ? $purchaseDate : null,
             ]);
 
             foreach ($request->items as $item) {

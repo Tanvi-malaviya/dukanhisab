@@ -22,11 +22,13 @@ class Purchase extends Model
         'cancellation_reason',
         'cancelled_at',
         'cancelled_by',
+        'paid_date',
     ];
 
     protected $casts = [
         'purchase_date' => 'datetime',
         'cancelled_at' => 'datetime',
+        'paid_date' => 'datetime',
     ];
 
     protected static function booted()

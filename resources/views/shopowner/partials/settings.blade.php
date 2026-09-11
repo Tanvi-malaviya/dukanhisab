@@ -1,5 +1,27 @@
 {{-- SETTINGS PANEL --}}
-<div x-show="page === 'settings'" class="space-y-6" x-data="{
+<div x-show="page === 'settings'" class="space-y-6"
+    @sync-settings-form.window="
+        if (shop) {
+            syncShopForm(shop);
+        }
+        if (user) {
+            userProfileForm = {
+                name: user.name || '',
+                display_name: user.display_name || '',
+                mobile: user.mobile || '',
+                email: user.email || '',
+                date_of_birth: user.date_of_birth || '',
+                gender: user.gender || '',
+                currency: user.currency || 'INR',
+                date_format: user.date_format || 'DD/MM/YYYY',
+                time_format: user.time_format || '12h',
+                notification_preferences: Object.assign({ email: true, sms: false, whatsapp: true, push: true }, user.notification_preferences || {})
+            };
+            profileAvatarPreview = '';
+            profileAvatarFile = null;
+        }
+    "
+    x-data="{
         settingsTab: 'shop',
         showPreviewModal: false,
         shopUpdateForm: {
@@ -25,6 +47,14 @@
             if (file) {
                 this.logoFile = file;
                 this.logoPreview = URL.createObjectURL(file);
+                
+                const shopInput = document.getElementById('shop-settings-logo-input');
+                const invoiceInput = document.getElementById('invoice-settings-logo-input');
+                if (e.target === shopInput && invoiceInput) {
+                    invoiceInput.files = e.target.files;
+                } else if (e.target === invoiceInput && shopInput) {
+                    shopInput.files = e.target.files;
+                }
             }
         },
         signaturePreview: '',
@@ -34,6 +64,14 @@
             if (file) {
                 this.signatureFile = file;
                 this.signaturePreview = URL.createObjectURL(file);
+                
+                const shopInput = document.getElementById('shop-settings-signature-input');
+                const invoiceInput = document.getElementById('invoice-settings-signature-input');
+                if (e.target === shopInput && invoiceInput) {
+                    invoiceInput.files = e.target.files;
+                } else if (e.target === invoiceInput && shopInput) {
+                    shopInput.files = e.target.files;
+                }
             }
         },
         shopImagePreview: '',
@@ -174,36 +212,39 @@
             this.signatureFile = null;
             this.shopImagePreview = '';
             this.shopImageFile = null;
+            
+            // Reset file input DOM values
+            const shopLogo = document.getElementById('shop-settings-logo-input');
+            const invLogo = document.getElementById('invoice-settings-logo-input');
+            const shopSig = document.getElementById('shop-settings-signature-input');
+            const invSig = document.getElementById('invoice-settings-signature-input');
+            if (shopLogo) shopLogo.value = '';
+            if (invLogo) invLogo.value = '';
+            if (shopSig) shopSig.value = '';
+            if (invSig) invSig.value = '';
+
             this.parseBankDetails();
         }
     }" x-init="
     if (shop) {
         syncShopForm(shop);
     }
-    $watch('shop', value => {
-        syncShopForm(value);
-    });
-    $watch('page', value => {
-        if(value === 'settings' && shop) {
-            syncShopForm(shop);
-        }
-        if (value === 'settings' && user) {
-            userProfileForm = {
-                name: user.name || '',
-                display_name: user.display_name || '',
-                mobile: user.mobile || '',
-                email: user.email || '',
-                date_of_birth: user.date_of_birth || '',
-                gender: user.gender || '',
-                currency: user.currency || 'INR',
-                date_format: user.date_format || 'DD/MM/YYYY',
-                time_format: user.time_format || '12h',
-                notification_preferences: Object.assign({ email: true, sms: false, whatsapp: true, push: true }, user.notification_preferences || {})
-            };
-            profileAvatarPreview = '';
-            profileAvatarFile = null;
-        }
-    });
+    if (user) {
+        userProfileForm = {
+            name: user.name || '',
+            display_name: user.display_name || '',
+            mobile: user.mobile || '',
+            email: user.email || '',
+            date_of_birth: user.date_of_birth || '',
+            gender: user.gender || '',
+            currency: user.currency || 'INR',
+            date_format: user.date_format || 'DD/MM/YYYY',
+            time_format: user.time_format || '12h',
+            notification_preferences: Object.assign({ email: true, sms: false, whatsapp: true, push: true }, user.notification_preferences || {})
+        };
+        profileAvatarPreview = '';
+        profileAvatarFile = null;
+    }
     $watch('invoiceSettings', value => {
         if (value) {
             invoiceConfigForm = {
@@ -327,7 +368,7 @@
                     </template>
                     <!-- Or existing shop logo -->
                     <template x-if="!logoPreview">
-                        <img :src="shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff'"
+                        <img :src="shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shop ? shop.name : 'Dukan') + '&background=0d9488&color=fff'"
                             class="w-full h-full object-cover">
                     </template>
 
@@ -344,12 +385,12 @@
                         <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider" x-text="t('change_logo')">Change Logo</span>
                     </div>
 
-                    <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
+                    <input type="file" id="shop-settings-logo-input" accept="image/*" @change="onSettingsLogoChange($event)"
                         class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
 
                 <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-3"
-                    x-text="shopUpdateForm.name || 'My Shop'"></h5>
+                    x-text="shop ? shop.name : 'My Shop'"></h5>
                 <p class="text-[9px] text-slate-400 mt-0.5 uppercase font-semibold tracking-widest"
                     x-text="(t('gstin_label') || 'GSTIN') + ': ' + (shopUpdateForm.gst_number || t('none') || 'None')"></p>
                 <p class="text-[10px] text-slate-400 mt-1 max-w-[200px]" x-text="t('format_max_2mb')">Format: JPG, PNG. Max 2MB.</p>
@@ -377,7 +418,7 @@
                             <span class="text-[8px] text-slate-200 font-bold uppercase tracking-wider" x-text="t('change')">Change</span>
                         </div>
 
-                        <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)"
+                        <input type="file" id="shop-settings-signature-input" accept="image/*" @change="onSettingsSignatureChange($event)"
                             class="absolute inset-0 opacity-0 cursor-pointer">
                     </div>
                 </div>
@@ -481,7 +522,7 @@
                                 <img :src="profileAvatarPreview" class="w-full h-full object-cover">
                             </template>
                             <template x-if="!profileAvatarPreview">
-                                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userProfileForm.name || 'User') + '&background=0d9488&color=fff'"
+                                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'"
                                     class="w-full h-full object-cover">
                             </template>
 
@@ -502,7 +543,7 @@
                         </div>
 
                         <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4"
-                            x-text="userProfileForm.display_name || userProfileForm.name || 'My Account'"></h5>
+                            x-text="user && (user.display_name || user.name) ? (user.display_name || user.name) : 'My Account'"></h5>
                         <p class="text-xs text-slate-400 mt-2 max-w-[200px]" x-text="t('format_max_size_2mb')">Format: JPG, PNG. Max size 2MB.</p>
                     </div>
 
@@ -956,7 +997,7 @@
 
     {{-- Invoice Settings --}}
     <div x-show="settingsTab === 'invoice'" class="w-full">
-        <form @submit.prevent="saveInvoiceSettings()" class="w-full space-y-6">
+        <form @submit.prevent="if (user && user.active_plan && user.active_plan.slug !== 'free') saveInvoiceSettings(); else showConfirm('Upgrade Plan Required', 'Invoice settings are only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); })" class="w-full space-y-6">
 
             {{-- General, Layout & Branding --}}
             <div
@@ -1028,7 +1069,7 @@
                                 <img :src="logoPreview || (shop && shop.logo ? '/storage/' + shop.logo : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(shopUpdateForm.name || 'Dukan') + '&background=0d9488&color=fff')"
                                     class="w-full h-full object-cover">
                             </div>
-                            <input type="file" accept="image/*" @change="onSettingsLogoChange($event)"
+                            <input type="file" id="invoice-settings-logo-input" accept="image/*" @change="onSettingsLogoChange($event)"
                                 class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
                         </div>
                     </div>
@@ -1046,7 +1087,7 @@
                                     <span class="text-[8px] text-slate-400" x-text="t('none')">None</span>
                                 </template>
                             </div>
-                            <input type="file" accept="image/*" @change="onSettingsSignatureChange($event)"
+                            <input type="file" id="invoice-settings-signature-input" accept="image/*" @change="onSettingsSignatureChange($event)"
                                 class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-2.5 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
                         </div>
                     </div>
@@ -1309,7 +1350,7 @@
                             encrypted backup file containing all products, sales history, customer dues, supplier
                             records, expenses, and settings.</p>
                     </div>
-                    <button type="button" @click="downloadShopBackup()"
+                    <button type="button" @click="if (user && user.active_plan && user.active_plan.slug === 'business') downloadShopBackup(); else showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); })"
                         class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1338,7 +1379,7 @@
                     <div class="space-y-2">
                         <input type="file" id="shop-restore-file-input" accept=".dhbak"
                             class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
-                        <button type="button" @click="restoreShopBackup(document.getElementById('shop-restore-file-input'))"
+                        <button type="button" @click="if (user && user.active_plan && user.active_plan.slug === 'business') restoreShopBackup(document.getElementById('shop-restore-file-input')); else showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); })"
                             class="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

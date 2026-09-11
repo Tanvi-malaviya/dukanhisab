@@ -61,7 +61,8 @@
                 <div class="bg-white dark:bg-gray-800 rounded-2xl border shadow-sm p-6 flex flex-col justify-between transition-all"
                     :class="{
                         'ring-2 ring-teal-600 border-transparent': user && user.active_plan && user.active_plan.id == plan.id,
-                        'border-slate-200 dark:border-gray-700': !(user && user.active_plan && user.active_plan.id == plan.id)
+                        'border-slate-200 dark:border-gray-700': !(user && user.active_plan && user.active_plan.id == plan.id),
+                        'opacity-60 grayscale-[40%]': plan.is_expired && !(user && user.active_plan && user.active_plan.id == plan.id)
                     }">
                     <div class="space-y-4">
                         <!-- Plan header -->
@@ -85,9 +86,17 @@
                                 </template>
                                 <span class="text-base font-bold text-slate-800 dark:text-white" x-text="plan.name"></span>
                             </div>
-                            <span x-show="user && user.active_plan && user.active_plan.id == plan.id"
-                                class="px-2 py-0.5 text-[10px] font-bold text-teal-700 bg-teal-100 dark:bg-teal-900/40 dark:text-teal-300 rounded-full shrink-0"
-                                x-text="t('current_plan')">Current Plan</span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span x-show="user && user.active_plan && user.active_plan.id == plan.id"
+                                    class="px-2 py-0.5 text-[10px] font-bold text-teal-700 bg-teal-100 dark:bg-teal-900/40 dark:text-teal-300 rounded-full"
+                                    x-text="t('current_plan')">Current Plan</span>
+                                <template x-if="plan.slug === 'business' && plan.is_expired && !(user && user.active_plan && user.active_plan.id == plan.id)">
+                                    <span class="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-100 dark:bg-red-900/40 dark:text-red-300 rounded-full">Offer Expired</span>
+                                </template>
+                                <template x-if="plan.slug === 'business' && !plan.is_expired && plan.days_left !== null && !(user && user.active_plan && user.active_plan.id == plan.id)">
+                                    <span class="px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 dark:bg-amber-900/40 dark:text-amber-300 rounded-full" x-text="Math.ceil(plan.days_left) + ' Days Left'"></span>
+                                </template>
+                            </div>
                         </div>
 
                         <!-- Description -->
@@ -117,16 +126,16 @@
                                 <span x-text="t('plan_feature_unlimited_sales_purchases')">Unlimited Sales & Purchases</span>
                             </li>
                             <!-- Cloud Backup -->
-                            <li class="flex items-center gap-2" :class="plan.features && plan.features.backup ? '' : 'opacity-40 line-through'">
-                                <svg class="w-4 h-4 shrink-0" :class="plan.features && plan.features.backup ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.features && plan.features.backup ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                            <li class="flex items-center gap-2" :class="plan.slug !== 'free' ? '' : 'opacity-40 line-through'">
+                                <svg class="w-4 h-4 shrink-0" :class="plan.slug !== 'free' ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.slug !== 'free' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
                                 </svg>
                                 <span x-text="t('cloud_backup_restore')">Cloud Backup & Restore</span>
                             </li>
                             <!-- Advanced Reports -->
-                            <li class="flex items-center gap-2" :class="plan.features && plan.features.advanced_reports ? '' : 'opacity-40 line-through'">
-                                <svg class="w-4 h-4 shrink-0" :class="plan.features && plan.features.advanced_reports ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.features && plan.features.advanced_reports ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
+                            <li class="flex items-center gap-2" :class="plan.slug !== 'free' ? '' : 'opacity-40 line-through'">
+                                <svg class="w-4 h-4 shrink-0" :class="plan.slug !== 'free' ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x-bind:d="plan.slug !== 'free' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'"></path>
                                 </svg>
                                 <span x-text="t('plan_feature_advanced_reports') || 'Advanced Reports'"></span>
                             </li>
@@ -151,15 +160,16 @@
                     <div class="pt-6">
                         <button type="button"
                             @click="upgradeSubscription(plan.slug)"
-                            :disabled="(user && user.active_plan && user.active_plan.id == plan.id) || subscriptionLoading"
+                            :disabled="(user && user.active_plan && user.active_plan.id == plan.id) || subscriptionLoading || plan.is_expired"
                             :class="{
-                                'bg-teal-600 hover:bg-teal-700 text-white': plan.slug !== 'free' && !(user && user.active_plan && user.active_plan.id == plan.id),
+                                'bg-teal-600 hover:bg-teal-700 text-white': plan.slug !== 'free' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
                                 'border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-gray-700/50': plan.slug === 'free' && !(user && user.active_plan && user.active_plan.id == plan.id),
-                                'opacity-50 cursor-not-allowed border border-slate-200 dark:border-gray-700 text-slate-500 dark:text-slate-400': user && user.active_plan && user.active_plan.id == plan.id
+                                'opacity-50 cursor-not-allowed border border-slate-200 dark:border-gray-700 text-slate-500 dark:text-slate-400': (user && user.active_plan && user.active_plan.id == plan.id) || plan.is_expired
                             }"
                             class="w-full py-2.5 rounded-xl text-xs font-bold transition-all disabled:pointer-events-none">
                             <span x-show="user && user.active_plan && user.active_plan.id == plan.id" x-text="t('current_plan') || 'Current Plan'"></span>
-                            <span x-show="!(user && user.active_plan && user.active_plan.id == plan.id)" x-text="plan.slug === 'free' ? (t('free_plan') || 'Free Plan') : (plan.slug === 'business' ? (t('buy_lifetime') || 'Buy Lifetime') : (t('upgrade_to_premium') || 'Upgrade'))"></span>
+                            <span x-show="!(user && user.active_plan && user.active_plan.id == plan.id) && plan.is_expired">Offer Expired</span>
+                            <span x-show="!(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired" x-text="plan.slug === 'free' ? (t('free_plan') || 'Free Plan') : (plan.slug === 'business' ? (t('buy_lifetime') || 'Buy Lifetime') : (t('upgrade_to_premium') || 'Upgrade'))"></span>
                         </button>
                     </div>
                 </div>
