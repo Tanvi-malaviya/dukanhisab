@@ -43,9 +43,9 @@
                                 </template>
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="formatDateTime(selectedSale.sale_date)"></span></p>
                             <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && (selectedSale.paid_date || selectedSale.updated_at)">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedSale.paid_date || selectedSale.updated_at).toLocaleString()"></span></p>
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="formatDateTime(selectedSale.paid_date || selectedSale.updated_at)"></span></p>
                             </template>
                         </div>
                     </div>
@@ -431,9 +431,9 @@
                                 </template>
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="formatDateTime(selectedPurchase.purchase_date)"></span></p>
                             <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && (selectedPurchase.paid_date || selectedPurchase.updated_at)">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedPurchase.paid_date || selectedPurchase.updated_at).toLocaleString()"></span></p>
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="formatDateTime(selectedPurchase.paid_date || selectedPurchase.updated_at)"></span></p>
                             </template>
                         </div>
                     </div>

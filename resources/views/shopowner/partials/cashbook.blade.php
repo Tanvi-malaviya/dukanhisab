@@ -103,7 +103,7 @@
                         <td class="px-6 py-4 text-sm font-extrabold" :class="entry.type === 'cash_in' ? 'text-emerald-600' : 'text-rose-600'">
                             ₹<span x-text="parseFloat(entry.amount).toFixed(2)"></span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-400" x-text="new Date(entry.transaction_date).toLocaleString()"></td>
+                        <td class="px-6 py-4 text-sm text-slate-400" x-text="formatDateTime(entry.transaction_date)"></td>
                         <td class="px-6 py-4 text-right text-sm">
                             <template x-if="entry.reference_type === null">
                                 <button @click="deleteCashBookEntry(entry.id)" class="text-rose-600 hover:text-rose-700 font-semibold" x-text="t('delete')">Delete</button>

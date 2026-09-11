@@ -30,7 +30,7 @@
                         <td class="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white" x-text="exp.description"></td>
                         <td class="px-6 py-4 text-sm font-bold text-rose-600">₹<span x-text="exp.amount"></span></td>
                         <td class="px-6 py-4 text-sm text-slate-500 uppercase" x-text="t(exp.payment_method ? exp.payment_method.toLowerCase() : 'cash') || exp.payment_method"></td>
-                        <td class="px-6 py-4 text-sm text-slate-500" x-text="new Date(exp.transaction_date).toLocaleDateString()"></td>
+                        <td class="px-6 py-4 text-sm text-slate-500" x-text="formatDate(exp.transaction_date)"></td>
                     </tr>
                 </template>
                 <template x-if="!expensesLoading && expenses.length === 0">

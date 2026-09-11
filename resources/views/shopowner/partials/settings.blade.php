@@ -7,7 +7,7 @@
         if (user) {
             userProfileForm = {
                 name: user.name || '',
-                display_name: user.display_name || '',
+                display_name: user.name || '',
                 mobile: user.mobile || '',
                 email: user.email || '',
                 date_of_birth: user.date_of_birth || '',
@@ -85,7 +85,7 @@
         },
         userProfileForm: {
             name: user ? user.name : '',
-            display_name: user ? user.display_name : '',
+            display_name: user ? user.name : '',
             mobile: user ? user.mobile : '',
             email: user ? user.email : '',
             date_of_birth: user ? user.date_of_birth : '',
@@ -173,13 +173,24 @@
             const dd = String(d.getDate()).padStart(2, '0');
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const yyyy = d.getFullYear();
-            const fmt = this.invoiceConfigForm.date_format || 'DD/MM/YYYY';
+            const fmt = this.invoiceConfigForm.date_format || (this.userProfileForm && this.userProfileForm.date_format) || (user && user.date_format) || 'DD/MM/YYYY';
             let datePart;
             if (fmt === 'MM/DD/YYYY') datePart = mm + '/' + dd + '/' + yyyy;
             else if (fmt === 'YYYY-MM-DD') datePart = yyyy + '-' + mm + '-' + dd;
             else datePart = dd + '/' + mm + '/' + yyyy;
-            const timePart = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return datePart + ', ' + timePart;
+
+            const is24h = (this.userProfileForm && this.userProfileForm.time_format === '24h') || (user && user.time_format === '24h');
+            let hours = d.getHours();
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            let timePart;
+            if (is24h) {
+                timePart = `${String(hours).padStart(2, '0')}:${minutes}`;
+            } else {
+                const ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12 || 12;
+                timePart = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+            }
+            return datePart + ' ' + timePart;
         },
         previewInvoiceNumber() {
             const d = new Date();
@@ -232,7 +243,7 @@
     if (user) {
         userProfileForm = {
             name: user.name || '',
-            display_name: user.display_name || '',
+            display_name: user.name || '',
             mobile: user.mobile || '',
             email: user.email || '',
             date_of_birth: user.date_of_birth || '',
@@ -542,26 +553,17 @@
                                 class="absolute inset-0 opacity-0 cursor-pointer">
                         </div>
 
-                        <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4"
-                            x-text="user && (user.display_name || user.name) ? (user.display_name || user.name) : 'My Account'"></h5>
+                        <h5 class="text-sm font-bold text-slate-800 dark:text-white mt-4 text-center"
+                            x-text="userProfileForm.name || (user ? user.name : 'My Account')"></h5>
                         <p class="text-xs text-slate-400 mt-2 max-w-[200px]" x-text="t('format_max_size_2mb')">Format: JPG, PNG. Max size 2MB.</p>
                     </div>
 
                     {{-- Right Side: Basic Info Form Inputs --}}
                     <div class="flex-1 space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('full_name')">Full Name</label>
-                                <input type="text" required x-model="userProfileForm.name"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('display_name')">Display Name</label>
-                                <input type="text" :placeholder="t('display_name_placeholder') || 'How you\'d like to be shown'"
-                                    x-model="userProfileForm.display_name"
-                                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
-                            </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('full_name')">Full Name</label>
+                            <input type="text" required x-model="userProfileForm.name"
+                                class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -602,13 +604,13 @@
                                 <span
                                     class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('registration_date')">Registration Date</span>
                                 <div class="px-3 py-2 bg-slate-50 dark:bg-gray-900/30 border border-slate-200 dark:border-gray-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-semibold"
-                                    x-text="user && user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'">
+                                    x-text="user && user.created_at ? formatDate(user.created_at) : '-'">
                                 </div>
                             </div>
                             <div>
                                 <span class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('last_login')">Last Login</span>
                                 <div class="px-3 py-2 bg-slate-50 dark:bg-gray-900/30 border border-slate-200 dark:border-gray-600 rounded-xl text-sm text-slate-600 dark:text-slate-300 font-semibold"
-                                    x-text="user && user.last_login_at ? new Date(user.last_login_at).toLocaleString() : '-'">
+                                    x-text="user && user.last_login_at ? formatDateTime(user.last_login_at) : '-'">
                                 </div>
                             </div>
                         </div>
@@ -659,7 +661,7 @@
                             class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
                             <input type="checkbox" x-model="userProfileForm.notification_preferences.email"
                                 class="rounded border-slate-300 text-primary focus:ring-primary">
-                            <span x-text="t('email')">Email</span>
+                            <span x-text="t('email') || 'Email'">Email</span>
                         </label>
                         <label
                             class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
@@ -677,7 +679,7 @@
                             class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
                             <input type="checkbox" x-model="userProfileForm.notification_preferences.push"
                                 class="rounded border-slate-300 text-primary focus:ring-primary">
-                            <span x-text="t('push_notif') || 'Push'">Push</span>
+                            <span x-text="t('push_notif') || 'Push Notifications'">Push Notifications</span>
                         </label>
                     </div>
                 </div>

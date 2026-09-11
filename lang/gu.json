@@ -219,6 +219,9 @@
   "12_hour": "12-કલાક",
   "24_hour": "24-કલાક",
   "notification_preferences": "નોટિફિકેશન પસંદગીઓ",
+  "sms_notif": "SMS",
+  "whatsapp_notif": "WhatsApp",
+  "push_notif": "પુશ નોટિફિકેશન",
   "business_website_status": "બિઝનેસ વેબસાઇટ સ્થિતિ:",
   "live_online": "લાઈવ અને ઓનલાઈન",
   "offline_private": "ઓફલાઈન / ખાનગી",
@@ -530,5 +533,13 @@
   "cancelled": "રદ કરેલ (Cancelled)",
   "cancel_sale": "બિલ રદ કરો",
   "cancel_purchase": "ખરીદી રદ કરો",
-  "cancel_invoice": "બિલ રદ કરો"
+  "cancel_invoice": "બિલ રદ કરો",
+  "purchase_bill": "ખરીદી બિલ",
+  "reversal_notice": "રિવર્સલ સૂચના",
+  "cancel_purchase_reversal_notice": "રદ કરવાથી આ બિલ દ્વારા ઉમેરાયેલ સ્ટોક પાછો ઓછો થશે, સપ્લાયરની બાકી રકમ/ચૂકવેલ રોકડ રિવર્સ થશે, કેશબુકમાં રિવર્સલ એન્ટ્રી પડશે અને આ રેકોર્ડ 'Cancelled' તરીકે સચવાશે.",
+  "cancel_sale_reversal_notice": "રદ કરવાથી પ્રોડક્ટનો સ્ટોક પાછો ઉમેરાશે, ગ્રાહકની બાકી રકમ/ક્રેડિટ એડજસ્ટ થશે, કેશબુકમાં રિવર્સલ એન્ટ્રી પડશે અને આ ઇન્વોઇસ 'Cancelled' તરીકે સચવાશે.",
+  "cancellation_reason": "રદ કરવાનું કારણ",
+  "cancel_purchase_reason_placeholder": "આ ખરીદી બિલ રદ કરવાનું કારણ દાખલ કરો...",
+  "cancel_sale_reason_placeholder": "આ બિલ રદ કરવાનું કારણ દાખલ કરો (દા.ત. ગ્રાહકે ઓર્ડર રદ કર્યો, ખોટી વસ્તુઓ બિલ થઈ)...",
+  "confirm_cancellation": "રદ્દીકરણની પુષ્ટિ કરો"
 }

@@ -105,7 +105,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans" x-text="t('date') + ':'">Date:</span>
-                            <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="new Date(sale.sale_date).toLocaleDateString()"></span>
+                            <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="formatDate(sale.sale_date)"></span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans" x-text="t('payment_type') + ':'">Payment:</span>

@@ -136,6 +136,59 @@
                 localStorage.setItem('locale', lang);
             },
 
+            formatDate(dateVal) {
+                if (!dateVal) return '-';
+                let yyyy, mm, dd;
+                if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
+                    const parts = dateVal.trim().split('-');
+                    yyyy = parts[0];
+                    mm = parts[1];
+                    dd = parts[2];
+                } else {
+                    const d = (dateVal instanceof Date) ? dateVal : new Date(typeof dateVal === 'string' && !dateVal.includes('T') ? dateVal.replace(' ', 'T') : dateVal);
+                    if (isNaN(d.getTime())) return String(dateVal);
+                    yyyy = String(d.getFullYear());
+                    mm = String(d.getMonth() + 1).padStart(2, '0');
+                    dd = String(d.getDate()).padStart(2, '0');
+                }
+
+                const fmt = (this.user && this.user.date_format) ? this.user.date_format : 'DD/MM/YYYY';
+                if (fmt === 'MM/DD/YYYY') {
+                    return `${mm}/${dd}/${yyyy}`;
+                } else if (fmt === 'YYYY-MM-DD') {
+                    return `${yyyy}-${mm}-${dd}`;
+                } else {
+                    return `${dd}/${mm}/${yyyy}`;
+                }
+            },
+
+            formatTime(dateVal) {
+                if (!dateVal) return '';
+                if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) return '';
+                const d = (dateVal instanceof Date) ? dateVal : new Date(typeof dateVal === 'string' && !dateVal.includes('T') ? dateVal.replace(' ', 'T') : dateVal);
+                if (isNaN(d.getTime())) return '';
+
+                const is24h = (this.user && this.user.time_format === '24h');
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+
+                if (is24h) {
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
+                } else {
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12;
+                    return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+                }
+            },
+
+            formatDateTime(dateVal) {
+                if (!dateVal) return '-';
+                const datePart = this.formatDate(dateVal);
+                const timePart = this.formatTime(dateVal);
+                return timePart ? `${datePart} ${timePart}` : datePart;
+            },
+
             // Auth States
             token: localStorage.getItem('shopowner_token') || localStorage.getItem('token'),
             user: JSON.parse(localStorage.getItem('shopowner_user') || 'null'),
@@ -1290,7 +1343,7 @@
                 this.loading = true;
                 const fd = new FormData();
                 fd.append('name', this.userProfileForm.name);
-                fd.append('display_name', this.userProfileForm.display_name || '');
+                fd.append('display_name', this.userProfileForm.name || '');
                 fd.append('mobile', this.userProfileForm.mobile || '');
                 fd.append('email', this.userProfileForm.email);
                 if (this.userProfileForm.date_of_birth) fd.append('date_of_birth', this.userProfileForm.date_of_birth);

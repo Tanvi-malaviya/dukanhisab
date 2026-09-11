@@ -129,7 +129,7 @@
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans" x-text="t('date') + ':'">Date:</span>
                             <span class="text-slate-700 dark:text-slate-300 font-sans"
-                                x-text="new Date(sale.sale_date).toLocaleDateString()"></span>
+                                x-text="formatDate(sale.sale_date)"></span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans" x-text="t('payment_type') + ':'">Payment:</span>
@@ -254,11 +254,11 @@
                     <div class="p-5 space-y-3.5 overflow-y-auto flex-1">
                         <div class="p-3 bg-slate-50 dark:bg-gray-700/50 rounded-xl space-y-1.5 text-xs border border-slate-100 dark:border-gray-700/60">
                             <div class="flex justify-between font-semibold">
-                                <span class="text-slate-500 dark:text-slate-400">Invoice:</span>
+                                <span class="text-slate-500 dark:text-slate-400" x-text="(t('invoice') || 'Invoice') + ':'">Invoice:</span>
                                 <span class="text-primary font-mono font-bold" x-text="saleToCancel.sale_number"></span>
                             </div>
                             <div class="flex justify-between font-semibold">
-                                <span class="text-slate-500 dark:text-slate-400">Total Amount:</span>
+                                <span class="text-slate-500 dark:text-slate-400" x-text="(t('total_amount') || 'Total Amount') + ':'">Total Amount:</span>
                                 <span class="text-slate-800 dark:text-white font-bold">₹<span
                                         x-text="parseFloat(saleToCancel.grand_total).toFixed(2)"></span></span>
                             </div>
@@ -266,17 +266,16 @@
 
                         <div
                             class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                            ⚠️ <strong>Reversal Notice:</strong> Cancelling will restore product inventory, adjust customer
-                            due/store credit, post a CashBook reversal entry, and keep this invoice marked as
-                            <strong>Cancelled</strong>.
+                            ⚠️ <strong x-text="(t('reversal_notice') || 'Reversal Notice') + ':'">Reversal Notice:</strong>
+                            <span x-text="t('cancel_sale_reversal_notice') || 'Cancelling will restore product inventory, adjust customer due/store credit, post a CashBook reversal entry, and keep this invoice marked as Cancelled.'"></span>
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                                Cancellation Reason <span class="text-rose-500">*</span>
+                                <span x-text="t('cancellation_reason') || 'Cancellation Reason'">Cancellation Reason</span> <span class="text-rose-500">*</span>
                             </label>
                             <textarea x-model="cancelSaleReason" rows="2"
-                                placeholder="Enter the reason for cancelling this bill (e.g. Customer cancelled order, wrong items billed)..."
+                                :placeholder="t('cancel_sale_reason_placeholder') || 'Enter the reason for cancelling this bill (e.g. Customer cancelled order, wrong items billed)...'"
                                 class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 resize-none"></textarea>
                         </div>
 
