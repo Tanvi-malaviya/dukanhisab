@@ -32,6 +32,7 @@ class DashboardApiController extends Controller
         // 2. Today's Purchases
         $todayPurchases = Purchase::where('shop_id', $shopId)
             ->whereDate('purchase_date', $today)
+            ->whereNotIn('status', ['Cancelled', 'Returned'])
             ->sum('total_amount');
 
         // 3. Cash Balance (net from CashBook)

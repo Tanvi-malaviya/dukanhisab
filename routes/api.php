@@ -42,25 +42,38 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     // Customer CRUD & Due Payments
     Route::apiResource('customers', \App\Http\Controllers\Api\CustomerApiController::class);
     Route::post('/customers/{id}/collect-payment', [\App\Http\Controllers\Api\CustomerApiController::class, 'recordPayment']);
+    Route::get('/customers/{id}/product-prices', [\App\Http\Controllers\Api\CustomerProductPriceApiController::class, 'index']);
+    Route::post('/customers/{id}/product-prices', [\App\Http\Controllers\Api\CustomerProductPriceApiController::class, 'update']);
 
     // Supplier CRUD & Due Payments
     Route::apiResource('suppliers', \App\Http\Controllers\Api\SupplierApiController::class);
     Route::post('/suppliers/{id}/pay-due', [\App\Http\Controllers\Api\SupplierApiController::class, 'recordPayment']);
+    Route::get('/suppliers/{id}/product-prices', [\App\Http\Controllers\Api\SupplierProductPriceApiController::class, 'index']);
+    Route::post('/suppliers/{id}/product-prices', [\App\Http\Controllers\Api\SupplierProductPriceApiController::class, 'update']);
 
     // Sale CRUD
     Route::apiResource('sales', \App\Http\Controllers\Api\SaleApiController::class);
+    Route::post('/sales/{id}/cancel', [\App\Http\Controllers\Api\SaleApiController::class, 'cancel']);
     Route::post('/sales/{id}/return', [\App\Http\Controllers\Api\SaleApiController::class, 'returnSale']);
     Route::get('/sales/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePDF']);
     Route::post('/sales/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailSaleInvoice']);
 
     // Purchase CRUD
     Route::apiResource('purchases', \App\Http\Controllers\Api\PurchaseApiController::class);
+    Route::post('/purchases/{id}/cancel', [\App\Http\Controllers\Api\PurchaseApiController::class, 'cancel']);
     Route::get('/purchases/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePurchasePDF']);
     Route::post('/purchases/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailPurchaseInvoice']);
     Route::post('/purchases/{id}/return', [\App\Http\Controllers\Api\PurchaseApiController::class, 'returnPurchase']);
 
     // CashBook
     Route::apiResource('cashbooks', \App\Http\Controllers\Api\CashBookApiController::class);
+
+    // Bank transfers (Deposit / Withdraw)
+    Route::post('/bank-transfers', [\App\Http\Controllers\Api\BankTransferApiController::class, 'store']);
+
+    // Register closures (Daily cash count)
+    Route::get('/register-closures/current-status', [\App\Http\Controllers\Api\RegisterClosureApiController::class, 'currentStatus']);
+    Route::apiResource('register-closures', \App\Http\Controllers\Api\RegisterClosureApiController::class)->only(['index', 'store']);
 
     // Bank accounts
     Route::apiResource('bank-accounts', \App\Http\Controllers\Api\BankAccountApiController::class);
@@ -70,6 +83,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
 
     // Reports
     Route::get('/reports', [\App\Http\Controllers\Api\ReportApiController::class, 'index']);
+
+    // Credit Notes
+    Route::apiResource('credit-notes', \App\Http\Controllers\Api\CreditNoteApiController::class)->only(['index', 'show']);
 });
 
 // ShopOwner Common API Authentication Module

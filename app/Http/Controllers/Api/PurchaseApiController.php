@@ -84,68 +84,113 @@ class PurchaseApiController extends Controller
         $validator = Validator::make($request->all(), [
             'supplier_id' => 'nullable|exists:suppliers,id',
             'total_amount' => 'required|numeric|min:0',
+            'discount' => 'nullable|numeric|min:0',
+            'paid_amount' => 'nullable|numeric|min:0',
             'payment_type' => 'required|string|in:Cash,Bank,UPI,Credit',
+            'purchase_date' => 'nullable|date',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.purchase_price' => 'required|numeric|min:0',
+            'items.*.discount' => 'nullable|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        return DB::transaction(function () use ($request, $shopId) {
+        $totalAmount = (float)$request->total_amount;
+        $discount = (float)($request->discount ?? 0);
+
+        if ($request->has('paid_amount')) {
+            $paidAmount = min($totalAmount, max(0, (float)$request->paid_amount));
+        } else {
+            $paidAmount = ($request->payment_type === 'Credit') ? 0.00 : $totalAmount;
+        }
+
+        $dueAmount = max(0, $totalAmount - $paidAmount);
+
+        if ($dueAmount > 0 && empty($request->supplier_id)) {
+            return response()->json(['errors' => ['supplier_id' => ['Supplier selection is required for purchases with unpaid due balance.']]], 422);
+        }
+
+        if ($dueAmount <= 0) {
+            $status = 'Completed';
+        } elseif ($paidAmount > 0) {
+            $status = 'Partially Paid';
+        } else {
+            $status = 'Unpaid';
+        }
+
+        return DB::transaction(function () use ($request, $shopId, $totalAmount, $discount, $paidAmount, $dueAmount, $status) {
             $today = Carbon::now();
             $todayStr = $today->format('Ymd');
-            $nextNumber = \App\Models\InvoiceCounter::nextNumber($shopId, 'purchase', $today);
-            $purchaseNumber = 'PUR-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            do {
+                $nextNumber = \App\Models\InvoiceCounter::nextNumber($shopId, 'purchase', $today);
+                $purchaseNumber = 'PUR-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+            } while (Purchase::withTrashed()->where('shop_id', $shopId)->where('purchase_number', $purchaseNumber)->exists());
 
             $purchase = Purchase::create([
                 'shop_id' => $shopId,
                 'supplier_id' => $request->supplier_id,
                 'purchase_number' => $purchaseNumber,
-                'total_amount' => $request->total_amount,
+                'total_amount' => $totalAmount,
+                'discount' => $discount,
+                'paid_amount' => $paidAmount,
                 'payment_type' => $request->payment_type,
-                'status' => $request->payment_type === 'Credit' ? 'Unpaid' : 'Completed',
+                'status' => $status,
                 'purchase_date' => $request->filled('purchase_date') ? Carbon::parse($request->purchase_date) : Carbon::now(),
             ]);
 
             foreach ($request->items as $item) {
+                $itemQty = (int)$item['quantity'];
+                $itemPrice = (float)$item['purchase_price'];
+                $itemDiscount = (float)($item['discount'] ?? 0);
+
                 // Create Purchase Item
                 PurchaseItem::create([
                     'purchase_id' => $purchase->id,
                     'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'purchase_price' => $item['purchase_price'],
+                    'quantity' => $itemQty,
+                    'purchase_price' => $itemPrice,
+                    'discount' => $itemDiscount,
                 ]);
 
-                // Increment Product Stock and update purchase price
+                // Increment Product Stock and update purchase price (COGS reduced by scheme discount)
                 $product = Product::findOrFail($item['product_id']);
-                $product->increment('stock', $item['quantity']);
-                $product->update(['purchase_price' => $item['purchase_price']]);
+                $product->increment('stock', $itemQty);
+
+                // Calculate Net discounted unit cost
+                $netUnitCost = round((($itemQty * $itemPrice) - $itemDiscount) / $itemQty, 2);
+                $product->update(['purchase_price' => $netUnitCost]);
             }
 
-            // Adjust Supplier Dues if Credit purchase
-            if ($request->payment_type === 'Credit' && $request->supplier_id) {
+            // Adjust Supplier Dues for unpaid portion
+            if ($dueAmount > 0 && $request->supplier_id) {
                 $supplier = Supplier::findOrFail($request->supplier_id);
-                $supplier->increment('due_amount', $request->total_amount);
+                $supplier->increment('due_amount', $dueAmount);
             }
 
-            // Log in Cash Book for Non-Credit purchases
-            if ($request->payment_type !== 'Credit') {
+            // Log in Cash Book for the paid portion
+            if ($paidAmount > 0) {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
-                    'UPI' => 'upi'
+                    'UPI' => 'upi',
+                    'Credit' => 'cash',
                 ];
-                
+
+                $desc = 'Purchase: ' . $purchaseNumber;
+                if ($dueAmount > 0) {
+                    $desc .= ' (Paid: ₹' . number_format($paidAmount, 2) . ', Due: ₹' . number_format($dueAmount, 2) . ')';
+                }
+
                 CashBook::create([
                     'shop_id' => $shopId,
                     'type' => 'cash_out',
-                    'amount' => $request->total_amount,
+                    'amount' => $paidAmount,
                     'payment_method' => $methodMap[$request->payment_type] ?? 'cash',
-                    'description' => 'Purchase: ' . $purchaseNumber,
+                    'description' => $desc,
                     'reference_id' => $purchase->id,
                     'reference_type' => 'purchase',
                     'transaction_date' => Carbon::now(),
@@ -327,31 +372,91 @@ class PurchaseApiController extends Controller
         });
     }
 
-    public function destroy(Request $request, $id)
+    /**
+     * Cancel a posted purchase invoice with full reversal of stock, dues, and cashbook audit trail.
+     */
+    public function cancel(Request $request, $id)
     {
         $shopId = $request->attributes->get('shop_id');
-        $purchase = Purchase::where('shop_id', $shopId)->findOrFail($id);
+        $purchase = Purchase::where('shop_id', $shopId)->with(['items', 'supplier'])->findOrFail($id);
 
-        return DB::transaction(function () use ($purchase, $shopId) {
+        if ($purchase->status === 'Cancelled') {
+            return response()->json(['message' => 'Purchase is already cancelled.'], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'cancellation_reason' => 'required|string|min:3|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $reason = $request->input('cancellation_reason');
+        $userId = auth()->id();
+
+        return DB::transaction(function () use ($purchase, $reason, $shopId, $userId) {
+            // 1. Stock Reversal (decrement stock for unreturned items)
             foreach ($purchase->items as $item) {
-                $product = Product::findOrFail($item->product_id);
-                $product->decrement('stock', $item->quantity);
+                $unreturnedQty = $item->quantity - ($item->returned_quantity ?? 0);
+                if ($unreturnedQty > 0) {
+                    $product = Product::find($item->product_id);
+                    if ($product) {
+                        $product->decrement('stock', $unreturnedQty);
+                    }
+                }
             }
 
-            if ($purchase->payment_type === 'Credit' && $purchase->supplier_id) {
-                $supplier = Supplier::findOrFail($purchase->supplier_id);
-                $supplier->decrement('due_amount', $purchase->total_amount);
+            // 2. Supplier Khata / Due Balance Reversal
+            if ($purchase->supplier_id) {
+                $supplier = Supplier::find($purchase->supplier_id);
+                if ($supplier) {
+                    $unpaidDue = max(0, (float)$purchase->total_amount - (float)($purchase->paid_amount ?? 0));
+                    if ($unpaidDue > 0) {
+                        $supplier->decrement('due_amount', min($unpaidDue, (float)$supplier->due_amount));
+                    }
+                }
             }
 
-            // Delete related Cash Book entry
-            CashBook::where('shop_id', $shopId)
-                ->where('reference_type', 'purchase')
-                ->where('reference_id', $purchase->id)
-                ->delete();
+            // 3. CashBook Reversal: Post an explicit cash_in reversal entry for audit integrity
+            $actualPaid = (float)($purchase->paid_amount ?? 0);
+            if ($actualPaid > 0) {
+                $methodMap = [
+                    'Cash' => 'cash',
+                    'Bank' => 'bank',
+                    'UPI' => 'upi',
+                    'Credit' => 'cash',
+                ];
 
-            $purchase->delete();
-            return response()->json(null, 204);
+                CashBook::create([
+                    'shop_id' => $shopId,
+                    'type' => 'cash_in',
+                    'amount' => $actualPaid,
+                    'payment_method' => $methodMap[$purchase->payment_type] ?? 'cash',
+                    'description' => 'Reversal (Cancelled): ' . $purchase->purchase_number . ' - ' . $reason,
+                    'reference_id' => $purchase->id,
+                    'reference_type' => 'purchase_cancel',
+                    'transaction_date' => Carbon::now(),
+                ]);
+            }
+
+            // 4. Update Purchase status and record cancellation reason (remains visible in DB and UI)
+            $purchase->update([
+                'status' => 'Cancelled',
+                'cancellation_reason' => $reason,
+                'cancelled_at' => Carbon::now(),
+                'cancelled_by' => $userId,
+            ]);
+
+            return response()->json($purchase->load('items.product', 'supplier'));
         });
+    }
+
+    public function destroy(Request $request, $id)
+    {
+        $reason = $request->input('cancellation_reason', 'Cancelled by user');
+        $request->merge(['cancellation_reason' => $reason]);
+        return $this->cancel($request, $id);
     }
 
     /**
@@ -407,29 +512,38 @@ class PurchaseApiController extends Controller
                 $newTotalAmount = 0;
                 foreach ($allPurchaseItems as $item) {
                     $netQty = $item->quantity - $item->returned_quantity;
-                    $newTotalAmount += $netQty * $item->purchase_price;
+                    $itemDiscount = (float)($item->discount ?? 0);
+                    $netItemTotal = ($netQty * $item->purchase_price) - ($item->quantity > 0 ? ($itemDiscount * $netQty / $item->quantity) : 0);
+                    $newTotalAmount += max(0, $netItemTotal);
                 }
 
-                $actualRefund = $purchase->total_amount - $newTotalAmount;
+                $actualRefund = max(0, $purchase->total_amount - $newTotalAmount);
 
-                // Adjust Supplier Due if Credit purchase
-                if ($purchase->payment_type === 'Credit' && $purchase->supplier_id) {
-                    $supplier = Supplier::findOrFail($purchase->supplier_id);
-                    $supplier->decrement('due_amount', $actualRefund);
+                // Adjust Supplier Due first if there was an unpaid balance on this purchase
+                $currentDue = max(0, $purchase->total_amount - ($purchase->paid_amount ?? 0));
+                $dueReduction = min($currentDue, $actualRefund);
+                $cashRefund = max(0, $actualRefund - $dueReduction);
+
+                if ($dueReduction > 0 && $purchase->supplier_id) {
+                    $supplier = Supplier::find($purchase->supplier_id);
+                    if ($supplier) {
+                        $supplier->decrement('due_amount', $dueReduction);
+                    }
                 }
 
-                // Log refund in Cash Book (Refund received from supplier) for non-credit purchases
-                if ($purchase->payment_type !== 'Credit' && $actualRefund > 0) {
+                // Log refund in Cash Book (Refund received from supplier) for actual cash paid portion
+                if ($cashRefund > 0) {
                     $methodMap = [
                         'Cash' => 'cash',
                         'Bank' => 'bank',
-                        'UPI' => 'upi'
+                        'UPI' => 'upi',
+                        'Credit' => 'cash',
                     ];
 
                     CashBook::create([
                         'shop_id' => $shopId,
                         'type' => 'cash_in',
-                        'amount' => $actualRefund,
+                        'amount' => $cashRefund,
                         'payment_method' => $methodMap[$purchase->payment_type] ?? 'cash',
                         'description' => 'Partial Return: ' . $purchase->purchase_number,
                         'reference_id' => $purchase->id,
@@ -438,7 +552,7 @@ class PurchaseApiController extends Controller
                     ]);
                 }
 
-                // Update Purchase status
+                // Update Purchase status and balances
                 $hasRemaining = false;
                 foreach ($allPurchaseItems as $item) {
                     if ($item->quantity > $item->returned_quantity) {
@@ -447,6 +561,7 @@ class PurchaseApiController extends Controller
                     }
                 }
 
+                $purchase->paid_amount = max(0, ($purchase->paid_amount ?? 0) - $cashRefund);
                 $purchase->total_amount = $newTotalAmount;
                 if (!$hasRemaining) {
                     $purchase->status = 'Returned';
@@ -468,32 +583,41 @@ class PurchaseApiController extends Controller
                 if ($unreturnedQty > 0) {
                     $product = Product::findOrFail($item->product_id);
                     $product->decrement('stock', $unreturnedQty);
-                    
+
                     $item->returned_quantity = $item->quantity;
                     $item->save();
 
-                    $totalRefundAmount += $unreturnedQty * $item->purchase_price;
+                    $itemDiscount = (float)($item->discount ?? 0);
+                    $netItemTotal = ($unreturnedQty * $item->purchase_price) - ($item->quantity > 0 ? ($itemDiscount * $unreturnedQty / $item->quantity) : 0);
+                    $totalRefundAmount += max(0, $netItemTotal);
                 }
             }
 
-            // 2. Adjust Supplier Due if Credit purchase
-            if ($purchase->payment_type === 'Credit' && $purchase->supplier_id && $totalRefundAmount > 0) {
-                $supplier = Supplier::findOrFail($purchase->supplier_id);
-                $supplier->decrement('due_amount', $totalRefundAmount);
+            // 2. Adjust Supplier Due first for unpaid portion
+            $currentDue = max(0, $purchase->total_amount - ($purchase->paid_amount ?? 0));
+            $dueReduction = min($currentDue, $totalRefundAmount);
+            $cashRefund = max(0, $totalRefundAmount - $dueReduction);
+
+            if ($dueReduction > 0 && $purchase->supplier_id) {
+                $supplier = Supplier::find($purchase->supplier_id);
+                if ($supplier) {
+                    $supplier->decrement('due_amount', $dueReduction);
+                }
             }
 
-            // 3. Log cash in in Cash Book (Refund received from supplier)
-            if ($purchase->payment_type !== 'Credit' && $totalRefundAmount > 0) {
+            // 3. Log cash in in Cash Book for cash refund portion
+            if ($cashRefund > 0) {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
-                    'UPI' => 'upi'
+                    'UPI' => 'upi',
+                    'Credit' => 'cash',
                 ];
 
                 CashBook::create([
                     'shop_id' => $shopId,
                     'type' => 'cash_in',
-                    'amount' => $totalRefundAmount,
+                    'amount' => $cashRefund,
                     'payment_method' => $methodMap[$purchase->payment_type] ?? 'cash',
                     'description' => 'Purchase Return: ' . $purchase->purchase_number,
                     'reference_id' => $purchase->id,
@@ -503,7 +627,8 @@ class PurchaseApiController extends Controller
             }
 
             $purchase->status = 'Returned';
-            $purchase->total_amount = 0; // Everything is returned
+            $purchase->total_amount = 0;
+            $purchase->paid_amount = 0;
             $purchase->save();
 
             return response()->json($purchase->load('items.product', 'supplier'));

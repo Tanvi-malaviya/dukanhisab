@@ -15,6 +15,7 @@ class PurchaseItem extends Model
         'quantity',
         'returned_quantity',
         'purchase_price',
+        'discount',
     ];
 
     public function purchase()

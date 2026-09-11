@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class ProductApiController extends Controller
@@ -50,10 +51,19 @@ class ProductApiController extends Controller
             'name' => 'required|string|max:255',
             'selling_price' => 'required|numeric|min:0',
             'purchase_price' => 'nullable|numeric|min:0',
-            'barcode' => 'nullable|string|max:100',
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::unique('products')->where(function ($query) use ($shopId) {
+                    return $query->where('shop_id', $shopId);
+                }),
+            ],
             'stock' => 'nullable|integer',
             'low_stock_threshold' => 'nullable|integer',
             'category_id' => 'nullable|exists:categories,id',
+        ], [
+            'barcode.unique' => 'This barcode is already assigned to another product in this shop.',
         ]);
 
         if ($validator->fails()) {
@@ -63,9 +73,12 @@ class ProductApiController extends Controller
         $data = $request->all();
         $data['shop_id'] = $shopId;
 
-        // Auto-generate barcode if missing and not walk-in
+        // Auto-generate unique barcode if missing and not walk-in
         if (empty($data['barcode'])) {
-            $data['barcode'] = 'BC-' . str_pad(rand(0, 99999999), 8, '0', STR_PAD_LEFT);
+            do {
+                $generatedBarcode = 'BC-' . str_pad(rand(0, 99999999), 8, '0', STR_PAD_LEFT);
+            } while (Product::where('shop_id', $shopId)->where('barcode', $generatedBarcode)->exists());
+            $data['barcode'] = $generatedBarcode;
         }
 
         $product = Product::create($data);
@@ -88,10 +101,19 @@ class ProductApiController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'selling_price' => 'sometimes|required|numeric|min:0',
             'purchase_price' => 'nullable|numeric|min:0',
-            'barcode' => 'nullable|string|max:100',
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:100',
+                Rule::unique('products')->where(function ($query) use ($shopId) {
+                    return $query->where('shop_id', $shopId);
+                })->ignore($product->id),
+            ],
             'stock' => 'nullable|integer',
             'low_stock_threshold' => 'nullable|integer',
             'category_id' => 'nullable|exists:categories,id',
+        ], [
+            'barcode.unique' => 'This barcode is already assigned to another product in this shop.',
         ]);
 
         if ($validator->fails()) {

@@ -15,6 +15,7 @@ class Customer extends Model
         'mobile',
         'email',
         'due_amount',
+        'credit_balance',
     ];
 
     public function shop()
@@ -25,5 +26,15 @@ class Customer extends Model
     public function sales()
     {
         return $this->hasMany(Sale::class);
+    }
+
+    public function creditNotes()
+    {
+        return $this->hasMany(CreditNote::class);
+    }
+
+    public function customProductPrices()
+    {
+        return $this->hasMany(CustomerProductPrice::class);
     }
 }

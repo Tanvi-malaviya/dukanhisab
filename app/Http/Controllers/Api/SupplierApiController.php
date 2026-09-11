@@ -162,31 +162,59 @@ class SupplierApiController extends Controller
         $supplier = Supplier::where('shop_id', $shopId)->find($supplierId);
         if (!$supplier) return;
 
+        $due = (float) $supplier->due_amount;
+
         $creditPurchases = \App\Models\Purchase::where('shop_id', $shopId)
             ->where('supplier_id', $supplierId)
-            ->whereIn('status', ['Unpaid', 'Completed'])
-            ->where('payment_type', 'Credit')
+            ->whereIn('status', ['Unpaid', 'Partially Paid', 'Completed'])
             ->orderBy('purchase_date', 'asc')
             ->orderBy('id', 'asc')
             ->get();
 
-        $totalCredit = $creditPurchases->sum('total_amount');
-        $due = (float) $supplier->due_amount;
-        $paidAmount = max(0, $totalCredit - $due);
+        if ($due <= 0) {
+            foreach ($creditPurchases as $purchase) {
+                if ($purchase->status === 'Unpaid' || $purchase->status === 'Partially Paid') {
+                    $purchase->update([
+                        'status' => 'Completed',
+                        'paid_amount' => $purchase->total_amount,
+                    ]);
+                }
+            }
+            return;
+        }
 
-        $rem = $paidAmount;
-        foreach ($creditPurchases as $purchase) {
+        $eligiblePurchases = $creditPurchases->filter(function($p) {
+            return $p->payment_type === 'Credit' || ($p->paid_amount < $p->total_amount);
+        });
+
+        $totalBillAmount = $eligiblePurchases->sum('total_amount');
+        $totalPaid = max(0, $totalBillAmount - $due);
+
+        $rem = $totalPaid;
+        foreach ($eligiblePurchases as $purchase) {
             $total = (float) $purchase->total_amount;
             if ($rem >= $total) {
                 if ($purchase->status !== 'Completed') {
                     $purchase->update([
                         'status' => 'Completed',
+                        'paid_amount' => $total,
                     ]);
                 }
                 $rem -= $total;
+            } elseif ($rem > 0) {
+                if ($purchase->status !== 'Partially Paid' || (float)$purchase->paid_amount !== $rem) {
+                    $purchase->update([
+                        'status' => 'Partially Paid',
+                        'paid_amount' => $rem,
+                    ]);
+                }
+                $rem = 0;
             } else {
                 if ($purchase->status !== 'Unpaid') {
-                    $purchase->update(['status' => 'Unpaid']);
+                    $purchase->update([
+                        'status' => 'Unpaid',
+                        'paid_amount' => 0,
+                    ]);
                 }
             }
         }
