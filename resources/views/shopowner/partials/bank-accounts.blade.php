@@ -226,6 +226,16 @@
                 </div>
                 <form @submit.prevent="submitBankTransfer(); showTransferModal = false" class="p-6 space-y-4">
                     <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1" x-text="t('bank_account') || 'Bank Account'">Bank Account</label>
+                        <select x-model="transferForm.bank_account_id"
+                            class="block w-full px-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary">
+                            <option value="">Default / First Account</option>
+                            <template x-for="acc in bankAccounts" :key="acc.id">
+                                <option :value="acc.id" x-text="acc.name + (acc.account_number ? ' (' + acc.account_number + ')' : '')"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1" x-text="t('transfer_amount_rs')">Transfer Amount (₹)</label>
                         <input type="number" step="0.01" required placeholder="0.00" x-model.number="transferForm.amount"
                             class="block w-full px-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary">

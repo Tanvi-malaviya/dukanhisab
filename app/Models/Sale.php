@@ -18,16 +18,30 @@ class Sale extends Model
         'discount',
         'grand_total',
         'paid_amount',
+        'store_credit',
         'payment_type',
         'status',
+        'cancellation_reason',
+        'cancelled_at',
+        'cancelled_by',
         'sale_date',
         'paid_date',
     ];
 
     protected $casts = [
         'sale_date' => 'datetime',
+        'cancelled_at' => 'datetime',
         'paid_date' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::deleting(function ($sale) {
+            if ($sale->isForceDeleting()) {
+                throw new \Exception("Hard delete is blocked for posted sales invoices. Please cancel the sale instead.");
+            }
+        });
+    }
 
     public function shop()
     {
@@ -42,5 +56,10 @@ class Sale extends Model
     public function items()
     {
         return $this->hasMany(SaleItem::class);
+    }
+
+    public function creditNotes()
+    {
+        return $this->hasMany(CreditNote::class);
     }
 }

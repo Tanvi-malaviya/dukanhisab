@@ -13,7 +13,12 @@ class ExpenseApiController extends Controller
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
-        $query = CashBook::where('shop_id', $shopId)->where('type', 'cash_out');
+        $query = CashBook::where('shop_id', $shopId)
+            ->where('type', 'cash_out')
+            ->where(function ($q) {
+                $q->whereNull('reference_type')
+                  ->orWhere('reference_type', 'expense');
+            });
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -49,6 +54,7 @@ class ExpenseApiController extends Controller
             'amount' => $request->amount,
             'payment_method' => $request->payment_method,
             'description' => $request->description,
+            'reference_type' => 'expense',
             'transaction_date' => Carbon::now(),
         ]);
 
@@ -60,6 +66,10 @@ class ExpenseApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $expense = CashBook::where('shop_id', $shopId)
             ->where('type', 'cash_out')
+            ->where(function ($q) {
+                $q->whereNull('reference_type')
+                  ->orWhere('reference_type', 'expense');
+            })
             ->findOrFail($id);
         return response()->json($expense);
     }
@@ -69,6 +79,10 @@ class ExpenseApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $expense = CashBook::where('shop_id', $shopId)
             ->where('type', 'cash_out')
+            ->where(function ($q) {
+                $q->whereNull('reference_type')
+                  ->orWhere('reference_type', 'expense');
+            })
             ->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -90,13 +104,11 @@ class ExpenseApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
         $expense = CashBook::where('shop_id', $shopId)
             ->where('type', 'cash_out')
+            ->where(function ($q) {
+                $q->whereNull('reference_type')
+                  ->orWhere('reference_type', 'expense');
+            })
             ->findOrFail($id);
-
-        if ($expense->reference_type !== null) {
-            return response()->json([
-                'message' => 'System generated expenses cannot be deleted directly.'
-            ], 400);
-        }
 
         $expense->delete();
         return response()->json(null, 204);

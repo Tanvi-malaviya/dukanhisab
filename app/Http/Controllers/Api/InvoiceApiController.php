@@ -543,7 +543,20 @@ class InvoiceApiController extends Controller
                                 <tr>
                                     <td class="grand-total-label">' . __('grand_total') . ':</td>
                                     <td class="grand-total-value">&#8377; ' . number_format($sale->grand_total, 2) . '</td>
-                                </tr>
+                                </tr>';
+                                if ((float)($sale->store_credit ?? 0) > 0) {
+                                    $netPayment = max(0, (float)$sale->grand_total - (float)$sale->store_credit);
+                                    $html .= '
+                                    <tr>
+                                        <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit', [], 'Store Credit') . ':</td>
+                                        <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377; ' . number_format($sale->store_credit, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due', [], 'Balance Due') : __('net_paid', [], 'Net Paid (' . $sale->payment_type . ')')) . ':</td>
+                                        <td class="total-value" style="font-weight: bold;">&#8377; ' . number_format($netPayment, 2) . '</td>
+                                    </tr>';
+                                }
+                                $html .= '
                             </table>
                         </td>
                     </tr>
@@ -910,15 +923,23 @@ class InvoiceApiController extends Controller
                             <div class="party-info">
                                 <strong>' . __('payment_status') . ':</strong> ' . (
                                     $purchase->status === 'Returned'
-                                        ? '<span style="color:#ef4444;">' . __('returned') . '</span>'
+                                        ? '<span class="badge badge-returned">' . strtoupper(__('returned')) . '</span>'
                                         : ($purchase->status === 'Partially Returned'
-                                            ? '<span style="color:#f59e0b;">' . __('partially_returned') . '</span>'
+                                            ? '<span class="badge badge-warning">' . strtoupper(__('partially_returned')) . '</span>'
                                             : ($purchase->status === 'Unpaid'
-                                                ? '<span style="color:#f59e0b;font-weight:bold;">' . __('unpaid') . '</span>'
-                                                : ($purchase->payment_type === 'Credit'
-                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>'
-                                                    : '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>')))
-                                ) . '<br>
+                                                ? '<span class="badge badge-unpaid">' . strtoupper(__('unpaid')) . '</span>'
+                                                : ($purchase->status === 'Partially Paid'
+                                                    ? '<span class="badge badge-warning">' . strtoupper(__('partially_paid', [], 'Partially Paid')) . '</span>'
+                                                    : ($purchase->payment_type === 'Credit'
+                                                        ? '<span class="badge badge-paid">' . strtoupper(__('paid')) . '</span>'
+                                                        : '<span class="badge badge-paid">' . strtoupper(__('completed')) . '</span>'
+                                                    )
+                                                )
+                                            )
+                                        )
+                                ) . '
+                            </div>
+                            <div class="meta-row">
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower($purchase->payment_type)) . '
                             </div>
                         </td>
@@ -928,61 +949,46 @@ class InvoiceApiController extends Controller
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px; text-align: center;">#</th>
-                            <th>' . __('product_name') . '</th>
-                            <th style="width: 80px; text-align: right;">' . __('unit_price') . '</th>
-                            <th style="width: 80px; text-align: center;">' . __('qty') . '</th>';
-
-        $isReturned = ($purchase->status === 'Returned' || $purchase->status === 'Partially Returned');
-        $hasReturnedQty = false;
-        foreach ($purchase->items as $item) {
-            if (($item->returned_quantity ?? 0) > 0) {
-                $hasReturnedQty = true;
-                break;
-            }
-        }
-
-        if ($isReturned) {
-            $html .= '
-                            <th style="width: 80px; text-align: center;">' . __('returned') . '</th>
-                            <th style="width: 80px; text-align: center;">' . __('net_qty') . '</th>';
-        }
-
-        $html .= '
-                            <th style="width: 100px; text-align: right;">' . __('total') . '</th>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: ' . ($isReturned ? '40%' : '55%') . ';">' . __('item') . '</th>
+                            <th style="width: ' . ($isReturned ? '12%' : '15%') . '; text-align: center;">' . ($isReturned ? __('purchased_qty') : __('quantity')) . '</th>
+                            ' . ($isReturned ? '<th style="width: 12%; text-align: center;">' . __('returned_qty') . '</th><th style="width: 12%; text-align: center;">' . __('net_qty') . '</th>' : '') . '
+                            <th style="width: 15%; text-align: right;">' . __('price') . '</th>
+                            <th style="width: 15%; text-align: right;">' . __('total') . '</th>
                         </tr>
                     </thead>
                     <tbody>';
 
-                    $i = 1;
+                    $rowNum = 1;
                     foreach ($purchase->items as $item) {
-                        $returnedQty = 0;
-                        $netQty = $item->quantity;
-                        if (($item->returned_quantity ?? 0) > 0) {
-                            $returnedQty = $item->returned_quantity;
-                            $netQty = $item->quantity - $returnedQty;
+                        $retQty = (int)($item->returned_quantity ?? 0);
+                        if (!$hasReturnedQty && $purchase->status === 'Partially Returned') {
+                            $retQty = 0;
                         } elseif (!$hasReturnedQty && $purchase->status === 'Returned') {
-                            $returnedQty = $item->quantity;
-                            $netQty = 0;
+                            $retQty = (int)$item->quantity;
                         }
+                        $netQty = max(0, (int)$item->quantity - $retQty);
+                        $lineDiscount = (float)($item->discount ?? 0);
+                        $lineTotal = max(0, ($item->purchase_price * $netQty) - $lineDiscount);
 
                         $html .= '
                         <tr>
-                            <td style="text-align: center;">' . $i++ . '</td>
-                            <td>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</td>
+                            <td>' . $rowNum++ . '</td>
+                            <td>
+                                <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
+                                ($lineDiscount > 0 ? '<br><small style="color:#059669;">' . __('scheme_discount', [], 'Scheme Disc') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</small>' : '') .
+                            '</td>
+                            <td style="text-align: center;">' . $item->quantity . '</td>
+                            ' . ($isReturned ? '<td style="text-align: center; color: #dc2626;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
                             <td style="text-align: right;">&#8377; ' . number_format($item->purchase_price, 2) . '</td>
-                            <td style="text-align: center;">' . $item->quantity . '</td>';
-
-                        if ($isReturned) {
-                            $html .= '
-                            <td style="text-align: center; color: #ef4444; font-weight: bold;">' . $returnedQty . '</td>
-                            <td style="text-align: center; font-weight: bold;">' . $netQty . '</td>';
-                        }
-
-                        $html .= '
-                            <td style="text-align: right;">&#8377; ' . number_format($item->purchase_price * $netQty, 2) . '</td>
+                            <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
                         </tr>';
                     }
+
+                    $totalDiscount = (float)($purchase->discount ?? 0);
+                    $paidAmount = (float)($purchase->paid_amount ?? 0);
+                    $dueAmount = max(0, (float)$purchase->total_amount - $paidAmount);
+                    $grossSubtotal = (float)$purchase->total_amount + $totalDiscount;
 
                     $html .= '
                     </tbody>
@@ -1000,11 +1006,35 @@ class InvoiceApiController extends Controller
                         $html .= '
                         </td>
                         <td>
-                            <table class="total-table">
+                            <table class="total-table">';
+                                if ($totalDiscount > 0) {
+                                    $html .= '
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #6b7280;">' . __('subtotal') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; color: #374151;">&#8377; ' . number_format($grossSubtotal, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #059669;">' . __('discount') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; color: #059669;">-&#8377; ' . number_format($totalDiscount, 2) . '</td>
+                                    </tr>';
+                                }
+                                $html .= '
                                 <tr>
                                     <td class="grand-total-label">' . __('total_amount') . ':</td>
                                     <td class="grand-total-value">&#8377; ' . number_format($purchase->total_amount, 2) . '</td>
-                                </tr>
+                                </tr>';
+                                if ($paidAmount > 0 || $dueAmount > 0) {
+                                    $html .= '
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #16a34a;">' . __('paid_amount', [], 'Paid Amount') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #16a34a;">&#8377; ' . number_format($paidAmount, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #dc2626;">' . __('balance_due', [], 'Balance Due') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #dc2626;">&#8377; ' . number_format($dueAmount, 2) . '</td>
+                                    </tr>';
+                                }
+                                $html .= '
                             </table>
                         </td>
                     </tr>

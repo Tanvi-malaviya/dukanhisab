@@ -1,8 +1,8 @@
 {{-- SALES POS MODULE --}}
-<div x-show="page === 'sales'" class="flex flex-col lg:flex-row gap-4 h-auto lg:h-full pb-10 lg:pb-0">
+<div x-show="page === 'sales'" class="flex flex-col lg:flex-row gap-4 pb-10 lg:pb-0 items-start">
 
     {{-- Product Selection Side --}}
-    <div class="flex-1 flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 overflow-hidden min-h-[480px] lg:min-h-0">
+    <div class="flex-1 w-full flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 min-h-[480px] lg:sticky lg:top-0">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             <div class="relative">
                 <input type="text" :placeholder="t('search_product_placeholder')" x-model="pos.searchQuery"
@@ -22,18 +22,30 @@
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[500px] content-start">
+        <div class="overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[calc(100vh-210px)] content-start">
             <template x-for="prod in filteredProducts()" :key="prod.id">
                 <div @click="prod.stock > 0 ? addToBill(prod) : showToast('Product is Out of Stock!', 'error')"
                     :class="prod.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : 'bg-slate-50 dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary'"
                     class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between">
                     <div>
-                        <p class="font-bold text-sm text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
-                        <p class="text-[10px] text-slate-400"><span x-text="t('barcode')">Barcode</span>: <span x-text="prod.barcode"></span></p>
+                        <div class="flex items-start justify-between gap-1.5">
+                            <p class="font-bold text-sm text-slate-800 dark:text-white truncate" :title="prod.name" x-text="prod.name"></p>
+                            <template x-if="hasPosCustomerCustomPrice(prod)">
+                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">Cust</span>
+                            </template>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-0.5"><span x-text="t('barcode')">Barcode</span>: <span x-text="prod.barcode"></span></p>
                     </div>
-                    <div class="flex justify-between items-center mt-3">
-                        <span class="text-sm font-extrabold text-primary">₹<span x-text="prod.selling_price"></span></span>
-                        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                    <div class="flex justify-between items-end mt-3 pt-2 border-t border-slate-100 dark:border-gray-700/60">
+                        <div class="flex flex-col">
+                            <template x-if="hasPosCustomerCustomPrice(prod)">
+                                <span class="line-through text-[10px] text-slate-400 font-medium">₹<span x-text="parseFloat(prod.selling_price).toFixed(2)"></span></span>
+                            </template>
+                            <span class="text-sm font-extrabold" :class="hasPosCustomerCustomPrice(prod) ? 'text-indigo-600 dark:text-indigo-400' : 'text-primary'">
+                                ₹<span x-text="parseFloat(getPosProductPrice(prod)).toFixed(2)"></span>
+                            </span>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0"
                             :class="prod.stock <= 0 ? 'bg-rose-100 text-rose-700' : (prod.stock <= prod.low_stock_threshold ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-700')"
                             x-text="prod.stock <= 0 ? t('out_of_stock') : (t('quantity') + ': ' + prod.stock)"></span>
                     </div>
@@ -43,7 +55,7 @@
     </div>
 
     {{-- Billing Side --}}
-    <div class="w-full lg:w-96 flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 overflow-hidden min-h-[400px] lg:min-h-0">
+    <div class="w-full lg:w-96 flex flex-col bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 lg:sticky lg:top-0">
         <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
             <span x-text="t('billing_cart')">Billing Cart</span>
             <button @click="resetPOS()" class="text-xs text-rose-500 hover:underline" x-text="t('clear_all')">Clear All</button>
@@ -102,7 +114,7 @@
         </div>
 
         {{-- Cart Items --}}
-        <div class="flex-1 overflow-y-auto space-y-2 pr-1 mb-4 max-h-[300px]">
+        <div class="overflow-y-auto space-y-2 pr-1 mb-3 min-h-[140px] max-h-[260px]">
             <template x-for="(item, idx) in pos.items" :key="idx">
                 <div class="p-2 bg-slate-50 dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
                     <div class="flex justify-between items-start">
@@ -111,17 +123,21 @@
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
-                    <div class="flex justify-between items-center gap-2">
-                        <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                    <div class="flex justify-between items-center gap-1.5 flex-wrap">
+                        <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
                             <button @click="decreaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
-                            <span class="px-2.5 text-xs font-bold" x-text="item.quantity"></span>
+                            <span class="px-2 text-xs font-bold" x-text="item.quantity"></span>
                             <button @click="increaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <span class="text-xs text-slate-400">₹</span>
-                            <input type="number" step="0.01" x-model.number="item.selling_price" class="w-16 px-1.5 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
+                        <div class="flex items-center gap-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                            <span class="text-[10px] text-slate-400">Rate:</span>
+                            <span>₹<span x-text="parseFloat(item.selling_price).toFixed(2)"></span></span>
                         </div>
-                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">₹<span x-text="(item.selling_price * item.quantity).toFixed(2)"></span></span>
+                        <div class="flex items-center gap-0.5">
+                            <span class="text-[10px] text-amber-500 font-medium">Disc:₹</span>
+                            <input type="number" step="0.01" min="0" x-model.number="item.discount" placeholder="0" title="Item Discount (₹)" class="w-12 px-1 py-0.5 border border-amber-200 dark:border-amber-800/60 rounded text-center text-xs text-amber-600 dark:text-amber-400 dark:bg-gray-700">
+                        </div>
+                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">₹<span x-text="Math.max(0, (item.selling_price * item.quantity) - (item.discount || 0)).toFixed(2)"></span></span>
                     </div>
                 </div>
             </template>
@@ -131,7 +147,7 @@
         </div>
 
         {{-- Totals & Payment --}}
-        <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2">
+        <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2 shrink-0">
             <div class="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                 <span x-text="t('subtotal')">Subtotal</span>
                 <span>₹<span x-text="calculateSubtotal().toFixed(2)"></span></span>
@@ -153,6 +169,23 @@
                     <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
                     <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit')">Credit</button>
                 </div>
+                <template x-if="getSelectedCustomerCreditBalance() > 0">
+                    <div class="mt-2.5 p-2.5 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-emerald-800 dark:text-emerald-300 font-medium">Available Store Credit:</span>
+                            <span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹<span x-text="getSelectedCustomerCreditBalance().toFixed(2)"></span></span>
+                        </div>
+                        <div class="text-[11px] text-emerald-800 dark:text-emerald-300 border-t border-emerald-200 dark:border-emerald-800 pt-1.5 flex justify-between font-semibold">
+                            <span>Auto Credit Applied: <strong class="text-emerald-700 dark:text-emerald-300">₹<span x-text="Math.min(calculateGrandTotal(), getSelectedCustomerCreditBalance()).toFixed(2)"></span></strong></span>
+                            <span>Remaining to Pay: <strong class="text-slate-900 dark:text-white font-extrabold">₹<span x-text="Math.max(0, calculateGrandTotal() - getSelectedCustomerCreditBalance()).toFixed(2)"></span></strong></span>
+                        </div>
+                        <template x-if="calculateGrandTotal() > getSelectedCustomerCreditBalance()">
+                            <div class="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
+                                💡 Remaining ₹<span x-text="(calculateGrandTotal() - getSelectedCustomerCreditBalance()).toFixed(2)"></span> will be paid via selected <strong>Payment Type</strong> below.
+                            </div>
+                        </template>
+                    </div>
+                </template>
             </div>
 
             <button @click="saveSale()" :disabled="pos.items.length === 0"

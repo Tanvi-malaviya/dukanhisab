@@ -65,6 +65,7 @@
                     <option value="Partially Paid" x-text="t('partially_paid')">Partially Paid</option>
                     <option value="Unpaid" x-text="t('unpaid')">Unpaid</option>
                     <option value="Partially Returned" x-text="t('partially_returned')">Partially Returned</option>
+                    <option value="Cancelled" x-text="t('cancelled') || 'Cancelled'">Cancelled</option>
                 </select>
             </div>
         </div>
@@ -94,7 +95,7 @@
                     {{-- Card Header --}}
                     <div class="flex justify-between items-center">
                         <span class="text-xs font-bold text-primary font-sans" x-text="sale.sale_number"></span>
-                        <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : (sale.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800' : (sale.status === 'Partially Paid' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : (sale.status === 'Unpaid' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-800')))" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="t(sale.status.toLowerCase().replace(/ /g, '_')) || sale.status"></span>
+                        <span :class="sale.status === 'Cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : (sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : (sale.status === 'Partially Returned' ? 'bg-amber-100 text-amber-800' : (sale.status === 'Partially Paid' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : (sale.status === 'Unpaid' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-800'))))" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="t(sale.status.toLowerCase().replace(/ /g, '_')) || sale.status"></span>
                     </div>
 
                     {{-- Card Body --}}
@@ -112,6 +113,12 @@
                             <span class="text-slate-700 dark:text-slate-300 font-medium font-sans" x-text="t(sale.payment_type.toLowerCase()) || sale.payment_type"></span>
                         </div>
                     </div>
+
+                    <template x-if="sale.status === 'Cancelled' && sale.cancellation_reason">
+                        <div class="text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg border border-red-200 dark:border-red-800/40">
+                            <span class="font-bold">Reason:</span> <span x-text="sale.cancellation_reason"></span>
+                        </div>
+                    </template>
 
                     {{-- Total & Paid/Due Amounts --}}
                     <div class="space-y-1">
@@ -148,17 +155,19 @@
                         <!-- Return Button -->
                         <button @click="returnSale(sale.id)"
                             :title="t('return_items')"
-                            :disabled="sale.status === 'Returned'"
-                            :class="sale.status === 'Returned' ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 cursor-pointer'"
+                            :disabled="sale.status === 'Returned' || sale.status === 'Cancelled'"
+                            :class="(sale.status === 'Returned' || sale.status === 'Cancelled') ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 cursor-pointer'"
                             class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                         </button>
 
-                        <!-- Delete Button -->
-                        <button @click="deleteSale(sale.id)"
-                            :title="t('delete')"
-                            class="flex-1 flex justify-center items-center py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white rounded-lg transition-all cursor-pointer">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <!-- Cancel Button -->
+                        <button @click="openCancelSaleModal(sale)"
+                            :title="t('cancel_invoice') || 'Cancel Invoice'"
+                            :disabled="sale.status === 'Cancelled' || sale.status === 'Returned'"
+                            :class="(sale.status === 'Cancelled' || sale.status === 'Returned') ? 'opacity-30 cursor-not-allowed' : 'hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white cursor-pointer'"
+                            class="flex-1 flex justify-center items-center py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 rounded-lg transition-all">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
                         </button>
                     </div>
                 </div>
@@ -166,6 +175,60 @@
         </div>
 
         <x-pagination currentPage="salesPage" totalItems="filteredSales().length" perPage="salesPerPage" loading="salesLoading" />
+    </div>
+
+    {{-- Cancel Sale Modal --}}
+    <div x-show="cancelSaleModalOpen" x-cloak
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div @click.away="cancelSaleModalOpen = false"
+            class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4 border border-slate-100 dark:border-gray-700 animate-in fade-in zoom-in duration-150">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-gray-700 pb-3">
+                <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white" x-text="t('cancel_sale') || 'Cancel Invoice'">Cancel Invoice</h3>
+                </div>
+                <button @click="cancelSaleModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <template x-if="saleToCancel">
+                <div class="space-y-3">
+                    <div class="p-3 bg-slate-50 dark:bg-gray-700/50 rounded-xl space-y-1 text-xs">
+                        <div class="flex justify-between font-semibold">
+                            <span class="text-slate-500">Invoice:</span>
+                            <span class="text-primary font-mono" x-text="saleToCancel.sale_number"></span>
+                        </div>
+                        <div class="flex justify-between font-semibold">
+                            <span class="text-slate-500">Total Amount:</span>
+                            <span class="text-slate-800 dark:text-white">₹<span x-text="parseFloat(saleToCancel.grand_total).toFixed(2)"></span></span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl text-xs text-amber-800 dark:text-amber-300">
+                        ⚠️ <strong>Reversal Notice:</strong> Cancelling will restore product inventory, adjust customer due/store credit, post a CashBook reversal entry, and keep this invoice marked as <strong>Cancelled</strong>.
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                            Cancellation Reason <span class="text-rose-500">*</span>
+                        </label>
+                        <textarea x-model="cancelSaleReason" rows="3"
+                            placeholder="Enter the reason for cancelling this bill (e.g. Customer cancelled order, wrong items billed)..."
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:outline-none focus:border-rose-500"></textarea>
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" @click="cancelSaleModalOpen = false"
+                            class="flex-1 py-2.5 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer" x-text="t('close')">Close</button>
+                        <button type="button" @click="submitCancelSale()"
+                            class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm cursor-pointer">
+                            Confirm Cancellation
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
     </div>
 
 </div>

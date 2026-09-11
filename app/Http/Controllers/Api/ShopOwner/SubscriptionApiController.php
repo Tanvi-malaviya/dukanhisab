@@ -9,8 +9,6 @@ use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
-use Razorpay\Api\Api as RazorpayApi;
 
 class SubscriptionApiController extends Controller
 {
@@ -436,7 +434,7 @@ class SubscriptionApiController extends Controller
         $user->load(['activePlan', 'currentSubscription']);
 
         return response()->json([
-            'message' => 'Subscription activated successfully.',
+            'message' => 'Subscription updated successfully to ' . $plan->name,
             'plan' => $user->activePlan,
             'subscription' => $user->currentSubscription,
             'user' => $user,
