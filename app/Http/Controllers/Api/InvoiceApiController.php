@@ -99,6 +99,8 @@ class InvoiceApiController extends Controller
     {
         $shop = Shop::findOrFail($sale->shop_id);
         $invoiceConfig = InvoiceConfig::firstOrCreate(['shop_id' => $sale->shop_id]);
+        $dateFormat = $invoiceConfig->date_format ?: ($shop->owner->date_format ?? 'DD/MM/YYYY');
+        $timeFormat = $shop->owner->time_format ?? '12h';
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
@@ -419,8 +421,8 @@ class InvoiceApiController extends Controller
                             <div style="clear: both;"></div>
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
-                                <strong>' . __('date') . ':</strong> ' . $sale->sale_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($sale->paid_date ?? $sale->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->sale_date, $dateFormat, $timeFormat) . '
+                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->paid_date ?? $sale->updated_at, $dateFormat, $timeFormat) : '') . '
                             </div>
                         </td>
                     </tr>
@@ -584,6 +586,8 @@ class InvoiceApiController extends Controller
     {
         $shop = Shop::findOrFail($purchase->shop_id);
         $invoiceConfig = InvoiceConfig::firstOrCreate(['shop_id' => $purchase->shop_id]);
+        $dateFormat = $invoiceConfig->date_format ?: ($shop->owner->date_format ?? 'DD/MM/YYYY');
+        $timeFormat = $shop->owner->time_format ?? '12h';
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
@@ -891,8 +895,8 @@ class InvoiceApiController extends Controller
                             <div style="clear: both;"></div>
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
-                                <strong>' . __('date') . ':</strong> ' . $purchase->purchase_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($purchase->paid_date ?? $purchase->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->purchase_date, $dateFormat, $timeFormat) . '
+                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->paid_date ?? $purchase->updated_at, $dateFormat, $timeFormat) : '') . '
                             </div>
                         </td>
                     </tr>
@@ -1097,5 +1101,24 @@ class InvoiceApiController extends Controller
         }
 
         return '<span class="font-default">' . $escaped . '</span>';
+    }
+
+    private function formatInvoiceDateTime($dateTime, ?string $dateFormat = 'DD/MM/YYYY', ?string $timeFormat = '12h'): string
+    {
+        if (!$dateTime) {
+            return '-';
+        }
+        $carbon = is_string($dateTime) ? \Carbon\Carbon::parse($dateTime) : $dateTime->copy();
+        $carbon = $carbon->timezone('Asia/Kolkata');
+
+        $phpDateFmt = match ($dateFormat) {
+            'MM/DD/YYYY' => 'm/d/Y',
+            'YYYY-MM-DD' => 'Y-m-d',
+            default => 'd/m/Y',
+        };
+
+        $phpTimeFmt = ($timeFormat === '24h') ? 'H:i' : 'h:i A';
+
+        return $carbon->format($phpDateFmt . ' ' . $phpTimeFmt);
     }
 }

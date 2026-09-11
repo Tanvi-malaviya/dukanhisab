@@ -168,7 +168,7 @@
                     <template x-for="tr in (cashbookLoading ? [] : getBankTransactions().slice((bankPage - 1) * bankPerPage, bankPage * bankPerPage))" :key="tr.id">
                         <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors">
                             <td class="px-6 py-3.5 text-xs text-slate-400"
-                                x-text="new Date(tr.transaction_date || tr.created_at).toLocaleDateString() + ' ' + new Date(tr.transaction_date || tr.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})">
+                                x-text="formatDateTime(tr.transaction_date || tr.created_at)">
                             </td>
                             <td class="px-6 py-3.5 text-sm font-semibold text-slate-800 dark:text-white"
                                 x-text="tr.description"></td>

@@ -219,6 +219,9 @@
   "12_hour": "12-hour",
   "24_hour": "24-hour",
   "notification_preferences": "Notification Preferences",
+  "sms_notif": "SMS",
+  "whatsapp_notif": "WhatsApp",
+  "push_notif": "Push Notifications",
   "business_website_status": "Business Website Status:",
   "live_online": "Live & Online",
   "offline_private": "Offline / Private",
@@ -530,5 +533,13 @@
   "cancelled": "Cancelled",
   "cancel_sale": "Cancel Invoice",
   "cancel_purchase": "Cancel Purchase",
-  "cancel_invoice": "Cancel Invoice"
+  "cancel_invoice": "Cancel Invoice",
+  "purchase_bill": "Purchase Bill",
+  "reversal_notice": "Reversal Notice",
+  "cancel_purchase_reversal_notice": "Cancelling will roll back inventory added by this bill, reverse supplier dues/cash paid, post a CashBook reversal entry, and keep this record marked as Cancelled.",
+  "cancel_sale_reversal_notice": "Cancelling will restore product inventory, adjust customer due/store credit, post a CashBook reversal entry, and keep this invoice marked as Cancelled.",
+  "cancellation_reason": "Cancellation Reason",
+  "cancel_purchase_reason_placeholder": "Enter the reason for cancelling this purchase bill...",
+  "cancel_sale_reason_placeholder": "Enter the reason for cancelling this bill (e.g. Customer cancelled order, wrong items billed)...",
+  "confirm_cancellation": "Confirm Cancellation"
 }

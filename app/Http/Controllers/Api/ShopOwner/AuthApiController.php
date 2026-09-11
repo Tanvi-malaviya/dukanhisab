@@ -402,6 +402,10 @@ class AuthApiController extends Controller
             $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
+        if (isset($data['name'])) {
+            $data['display_name'] = $data['name'];
+        }
+
         $user->update($data);
 
         return response()->json([

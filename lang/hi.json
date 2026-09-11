@@ -219,6 +219,9 @@
   "12_hour": "12-घंटे",
   "24_hour": "24-घंटे",
   "notification_preferences": "सूचना प्राथमिकताएं",
+  "sms_notif": "एसएमएस (SMS)",
+  "whatsapp_notif": "व्हाट्सएप (WhatsApp)",
+  "push_notif": "पुश नोटिफिकेशन",
   "business_website_status": "बिजनेस वेबसाइट स्थिति:",
   "live_online": "लाइव और ऑनलाइन",
   "offline_private": "ऑफलाइन / निजी",
@@ -530,5 +533,13 @@
   "cancelled": "रद्द (Cancelled)",
   "cancel_sale": "बिल रद्द करें",
   "cancel_purchase": "खरीद रद्द करें",
-  "cancel_invoice": "बिल रद्द करें"
+  "cancel_invoice": "बिल रद्द करें",
+  "purchase_bill": "खरीद बिल",
+  "reversal_notice": "रिवर्सल सूचना",
+  "cancel_purchase_reversal_notice": "रद्द करने से इस बिल द्वारा जोड़ी गई इन्वेंट्री वापस कम हो जाएगी, सप्लायर का बकाया/भुगतान किया गया कैश रिवर्स हो जाएगा, कैशबुक में रिवर्सल एंट्री होगी और यह रिकॉर्ड 'Cancelled' के रूप में चिह्नित रहेगा।",
+  "cancel_sale_reversal_notice": "रद्द करने से उत्पाद इन्वेंट्री वापस जुड़ जाएगी, ग्राहक का बकाया/स्टोर क्रेडिट एडजस्ट हो जाएगा, कैशबुक में रिवर्सल एंट्री होगी और यह इनवॉइस 'Cancelled' के रूप में चिह्नित रहेगा।",
+  "cancellation_reason": "रद्द करने का कारण",
+  "cancel_purchase_reason_placeholder": "इस खरीद बिल को रद्द करने का कारण दर्ज करें...",
+  "cancel_sale_reason_placeholder": "इस बिल को रद्द करने का कारण दर्ज करें (उदा. ग्राहक ने ऑर्डर रद्द किया, गलत सामान बिल हुआ)...",
+  "confirm_cancellation": "रद्दीकरण की पुष्टि करें"
 }

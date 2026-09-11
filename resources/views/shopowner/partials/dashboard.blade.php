@@ -144,7 +144,7 @@
                                 <td class="px-3 py-2.5 text-sm">
                                     <span :class="sale.status === 'Returned' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'" class="px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap" x-text="sale.status === 'Returned' ? t('returned') : (sale.status === 'Partially Paid' ? t('partially_paid') : (sale.status === 'Paid' || sale.status === 'Completed' ? t('completed') : (t(sale.status.toLowerCase().replace(/\s+/g, '_')) || sale.status)))"></span>
                                 </td>
-                                <td class="px-3 py-2.5 text-xs text-slate-500" x-text="new Date(sale.sale_date).toLocaleDateString(currentLang === 'gu' ? 'gu-IN' : (currentLang === 'hi' ? 'hi-IN' : 'en-US'))"></td>
+                                <td class="px-3 py-2.5 text-xs text-slate-500" x-text="formatDate(sale.sale_date)"></td>
                             </tr>
                         </template>
                         <template x-if="!dashboardLoading && dashboardStats.recent_sales.length === 0">
