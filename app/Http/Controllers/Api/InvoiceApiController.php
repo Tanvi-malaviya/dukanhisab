@@ -606,25 +606,6 @@ class InvoiceApiController extends Controller
             $locale = explode('_', $locale)[0];
         }
 
-        // Force locale from request parameters/headers to ensure correct translations in PDF generation
-        $request = request();
-        $locale = $request->input('locale')
-            ?? $request->header('X-Locale')
-            ?? $request->header('Accept-Language')
-            ?? app()->getLocale();
-
-        // Clean and validate locale
-        $locale = strtolower(trim($locale));
-        if (str_contains($locale, ',')) {
-            $locale = explode(',', $locale)[0];
-        }
-        if (str_contains($locale, '-')) {
-            $locale = explode('-', $locale)[0];
-        }
-        if (str_contains($locale, '_')) {
-            $locale = explode('_', $locale)[0];
-        }
-
         // Force English locale for all PDF invoices for now to bypass font cache permissions issues
         app()->setLocale('en');
         $locale = 'en';
@@ -680,6 +661,15 @@ class InvoiceApiController extends Controller
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
             $qrBase64 = $this->fetchQrCodeBase64($shop->upi_id, $shop->name, $purchase->total_amount);
+        }
+
+        $isReturned = ($purchase->status === 'Returned' || $purchase->status === 'Partially Returned');
+        $hasReturnedQty = false;
+        foreach ($purchase->items as $item) {
+            if (($item->returned_quantity ?? 0) > 0) {
+                $hasReturnedQty = true;
+                break;
+            }
         }
 
         // Build premium styled HTML for PDF invoice
