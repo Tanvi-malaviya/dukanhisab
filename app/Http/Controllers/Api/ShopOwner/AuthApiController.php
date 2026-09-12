@@ -373,6 +373,24 @@ class AuthApiController extends Controller
     {
         $user = $request->user();
 
+        if ($request->has('notification_preferences')) {
+            $notif = $request->input('notification_preferences');
+            if (is_string($notif)) {
+                $decoded = json_decode($notif, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $request->merge(['notification_preferences' => $decoded]);
+                }
+            }
+        }
+
+        if ($request->has('notification_preferences') && is_array($request->input('notification_preferences'))) {
+            $prefs = [];
+            foreach ($request->input('notification_preferences') as $k => $v) {
+                $prefs[$k] = filter_var($v, FILTER_VALIDATE_BOOLEAN);
+            }
+            $request->merge(['notification_preferences' => $prefs]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'display_name' => 'nullable|string|max:255',
@@ -402,7 +420,7 @@ class AuthApiController extends Controller
             $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
         }
 
-        if (isset($data['name'])) {
+        if (empty($data['display_name']) && isset($data['name'])) {
             $data['display_name'] = $data['name'];
         }
 

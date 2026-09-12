@@ -117,6 +117,7 @@ Route::prefix('v1/shopowner')->group(function () {
 
         // Support tickets (own tickets only)
         Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
+        ->names('shopowner.support-tickets')
             ->except(['edit', 'create']);
     });
 });
@@ -124,6 +125,7 @@ Route::prefix('v1/shopowner')->group(function () {
 // Direct v1 Support Tickets endpoint for mobile app clients
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
+    ->names('v1.support-tickets')
         ->except(['edit', 'create']);
 });
 
