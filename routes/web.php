@@ -114,7 +114,7 @@ Route::group([
 // Shop Owner Auth Routes (Login, Register, Forgot Password, Reset Password)
 Route::get('/shop/login', function () {
     return view('shopowner');
-})->name('shop.login');
+})->name('login');
 
 Route::get('/shop/register', function () {
     return view('shopowner');

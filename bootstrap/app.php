@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(\App\Http\Middleware\SetUserLocale::class);
+        $middleware->redirectTo(
+            guests: '/shop/login',
+            users: '/shop/dashboard'
+        );
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'audit' => \App\Http\Middleware\AuditLogMiddleware::class,
