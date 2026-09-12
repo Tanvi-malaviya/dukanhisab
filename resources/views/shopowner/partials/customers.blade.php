@@ -1,8 +1,34 @@
 {{-- CUSTOMERS PANEL --}}
 <div x-show="page === 'customers'" class="space-y-2">
-    <div class="flex justify-end items-center">
-       
-        <button @click="openNewCustomerModal()" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-all">
+    <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3">
+        {{-- Search Bar --}}
+        <div class="relative flex-1 max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+            </span>
+            <input type="text"
+                x-model="customerSearchQuery"
+                @input="customersPage = 1"
+                :placeholder="t('search_customer_placeholder') || 'Search customer name or mobile...'"
+                class="w-full pl-10 pr-9 py-2 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl text-sm text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary shadow-sm transition-all">
+            <template x-if="customerSearchQuery">
+                <button type="button" @click="customerSearchQuery = ''; customersPage = 1"
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </template>
+        </div>
+
+        {{-- Add Customer Button --}}
+        <button @click="openNewCustomerModal()" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
             <span x-text="t('add_customer')">Add Customer</span>
         </button>
     </div>
@@ -26,7 +52,7 @@
                         </td>
                     </tr>
                 </template>
-                <template x-for="cust in (customersLoading ? [] : customers.slice((customersPage - 1) * customersPerPage, customersPage * customersPerPage))" :key="cust.id">
+                <template x-for="cust in (customersLoading ? [] : filteredCustomersList().slice((customersPage - 1) * customersPerPage, customersPage * customersPerPage))" :key="cust.id">
                     <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50">
                         <td class="px-4 py-3 text-sm font-bold text-slate-800 dark:text-white" x-text="cust.name"></td>
                         <td class="px-3 py-3 text-sm text-slate-500 whitespace-nowrap" x-text="cust.mobile || 'N/A'"></td>
@@ -76,13 +102,13 @@
                         </td>
                     </tr>
                 </template>
-                <template x-if="!customersLoading && customers.length === 0">
+                <template x-if="!customersLoading && filteredCustomersList().length === 0">
                     <tr>
                         <td colspan="5" class="text-center text-slate-400 py-8 text-sm" x-text="t('no_customers_found')">No customers found.</td>
                     </tr>
                 </template>
             </tbody>
         </table>
-        <x-pagination currentPage="customersPage" totalItems="customersTotal" perPage="customersPerPage" loading="customersLoading" />
+        <x-pagination currentPage="customersPage" totalItems="filteredCustomersList().length" perPage="customersPerPage" loading="customersLoading" />
     </div>
 </div>

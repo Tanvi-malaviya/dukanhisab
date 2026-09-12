@@ -1625,3 +1625,160 @@
         </div>
     </div>
 </div>
+
+{{-- 24. SUPPORT TICKET MODALS --}}
+{{-- MODAL: Create New Support Ticket --}}
+<div x-show="newTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
+    <div @click.outside="newTicketModal = false" class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="t('new_support_ticket') || 'Create New Support Ticket'">Create New Support Ticket</h4>
+            </div>
+            <button type="button" @click="newTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form @submit.prevent="submitNewTicket()" class="p-6 space-y-4">
+            {{-- Subject --}}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_subject') || 'Subject'">Subject</label>
+                <input type="text" required x-model="ticketForm.subject" :placeholder="t('ticket_subject_placeholder') || 'Brief summary of issue...'"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+            </div>
+
+            {{-- Message --}}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_message') || 'Issue Details'">Issue Details</label>
+                <textarea required rows="4" x-model="ticketForm.message" :placeholder="t('ticket_message_placeholder') || 'Describe your problem in detail...'"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all"></textarea>
+            </div>
+
+            {{-- Screenshot / Attachment --}}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_screenshot') || 'Screenshot or Attachment (Optional)'">Screenshot (Optional)</label>
+                <div class="relative border-2 border-dashed border-slate-200 dark:border-gray-600 rounded-2xl p-4 text-center hover:border-primary transition-all">
+                    <template x-if="!ticketForm.screenshotPreview">
+                        <label class="cursor-pointer flex flex-col items-center justify-center">
+                            <svg class="w-8 h-8 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span class="text-xs font-semibold text-primary">Click to upload screenshot</span>
+                            <span class="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP up to 10MB</span>
+                            <input type="file" accept="image/*,.pdf" @change="onTicketScreenshotChange($event)" class="sr-only">
+                        </label>
+                    </template>
+                    <template x-if="ticketForm.screenshotPreview">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <img :src="ticketForm.screenshotPreview" class="w-12 h-12 object-cover rounded-xl border border-slate-200 dark:border-gray-700">
+                                <div class="text-left">
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[200px]" x-text="ticketForm.screenshot ? ticketForm.screenshot.name : 'Selected file'"></p>
+                                    <span class="text-[10px] text-emerald-600 font-semibold">Ready to upload</span>
+                                </div>
+                            </div>
+                            <button type="button" @click="ticketForm.screenshot = null; ticketForm.screenshotPreview = null" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            {{-- Action Buttons --}}
+            <div class="pt-4 border-t border-slate-100 dark:border-gray-700/50 flex items-center justify-end gap-2">
+                <button type="button" @click="newTicketModal = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all">
+                    Cancel
+                </button>
+                <button type="submit" :disabled="submittingTicket" class="px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                    <template x-if="submittingTicket">
+                        <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                    </template>
+                    <span x-text="submittingTicket ? 'Submitting...' : (t('create_ticket') || 'Submit Ticket')">Submit Ticket</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL: View Ticket Details & Admin Reply --}}
+<div x-show="viewTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
+    <div @click.outside="viewTicketModal = false" class="bg-white dark:bg-gray-800 rounded-3xl max-w-xl w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <template x-if="selectedTicket">
+            <div>
+                {{-- Header --}}
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-extrabold text-slate-400" x-text="'Ticket #' + selectedTicket.id"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                            :class="{
+                                'bg-amber-100 text-amber-700': selectedTicket.status === 'open',
+                                'bg-blue-100 text-blue-700': ['inProgress', 'pending'].includes(selectedTicket.status),
+                                'bg-emerald-100 text-emerald-700': ['resolved', 'closed'].includes(selectedTicket.status)
+                            }"
+                            x-text="selectedTicket.status"></span>
+                    </div>
+                    <button type="button" @click="viewTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                {{-- Body with Message Bubbles --}}
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                    {{-- Ticket Subject --}}
+                    <div class="pb-3 border-b border-slate-100 dark:border-gray-700/50">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('ticket_subject') || 'Subject'">Subject</span>
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5" x-text="selectedTicket.subject"></h4>
+                    </div>
+
+                    {{-- User Message --}}
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-700/40 border border-slate-100 dark:border-gray-700 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-slate-700 dark:text-slate-200" x-text="t('your_message') || 'Your Issue Description'">Your Issue Description</span>
+                            <span class="text-[10px] text-slate-400" x-text="formatDateTime(selectedTicket.created_at)"></span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed" x-text="selectedTicket.message"></p>
+
+                        <template x-if="selectedTicket.screenshot">
+                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-gray-600">
+                                <span class="block text-[10px] font-semibold text-slate-400 mb-1.5">Attached Image / Screenshot:</span>
+                                <a :href="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" target="_blank" class="inline-block rounded-xl overflow-hidden border border-slate-200 dark:border-gray-600 max-h-48 hover:opacity-95 transition-opacity">
+                                    <img :src="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" class="max-h-48 max-w-full object-contain bg-black/5 dark:bg-white/5">
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Admin Reply Section --}}
+                    <template x-if="selectedTicket.admin_reply">
+                        <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span x-text="t('admin_reply') || 'Support Team Response'">Support Team Response</span>
+                                </div>
+                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400" x-text="selectedTicket.replied_at ? formatDateTime(selectedTicket.replied_at) : ''"></span>
+                            </div>
+                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="selectedTicket.admin_reply"></p>
+                        </div>
+                    </template>
+
+                    <template x-if="!selectedTicket.admin_reply">
+                        <div class="py-2.5 px-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0"></span>
+                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300" x-text="t('waiting_for_reply') || 'Waiting for support response...'">Waiting for support response...</span>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Footer --}}
+                <div class="px-6 py-3.5 border-t border-slate-100 dark:border-gray-700 flex justify-end">
+                    <button type="button" @click="viewTicketModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>

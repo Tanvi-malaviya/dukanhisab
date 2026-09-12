@@ -283,29 +283,35 @@
     });
 ">
     {{-- Tab Switcher --}}
-    <div class="flex gap-2 border-b border-slate-200 dark:border-gray-700">
+    <div class="flex gap-2 border-b border-slate-200 dark:border-gray-700 overflow-x-auto">
         <button type="button" @click="settingsTab = 'shop'"
-            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             :class="settingsTab === 'shop' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
             <span x-text="t('shop_settings')">Shop Settings</span>
         </button>
         <button type="button" @click="settingsTab = 'profile'"
-            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             :class="settingsTab === 'profile' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
             <span x-text="t('user_settings')">User Settings</span>
         </button>
+        <button type="button" @click="settingsTab = 'security'"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap flex items-center gap-1.5"
+            :class="settingsTab === 'security' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span x-text="t('security') || 'Security'">Security</span>
+        </button>
         <button type="button" @click="settingsTab = 'invoice'"
-            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             :class="settingsTab === 'invoice' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
             <span x-text="t('invoice_settings')">Invoice Settings</span>
         </button>
         <button type="button" @click="settingsTab = 'website'"
-            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             :class="settingsTab === 'website' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
             <span x-text="t('website_settings')">Website Settings</span>
         </button>
         <button type="button" @click="settingsTab = 'backup'"
-            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all"
+            class="px-4 py-2.5 text-sm font-semibold border-b-2 transition-all whitespace-nowrap"
             :class="settingsTab === 'backup' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'">
             <span x-text="t('backup_restore')">Backup & Restore</span>
         </button>
@@ -697,6 +703,178 @@
                 </button>
             </div>
         </form>
+
+        {{-- Security & Password Card in User Settings --}}
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <div>
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="t('change_password') || 'Change Password'">Change Password</h4>
+                    <p class="text-xs text-slate-400 mt-0.5" x-text="t('update_password_desc') || 'Manage your account password and security preferences.'">Manage your account password and security preferences.</p>
+                </div>
+            </div>
+            <button type="button" @click="settingsTab = 'security'" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2">
+                <span x-text="t('change_password') || 'Change Password'">Change Password</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    {{-- Security & Change Password Settings Panel --}}
+    <div x-show="settingsTab === 'security'" class="space-y-6" x-cloak>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {{-- Left 2 cols: Change Password Form --}}
+            <div class="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
+                <div class="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-gray-700/50">
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="t('change_password') || 'Change Password'">Change Password</h4>
+                        <p class="text-xs text-slate-400" x-text="t('change_password_subtitle') || 'Update your password to keep your account safe and secure.'">Update your password to keep your account safe and secure.</p>
+                    </div>
+                </div>
+
+                <form @submit.prevent="submitChangePassword()" class="space-y-4">
+                    {{-- Current Password --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('current_password') || 'Current Password'">Current Password</label>
+                        <div class="relative">
+                            <input :type="showCurrentPass ? 'text' : 'password'" 
+                                required 
+                                x-model="passForm.current_password" 
+                                :placeholder="t('enter_current_password') || 'Enter current password'"
+                                class="block w-full pl-3 pr-10 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <button type="button" @click="showCurrentPass = !showCurrentPass" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <template x-if="!showCurrentPass">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </template>
+                                <template x-if="showCurrentPass">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
+                                </template>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- New Password --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('new_password') || 'New Password'">New Password</label>
+                        <div class="relative">
+                            <input :type="showNewPass ? 'text' : 'password'" 
+                                required 
+                                minlength="8"
+                                x-model="passForm.new_password" 
+                                :placeholder="t('enter_new_password') || 'Enter new password (min. 8 characters)'"
+                                class="block w-full pl-3 pr-10 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <button type="button" @click="showNewPass = !showNewPass" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <template x-if="!showNewPass">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </template>
+                                <template x-if="showNewPass">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
+                                </template>
+                            </button>
+                        </div>
+                        {{-- Real-time validation indicator --}}
+                        <div class="flex items-center gap-1.5 mt-1.5 text-[11px]" :class="passForm.new_password.length >= 8 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span x-text="t('password_min_8_chars') || 'Must be at least 8 characters long'">Must be at least 8 characters long</span>
+                        </div>
+                    </div>
+
+                    {{-- Confirm New Password --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('confirm_new_password') || 'Confirm New Password'">Confirm New Password</label>
+                        <div class="relative">
+                            <input :type="showConfirmPass ? 'text' : 'password'" 
+                                required 
+                                minlength="8"
+                                x-model="passForm.new_password_confirmation" 
+                                :placeholder="t('reenter_new_password') || 'Re-enter new password'"
+                                class="block w-full pl-3 pr-10 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <button type="button" @click="showConfirmPass = !showConfirmPass" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                <template x-if="!showConfirmPass">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                </template>
+                                <template x-if="showConfirmPass">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
+                                </template>
+                            </button>
+                        </div>
+                        {{-- Match indicator --}}
+                        <div x-show="passForm.new_password_confirmation" class="flex items-center gap-1.5 mt-1.5 text-[11px]" :class="passForm.new_password === passForm.new_password_confirmation ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+                            <template x-if="passForm.new_password === passForm.new_password_confirmation">
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span x-text="t('passwords_match') || 'Passwords match'">Passwords match</span>
+                                </span>
+                            </template>
+                            <template x-if="passForm.new_password !== passForm.new_password_confirmation">
+                                <span class="flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    <span x-text="t('passwords_do_not_match') || 'Passwords do not match'">Passwords do not match</span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+
+                    {{-- Action buttons --}}
+                    <div class="pt-4 border-t border-slate-100 dark:border-gray-700/50 flex items-center justify-between">
+                        <button type="button" @click="passForm = { current_password: '', new_password: '', new_password_confirmation: '' }" class="px-4 py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors" x-text="t('reset') || 'Reset'">
+                            Reset
+                        </button>
+                        <button type="submit" :disabled="passChanging || !passForm.current_password || passForm.new_password.length < 8 || passForm.new_password !== passForm.new_password_confirmation" 
+                            class="px-6 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed">
+                            <template x-if="passChanging">
+                                <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            </template>
+                            <span x-text="passChanging ? (t('updating') || 'Updating...') : (t('update_password') || 'Update Password')">Update Password</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {{-- Right 1 col: Security Tips & Account Overview --}}
+            <div class="space-y-6">
+                {{-- Security Overview --}}
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+                    <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500" x-text="t('account_security') || 'Account Security'">Account Security</h5>
+                    <div class="space-y-3 text-xs">
+                        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-gray-700/50">
+                            <span class="text-slate-500" x-text="t('account_status') || 'Account Status'">Account Status</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                                :class="(user && user.status === 'suspended') ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
+                                x-text="(user && user.status === 'suspended') ? (t('suspended') || 'suspended') : (t('active') || 'active')"></span>
+                        </div>
+                        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-gray-700/50">
+                            <span class="text-slate-500" x-text="t('email_address') || 'Email Address'">Email Address</span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-200" x-text="user ? user.email : '-'"></span>
+                        </div>
+                        <div class="flex items-center justify-between py-1.5 border-b border-slate-100 dark:border-gray-700/50">
+                            <span class="text-slate-500" x-text="t('last_login') || 'Last Login'">Last Login</span>
+                            <span class="font-semibold text-slate-700 dark:text-slate-200" x-text="user && user.last_login_at ? formatDateTime(user.last_login_at) : '-'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Password Tips Card --}}
+                <div class="bg-gradient-to-br from-teal-500/10 via-emerald-500/5 to-transparent dark:from-teal-900/20 dark:to-transparent p-5 rounded-2xl border border-teal-500/20 space-y-3">
+                    <div class="flex items-center gap-2 text-teal-700 dark:text-teal-400 font-bold text-xs">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span x-text="t('password_tips_title') || 'Password Recommendations'">Password Recommendations</span>
+                    </div>
+                    <ul class="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-disc pl-4">
+                        <li x-text="t('tip_min_chars') || 'Use at least 8 characters long.'">Use at least 8 characters long.</li>
+                        <li x-text="t('tip_combination') || 'Combine uppercase, lowercase, numbers, and symbols.'">Combine uppercase, lowercase, numbers, and symbols.</li>
+                        <li x-text="t('tip_unique') || 'Do not reuse passwords from other websites.'">Do not reuse passwords from other websites.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     {{-- Website Settings --}}

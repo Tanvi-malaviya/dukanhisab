@@ -78,9 +78,12 @@ class RegisterClosureApiController extends Controller
             ->with('closedByUser:id,name')
             ->orderBy('closing_date', 'desc')
             ->orderBy('id', 'desc')
-            ->paginate($request->input('per_page', 15));
+            ->paginate($request->input('per_page', 50));
 
-        return response()->json($closures);
+        return response()->json([
+            'status' => 'success',
+            'data' => $closures
+        ]);
     }
 
     /**
@@ -131,19 +134,39 @@ class RegisterClosureApiController extends Controller
 
         $openingBalance = (float) ($expectedCash - ($todayCashIn - $todayCashOut));
 
-        $closure = CashRegisterClosure::create([
-            'shop_id' => $shopId,
-            'closed_by_user_id' => $user ? $user->id : null,
-            'closing_date' => $today,
-            'opening_balance' => round($openingBalance, 2),
-            'cash_in' => round((float) $todayCashIn, 2),
-            'cash_out' => round((float) $todayCashOut, 2),
-            'expected_cash' => round($expectedCash, 2),
-            'actual_cash' => round($actualCash, 2),
-            'difference' => $difference,
-            'denominations' => $request->input('denominations', []),
-            'note' => $request->input('note'),
-        ]);
+        $existingClosure = CashRegisterClosure::where('shop_id', $shopId)
+            ->whereDate('closing_date', $today)
+            ->latest('id')
+            ->first();
+
+        if ($existingClosure) {
+            $existingClosure->update([
+                'closed_by_user_id' => $user ? $user->id : null,
+                'opening_balance' => round($openingBalance, 2),
+                'cash_in' => round((float) $todayCashIn, 2),
+                'cash_out' => round((float) $todayCashOut, 2),
+                'expected_cash' => round($expectedCash, 2),
+                'actual_cash' => round($actualCash, 2),
+                'difference' => $difference,
+                'denominations' => $request->input('denominations', []),
+                'note' => $request->input('note'),
+            ]);
+            $closure = $existingClosure;
+        } else {
+            $closure = CashRegisterClosure::create([
+                'shop_id' => $shopId,
+                'closed_by_user_id' => $user ? $user->id : null,
+                'closing_date' => $today,
+                'opening_balance' => round($openingBalance, 2),
+                'cash_in' => round((float) $todayCashIn, 2),
+                'cash_out' => round((float) $todayCashOut, 2),
+                'expected_cash' => round($expectedCash, 2),
+                'actual_cash' => round($actualCash, 2),
+                'difference' => $difference,
+                'denominations' => $request->input('denominations', []),
+                'note' => $request->input('note'),
+            ]);
+        }
 
         $status = $difference == 0 ? 'balanced' : ($difference > 0 ? 'surplus' : 'shortage');
         $closureData = $closure->load('closedByUser:id,name');

@@ -16,9 +16,22 @@ class SupportTicketApiController extends Controller
      */
     public function index(Request $request)
     {
-        $tickets = $request->user()->supportTickets()->latest()->get();
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
 
-        return response()->json(['tickets' => $tickets]);
+        $tickets = $user->supportTickets()->latest()->get()->map(function ($ticket) {
+            $ticket->screenshot_url = $ticket->screenshot ? asset('storage/' . $ticket->screenshot) : null;
+            return $ticket;
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Tickets retrieved successfully.',
+            'tickets' => $tickets,
+            'data' => $tickets,
+        ]);
     }
 
     /**
@@ -26,13 +39,24 @@ class SupportTicketApiController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $ticket = $request->user()->supportTickets()->find($id);
-
-        if (!$ticket) {
-            return response()->json(['message' => 'Support ticket not found.'], 404);
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        return response()->json(['ticket' => $ticket]);
+        $ticket = $user->supportTickets()->find($id);
+
+        if (!$ticket) {
+            return response()->json(['status' => false, 'message' => 'Support ticket not found.'], 404);
+        }
+
+        $ticket->screenshot_url = $ticket->screenshot ? asset('storage/' . $ticket->screenshot) : null;
+
+        return response()->json([
+            'status' => true,
+            'ticket' => $ticket,
+            'data' => $ticket,
+        ]);
     }
 
     /**
@@ -40,43 +64,76 @@ class SupportTicketApiController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        // Accept flexible keys from both mobile app and web (subject/title, message/description)
+        $subject = $request->input('subject') ?? $request->input('title');
+        $message = $request->input('message') ?? $request->input('description') ?? $request->input('body');
+
+        $dataToValidate = [
+            'subject' => $subject,
+            'message' => $message,
+        ];
+
+        $validator = Validator::make($dataToValidate, [
             'subject' => 'required|string|max:255',
-            'message' => 'required|string|max:2000',
+            'message' => 'required|string|max:5000',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $user = $request->user();
+        // Handle screenshot or attachment file upload
+        $screenshotPath = null;
+        if ($request->hasFile('screenshot')) {
+            $screenshotPath = $request->file('screenshot')->store('support-tickets', 'public');
+        } elseif ($request->hasFile('image')) {
+            $screenshotPath = $request->file('image')->store('support-tickets', 'public');
+        } elseif ($request->hasFile('attachment')) {
+            $screenshotPath = $request->file('attachment')->store('support-tickets', 'public');
+        } elseif ($request->filled('screenshot') && is_string($request->input('screenshot'))) {
+            $screenshotPath = $request->input('screenshot');
+        }
 
         $ticket = SupportTicket::create([
             'user_id' => $user->id,
-            'subject' => $request->input('subject'),
-            'message' => $request->input('message'),
+            'subject' => $subject,
+            'message' => $message,
+            'screenshot' => $screenshotPath,
             'status' => 'open',
         ]);
 
-        $adminEmails = Admin::where('status', 'active')->pluck('email');
+        $ticket->screenshot_url = $ticket->screenshot ? asset('storage/' . $ticket->screenshot) : null;
 
-        if ($adminEmails->isNotEmpty()) {
-            try {
+        // Try sending notification email to active admins, guarded against any exception
+        try {
+            $adminEmails = Admin::where('status', 'active')->pluck('email');
+            if ($adminEmails->isNotEmpty()) {
                 Mail::send('shopowner.emails.support-ticket-created', [
                     'user' => $user,
                     'ticket' => $ticket,
-                ], function ($message) use ($adminEmails, $ticket) {
-                    $message->to($adminEmails->all())
-                            ->subject('New Support Ticket #' . $ticket->id . ': ' . $ticket->subject);
+                ], function ($mail) use ($adminEmails, $ticket) {
+                    $mail->to($adminEmails->all())
+                         ->subject('New Support Ticket #' . $ticket->id . ': ' . $ticket->subject);
                 });
-            } catch (\Exception $e) {
-                \Log::error('Support ticket notification email failed: ' . $e->getMessage());
             }
+        } catch (\Throwable $e) {
+            \Log::error('Support ticket notification email failed: ' . $e->getMessage());
         }
 
         return response()->json([
+            'status' => true,
             'message' => 'Support ticket submitted successfully.',
             'ticket' => $ticket,
+            'data' => $ticket,
         ], 201);
     }
 
@@ -85,28 +142,58 @@ class SupportTicketApiController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $ticket = $request->user()->supportTickets()->find($id);
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $ticket = $user->supportTickets()->find($id);
 
         if (!$ticket) {
-            return response()->json(['message' => 'Support ticket not found.'], 404);
+            return response()->json(['status' => false, 'message' => 'Support ticket not found.'], 404);
         }
 
         if ($ticket->status !== 'open') {
-            return response()->json(['message' => 'This ticket has already been picked up and can no longer be edited.'], 422);
+            return response()->json(['status' => false, 'message' => 'This ticket has already been picked up and can no longer be edited.'], 422);
         }
 
-        $validator = Validator::make($request->all(), [
+        $subject = $request->input('subject') ?? $request->input('title') ?? $ticket->subject;
+        $message = $request->input('message') ?? $request->input('description') ?? $ticket->message;
+
+        $validator = Validator::make([
+            'subject' => $subject,
+            'message' => $message,
+        ], [
             'subject' => 'required|string|max:255',
-            'message' => 'required|string|max:2000',
+            'message' => 'required|string|max:5000',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $ticket->update($request->only(['subject', 'message']));
+        if ($request->hasFile('screenshot')) {
+            $ticket->screenshot = $request->file('screenshot')->store('support-tickets', 'public');
+        } elseif ($request->hasFile('image')) {
+            $ticket->screenshot = $request->file('image')->store('support-tickets', 'public');
+        }
 
-        return response()->json(['message' => 'Support ticket updated.', 'ticket' => $ticket]);
+        $ticket->subject = $subject;
+        $ticket->message = $message;
+        $ticket->save();
+
+        $ticket->screenshot_url = $ticket->screenshot ? asset('storage/' . $ticket->screenshot) : null;
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Support ticket updated.',
+            'ticket' => $ticket,
+            'data' => $ticket
+        ]);
     }
 
     /**
@@ -114,14 +201,22 @@ class SupportTicketApiController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $ticket = $request->user()->supportTickets()->find($id);
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $ticket = $user->supportTickets()->find($id);
 
         if (!$ticket) {
-            return response()->json(['message' => 'Support ticket not found.'], 404);
+            return response()->json(['status' => false, 'message' => 'Support ticket not found.'], 404);
         }
 
         $ticket->delete();
 
-        return response()->json(['message' => 'Support ticket deleted.']);
+        return response()->json([
+            'status' => true,
+            'message' => 'Support ticket deleted.'
+        ]);
     }
 }

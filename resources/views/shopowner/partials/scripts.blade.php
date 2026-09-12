@@ -106,6 +106,7 @@
                 'subscription': 'subscription',
                 'sales-returned': 'sales-returned',
                 'purchase-returned': 'purchase-returned',
+                'support': 'support',
             },
 
             // Theme State
@@ -202,6 +203,11 @@
             forgotForm: { email: '' },
             resetForm: { token: '', password: '', password_confirmation: '' },
             emailToVerify: '',
+            passForm: { current_password: '', new_password: '', new_password_confirmation: '' },
+            passChanging: false,
+            showCurrentPass: false,
+            showNewPass: false,
+            showConfirmPass: false,
 
             setupForm: { name: '', owner_name: '', mobile: '', gst_number: '', logo: null },
             logoPreview: null,
@@ -221,6 +227,7 @@
             customers: [],
             customersTotal: 0,
             customersLoading: false,
+            customerSearchQuery: '',
             suppliers: [],
             suppliersLoading: false,
             sales: [],
@@ -245,6 +252,15 @@
             purchaseFilter: { month: '', supplierId: '', search: '' },
             purchaseReturnedFilter: { month: '', supplierId: '', search: '' },
             stockHistory: [],
+            // Support Tickets
+            supportTickets: [],
+            supportTicketsLoading: false,
+            supportFilter: { search: '', status: '' },
+            newTicketModal: false,
+            viewTicketModal: false,
+            selectedTicket: null,
+            ticketForm: { subject: '', message: '', screenshot: null, screenshotPreview: null },
+            submittingTicket: false,
             cashbook: [],
             cashbookLoading: false,
             cashbookTab: 'ledger',
@@ -518,6 +534,7 @@
                 else if (pageName === 'sales-history' || pageName === 'sales-returned') this.salesLoading = state;
                 else if (pageName === 'cashbook' || pageName === 'bank-accounts' || pageName === 'transactions') this.cashbookLoading = state;
                 else if (pageName === 'dashboard') this.dashboardLoading = state;
+                else if (pageName === 'support') this.supportTicketsLoading = state;
             },
 
             // Navigate to a page - updates both state and browser URL
@@ -539,7 +556,7 @@
                 if (pageName === 'dashboard') this.loadDashboard();
                 else if (pageName === 'sales-history' || pageName === 'sales-returned') this.loadSales();
                 else if (pageName === 'products') this.loadProducts('', true);
-                else if (pageName === 'customers') this.loadCustomers(true);
+                else if (pageName === 'customers') { this.customerSearchQuery = ''; this.loadCustomers(); }
                 else if (pageName === 'suppliers') this.loadSuppliers();
                 else if (pageName === 'expenses') this.loadExpenses();
                 else if (pageName === 'sales') { this.loadProducts(); this.loadCustomers(); this.resetPOS(); }
@@ -547,13 +564,14 @@
                 else if (pageName === 'purchase-history') { this.loadPurchases(true); this.loadSuppliers(); }
                 else if (pageName === 'purchase-returned') { this.loadPurchases(true); this.loadSuppliers(); }
                 else if (pageName === 'inventory') this.loadProducts('', true);
-                else if (pageName === 'cashbook') this.loadCashBook();
+                else if (pageName === 'cashbook') { this.loadCashBook(); this.loadRegisterClosures(); }
                 else if (pageName === 'bank-accounts') { this.loadBankAccounts(); this.loadCashBook(); }
                 else if (pageName === 'transactions') this.loadCashBook();
                 else if (pageName === 'reports') this.loadReports();
                 else if (pageName === 'reminders') { this.loadCustomers(); this.loadSuppliers(); this.loadProducts(); }
                 else if (pageName === 'settings') this.loadInvoiceSettings();
                 else if (pageName === 'subscription') this.loadSubscriptionPlans();
+                else if (pageName === 'support') this.loadSupportTickets();
             },
 
             toggleTheme() {
@@ -576,6 +594,11 @@
             authSubtitle() {
                 const map = { 'login': 'Login to manage your business ledger.', 'register': 'Create your owner account.', 'otp-verify': 'Verify your email address.', 'forgot-pass': 'Enter email to receive OTP.', 'reset-pass': 'Enter new password credentials.' };
                 return map[this.authPage] || '';
+            },
+
+            getTodayDate() {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             },
 
             getHeaders() {
@@ -623,13 +646,16 @@
                     .catch(() => { this.productsLoading = false; });
             },
 
-            loadCustomers(paginate = false) {
+            loadCustomers(search = '', paginate = false) {
                 if (!paginate) {
                     this.customersPage = 1;
                     this.customerDuesPage = 1;
                 }
                 this.customersLoading = true;
                 let url = '/api/v1/customers?';
+                if (search) {
+                    url += 'search=' + encodeURIComponent(search) + '&';
+                }
                 if (paginate) {
                     url += `page=${this.customersPage}&per_page=${this.customersPerPage}`;
                 }
@@ -649,6 +675,19 @@
                         }
                     })
                     .catch(() => { this.customersLoading = false; });
+            },
+
+            filteredCustomersList() {
+                if (!this.customerSearchQuery || !this.customerSearchQuery.trim()) {
+                    return this.customers;
+                }
+                const q = this.customerSearchQuery.toLowerCase().trim();
+                return this.customers.filter(c => {
+                    const name = (c.name || '').toLowerCase();
+                    const mobile = (c.mobile || '').toLowerCase();
+                    const email = (c.email || '').toLowerCase();
+                    return name.includes(q) || mobile.includes(q) || email.includes(q);
+                });
             },
 
             loadSuppliers() {
@@ -1151,17 +1190,32 @@
                         this.loading = false;
                         if (res.status === 'success' && res.data) {
                             this.registerStatus = res.data;
-                            this.registerClosureForm = {
-                                d500: 0,
-                                d200: 0,
-                                d100: 0,
-                                d50: 0,
-                                d20: 0,
-                                d10: 0,
-                                coins: 0,
-                                actual_cash: 0,
-                                note: ''
-                            };
+                            if (res.data.last_closure && res.data.last_closure.denominations) {
+                                const den = res.data.last_closure.denominations;
+                                this.registerClosureForm = {
+                                    d500: den['500'] || 0,
+                                    d200: den['200'] || 0,
+                                    d100: den['100'] || 0,
+                                    d50:  den['50']  || 0,
+                                    d20:  den['20']  || 0,
+                                    d10:  den['10']  || 0,
+                                    coins: den['coins'] || 0,
+                                    actual_cash: parseFloat(res.data.last_closure.actual_cash) || 0,
+                                    note: res.data.last_closure.note || ''
+                                };
+                            } else {
+                                this.registerClosureForm = {
+                                    d500: 0,
+                                    d200: 0,
+                                    d100: 0,
+                                    d50: 0,
+                                    d20: 0,
+                                    d10: 0,
+                                    coins: 0,
+                                    actual_cash: 0,
+                                    note: ''
+                                };
+                            }
                             this.showRegisterClosureModal = true;
                         } else {
                             this.showToast(res.message || 'Failed to fetch register status.', 'error');
@@ -1213,9 +1267,10 @@
                 .then(r => r.json())
                 .then(res => {
                     this.loading = false;
-                    if (res.status === 'success' && res.data) {
+                    if (res.status === 'success' && (res.data || res.closure)) {
                         this.showToast(res.message || 'Register closed successfully!');
                         this.showRegisterClosureModal = false;
+                        this.cashbookTab = 'closures';
                         this.loadRegisterClosures();
                         this.loadCashBook();
                         this.loadDashboard();
@@ -1236,7 +1291,15 @@
                     .then(res => {
                         this.registerClosuresLoading = false;
                         if (res.status === 'success' && res.data) {
-                            this.registerClosures = res.data.data || res.data;
+                            this.registerClosures = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+                        } else if (res.data && Array.isArray(res.data.data)) {
+                            this.registerClosures = res.data.data;
+                        } else if (res.data && Array.isArray(res.data)) {
+                            this.registerClosures = res.data;
+                        } else if (Array.isArray(res)) {
+                            this.registerClosures = res;
+                        } else {
+                            this.registerClosures = [];
                         }
                     })
                     .catch(() => {
@@ -1269,6 +1332,14 @@
             },
 
             loadReports(startDate = '', endDate = '') {
+                const today = this.getTodayDate();
+                if (startDate && startDate > today) startDate = today;
+                if (endDate && endDate > today) endDate = today;
+                if (startDate && endDate && startDate > endDate) {
+                    const temp = startDate;
+                    startDate = endDate;
+                    endDate = temp;
+                }
                 this.reportsLoading = true;
                 let url = '/api/v1/reports?';
                 if (startDate) url += '&start_date=' + startDate;
@@ -1697,7 +1768,24 @@
             },
 
             submitChangePassword() {
-                this.loading = true;
+                if (!this.passForm.current_password) {
+                    this.showToast(this.t('current_password_required') || 'Current password is required.', 'error');
+                    return;
+                }
+                if (!this.passForm.new_password) {
+                    this.showToast(this.t('new_password_required') || 'New password is required.', 'error');
+                    return;
+                }
+                if (this.passForm.new_password.length < 8) {
+                    this.showToast(this.t('password_min_8_chars') || 'New password must be at least 8 characters.', 'error');
+                    return;
+                }
+                if (this.passForm.new_password !== this.passForm.new_password_confirmation) {
+                    this.showToast(this.t('passwords_do_not_match') || 'Passwords do not match.', 'error');
+                    return;
+                }
+
+                this.passChanging = true;
                 const body = {
                     current_password: this.passForm.current_password,
                     new_password: this.passForm.new_password,
@@ -1708,16 +1796,26 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify(body)
                 })
-                    .then(r => r.json()).then(d => {
-                        this.loading = false;
-                        if (d.message) {
-                            this.showToast('Password updated successfully!');
+                    .then(async r => {
+                        const d = await r.json();
+                        return { ok: r.ok, status: r.status, data: d };
+                    })
+                    .then(res => {
+                        this.passChanging = false;
+                        if (res.ok) {
+                            this.showToast(res.data.message || this.t('password_updated_success') || 'Password updated successfully!');
                             this.passForm = { current_password: '', new_password: '', new_password_confirmation: '' };
+                            this.showCurrentPass = false;
+                            this.showNewPass = false;
+                            this.showConfirmPass = false;
+                        } else if (res.data.errors) {
+                            const firstKey = Object.keys(res.data.errors)[0];
+                            this.showToast(res.data.errors[firstKey][0], 'error');
                         } else {
-                            this.showToast(d.message || 'Failed to change password.', 'error');
+                            this.showToast(res.data.message || 'Failed to change password.', 'error');
                         }
                     }).catch(() => {
-                        this.loading = false;
+                        this.passChanging = false;
                         this.showToast('Error changing password.', 'error');
                     });
             },
@@ -1728,6 +1826,121 @@
 
             triggerCloudRestore() {
                 this.showToast('Database restore completed from cloud snapshot.');
+            },
+
+            // ── SUPPORT TICKETS ─────────────────────────────────────────
+            loadSupportTickets() {
+                this.supportTicketsLoading = true;
+                fetch('/api/v1/shopowner/support-tickets', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.supportTicketsLoading = false;
+                        if (d.tickets) this.supportTickets = d.tickets;
+                        else if (Array.isArray(d.data)) this.supportTickets = d.data;
+                        else if (Array.isArray(d)) this.supportTickets = d;
+                    })
+                    .catch(() => {
+                        this.supportTicketsLoading = false;
+                    });
+            },
+
+            filteredSupportTickets() {
+                let list = this.supportTickets || [];
+                if (this.supportFilter.status) {
+                    list = list.filter(t => t.status === this.supportFilter.status);
+                }
+                if (this.supportFilter.search) {
+                    const q = this.supportFilter.search.toLowerCase().trim();
+                    list = list.filter(t =>
+                        (t.subject && t.subject.toLowerCase().includes(q)) ||
+                        (t.message && t.message.toLowerCase().includes(q)) ||
+                        (String(t.id).includes(q))
+                    );
+                }
+                return list;
+            },
+
+            openNewTicketModal() {
+                this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                this.newTicketModal = true;
+            },
+
+            onTicketScreenshotChange(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.ticketForm.screenshot = file;
+                    this.ticketForm.screenshotPreview = URL.createObjectURL(file);
+                }
+            },
+
+            submitNewTicket() {
+                if (!this.ticketForm.subject.trim()) {
+                    this.showToast('Please enter a subject.', 'error');
+                    return;
+                }
+                if (!this.ticketForm.message.trim()) {
+                    this.showToast('Please enter issue details.', 'error');
+                    return;
+                }
+
+                this.submittingTicket = true;
+                const fd = new FormData();
+                fd.append('subject', this.ticketForm.subject);
+                fd.append('message', this.ticketForm.message);
+                if (this.ticketForm.screenshot) {
+                    fd.append('screenshot', this.ticketForm.screenshot);
+                }
+
+                fetch('/api/v1/shopowner/support-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + this.token,
+                        'X-Shop-ID': this.shop ? this.shop.id : '',
+                        'X-Locale': this.currentLang || 'en'
+                    },
+                    body: fd
+                })
+                .then(async r => {
+                    const data = await r.json();
+                    return { ok: r.ok, status: r.status, data };
+                })
+                .then(res => {
+                    this.submittingTicket = false;
+                    if (res.ok) {
+                        this.showToast(this.t('ticket_created_success') || 'Support ticket submitted successfully!');
+                        this.newTicketModal = false;
+                        this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                        this.loadSupportTickets();
+                    } else {
+                        this.showToast(res.data.message || 'Failed to submit support ticket.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.submittingTicket = false;
+                    this.showToast('Error submitting support ticket.', 'error');
+                });
+            },
+
+            openTicketDetails(ticket) {
+                this.selectedTicket = ticket;
+                this.viewTicketModal = true;
+            },
+
+            deleteTicket(id) {
+                if (!confirm('Are you sure you want to delete this support ticket?')) return;
+                fetch('/api/v1/shopowner/support-tickets/' + id, {
+                    method: 'DELETE',
+                    headers: this.getHeaders()
+                })
+                .then(r => r.json())
+                .then(d => {
+                    this.showToast(this.t('ticket_deleted_success') || 'Support ticket deleted.');
+                    this.loadSupportTickets();
+                })
+                .catch(() => {
+                    this.showToast('Failed to delete support ticket.', 'error');
+                });
             },
 
             // ── AUTH ──────────────────────────────────────────────────

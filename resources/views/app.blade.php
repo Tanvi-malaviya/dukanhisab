@@ -243,6 +243,7 @@
                     @include('shopowner.partials.reminders')
                     @include('shopowner.partials.settings')
                     @include('shopowner.partials.subscription')
+                    @include('shopowner.partials.support')
 
                 </main>
             </div>
