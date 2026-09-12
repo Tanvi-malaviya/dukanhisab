@@ -85,6 +85,8 @@ class InvoiceApiController extends Controller
     {
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('A4', 'portrait');
+        $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', true);
+        $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
 
         if ($stream) {
             return response($pdf->output())
@@ -165,15 +167,8 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoUrl = '';
-        if ($shop->logo) {
-            $logoUrl = public_path('storage/' . $shop->logo);
-        }
-
-        $signatureUrl = '';
-        if ($shop->signature) {
-            $signatureUrl = public_path('storage/' . $shop->signature);
-        }
+        $logoBase64 = $this->getBase64Image($shop->logo);
+        $signatureBase64 = $this->getBase64Image($shop->signature);
 
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
@@ -192,6 +187,9 @@ class InvoiceApiController extends Controller
                 ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: geometricPrecision;
                 }
                 body {
                     color: #111;
@@ -222,9 +220,8 @@ class InvoiceApiController extends Controller
                     padding: 20px;
                 }
                 .header-logo {
-                    width: 50px;
-                    height: 50px;
-                    object-fit: contain;
+                    max-width: 65px;
+                    max-height: 50px;
                     display: block;
                 }
                 .shop-name {
@@ -272,11 +269,11 @@ class InvoiceApiController extends Controller
                     vertical-align: top;
                 }
                 .section-title {
-                    font-size: 11px;
+                    font-size: 11.5px;
                     text-transform: uppercase;
-                    color: #9ca3af;
+                    color: #475569;
                     font-weight: bold;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
                     margin-bottom: 5px;
                 }
                 .party-name {
@@ -325,10 +322,11 @@ class InvoiceApiController extends Controller
                     height: 80px;
                 }
                 .bank-details {
-                    font-size: 11px;
-                    color: #6b7280;
+                    font-size: 11.5px;
+                    color: #334155;
                     white-space: pre-line;
                     margin-top: 8px;
+                    line-height: 1.4;
                 }
                 .total-table {
                     width: 100%;
@@ -367,22 +365,24 @@ class InvoiceApiController extends Controller
                 .invoice-footer-text {
                     margin-top: 25px;
                     text-align: center;
-                    font-size: 12px;
-                    color: #6b7280;
+                    font-size: 12.5px;
+                    color: #334155;
+                    font-weight: 500;
                 }
                 .signature-img {
                     margin-top: 15px;
                     text-align: right;
                 }
                 .signature-img img {
-                    height: 40px;
+                    max-height: 45px;
+                    max-width: 120px;
                 }
                 .footer {
                     margin-top: 20px;
                     text-align: center;
-                    font-size: 10px;
-                    color: #9ca3af;
-                    border-top: 1px solid #e5e7eb;
+                    font-size: 11px;
+                    color: #64748b;
+                    border-top: 1px solid #cbd5e1;
                     padding-top: 15px;
                 }
                 .brand-highlight {
@@ -397,8 +397,8 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td style="vertical-align: top;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
-                        if ($shop->logo && file_exists($logoUrl)) {
-                            $html .= '<td style="vertical-align: top; width: 50px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="data:image/png;base64,' . base64_encode(file_get_contents($logoUrl)) . '" /></td>';
+                        if ($logoBase64) {
+                            $html .= '<td style="vertical-align: top; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="' . $logoBase64 . '" /></td>';
                         }
                         $html .= '
                                 <td style="vertical-align: top; padding: 0;">
@@ -525,7 +525,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:10px;color:#9ca3af;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:11px;color:#475569;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -566,8 +566,8 @@ class InvoiceApiController extends Controller
 
                 <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
 
-                if ($shop->signature && file_exists($signatureUrl)) {
-                    $html .= '<div class="signature-img"><img src="data:image/png;base64,' . base64_encode(file_get_contents($signatureUrl)) . '" /></div>';
+                if ($signatureBase64) {
+                    $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
                 }
 
                 $html .= '
@@ -652,15 +652,8 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoUrl = '';
-        if ($shop->logo) {
-            $logoUrl = public_path('storage/' . $shop->logo);
-        }
-
-        $signatureUrl = '';
-        if ($shop->signature) {
-            $signatureUrl = public_path('storage/' . $shop->signature);
-        }
+        $logoBase64 = $this->getBase64Image($shop->logo);
+        $signatureBase64 = $this->getBase64Image($shop->signature);
 
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
@@ -688,6 +681,9 @@ class InvoiceApiController extends Controller
                 ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: geometricPrecision;
                 }
                 body {
                     color: #111;
@@ -709,9 +705,8 @@ class InvoiceApiController extends Controller
                     padding: 20px;
                 }
                 .header-logo {
-                    width: 50px;
-                    height: 50px;
-                    object-fit: contain;
+                    max-width: 65px;
+                    max-height: 50px;
                     display: block;
                 }
                 .shop-name {
@@ -759,11 +754,11 @@ class InvoiceApiController extends Controller
                     vertical-align: top;
                 }
                 .section-title {
-                    font-size: 11px;
+                    font-size: 11.5px;
                     text-transform: uppercase;
-                    color: #9ca3af;
+                    color: #475569;
                     font-weight: bold;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
                     margin-bottom: 5px;
                 }
                 .party-name {
@@ -812,10 +807,11 @@ class InvoiceApiController extends Controller
                     height: 80px;
                 }
                 .bank-details {
-                    font-size: 11px;
-                    color: #6b7280;
+                    font-size: 11.5px;
+                    color: #334155;
                     white-space: pre-line;
                     margin-top: 8px;
+                    line-height: 1.4;
                 }
                 .total-table {
                     width: 100%;
@@ -841,22 +837,24 @@ class InvoiceApiController extends Controller
                 .invoice-footer-text {
                     margin-top: 25px;
                     text-align: center;
-                    font-size: 12px;
-                    color: #6b7280;
+                    font-size: 12.5px;
+                    color: #334155;
+                    font-weight: 500;
                 }
                 .signature-img {
                     margin-top: 15px;
                     text-align: right;
                 }
                 .signature-img img {
-                    height: 40px;
+                    max-height: 45px;
+                    max-width: 120px;
                 }
                 .footer {
                     margin-top: 20px;
                     text-align: center;
-                    font-size: 10px;
-                    color: #9ca3af;
-                    border-top: 1px solid #e5e7eb;
+                    font-size: 11px;
+                    color: #64748b;
+                    border-top: 1px solid #cbd5e1;
                     padding-top: 15px;
                 }
                 .brand-highlight {
@@ -871,8 +869,8 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td style="vertical-align: top;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
-                        if ($shop->logo && file_exists($logoUrl)) {
-                            $html .= '<td style="vertical-align: top; width: 50px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="data:image/png;base64,' . base64_encode(file_get_contents($logoUrl)) . '" /></td>';
+                        if ($logoBase64) {
+                            $html .= '<td style="vertical-align: top; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="' . $logoBase64 . '" /></td>';
                         }
                         $html .= '
                                 <td style="vertical-align: top; padding: 0;">
@@ -970,7 +968,7 @@ class InvoiceApiController extends Controller
                             <td>' . $rowNum++ . '</td>
                             <td>
                                 <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
-                                ($lineDiscount > 0 ? '<br><small style="color:#059669;">' . __('scheme_discount', [], 'Scheme Disc') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</small>' : '') .
+                                ($lineDiscount > 0 ? '<span style="font-size:11px;font-weight:600;color:#059669;display:block;margin-top:2px;">' . __('scheme_discount', [], 'Scheme Disc') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</span>' : '') .
                             '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>
                             ' . ($isReturned ? '<td style="text-align: center; color: #dc2626;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
@@ -992,7 +990,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:10px;color:#9ca3af;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:11px;color:#475569;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -1036,8 +1034,8 @@ class InvoiceApiController extends Controller
 
                 <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
 
-                if ($shop->signature && file_exists($signatureUrl)) {
-                    $html .= '<div class="signature-img"><img src="data:image/png;base64,' . base64_encode(file_get_contents($signatureUrl)) . '" /></div>';
+                if ($signatureBase64) {
+                    $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
                 }
 
                 $html .= '
@@ -1120,5 +1118,99 @@ class InvoiceApiController extends Controller
         $phpTimeFmt = ($timeFormat === '24h') ? 'H:i' : 'h:i A';
 
         return $carbon->format($phpDateFmt . ' ' . $phpTimeFmt);
+    }
+
+    private function resolveImagePath(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+
+        // Clean any leading slashes or redundant storage/ prefixes
+        $clean = ltrim($relativePath, '/\\');
+        if (str_starts_with($clean, 'storage/')) {
+            $clean = substr($clean, 8);
+        }
+        if (str_starts_with($clean, 'public/')) {
+            $clean = substr($clean, 7);
+        }
+
+        $candidates = [
+            storage_path('app/public/' . $clean),
+            public_path('storage/' . $clean),
+            public_path($clean),
+            storage_path('app/' . $clean),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && is_file($candidate)) {
+                $mime = @mime_content_type($candidate);
+                if ($mime && str_starts_with($mime, 'image/')) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function getBase64Image(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+
+        $localPath = $this->resolveImagePath($relativePath);
+
+        // 1. If found on local disk and validated as a real image
+        if ($localPath && file_exists($localPath) && is_file($localPath)) {
+            $mime = @mime_content_type($localPath) ?: 'image/png';
+            $contents = @file_get_contents($localPath);
+            if ($contents) {
+                return 'data:' . $mime . ';base64,' . base64_encode($contents);
+            }
+        }
+
+        // 2. If it's a full remote URL
+        if (str_starts_with($relativePath, 'http://') || str_starts_with($relativePath, 'https://')) {
+            try {
+                $contents = @file_get_contents($relativePath);
+                if ($contents) {
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mime = $finfo->buffer($contents);
+                    if ($mime && str_starts_with($mime, 'image/')) {
+                        return 'data:' . $mime . ';base64,' . base64_encode($contents);
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 3. Fallback: try fetching from live server if missing locally
+        try {
+            $clean = ltrim($relativePath, '/\\');
+            if (str_starts_with($clean, 'storage/')) {
+                $clean = substr($clean, 8);
+            }
+            $fallbackUrls = [
+                'https://themejagat.com/dukanhisab/storage/' . $clean,
+                'https://themejagat.com/dukanhisab/public/storage/' . $clean,
+            ];
+            foreach ($fallbackUrls as $fallbackUrl) {
+                $contents = @file_get_contents($fallbackUrl);
+                if ($contents) {
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mime = $finfo->buffer($contents);
+                    if ($mime && str_starts_with($mime, 'image/')) {
+                        // Cache locally so subsequent generations are instant
+                        $localTarget = storage_path('app/public/' . $clean);
+                        @mkdir(dirname($localTarget), 0777, true);
+                        @file_put_contents($localTarget, $contents);
+                        return 'data:' . $mime . ';base64,' . base64_encode($contents);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        return null;
     }
 }
