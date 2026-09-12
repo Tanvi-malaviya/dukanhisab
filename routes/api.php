@@ -121,3 +121,10 @@ Route::prefix('v1/shopowner')->group(function () {
     });
 });
 
+// Direct v1 Support Tickets endpoint for mobile app clients
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+    Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
+        ->except(['edit', 'create']);
+});
+
+

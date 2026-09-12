@@ -15,6 +15,8 @@ class ReportApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         
+        $todayEnd = Carbon::now()->endOfDay();
+
         $startDate = $request->filled('start_date') 
             ? Carbon::parse($request->start_date)->startOfDay() 
             : Carbon::now()->startOfMonth();
@@ -22,6 +24,16 @@ class ReportApiController extends Controller
         $endDate = $request->filled('end_date') 
             ? Carbon::parse($request->end_date)->endOfDay() 
             : Carbon::now()->endOfDay();
+
+        if ($endDate->gt($todayEnd)) {
+            $endDate = $todayEnd;
+        }
+        if ($startDate->gt($todayEnd)) {
+            $startDate = $todayEnd->copy()->startOfDay();
+        }
+        if ($startDate->gt($endDate)) {
+            $startDate = $endDate->copy()->startOfDay();
+        }
 
         // 1. Sales Report
         $salesQuery = Sale::where('shop_id', $shopId)

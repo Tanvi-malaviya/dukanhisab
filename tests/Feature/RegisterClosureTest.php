@@ -177,4 +177,47 @@ class RegisterClosureTest extends TestCase
                 ]
             ]);
     }
+
+    public function test_can_list_register_closures(): void
+    {
+        $user = User::factory()->create();
+        $shop = Shop::create([
+            'owner_id' => $user->id,
+            'name' => 'List Closure Shop ' . Str::random(5),
+            'currency' => 'INR',
+            'is_active' => true,
+        ]);
+        $user->update(['shop_id' => $shop->id]);
+
+        CashRegisterClosure::create([
+            'shop_id' => $shop->id,
+            'closed_by_user_id' => $user->id,
+            'closing_date' => Carbon::today(),
+            'opening_balance' => 100,
+            'cash_in' => 500,
+            'cash_out' => 50,
+            'expected_cash' => 550,
+            'actual_cash' => 550,
+            'difference' => 0,
+            'denominations' => [],
+            'note' => 'Test closure',
+        ]);
+
+        $response = $this->actingAs($user)
+            ->withHeaders(['X-Shop-ID' => $shop->id])
+            ->getJson('/api/v1/register-closures');
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+            ])
+            ->assertJsonStructure([
+                'status',
+                'data' => [
+                    'data' => [
+                        '*' => ['id', 'shop_id', 'closing_date', 'actual_cash', 'expected_cash', 'difference']
+                    ]
+                ]
+            ]);
+    }
 }
