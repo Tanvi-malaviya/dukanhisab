@@ -27,17 +27,23 @@ class SubscriptionApiController extends Controller
 
         $user->load(['activePlan']);
         $hasLifetimeActive = ($user->activePlan && $user->activePlan->slug === 'business');
-        $daysSinceRegistration = $user->created_at->diffInDays(now());
+        $daysSinceRegistration = $user->created_at ? $user->created_at->diffInDays(now()) : 0;
 
-        foreach ($plans as $plan) {
+        $plans = $plans->filter(function ($plan) use ($daysSinceRegistration, $hasLifetimeActive) {
             if ($plan->slug === 'business') {
+                $isExpired = ($daysSinceRegistration >= 7) && !$hasLifetimeActive;
+                // If the business plan offer is expired, hide it completely
+                if ($isExpired) {
+                    return false;
+                }
                 $plan->setAttribute('days_left', max(0, 7 - $daysSinceRegistration));
-                $plan->setAttribute('is_expired', ($daysSinceRegistration >= 7) && !$hasLifetimeActive);
+                $plan->setAttribute('is_expired', false);
             } else {
                 $plan->setAttribute('days_left', null);
                 $plan->setAttribute('is_expired', false);
             }
-        }
+            return true;
+        })->values();
 
         return response()->json(['plans' => $plans]);
     }

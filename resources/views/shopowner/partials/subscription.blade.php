@@ -56,9 +56,11 @@
         </div>
 
         <!-- Plans grid -->
-        <div x-show="subscriptionPlans.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div x-show="subscriptionPlans.length > 0" class="grid grid-cols-1 gap-6"
+            :class="subscriptionPlans.length === 1 ? 'max-w-md mx-auto' : (subscriptionPlans.length === 2 ? 'md:grid-cols-2 max-w-4xl mx-auto' : 'md:grid-cols-3')">
             <template x-for="plan in subscriptionPlans" :key="plan.id">
-                <div class="bg-white dark:bg-gray-800 rounded-2xl border shadow-sm p-6 flex flex-col justify-between transition-all"
+                <div x-show="!plan.is_expired || (user && user.active_plan && user.active_plan.id == plan.id)"
+                    class="bg-white dark:bg-gray-800 rounded-2xl border shadow-sm p-6 flex flex-col justify-between transition-all"
                     :class="{
                         'ring-2 ring-teal-600 border-transparent': user && user.active_plan && user.active_plan.id == plan.id,
                         'border-slate-200 dark:border-gray-700': !(user && user.active_plan && user.active_plan.id == plan.id),
