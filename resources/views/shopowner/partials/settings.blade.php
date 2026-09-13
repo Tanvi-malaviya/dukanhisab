@@ -7,7 +7,6 @@
         if (user) {
             userProfileForm = {
                 name: user.name || '',
-                display_name: user.name || '',
                 mobile: user.mobile || '',
                 email: user.email || '',
                 date_of_birth: user.date_of_birth || '',
@@ -85,7 +84,6 @@
         },
         userProfileForm: {
             name: user ? user.name : '',
-            display_name: user ? user.name : '',
             mobile: user ? user.mobile : '',
             email: user ? user.email : '',
             date_of_birth: user ? user.date_of_birth : '',
@@ -243,7 +241,6 @@
     if (user) {
         userProfileForm = {
             name: user.name || '',
-            display_name: user.name || '',
             mobile: user.mobile || '',
             email: user.email || '',
             date_of_birth: user.date_of_birth || '',
