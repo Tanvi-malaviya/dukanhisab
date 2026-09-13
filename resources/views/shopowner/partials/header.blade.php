@@ -115,9 +115,13 @@
         {{-- User Profile & Logout Group Box --}}
         <div class="flex items-center gap-2 pl-2 py-0.5 pr-0.5 border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/40 rounded-xl">
             {{-- User Profile Image --}}
-            <a href="/shop/settings" @click.prevent="navigateTo('settings')" title="My Profile" class="block w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600 shrink-0 hover:opacity-90 transition-opacity">
-                <img :src="getAvatarUrl(user ? user.avatar : null, user ? user.name : 'User')" @error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
-            </a>
+              <a href="/shop/settings" @click.prevent="navigateTo('settings')" title="My Profile" class="relative block w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600 shrink-0 hover:opacity-90 transition-opacity bg-teal-700 text-white font-bold text-xs flex items-center justify-center select-none">
+                  <img x-show="user && (user.avatar_url || user.avatar)"
+                      :src="getAvatarUrl(user ? (user.avatar_url || user.avatar) : null, user ? user.name : 'User')"
+                      @error="$el.style.display = 'none';"
+                      class="w-full h-full object-cover absolute inset-0">
+                  <span x-text="user ? (user.name || 'U').trim().charAt(0).toUpperCase() : 'U'"></span>
+              </a>
 
             <div class="h-4 w-px bg-slate-200 dark:bg-gray-700"></div>
 

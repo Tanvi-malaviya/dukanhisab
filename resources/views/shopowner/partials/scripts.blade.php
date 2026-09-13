@@ -4,7 +4,7 @@
             dark: localStorage.getItem('darkMode') === 'true',
             getAvatarUrl(avatar, name = 'User') {
                 if (!avatar || !String(avatar).trim()) {
-                    return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name || 'User') + '&background=0d9488&color=fff';
+                    return '';
                 }
                 const clean = String(avatar).trim();
                 if (clean.startsWith('http://') || clean.startsWith('https://')) {

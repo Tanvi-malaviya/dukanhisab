@@ -163,10 +163,32 @@ Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::c
 // Storage files streaming route (direct fallback if public/storage symlink is not served by webserver)
 Route::get('/storage/{path}', function ($path) {
     $cleanPath = ltrim($path, '/');
-    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
-        return \Illuminate\Support\Facades\Storage::disk('public')->response($cleanPath);
+    if (str_starts_with($cleanPath, 'storage/')) {
+        $cleanPath = substr($cleanPath, 8);
     }
-    abort(404);
+
+    $candidates = [
+        storage_path('app/public/' . $cleanPath),
+        public_path('storage/' . $cleanPath),
+        storage_path('app/' . $cleanPath),
+        public_path($cleanPath),
+    ];
+
+    foreach ($candidates as $fullPath) {
+        if (file_exists($fullPath) && is_file($fullPath)) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo ? finfo_file($finfo, $fullPath) : 'image/jpeg';
+            if ($finfo) finfo_close($finfo);
+            return response()->file($fullPath, [
+                'Content-Type' => $mime ?: 'image/jpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+    }
+
+    // Return a clean inline SVG badge instead of aborting 404 (which triggers HTML SPA catch-all)
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#0d9488"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="40" font-weight="bold" fill="#ffffff">U</text></svg>';
+    return response($svg, 200)->header('Content-Type', 'image/svg+xml');
 })->where('path', '.*');
 
 // Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)

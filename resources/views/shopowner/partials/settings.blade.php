@@ -531,14 +531,18 @@
                             x-text="t('profile_photo')">Profile Photo</span>
 
                         <div
-                            class="relative w-28 h-28 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-white dark:bg-gray-700 shadow-md group transition-all hover:border-primary">
+                            class="relative w-28 h-28 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-teal-700 text-white font-bold text-3xl shadow-md group transition-all hover:border-primary select-none">
                             <template x-if="profileAvatarPreview">
                                 <img :src="profileAvatarPreview" class="w-full h-full object-cover">
                             </template>
                             <template x-if="!profileAvatarPreview">
-                                <img :src="getAvatarUrl(user ? user.avatar : null, user ? user.name : 'User')"
-                                    @error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'"
-                                    class="w-full h-full object-cover">
+                                <div class="w-full h-full relative flex items-center justify-center">
+                                    <img x-show="user && (user.avatar_url || user.avatar)"
+                                        :src="getAvatarUrl(user ? (user.avatar_url || user.avatar) : null, user ? user.name : 'User')"
+                                        @error="$el.style.display = 'none';"
+                                        class="w-full h-full object-cover absolute inset-0">
+                                    <span x-text="user ? (user.name || 'U').trim().charAt(0).toUpperCase() : 'U'"></span>
+                                </div>
                             </template>
 
                             <div
