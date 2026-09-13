@@ -17,8 +17,12 @@ class ExpenseApiController extends Controller
             ->where('type', 'cash_out')
             ->where(function ($q) {
                 $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
+                  ->orWhereIn('reference_type', ['expense', 'purchase']);
             });
+
+        if ($request->filled('updated_since')) {
+            $query->where('updated_at', '>=', Carbon::parse($request->updated_since));
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -68,7 +72,7 @@ class ExpenseApiController extends Controller
             ->where('type', 'cash_out')
             ->where(function ($q) {
                 $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
+                  ->orWhereIn('reference_type', ['expense', 'purchase']);
             })
             ->findOrFail($id);
         return response()->json($expense);
@@ -81,7 +85,7 @@ class ExpenseApiController extends Controller
             ->where('type', 'cash_out')
             ->where(function ($q) {
                 $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
+                  ->orWhereIn('reference_type', ['expense', 'purchase']);
             })
             ->findOrFail($id);
 
@@ -106,9 +110,15 @@ class ExpenseApiController extends Controller
             ->where('type', 'cash_out')
             ->where(function ($q) {
                 $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
+                  ->orWhereIn('reference_type', ['expense', 'purchase']);
             })
             ->findOrFail($id);
+
+        if ($expense->reference_type !== null && $expense->reference_type !== 'expense') {
+            return response()->json([
+                'message' => 'System generated transactions cannot be deleted from expenses.'
+            ], 400);
+        }
 
         $expense->delete();
         return response()->json(null, 204);
