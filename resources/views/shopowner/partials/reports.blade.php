@@ -1,16 +1,33 @@
 {{-- REPORTS PANEL --}}
-<div x-show="page === 'reports'" class="space-y-2" x-data="{ reportDates: { start: '', end: '' } }">
+<div x-show="page === 'reports'" class="space-y-2" x-data="{ 
+    reportDates: { start: '', end: '' },
+    get today() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+}">
 
     {{-- Filter section --}}
     <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col md:flex-row md:justify-between md:items-end gap-3">
         <div class="flex flex-wrap gap-3 items-end">
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('from_date')">From Date</label>
-                <input type="date" x-model="reportDates.start" onclick="this.showPicker()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
+                <input type="date" 
+                    x-model="reportDates.start" 
+                    :max="reportDates.end || today" 
+                    onclick="this.showPicker()" 
+                    @change="if (reportDates.start && reportDates.start > today) reportDates.start = today; if (reportDates.end && reportDates.start > reportDates.end) reportDates.end = reportDates.start;"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('to_date')">To Date</label>
-                <input type="date" x-model="reportDates.end" onclick="this.showPicker()" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
+                <input type="date" 
+                    x-model="reportDates.end" 
+                    :min="reportDates.start || ''" 
+                    :max="today" 
+                    onclick="this.showPicker()" 
+                    @change="if (reportDates.end && reportDates.end > today) reportDates.end = today; if (reportDates.start && reportDates.end < reportDates.start) reportDates.start = reportDates.end;"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white cursor-pointer">
             </div>
             <div class="flex gap-2">
                 <button @click="loadReports(reportDates.start, reportDates.end)" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl transition-all" x-text="t('generate')">Generate</button>

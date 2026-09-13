@@ -205,7 +205,7 @@
                                 <td class="px-6 py-4 text-sm text-slate-500" x-text="hist.old_stock"></td>
                                 <td class="px-6 py-4 text-sm text-slate-700 dark:text-slate-300" x-text="hist.new_stock"></td>
                                 <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400" x-text="hist.reason"></td>
-                                <td class="px-6 py-4 text-sm text-slate-400" x-text="new Date(hist.created_at).toLocaleString()"></td>
+                                <td class="px-6 py-4 text-sm text-slate-400" x-text="formatDateTime(hist.created_at)"></td>
                             </tr>
                         </template>
                         <template x-if="stockHistory.length === 0">

@@ -85,6 +85,8 @@ class InvoiceApiController extends Controller
     {
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('A4', 'portrait');
+        $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', true);
+        $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
 
         if ($stream) {
             return response($pdf->output())
@@ -99,6 +101,8 @@ class InvoiceApiController extends Controller
     {
         $shop = Shop::findOrFail($sale->shop_id);
         $invoiceConfig = InvoiceConfig::firstOrCreate(['shop_id' => $sale->shop_id]);
+        $dateFormat = $invoiceConfig->date_format ?: ($shop->owner->date_format ?? 'DD/MM/YYYY');
+        $timeFormat = $shop->owner->time_format ?? '12h';
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
@@ -163,15 +167,8 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoUrl = '';
-        if ($shop->logo) {
-            $logoUrl = public_path('storage/' . $shop->logo);
-        }
-
-        $signatureUrl = '';
-        if ($shop->signature) {
-            $signatureUrl = public_path('storage/' . $shop->signature);
-        }
+        $logoBase64 = $this->getBase64Image($shop->logo);
+        $signatureBase64 = $this->getBase64Image($shop->signature);
 
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
@@ -190,6 +187,9 @@ class InvoiceApiController extends Controller
                 ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: geometricPrecision;
                 }
                 body {
                     color: #111;
@@ -220,9 +220,8 @@ class InvoiceApiController extends Controller
                     padding: 20px;
                 }
                 .header-logo {
-                    width: 50px;
-                    height: 50px;
-                    object-fit: contain;
+                    max-width: 65px;
+                    max-height: 50px;
                     display: block;
                 }
                 .shop-name {
@@ -270,11 +269,11 @@ class InvoiceApiController extends Controller
                     vertical-align: top;
                 }
                 .section-title {
-                    font-size: 11px;
+                    font-size: 11.5px;
                     text-transform: uppercase;
-                    color: #9ca3af;
+                    color: #475569;
                     font-weight: bold;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
                     margin-bottom: 5px;
                 }
                 .party-name {
@@ -323,10 +322,11 @@ class InvoiceApiController extends Controller
                     height: 80px;
                 }
                 .bank-details {
-                    font-size: 11px;
-                    color: #6b7280;
+                    font-size: 11.5px;
+                    color: #334155;
                     white-space: pre-line;
                     margin-top: 8px;
+                    line-height: 1.4;
                 }
                 .total-table {
                     width: 100%;
@@ -365,22 +365,24 @@ class InvoiceApiController extends Controller
                 .invoice-footer-text {
                     margin-top: 25px;
                     text-align: center;
-                    font-size: 12px;
-                    color: #6b7280;
+                    font-size: 12.5px;
+                    color: #334155;
+                    font-weight: 500;
                 }
                 .signature-img {
                     margin-top: 15px;
                     text-align: right;
                 }
                 .signature-img img {
-                    height: 40px;
+                    max-height: 45px;
+                    max-width: 120px;
                 }
                 .footer {
                     margin-top: 20px;
                     text-align: center;
-                    font-size: 10px;
-                    color: #9ca3af;
-                    border-top: 1px solid #e5e7eb;
+                    font-size: 11px;
+                    color: #64748b;
+                    border-top: 1px solid #cbd5e1;
                     padding-top: 15px;
                 }
                 .brand-highlight {
@@ -395,8 +397,8 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td style="vertical-align: top;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
-                        if ($shop->logo && file_exists($logoUrl)) {
-                            $html .= '<td style="vertical-align: top; width: 50px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="data:image/png;base64,' . base64_encode(file_get_contents($logoUrl)) . '" /></td>';
+                        if ($logoBase64) {
+                            $html .= '<td style="vertical-align: top; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="' . $logoBase64 . '" /></td>';
                         }
                         $html .= '
                                 <td style="vertical-align: top; padding: 0;">
@@ -419,8 +421,8 @@ class InvoiceApiController extends Controller
                             <div style="clear: both;"></div>
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
-                                <strong>' . __('date') . ':</strong> ' . $sale->sale_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($sale->paid_date ?? $sale->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->sale_date, $dateFormat, $timeFormat) . '
+                                ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->paid_date ?? $sale->updated_at, $dateFormat, $timeFormat) : '') . '
                             </div>
                         </td>
                     </tr>
@@ -464,6 +466,21 @@ class InvoiceApiController extends Controller
                             <th style="width: 80px; text-align: right;">' . __('price') . '</th>
                             <th style="width: 80px; text-align: center;">' . __('qty') . '</th>';
 
+        $showDiscountCol = ($invoiceConfig->show_discount ?? true);
+        if (!$showDiscountCol) {
+            foreach ($sale->items as $item) {
+                if ((float)($item->discount ?? 0) > 0) {
+                    $showDiscountCol = true;
+                    break;
+                }
+            }
+        }
+
+        if ($showDiscountCol) {
+            $html .= '
+                            <th style="width: 80px; text-align: right;">' . __('discount') . '</th>';
+        }
+
         $isReturned = ($sale->status === 'Returned' || $sale->status === 'Partially Returned');
         $hasReturnedQty = false;
         foreach ($sale->items as $item) {
@@ -497,12 +514,20 @@ class InvoiceApiController extends Controller
                             $netQty = 0;
                         }
 
+                        $itemDiscount = (float)($item->discount ?? 0);
+                        $lineTotal = max(0, ($item->selling_price * $netQty) - $itemDiscount);
+
                         $html .= '
                         <tr>
                             <td style="text-align: center;">' . $i++ . '</td>
                             <td>' . $this->renderMultilingualText($item->product->name ?? __('unknown_product')) . '</td>
                             <td style="text-align: right;">&#8377; ' . number_format($item->selling_price, 2) . '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>';
+
+                        if ($showDiscountCol) {
+                            $html .= '
+                            <td style="text-align: right;">' . ($itemDiscount > 0 ? '&#8377; ' . number_format($itemDiscount, 2) : '-') . '</td>';
+                        }
 
                         if ($isReturned) {
                             $html .= '
@@ -511,7 +536,7 @@ class InvoiceApiController extends Controller
                         }
 
                         $html .= '
-                            <td style="text-align: right;">&#8377; ' . number_format($item->selling_price * $netQty, 2) . '</td>
+                            <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
                         </tr>';
                     }
 
@@ -523,7 +548,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:10px;color:#9ca3af;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:11px;color:#475569;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -543,7 +568,20 @@ class InvoiceApiController extends Controller
                                 <tr>
                                     <td class="grand-total-label">' . __('grand_total') . ':</td>
                                     <td class="grand-total-value">&#8377; ' . number_format($sale->grand_total, 2) . '</td>
-                                </tr>
+                                </tr>';
+                                if ((float)($sale->store_credit ?? 0) > 0) {
+                                    $netPayment = max(0, (float)$sale->grand_total - (float)$sale->store_credit);
+                                    $html .= '
+                                    <tr>
+                                        <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit', [], 'Store Credit') . ':</td>
+                                        <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377; ' . number_format($sale->store_credit, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due', [], 'Balance Due') : __('net_paid', [], 'Net Paid (' . $sale->payment_type . ')')) . ':</td>
+                                        <td class="total-value" style="font-weight: bold;">&#8377; ' . number_format($netPayment, 2) . '</td>
+                                    </tr>';
+                                }
+                                $html .= '
                             </table>
                         </td>
                     </tr>
@@ -551,8 +589,8 @@ class InvoiceApiController extends Controller
 
                 <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
 
-                if ($shop->signature && file_exists($signatureUrl)) {
-                    $html .= '<div class="signature-img"><img src="data:image/png;base64,' . base64_encode(file_get_contents($signatureUrl)) . '" /></div>';
+                if ($signatureBase64) {
+                    $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
                 }
 
                 $html .= '
@@ -571,27 +609,10 @@ class InvoiceApiController extends Controller
     {
         $shop = Shop::findOrFail($purchase->shop_id);
         $invoiceConfig = InvoiceConfig::firstOrCreate(['shop_id' => $purchase->shop_id]);
+        $dateFormat = $invoiceConfig->date_format ?: ($shop->owner->date_format ?? 'DD/MM/YYYY');
+        $timeFormat = $shop->owner->time_format ?? '12h';
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
-
-        // Force locale from request parameters/headers to ensure correct translations in PDF generation
-        $request = request();
-        $locale = $request->input('locale')
-            ?? $request->header('X-Locale')
-            ?? $request->header('Accept-Language')
-            ?? app()->getLocale();
-
-        // Clean and validate locale
-        $locale = strtolower(trim($locale));
-        if (str_contains($locale, ',')) {
-            $locale = explode(',', $locale)[0];
-        }
-        if (str_contains($locale, '-')) {
-            $locale = explode('-', $locale)[0];
-        }
-        if (str_contains($locale, '_')) {
-            $locale = explode('_', $locale)[0];
-        }
 
         // Force locale from request parameters/headers to ensure correct translations in PDF generation
         $request = request();
@@ -654,19 +675,21 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoUrl = '';
-        if ($shop->logo) {
-            $logoUrl = public_path('storage/' . $shop->logo);
-        }
-
-        $signatureUrl = '';
-        if ($shop->signature) {
-            $signatureUrl = public_path('storage/' . $shop->signature);
-        }
+        $logoBase64 = $this->getBase64Image($shop->logo);
+        $signatureBase64 = $this->getBase64Image($shop->signature);
 
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
             $qrBase64 = $this->fetchQrCodeBase64($shop->upi_id, $shop->name, $purchase->total_amount);
+        }
+
+        $isReturned = ($purchase->status === 'Returned' || $purchase->status === 'Partially Returned');
+        $hasReturnedQty = false;
+        foreach ($purchase->items as $item) {
+            if (($item->returned_quantity ?? 0) > 0) {
+                $hasReturnedQty = true;
+                break;
+            }
         }
 
         // Build premium styled HTML for PDF invoice
@@ -681,6 +704,9 @@ class InvoiceApiController extends Controller
                 ' . $fontFaceStyles . '
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
+                    -webkit-font-smoothing: antialiased;
+                    -moz-osx-font-smoothing: grayscale;
+                    text-rendering: geometricPrecision;
                 }
                 body {
                     color: #111;
@@ -702,9 +728,8 @@ class InvoiceApiController extends Controller
                     padding: 20px;
                 }
                 .header-logo {
-                    width: 50px;
-                    height: 50px;
-                    object-fit: contain;
+                    max-width: 65px;
+                    max-height: 50px;
                     display: block;
                 }
                 .shop-name {
@@ -752,11 +777,11 @@ class InvoiceApiController extends Controller
                     vertical-align: top;
                 }
                 .section-title {
-                    font-size: 11px;
+                    font-size: 11.5px;
                     text-transform: uppercase;
-                    color: #9ca3af;
+                    color: #475569;
                     font-weight: bold;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
                     margin-bottom: 5px;
                 }
                 .party-name {
@@ -805,10 +830,11 @@ class InvoiceApiController extends Controller
                     height: 80px;
                 }
                 .bank-details {
-                    font-size: 11px;
-                    color: #6b7280;
+                    font-size: 11.5px;
+                    color: #334155;
                     white-space: pre-line;
                     margin-top: 8px;
+                    line-height: 1.4;
                 }
                 .total-table {
                     width: 100%;
@@ -834,22 +860,24 @@ class InvoiceApiController extends Controller
                 .invoice-footer-text {
                     margin-top: 25px;
                     text-align: center;
-                    font-size: 12px;
-                    color: #6b7280;
+                    font-size: 12.5px;
+                    color: #334155;
+                    font-weight: 500;
                 }
                 .signature-img {
                     margin-top: 15px;
                     text-align: right;
                 }
                 .signature-img img {
-                    height: 40px;
+                    max-height: 45px;
+                    max-width: 120px;
                 }
                 .footer {
                     margin-top: 20px;
                     text-align: center;
-                    font-size: 10px;
-                    color: #9ca3af;
-                    border-top: 1px solid #e5e7eb;
+                    font-size: 11px;
+                    color: #64748b;
+                    border-top: 1px solid #cbd5e1;
                     padding-top: 15px;
                 }
                 .brand-highlight {
@@ -864,8 +892,8 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td style="vertical-align: top;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
-                        if ($shop->logo && file_exists($logoUrl)) {
-                            $html .= '<td style="vertical-align: top; width: 50px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="data:image/png;base64,' . base64_encode(file_get_contents($logoUrl)) . '" /></td>';
+                        if ($logoBase64) {
+                            $html .= '<td style="vertical-align: top; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="' . $logoBase64 . '" /></td>';
                         }
                         $html .= '
                                 <td style="vertical-align: top; padding: 0;">
@@ -888,8 +916,8 @@ class InvoiceApiController extends Controller
                             <div style="clear: both;"></div>
                             <div class="invoice-meta" style="margin-top: 5px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
-                                <strong>' . __('date') . ':</strong> ' . $purchase->purchase_date->timezone('Asia/Kolkata')->format('d M, Y h:i A') . '
-                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . ($purchase->paid_date ?? $purchase->updated_at)->timezone('Asia/Kolkata')->format('d M, Y h:i A') : '') . '
+                                <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->purchase_date, $dateFormat, $timeFormat) . '
+                                ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->paid_date ?? $purchase->updated_at, $dateFormat, $timeFormat) : '') . '
                             </div>
                         </td>
                     </tr>
@@ -910,15 +938,23 @@ class InvoiceApiController extends Controller
                             <div class="party-info">
                                 <strong>' . __('payment_status') . ':</strong> ' . (
                                     $purchase->status === 'Returned'
-                                        ? '<span style="color:#ef4444;">' . __('returned') . '</span>'
+                                        ? '<span class="badge badge-returned">' . strtoupper(__('returned')) . '</span>'
                                         : ($purchase->status === 'Partially Returned'
-                                            ? '<span style="color:#f59e0b;">' . __('partially_returned') . '</span>'
+                                            ? '<span class="badge badge-warning">' . strtoupper(__('partially_returned')) . '</span>'
                                             : ($purchase->status === 'Unpaid'
-                                                ? '<span style="color:#f59e0b;font-weight:bold;">' . __('unpaid') . '</span>'
-                                                : ($purchase->payment_type === 'Credit'
-                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>'
-                                                    : '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>')))
-                                ) . '<br>
+                                                ? '<span class="badge badge-unpaid">' . strtoupper(__('unpaid')) . '</span>'
+                                                : ($purchase->status === 'Partially Paid'
+                                                    ? '<span class="badge badge-warning">' . strtoupper(__('partially_paid', [], 'Partially Paid')) . '</span>'
+                                                    : ($purchase->payment_type === 'Credit'
+                                                        ? '<span class="badge badge-paid">' . strtoupper(__('paid')) . '</span>'
+                                                        : '<span class="badge badge-paid">' . strtoupper(__('completed')) . '</span>'
+                                                    )
+                                                )
+                                            )
+                                        )
+                                ) . '
+                            </div>
+                            <div class="meta-row">
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower($purchase->payment_type)) . '
                             </div>
                         </td>
@@ -928,61 +964,46 @@ class InvoiceApiController extends Controller
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px; text-align: center;">#</th>
-                            <th>' . __('product_name') . '</th>
-                            <th style="width: 80px; text-align: right;">' . __('unit_price') . '</th>
-                            <th style="width: 80px; text-align: center;">' . __('qty') . '</th>';
-
-        $isReturned = ($purchase->status === 'Returned' || $purchase->status === 'Partially Returned');
-        $hasReturnedQty = false;
-        foreach ($purchase->items as $item) {
-            if (($item->returned_quantity ?? 0) > 0) {
-                $hasReturnedQty = true;
-                break;
-            }
-        }
-
-        if ($isReturned) {
-            $html .= '
-                            <th style="width: 80px; text-align: center;">' . __('returned') . '</th>
-                            <th style="width: 80px; text-align: center;">' . __('net_qty') . '</th>';
-        }
-
-        $html .= '
-                            <th style="width: 100px; text-align: right;">' . __('total') . '</th>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: ' . ($isReturned ? '40%' : '55%') . ';">' . __('item') . '</th>
+                            <th style="width: ' . ($isReturned ? '12%' : '15%') . '; text-align: center;">' . ($isReturned ? __('purchased_qty') : __('quantity')) . '</th>
+                            ' . ($isReturned ? '<th style="width: 12%; text-align: center;">' . __('returned_qty') . '</th><th style="width: 12%; text-align: center;">' . __('net_qty') . '</th>' : '') . '
+                            <th style="width: 15%; text-align: right;">' . __('price') . '</th>
+                            <th style="width: 15%; text-align: right;">' . __('total') . '</th>
                         </tr>
                     </thead>
                     <tbody>';
 
-                    $i = 1;
+                    $rowNum = 1;
                     foreach ($purchase->items as $item) {
-                        $returnedQty = 0;
-                        $netQty = $item->quantity;
-                        if (($item->returned_quantity ?? 0) > 0) {
-                            $returnedQty = $item->returned_quantity;
-                            $netQty = $item->quantity - $returnedQty;
+                        $retQty = (int)($item->returned_quantity ?? 0);
+                        if (!$hasReturnedQty && $purchase->status === 'Partially Returned') {
+                            $retQty = 0;
                         } elseif (!$hasReturnedQty && $purchase->status === 'Returned') {
-                            $returnedQty = $item->quantity;
-                            $netQty = 0;
+                            $retQty = (int)$item->quantity;
                         }
+                        $netQty = max(0, (int)$item->quantity - $retQty);
+                        $lineDiscount = (float)($item->discount ?? 0);
+                        $lineTotal = max(0, ($item->purchase_price * $netQty) - $lineDiscount);
 
                         $html .= '
                         <tr>
-                            <td style="text-align: center;">' . $i++ . '</td>
-                            <td>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</td>
+                            <td>' . $rowNum++ . '</td>
+                            <td>
+                                <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
+                                ($lineDiscount > 0 ? '<span style="font-size:11px;font-weight:600;color:#059669;display:block;margin-top:2px;">' . __('scheme_discount', [], 'Scheme Disc') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</span>' : '') .
+                            '</td>
+                            <td style="text-align: center;">' . $item->quantity . '</td>
+                            ' . ($isReturned ? '<td style="text-align: center; color: #dc2626;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
                             <td style="text-align: right;">&#8377; ' . number_format($item->purchase_price, 2) . '</td>
-                            <td style="text-align: center;">' . $item->quantity . '</td>';
-
-                        if ($isReturned) {
-                            $html .= '
-                            <td style="text-align: center; color: #ef4444; font-weight: bold;">' . $returnedQty . '</td>
-                            <td style="text-align: center; font-weight: bold;">' . $netQty . '</td>';
-                        }
-
-                        $html .= '
-                            <td style="text-align: right;">&#8377; ' . number_format($item->purchase_price * $netQty, 2) . '</td>
+                            <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
                         </tr>';
                     }
+
+                    $totalDiscount = (float)($purchase->discount ?? 0);
+                    $paidAmount = (float)($purchase->paid_amount ?? 0);
+                    $dueAmount = max(0, (float)$purchase->total_amount - $paidAmount);
+                    $grossSubtotal = (float)$purchase->total_amount + $totalDiscount;
 
                     $html .= '
                     </tbody>
@@ -992,7 +1013,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:10px;color:#9ca3af;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:11px;color:#475569;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -1000,11 +1021,35 @@ class InvoiceApiController extends Controller
                         $html .= '
                         </td>
                         <td>
-                            <table class="total-table">
+                            <table class="total-table">';
+                                if ($totalDiscount > 0) {
+                                    $html .= '
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #6b7280;">' . __('subtotal') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; color: #374151;">&#8377; ' . number_format($grossSubtotal, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #059669;">' . __('discount') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; color: #059669;">-&#8377; ' . number_format($totalDiscount, 2) . '</td>
+                                    </tr>';
+                                }
+                                $html .= '
                                 <tr>
                                     <td class="grand-total-label">' . __('total_amount') . ':</td>
                                     <td class="grand-total-value">&#8377; ' . number_format($purchase->total_amount, 2) . '</td>
-                                </tr>
+                                </tr>';
+                                if ($paidAmount > 0 || $dueAmount > 0) {
+                                    $html .= '
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #16a34a;">' . __('paid_amount', [], 'Paid Amount') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #16a34a;">&#8377; ' . number_format($paidAmount, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #dc2626;">' . __('balance_due', [], 'Balance Due') . ':</td>
+                                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #dc2626;">&#8377; ' . number_format($dueAmount, 2) . '</td>
+                                    </tr>';
+                                }
+                                $html .= '
                             </table>
                         </td>
                     </tr>
@@ -1012,8 +1057,8 @@ class InvoiceApiController extends Controller
 
                 <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
 
-                if ($shop->signature && file_exists($signatureUrl)) {
-                    $html .= '<div class="signature-img"><img src="data:image/png;base64,' . base64_encode(file_get_contents($signatureUrl)) . '" /></div>';
+                if ($signatureBase64) {
+                    $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
                 }
 
                 $html .= '
@@ -1077,5 +1122,118 @@ class InvoiceApiController extends Controller
         }
 
         return '<span class="font-default">' . $escaped . '</span>';
+    }
+
+    private function formatInvoiceDateTime($dateTime, ?string $dateFormat = 'DD/MM/YYYY', ?string $timeFormat = '12h'): string
+    {
+        if (!$dateTime) {
+            return '-';
+        }
+        $carbon = is_string($dateTime) ? \Carbon\Carbon::parse($dateTime) : $dateTime->copy();
+        $carbon = $carbon->timezone('Asia/Kolkata');
+
+        $phpDateFmt = match ($dateFormat) {
+            'MM/DD/YYYY' => 'm/d/Y',
+            'YYYY-MM-DD' => 'Y-m-d',
+            default => 'd/m/Y',
+        };
+
+        $phpTimeFmt = ($timeFormat === '24h') ? 'H:i' : 'h:i A';
+
+        return $carbon->format($phpDateFmt . ' ' . $phpTimeFmt);
+    }
+
+    private function resolveImagePath(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+
+        // Clean any leading slashes or redundant storage/ prefixes
+        $clean = ltrim($relativePath, '/\\');
+        if (str_starts_with($clean, 'storage/')) {
+            $clean = substr($clean, 8);
+        }
+        if (str_starts_with($clean, 'public/')) {
+            $clean = substr($clean, 7);
+        }
+
+        $candidates = [
+            storage_path('app/public/' . $clean),
+            public_path('storage/' . $clean),
+            public_path($clean),
+            storage_path('app/' . $clean),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (file_exists($candidate) && is_file($candidate)) {
+                $mime = @mime_content_type($candidate);
+                if ($mime && str_starts_with($mime, 'image/')) {
+                    return $candidate;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function getBase64Image(?string $relativePath): ?string
+    {
+        if (!$relativePath) {
+            return null;
+        }
+
+        $localPath = $this->resolveImagePath($relativePath);
+
+        // 1. If found on local disk and validated as a real image
+        if ($localPath && file_exists($localPath) && is_file($localPath)) {
+            $mime = @mime_content_type($localPath) ?: 'image/png';
+            $contents = @file_get_contents($localPath);
+            if ($contents) {
+                return 'data:' . $mime . ';base64,' . base64_encode($contents);
+            }
+        }
+
+        // 2. If it's a full remote URL
+        if (str_starts_with($relativePath, 'http://') || str_starts_with($relativePath, 'https://')) {
+            try {
+                $contents = @file_get_contents($relativePath);
+                if ($contents) {
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mime = $finfo->buffer($contents);
+                    if ($mime && str_starts_with($mime, 'image/')) {
+                        return 'data:' . $mime . ';base64,' . base64_encode($contents);
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        // 3. Fallback: try fetching from live server if missing locally
+        try {
+            $clean = ltrim($relativePath, '/\\');
+            if (str_starts_with($clean, 'storage/')) {
+                $clean = substr($clean, 8);
+            }
+            $fallbackUrls = [
+                'https://themejagat.com/dukanhisab/storage/' . $clean,
+                'https://themejagat.com/dukanhisab/public/storage/' . $clean,
+            ];
+            foreach ($fallbackUrls as $fallbackUrl) {
+                $contents = @file_get_contents($fallbackUrl);
+                if ($contents) {
+                    $finfo = new \finfo(FILEINFO_MIME_TYPE);
+                    $mime = $finfo->buffer($contents);
+                    if ($mime && str_starts_with($mime, 'image/')) {
+                        // Cache locally so subsequent generations are instant
+                        $localTarget = storage_path('app/public/' . $clean);
+                        @mkdir(dirname($localTarget), 0777, true);
+                        @file_put_contents($localTarget, $contents);
+                        return 'data:' . $mime . ';base64,' . base64_encode($contents);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        return null;
     }
 }

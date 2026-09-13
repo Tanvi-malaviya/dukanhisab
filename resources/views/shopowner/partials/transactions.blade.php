@@ -78,7 +78,7 @@
                         <td class="px-6 py-4 text-sm font-extrabold" :class="t_item.flow === 'IN' ? 'text-emerald-600' : 'text-rose-600'">
                             ₹<span x-text="parseFloat(t_item.amount).toFixed(2)"></span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-400" x-text="new Date(t_item.date).toLocaleString()"></td>
+                        <td class="px-6 py-4 text-sm text-slate-400" x-text="formatDateTime(t_item.date)"></td>
                     </tr>
                 </template>
                 <template x-if="!cashbookLoading && getConsolidatedTransactions(filterType, searchQuery, startDate, endDate).length === 0">

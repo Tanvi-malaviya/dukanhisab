@@ -228,7 +228,7 @@ class BackupApiController extends Controller
                         ? $customerMap[$saleData['customer_id']]
                         : null;
 
-                    $sale = Sale::withTrashed()->where('sale_number', $saleData['sale_number'])->first();
+                    $sale = Sale::withTrashed()->where('shop_id', $shopId)->where('sale_number', $saleData['sale_number'])->first();
                     if ($sale) {
                         if ($sale->trashed()) {
                             $sale->restore();
@@ -283,7 +283,7 @@ class BackupApiController extends Controller
                         ? $supplierMap[$purData['supplier_id']]
                         : null;
 
-                    $purchase = Purchase::withTrashed()->where('purchase_number', $purData['purchase_number'])->first();
+                    $purchase = Purchase::withTrashed()->where('shop_id', $shopId)->where('purchase_number', $purData['purchase_number'])->first();
                     if ($purchase) {
                         if ($purchase->trashed()) {
                             $purchase->restore();

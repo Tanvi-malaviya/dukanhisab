@@ -2,6 +2,20 @@
     function appState() {
         return {
             dark: localStorage.getItem('darkMode') === 'true',
+            getAvatarUrl(avatar, name = 'User') {
+                if (!avatar || !String(avatar).trim()) {
+                    return '';
+                }
+                const clean = String(avatar).trim();
+                if (clean.startsWith('http://') || clean.startsWith('https://')) {
+                    return clean;
+                }
+                const path = clean.startsWith('/') ? clean.substring(1) : clean;
+                if (path.startsWith('storage/')) {
+                    return '/' + path;
+                }
+                return '/storage/' + path;
+            },
             getContrastColor(hexColor) {
                 if (!hexColor) return 'text-slate-900';
                 const str = hexColor.trim().toLowerCase();
@@ -106,6 +120,7 @@
                 'subscription': 'subscription',
                 'sales-returned': 'sales-returned',
                 'purchase-returned': 'purchase-returned',
+                'support': 'support',
             },
 
             // Theme State
@@ -136,6 +151,59 @@
                 localStorage.setItem('locale', lang);
             },
 
+            formatDate(dateVal) {
+                if (!dateVal) return '-';
+                let yyyy, mm, dd;
+                if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
+                    const parts = dateVal.trim().split('-');
+                    yyyy = parts[0];
+                    mm = parts[1];
+                    dd = parts[2];
+                } else {
+                    const d = (dateVal instanceof Date) ? dateVal : new Date(typeof dateVal === 'string' && !dateVal.includes('T') ? dateVal.replace(' ', 'T') : dateVal);
+                    if (isNaN(d.getTime())) return String(dateVal);
+                    yyyy = String(d.getFullYear());
+                    mm = String(d.getMonth() + 1).padStart(2, '0');
+                    dd = String(d.getDate()).padStart(2, '0');
+                }
+
+                const fmt = (this.user && this.user.date_format) ? this.user.date_format : 'DD/MM/YYYY';
+                if (fmt === 'MM/DD/YYYY') {
+                    return `${mm}/${dd}/${yyyy}`;
+                } else if (fmt === 'YYYY-MM-DD') {
+                    return `${yyyy}-${mm}-${dd}`;
+                } else {
+                    return `${dd}/${mm}/${yyyy}`;
+                }
+            },
+
+            formatTime(dateVal) {
+                if (!dateVal) return '';
+                if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) return '';
+                const d = (dateVal instanceof Date) ? dateVal : new Date(typeof dateVal === 'string' && !dateVal.includes('T') ? dateVal.replace(' ', 'T') : dateVal);
+                if (isNaN(d.getTime())) return '';
+
+                const is24h = (this.user && this.user.time_format === '24h');
+                let hours = d.getHours();
+                const minutes = String(d.getMinutes()).padStart(2, '0');
+
+                if (is24h) {
+                    return `${String(hours).padStart(2, '0')}:${minutes}`;
+                } else {
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12;
+                    hours = hours ? hours : 12;
+                    return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+                }
+            },
+
+            formatDateTime(dateVal) {
+                if (!dateVal) return '-';
+                const datePart = this.formatDate(dateVal);
+                const timePart = this.formatTime(dateVal);
+                return timePart ? `${datePart} ${timePart}` : datePart;
+            },
+
             // Auth States
             token: localStorage.getItem('shopowner_token') || localStorage.getItem('token'),
             user: JSON.parse(localStorage.getItem('shopowner_user') || 'null'),
@@ -149,6 +217,11 @@
             forgotForm: { email: '' },
             resetForm: { token: '', password: '', password_confirmation: '' },
             emailToVerify: '',
+            passForm: { current_password: '', new_password: '', new_password_confirmation: '' },
+            passChanging: false,
+            showCurrentPass: false,
+            showNewPass: false,
+            showConfirmPass: false,
 
             setupForm: { name: '', owner_name: '', mobile: '', gst_number: '', logo: null },
             logoPreview: null,
@@ -168,6 +241,7 @@
             customers: [],
             customersTotal: 0,
             customersLoading: false,
+            customerSearchQuery: '',
             suppliers: [],
             suppliersLoading: false,
             sales: [],
@@ -180,14 +254,54 @@
             salesFilter: { date: '', customerId: '', search: '', status: '' },
             salesCustomerSearchQuery: '',
             salesFilteredCustomers: [],
+            cancelSaleModalOpen: false,
+            saleToCancel: null,
+            cancelSaleReason: '',
+            cancelPurchaseModalOpen: false,
+            purchaseToCancel: null,
+            cancelPurchaseReason: '',
             returnedFilter: { date: '', customerId: '', search: '', status: '' },
             returnedCustomerSearchQuery: '',
             returnedFilteredCustomers: [],
             purchaseFilter: { month: '', supplierId: '', search: '' },
             purchaseReturnedFilter: { month: '', supplierId: '', search: '' },
             stockHistory: [],
+            // Support Tickets
+            supportTickets: [],
+            supportTicketsLoading: false,
+            supportFilter: { search: '', status: '' },
+            newTicketModal: false,
+            viewTicketModal: false,
+            selectedTicket: null,
+            ticketForm: { subject: '', message: '', screenshot: null, screenshotPreview: null },
+            submittingTicket: false,
             cashbook: [],
             cashbookLoading: false,
+            cashbookTab: 'ledger',
+            registerClosures: [],
+            registerClosuresLoading: false,
+            registerClosuresPage: 1,
+            registerClosuresPerPage: 10,
+            showRegisterClosureModal: false,
+            registerStatus: {
+                opening_balance: 0,
+                cash_in: 0,
+                cash_out: 0,
+                expected_cash: 0,
+                is_closed_today: false,
+                today_closure: null
+            },
+            registerClosureForm: {
+                d500: 0,
+                d200: 0,
+                d100: 0,
+                d50: 0,
+                d20: 0,
+                d10: 0,
+                coins: 0,
+                actual_cash: 0,
+                note: ''
+            },
             bankAccounts: [],
             bankAccountsLoading: false,
             reportsData: { total_sales: 0, sales_count: 0, sales_by_payment_type: [], total_purchases: 0, purchases_count: 0, total_expenses: 0, expenses_count: 0, net_profit: 0 },
@@ -232,7 +346,7 @@
             showSupplierModal: false,
             newSupplier: { name: '', mobile: '', email: '' },
             showPurchaseModal: false,
-            newPurchase: { supplier_id: '', payment_type: 'Cash', items: [] },
+            newPurchase: { supplier_id: '', payment_type: 'Cash', paid_amount: null, discount: 0, items: [] },
             selectedSale: null,
             showInvoiceModal: false,
             sendingSaleEmail: false,
@@ -252,6 +366,24 @@
             selectedPurchase: null,
             showPurchaseDetailsModal: false,
             confirmModal: { show: false, title: '', message: '', onConfirm: null },
+
+            // Customer Custom Pricing Modal
+            showCustomerPricingModal: false,
+            customerPricingTarget: null,
+            customerPricingList: [],
+            customerPricingSearch: '',
+            customerPricingLoading: false,
+            customerPricingSaving: false,
+            posCustomerPrices: {},
+
+            // Supplier Custom Pricing Modal & Purchase Prices
+            showSupplierPricingModal: false,
+            supplierPricingTarget: null,
+            supplierPricingList: [],
+            supplierPricingSearch: '',
+            supplierPricingLoading: false,
+            supplierPricingSaving: false,
+            purchaseSupplierPrices: {},
 
             showLifetimeOfferPopup: false,
             lifetimeOfferDaysLeft: 7,
@@ -305,11 +437,7 @@
 
                 // Redirect to login page if unauthenticated
                 if (!this.token || !this.hasShop) {
-                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                    if (redirectUrl === window.location.pathname) {
-                        redirectUrl = '/shopowner/';
-                    }
-                    window.location.href = redirectUrl;
+                    window.location.href = '/shop/login';
                     return;
                 }
 
@@ -327,11 +455,7 @@
                             this.authPage = 'login';
                             this.showToast('Session expired. Please log in again.', 'error');
                             setTimeout(() => {
-                                let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                                if (redirectUrl === window.location.pathname) {
-                                    redirectUrl = '/shopowner/';
-                                }
-                                window.location.href = redirectUrl;
+                                window.location.href = '/shop/login';
                             }, 1500);
                         }
                         return response;
@@ -410,8 +534,8 @@
             // Read current URL path segment and set this.page
             _syncPageFromUrl() {
                 const path = window.location.pathname;
-                // Extract last segment: /dukanhisab/sales-history → 'sales-history'
-                const segment = path.replace(/^\/dukanhisab\/?/, '').replace(/\/$/, '') || '';
+                // Extract segment: /shop/sales-history → 'sales-history'
+                const segment = path.replace(/^\/(shop|web|dukanhisab)\/?/, '').replace(/\/$/, '') || '';
                 this.page = this.routeMap[segment] || 'dashboard';
             },
 
@@ -424,13 +548,14 @@
                 else if (pageName === 'sales-history' || pageName === 'sales-returned') this.salesLoading = state;
                 else if (pageName === 'cashbook' || pageName === 'bank-accounts' || pageName === 'transactions') this.cashbookLoading = state;
                 else if (pageName === 'dashboard') this.dashboardLoading = state;
+                else if (pageName === 'support') this.supportTicketsLoading = state;
             },
 
             // Navigate to a page - updates both state and browser URL
             navigateTo(pageName, extraFn = null) {
                 this.setPageLoading(pageName, true);
                 this.page = pageName;
-                const url = '/dukanhisab/' + (pageName === 'dashboard' ? '' : pageName);
+                const url = '/shop/' + (pageName === 'dashboard' ? 'dashboard' : pageName);
                 history.pushState({ page: pageName }, '', url);
                 if (extraFn) extraFn();
                 this._loadPageData(pageName);
@@ -445,7 +570,7 @@
                 if (pageName === 'dashboard') this.loadDashboard();
                 else if (pageName === 'sales-history' || pageName === 'sales-returned') this.loadSales();
                 else if (pageName === 'products') this.loadProducts('', true);
-                else if (pageName === 'customers') this.loadCustomers(true);
+                else if (pageName === 'customers') { this.customerSearchQuery = ''; this.loadCustomers(); }
                 else if (pageName === 'suppliers') this.loadSuppliers();
                 else if (pageName === 'expenses') this.loadExpenses();
                 else if (pageName === 'sales') { this.loadProducts(); this.loadCustomers(); this.resetPOS(); }
@@ -453,13 +578,14 @@
                 else if (pageName === 'purchase-history') { this.loadPurchases(true); this.loadSuppliers(); }
                 else if (pageName === 'purchase-returned') { this.loadPurchases(true); this.loadSuppliers(); }
                 else if (pageName === 'inventory') this.loadProducts('', true);
-                else if (pageName === 'cashbook') this.loadCashBook();
+                else if (pageName === 'cashbook') { this.loadCashBook(); this.loadRegisterClosures(); }
                 else if (pageName === 'bank-accounts') { this.loadBankAccounts(); this.loadCashBook(); }
                 else if (pageName === 'transactions') this.loadCashBook();
                 else if (pageName === 'reports') this.loadReports();
                 else if (pageName === 'reminders') { this.loadCustomers(); this.loadSuppliers(); this.loadProducts(); }
                 else if (pageName === 'settings') this.loadInvoiceSettings();
                 else if (pageName === 'subscription') this.loadSubscriptionPlans();
+                else if (pageName === 'support') this.loadSupportTickets();
             },
 
             toggleTheme() {
@@ -475,6 +601,15 @@
             },
 
             showToast(msg, type = 'success') {
+                if (msg === undefined || msg === null || msg === 'undefined' || msg === 'null' || msg === '') {
+                    if (type === 'warning' || type === 'info') {
+                        msg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
+                              (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                    } else {
+                        msg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_failed']) ||
+                              (this.currentLang === 'gu' ? 'ચુકવણી નિષ્ફળ ગઈ. કૃપા કરીને ફરી પ્રયાસ કરો.' : (this.currentLang === 'hi' ? 'भुगतान विफल रहा। कृपया पुन: प्रयास करें।' : 'Payment failed. Please try again.'));
+                    }
+                }
                 this.toast.message = msg; this.toast.type = type; this.toast.show = true;
                 setTimeout(() => { this.toast.show = false; }, 3500);
             },
@@ -482,6 +617,11 @@
             authSubtitle() {
                 const map = { 'login': 'Login to manage your business ledger.', 'register': 'Create your owner account.', 'otp-verify': 'Verify your email address.', 'forgot-pass': 'Enter email to receive OTP.', 'reset-pass': 'Enter new password credentials.' };
                 return map[this.authPage] || '';
+            },
+
+            getTodayDate() {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             },
 
             getHeaders() {
@@ -529,13 +669,16 @@
                     .catch(() => { this.productsLoading = false; });
             },
 
-            loadCustomers(paginate = false) {
+            loadCustomers(search = '', paginate = false) {
                 if (!paginate) {
                     this.customersPage = 1;
                     this.customerDuesPage = 1;
                 }
                 this.customersLoading = true;
                 let url = '/api/v1/customers?';
+                if (search) {
+                    url += 'search=' + encodeURIComponent(search) + '&';
+                }
                 if (paginate) {
                     url += `page=${this.customersPage}&per_page=${this.customersPerPage}`;
                 }
@@ -555,6 +698,19 @@
                         }
                     })
                     .catch(() => { this.customersLoading = false; });
+            },
+
+            filteredCustomersList() {
+                if (!this.customerSearchQuery || !this.customerSearchQuery.trim()) {
+                    return this.customers;
+                }
+                const q = this.customerSearchQuery.toLowerCase().trim();
+                return this.customers.filter(c => {
+                    const name = (c.name || '').toLowerCase();
+                    const mobile = (c.mobile || '').toLowerCase();
+                    const email = (c.email || '').toLowerCase();
+                    return name.includes(q) || mobile.includes(q) || email.includes(q);
+                });
             },
 
             loadSuppliers() {
@@ -729,12 +885,58 @@
                 return this.purchases;
             },
 
-            deletePurchase(purchaseId) {
-                this.showConfirm('Delete Purchase', 'Are you sure you want to delete this purchase record? This action cannot be undone.', () => {
-                    this.loading = true;
-                    fetch('/api/v1/purchases/' + purchaseId, { method: 'DELETE', headers: this.getHeaders() })
-                        .then(r => { this.loading = false; if (r.status === 204) { this.showToast('Purchase deleted.'); this.loadPurchases(this.page === 'purchase-history' || this.page === 'purchase-returned'); this.loadAllData(); } });
+            openCancelPurchaseModal(purchase) {
+                if (!purchase || purchase.status === 'Cancelled' || purchase.status === 'Returned') return;
+                this.purchaseToCancel = purchase;
+                this.cancelPurchaseReason = '';
+                this.cancelPurchaseModalOpen = true;
+            },
+
+            submitCancelPurchase() {
+                if (!this.purchaseToCancel) return;
+                if (!this.cancelPurchaseReason || this.cancelPurchaseReason.trim().length < 3) {
+                    this.showToast('Please enter a cancellation reason (minimum 3 characters).', 'error');
+                    return;
+                }
+
+                this.loading = true;
+                fetch('/api/v1/purchases/' + this.purchaseToCancel.id + '/cancel', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({ cancellation_reason: this.cancelPurchaseReason.trim() })
+                })
+                .then(r => r.json().then(data => ({ status: r.status, data })))
+                .then(({ status, data }) => {
+                    this.loading = false;
+                    if (status === 200) {
+                        this.cancelPurchaseModalOpen = false;
+                        this.purchaseToCancel = null;
+                        this.cancelPurchaseReason = '';
+                        this.showToast('Purchase bill cancelled and reversed successfully.', 'success');
+                        this.loadPurchases(this.page === 'purchase-history' || this.page === 'purchase-returned');
+                        this.loadAllData();
+                    } else {
+                        let msg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Failed to cancel purchase.');
+                        this.showToast(msg, 'error');
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showToast('Error cancelling purchase.', 'error');
                 });
+            },
+
+            deletePurchase(purchaseId) {
+                const pur = this.purchases.find(p => p.id === purchaseId);
+                if (pur) {
+                    this.openCancelPurchaseModal(pur);
+                } else {
+                    this.showConfirm('Cancel Purchase', 'Are you sure you want to cancel this purchase record?', () => {
+                        this.loading = true;
+                        fetch('/api/v1/purchases/' + purchaseId, { method: 'DELETE', headers: this.getHeaders() })
+                            .then(r => { this.loading = false; this.showToast('Purchase cancelled.'); this.loadPurchases(this.page === 'purchase-history' || this.page === 'purchase-returned'); this.loadAllData(); });
+                    });
+                }
             },
 
             returnPurchase(purchaseId) {
@@ -820,7 +1022,21 @@
                 localStorage.removeItem('dukanhisab_stock_history');
                 const key = this.getHistoryKey();
                 try {
-                    this.stockHistory = JSON.parse(localStorage.getItem(key) || '[]');
+                    let history = JSON.parse(localStorage.getItem(key) || '[]');
+                    // Automatically clean up records of products that have been deleted
+                    if (this.products && this.products.length > 0) {
+                        const existingNames = new Set(this.products.map(p => p.name));
+                        const existingIds = new Set(this.products.map(p => p.id));
+                        const filtered = history.filter(h =>
+                            (h.product_id && existingIds.has(h.product_id)) ||
+                            (!h.product_id && existingNames.has(h.product_name))
+                        );
+                        if (filtered.length !== history.length) {
+                            history = filtered;
+                            localStorage.setItem(key, JSON.stringify(history));
+                        }
+                    }
+                    this.stockHistory = history;
                 } catch (e) {
                     this.stockHistory = [];
                 }
@@ -850,6 +1066,7 @@
                             // Log adjustment in shop-scoped stockHistory
                             const logEntry = {
                                 id: Date.now(),
+                                product_id: prod.id,
                                 product_name: prod.name,
                                 change_qty: changeQty,
                                 old_stock: oldStock,
@@ -959,58 +1176,157 @@
             },
 
             submitBankTransfer() {
-                // Deposit: withdraw from cash, deposit to bank
-                // Withdrawal: withdraw from bank, deposit to cash
                 this.loading = true;
-                const isDeposit = this.transferForm.type === 'deposit';
-
-                const entry1 = {
-                    type: isDeposit ? 'cash_out' : 'cash_out',
-                    amount: this.transferForm.amount,
-                    payment_method: isDeposit ? 'cash' : 'bank',
-                    description: this.transferForm.description + (isDeposit ? ' (Paid from Cash)' : ' (Withdrawn from Bank)')
-                };
-
-                const entry2 = {
-                    type: isDeposit ? 'cash_in' : 'cash_in',
-                    amount: this.transferForm.amount,
-                    payment_method: isDeposit ? 'bank' : 'cash',
-                    description: this.transferForm.description + (isDeposit ? ' (Deposited to Bank)' : ' (Received in Cash)')
-                };
-
-                // Let's create transaction 1 first, then transaction 2
-                fetch('/api/v1/cashbooks', {
+                fetch('/api/v1/bank-transfers', {
                     method: 'POST',
                     headers: this.getHeaders(),
-                    body: JSON.stringify(entry1)
+                    body: JSON.stringify({
+                        type: this.transferForm.type,
+                        amount: parseFloat(this.transferForm.amount),
+                        bank_account_id: this.transferForm.bank_account_id || null,
+                        description: this.transferForm.description
+                    })
                 })
+                .then(r => r.json())
+                .then(res => {
+                    this.loading = false;
+                    if (res.status === 'success' || res.message) {
+                        this.showToast(res.message || 'Bank transfer recorded successfully.');
+                        this.loadBankAccounts();
+                        this.loadCashBook();
+                        this.loadDashboard();
+                    } else {
+                        this.showToast(res.message || 'Failed to record bank transfer.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showToast('Error recording bank transfer.', 'error');
+                });
+            },
+
+            openRegisterClosureModal() {
+                this.loading = true;
+                fetch('/api/v1/register-closures/current-status', { headers: this.getHeaders() })
                     .then(r => r.json())
-                    .then(d1 => {
-                        if (d1.id) {
-                            fetch('/api/v1/cashbooks', {
-                                method: 'POST',
-                                headers: this.getHeaders(),
-                                body: JSON.stringify(entry2)
-                            })
-                                .then(r => r.json())
-                                .then(d2 => {
-                                    this.loading = false;
-                                    if (d2.id) {
-                                        this.showToast('Bank transfer recorded successfully.');
-                                        this.loadBankAccounts();
-                                        this.loadCashBook();
-                                        this.loadDashboard();
-                                    } else {
-                                        this.showToast('Failed to record transfer part 2.', 'error');
-                                    }
-                                });
-                        } else {
-                            this.loading = false;
-                            this.showToast('Failed to record transfer part 1.', 'error');
-                        }
-                    }).catch(() => {
+                    .then(res => {
                         this.loading = false;
-                        this.showToast('Error recording bank transfer.', 'error');
+                        if (res.status === 'success' && res.data) {
+                            this.registerStatus = res.data;
+                            if (res.data.last_closure && res.data.last_closure.denominations) {
+                                const den = res.data.last_closure.denominations;
+                                this.registerClosureForm = {
+                                    d500: den['500'] || 0,
+                                    d200: den['200'] || 0,
+                                    d100: den['100'] || 0,
+                                    d50:  den['50']  || 0,
+                                    d20:  den['20']  || 0,
+                                    d10:  den['10']  || 0,
+                                    coins: den['coins'] || 0,
+                                    actual_cash: parseFloat(res.data.last_closure.actual_cash) || 0,
+                                    note: res.data.last_closure.note || ''
+                                };
+                            } else {
+                                this.registerClosureForm = {
+                                    d500: 0,
+                                    d200: 0,
+                                    d100: 0,
+                                    d50: 0,
+                                    d20: 0,
+                                    d10: 0,
+                                    coins: 0,
+                                    actual_cash: 0,
+                                    note: ''
+                                };
+                            }
+                            this.showRegisterClosureModal = true;
+                        } else {
+                            this.showToast(res.message || 'Failed to fetch register status.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error fetching register status.', 'error');
+                    });
+            },
+
+            calculateDenominationsTotal() {
+                const f = this.registerClosureForm;
+                const d500 = (parseInt(f.d500) || 0) * 500;
+                const d200 = (parseInt(f.d200) || 0) * 200;
+                const d100 = (parseInt(f.d100) || 0) * 100;
+                const d50  = (parseInt(f.d50)  || 0) * 50;
+                const d20  = (parseInt(f.d20)  || 0) * 20;
+                const d10  = (parseInt(f.d10)  || 0) * 10;
+                const coins = parseFloat(f.coins) || 0;
+                f.actual_cash = d500 + d200 + d100 + d50 + d20 + d10 + coins;
+            },
+
+            submitRegisterClosure() {
+                if (this.registerClosureForm.actual_cash === undefined || this.registerClosureForm.actual_cash === null) {
+                    this.showToast('Please enter counted cash.', 'error');
+                    return;
+                }
+                this.loading = true;
+                const payload = {
+                    actual_cash: parseFloat(this.registerClosureForm.actual_cash) || 0,
+                    denominations: {
+                        '500': parseInt(this.registerClosureForm.d500) || 0,
+                        '200': parseInt(this.registerClosureForm.d200) || 0,
+                        '100': parseInt(this.registerClosureForm.d100) || 0,
+                        '50':  parseInt(this.registerClosureForm.d50)  || 0,
+                        '20':  parseInt(this.registerClosureForm.d20)  || 0,
+                        '10':  parseInt(this.registerClosureForm.d10)  || 0,
+                        'coins': parseFloat(this.registerClosureForm.coins) || 0
+                    },
+                    note: this.registerClosureForm.note || null
+                };
+
+                fetch('/api/v1/register-closures', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(res => {
+                    this.loading = false;
+                    if (res.status === 'success' && (res.data || res.closure)) {
+                        this.showToast(res.message || 'Register closed successfully!');
+                        this.showRegisterClosureModal = false;
+                        this.cashbookTab = 'closures';
+                        this.loadRegisterClosures();
+                        this.loadCashBook();
+                        this.loadDashboard();
+                    } else {
+                        this.showToast(res.message || 'Failed to close register.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showToast('Error submitting register closure.', 'error');
+                });
+            },
+
+            loadRegisterClosures() {
+                this.registerClosuresLoading = true;
+                fetch('/api/v1/register-closures', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(res => {
+                        this.registerClosuresLoading = false;
+                        if (res.status === 'success' && res.data) {
+                            this.registerClosures = Array.isArray(res.data.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+                        } else if (res.data && Array.isArray(res.data.data)) {
+                            this.registerClosures = res.data.data;
+                        } else if (res.data && Array.isArray(res.data)) {
+                            this.registerClosures = res.data;
+                        } else if (Array.isArray(res)) {
+                            this.registerClosures = res;
+                        } else {
+                            this.registerClosures = [];
+                        }
+                    })
+                    .catch(() => {
+                        this.registerClosuresLoading = false;
                     });
             },
 
@@ -1039,6 +1355,14 @@
             },
 
             loadReports(startDate = '', endDate = '') {
+                const today = this.getTodayDate();
+                if (startDate && startDate > today) startDate = today;
+                if (endDate && endDate > today) endDate = today;
+                if (startDate && endDate && startDate > endDate) {
+                    const temp = startDate;
+                    startDate = endDate;
+                    endDate = temp;
+                }
                 this.reportsLoading = true;
                 let url = '/api/v1/reports?';
                 if (startDate) url += '&start_date=' + startDate;
@@ -1109,21 +1433,34 @@
                     });
             },
 
-            submitUserProfileUpdate(avatarFile = null) {
+            submitUserProfileUpdate(avatarFile = null, profileForm = null) {
                 this.loading = true;
+                const form = profileForm || this.userProfileForm || (this.user ? {
+                    name: this.user.name,
+                    mobile: this.user.mobile,
+                    email: this.user.email,
+                    date_of_birth: this.user.date_of_birth,
+                    gender: this.user.gender,
+                    currency: this.user.currency || 'INR',
+                    date_format: this.user.date_format || 'DD/MM/YYYY',
+                    time_format: this.user.time_format || '12h',
+                    notification_preferences: this.user.notification_preferences || {}
+                } : {});
+
                 const fd = new FormData();
-                fd.append('name', this.userProfileForm.name);
-                fd.append('display_name', this.userProfileForm.display_name || '');
-                fd.append('mobile', this.userProfileForm.mobile || '');
-                fd.append('email', this.userProfileForm.email);
-                if (this.userProfileForm.date_of_birth) fd.append('date_of_birth', this.userProfileForm.date_of_birth);
-                if (this.userProfileForm.gender) fd.append('gender', this.userProfileForm.gender);
-                fd.append('currency', this.userProfileForm.currency);
-                fd.append('date_format', this.userProfileForm.date_format);
-                fd.append('time_format', this.userProfileForm.time_format);
-                Object.keys(this.userProfileForm.notification_preferences).forEach(key => {
-                    fd.append('notification_preferences[' + key + ']', this.userProfileForm.notification_preferences[key] ? '1' : '0');
-                });
+                fd.append('name', form.name || (this.user ? this.user.name : ''));
+                fd.append('mobile', form.mobile || (this.user ? this.user.mobile : ''));
+                fd.append('email', form.email || (this.user ? this.user.email : ''));
+                if (form.date_of_birth) fd.append('date_of_birth', form.date_of_birth);
+                if (form.gender) fd.append('gender', form.gender);
+                fd.append('currency', form.currency || 'INR');
+                fd.append('date_format', form.date_format || 'DD/MM/YYYY');
+                fd.append('time_format', form.time_format || '12h');
+                if (form.notification_preferences) {
+                    Object.keys(form.notification_preferences).forEach(key => {
+                        fd.append('notification_preferences[' + key + ']', form.notification_preferences[key] ? '1' : '0');
+                    });
+                }
                 if (avatarFile) fd.append('avatar', avatarFile);
 
                 fetch('/api/v1/shopowner/profile', {
@@ -1159,6 +1496,7 @@
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             this.checkLifetimeOffer();
+                            window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         }
                         if (d.shop) {
                             this.shop = d.shop;
@@ -1263,6 +1601,7 @@
                                 description: (d.plan ? d.plan.name : planSlug.toUpperCase()) + ' Subscription Plan',
                                 order_id: d.order_id,
                                 handler: function (response) {
+                                    paymentCompletedOrHandled = true;
                                     self.verifyRazorpayPayment(planSlug, response);
                                 },
                                 prefill: {
@@ -1276,14 +1615,40 @@
                                 modal: {
                                     ondismiss: function () {
                                         self.subscriptionLoading = false;
+                                        if (!paymentCompletedOrHandled) {
+                                            paymentCompletedOrHandled = true;
+                                            const cancelMsg = (self.translations && self.translations[self.currentLang] && self.translations[self.currentLang]['payment_cancelled']) ||
+                                                (self.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (self.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                            self.showToast(cancelMsg, 'warning');
+                                        }
                                     }
                                 }
                             };
 
+                            let paymentCompletedOrHandled = false;
                             const rzp = new Razorpay(options);
                             rzp.on('payment.failed', function (response) {
                                 self.subscriptionLoading = false;
-                                self.showToast(response.error ? response.error.description : 'Payment failed. Please try again.', 'error');
+                                if (paymentCompletedOrHandled) return;
+                                paymentCompletedOrHandled = true;
+
+                                const err = (response && response.error) ? response.error : {};
+                                const reason = String(err.reason || '').toLowerCase();
+                                const desc = String(err.description || '').toLowerCase();
+                                const code = String(err.code || '').toLowerCase();
+                                const isCancelled = reason.includes('cancel') || desc.includes('cancel') || code.includes('cancel') ||
+                                    (!err.description && !err.reason) || desc === 'undefined';
+
+                                if (isCancelled) {
+                                    const cancelMsg = (self.translations && self.translations[self.currentLang] && self.translations[self.currentLang]['payment_cancelled']) ||
+                                        (self.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (self.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                    self.showToast(cancelMsg, 'warning');
+                                } else {
+                                    const errorMsg = (err.description && err.description !== 'undefined')
+                                        ? err.description
+                                        : (err.reason || (self.translations && self.translations[self.currentLang] && self.translations[self.currentLang]['payment_failed']) || 'Payment failed. Please try again.');
+                                    self.showToast(errorMsg, 'error');
+                                }
                             });
                             rzp.open();
                         } else {
@@ -1332,6 +1697,7 @@
                                 name: "DukanHisab",
                                 description: "Subscription to " + d.plan.name,
                                 handler: (response) => {
+                                    paymentCompletedOrHandled = true;
                                     this.subscriptionLoading = true;
                                     fetch('/api/v1/shopowner/subscription/verify', {
                                         method: 'POST',
@@ -1368,6 +1734,17 @@
                                 },
                                 theme: {
                                     color: "#0F766E"
+                                },
+                                modal: {
+                                    ondismiss: () => {
+                                        this.subscriptionLoading = false;
+                                        if (!paymentCompletedOrHandled) {
+                                            paymentCompletedOrHandled = true;
+                                            const cancelMsg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
+                                                (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                            this.showToast(cancelMsg, 'warning');
+                                        }
+                                    }
                                 }
                             };
 
@@ -1377,9 +1754,30 @@
                                 options.order_id = d.order_id;
                             }
 
+                            let paymentCompletedOrHandled = false;
                             const rzp = new Razorpay(options);
                             rzp.on('payment.failed', (response) => {
-                                this.showToast(response.error.description || 'Payment failed.', 'error');
+                                this.subscriptionLoading = false;
+                                if (paymentCompletedOrHandled) return;
+                                paymentCompletedOrHandled = true;
+
+                                const err = (response && response.error) ? response.error : {};
+                                const reason = String(err.reason || '').toLowerCase();
+                                const desc = String(err.description || '').toLowerCase();
+                                const code = String(err.code || '').toLowerCase();
+                                const isCancelled = reason.includes('cancel') || desc.includes('cancel') || code.includes('cancel') ||
+                                    (!err.description && !err.reason) || desc === 'undefined';
+
+                                if (isCancelled) {
+                                    const cancelMsg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
+                                        (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                    this.showToast(cancelMsg, 'warning');
+                                } else {
+                                    const errorMsg = (err.description && err.description !== 'undefined')
+                                        ? err.description
+                                        : (err.reason || (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_failed']) || 'Payment failed. Please try again.');
+                                    this.showToast(errorMsg, 'error');
+                                }
                             });
                             rzp.open();
                         } else if (d.user) {
@@ -1467,7 +1865,24 @@
             },
 
             submitChangePassword() {
-                this.loading = true;
+                if (!this.passForm.current_password) {
+                    this.showToast(this.t('current_password_required') || 'Current password is required.', 'error');
+                    return;
+                }
+                if (!this.passForm.new_password) {
+                    this.showToast(this.t('new_password_required') || 'New password is required.', 'error');
+                    return;
+                }
+                if (this.passForm.new_password.length < 8) {
+                    this.showToast(this.t('password_min_8_chars') || 'New password must be at least 8 characters.', 'error');
+                    return;
+                }
+                if (this.passForm.new_password !== this.passForm.new_password_confirmation) {
+                    this.showToast(this.t('passwords_do_not_match') || 'Passwords do not match.', 'error');
+                    return;
+                }
+
+                this.passChanging = true;
                 const body = {
                     current_password: this.passForm.current_password,
                     new_password: this.passForm.new_password,
@@ -1478,16 +1893,26 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify(body)
                 })
-                    .then(r => r.json()).then(d => {
-                        this.loading = false;
-                        if (d.message) {
-                            this.showToast('Password updated successfully!');
+                    .then(async r => {
+                        const d = await r.json();
+                        return { ok: r.ok, status: r.status, data: d };
+                    })
+                    .then(res => {
+                        this.passChanging = false;
+                        if (res.ok) {
+                            this.showToast(res.data.message || this.t('password_updated_success') || 'Password updated successfully!');
                             this.passForm = { current_password: '', new_password: '', new_password_confirmation: '' };
+                            this.showCurrentPass = false;
+                            this.showNewPass = false;
+                            this.showConfirmPass = false;
+                        } else if (res.data.errors) {
+                            const firstKey = Object.keys(res.data.errors)[0];
+                            this.showToast(res.data.errors[firstKey][0], 'error');
                         } else {
-                            this.showToast(d.message || 'Failed to change password.', 'error');
+                            this.showToast(res.data.message || 'Failed to change password.', 'error');
                         }
                     }).catch(() => {
-                        this.loading = false;
+                        this.passChanging = false;
                         this.showToast('Error changing password.', 'error');
                     });
             },
@@ -1498,6 +1923,121 @@
 
             triggerCloudRestore() {
                 this.showToast('Database restore completed from cloud snapshot.');
+            },
+
+            // ── SUPPORT TICKETS ─────────────────────────────────────────
+            loadSupportTickets() {
+                this.supportTicketsLoading = true;
+                fetch('/api/v1/shopowner/support-tickets', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.supportTicketsLoading = false;
+                        if (d.tickets) this.supportTickets = d.tickets;
+                        else if (Array.isArray(d.data)) this.supportTickets = d.data;
+                        else if (Array.isArray(d)) this.supportTickets = d;
+                    })
+                    .catch(() => {
+                        this.supportTicketsLoading = false;
+                    });
+            },
+
+            filteredSupportTickets() {
+                let list = this.supportTickets || [];
+                if (this.supportFilter.status) {
+                    list = list.filter(t => t.status === this.supportFilter.status);
+                }
+                if (this.supportFilter.search) {
+                    const q = this.supportFilter.search.toLowerCase().trim();
+                    list = list.filter(t =>
+                        (t.subject && t.subject.toLowerCase().includes(q)) ||
+                        (t.message && t.message.toLowerCase().includes(q)) ||
+                        (String(t.id).includes(q))
+                    );
+                }
+                return list;
+            },
+
+            openNewTicketModal() {
+                this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                this.newTicketModal = true;
+            },
+
+            onTicketScreenshotChange(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    this.ticketForm.screenshot = file;
+                    this.ticketForm.screenshotPreview = URL.createObjectURL(file);
+                }
+            },
+
+            submitNewTicket() {
+                if (!this.ticketForm.subject.trim()) {
+                    this.showToast('Please enter a subject.', 'error');
+                    return;
+                }
+                if (!this.ticketForm.message.trim()) {
+                    this.showToast('Please enter issue details.', 'error');
+                    return;
+                }
+
+                this.submittingTicket = true;
+                const fd = new FormData();
+                fd.append('subject', this.ticketForm.subject);
+                fd.append('message', this.ticketForm.message);
+                if (this.ticketForm.screenshot) {
+                    fd.append('screenshot', this.ticketForm.screenshot);
+                }
+
+                fetch('/api/v1/shopowner/support-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + this.token,
+                        'X-Shop-ID': this.shop ? this.shop.id : '',
+                        'X-Locale': this.currentLang || 'en'
+                    },
+                    body: fd
+                })
+                .then(async r => {
+                    const data = await r.json();
+                    return { ok: r.ok, status: r.status, data };
+                })
+                .then(res => {
+                    this.submittingTicket = false;
+                    if (res.ok) {
+                        this.showToast(this.t('ticket_created_success') || 'Support ticket submitted successfully!');
+                        this.newTicketModal = false;
+                        this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                        this.loadSupportTickets();
+                    } else {
+                        this.showToast(res.data.message || 'Failed to submit support ticket.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.submittingTicket = false;
+                    this.showToast('Error submitting support ticket.', 'error');
+                });
+            },
+
+            openTicketDetails(ticket) {
+                this.selectedTicket = ticket;
+                this.viewTicketModal = true;
+            },
+
+            deleteTicket(id) {
+                if (!confirm('Are you sure you want to delete this support ticket?')) return;
+                fetch('/api/v1/shopowner/support-tickets/' + id, {
+                    method: 'DELETE',
+                    headers: this.getHeaders()
+                })
+                .then(r => r.json())
+                .then(d => {
+                    this.showToast(this.t('ticket_deleted_success') || 'Support ticket deleted.');
+                    this.loadSupportTickets();
+                })
+                .catch(() => {
+                    this.showToast('Failed to delete support ticket.', 'error');
+                });
             },
 
             // ── AUTH ──────────────────────────────────────────────────
@@ -1601,11 +2141,7 @@
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
                     ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
-                    let redirectUrl = window.location.pathname.replace(/\/dukanhisab(\/.*)?$/, '/shopowner/');
-                    if (redirectUrl === window.location.pathname) {
-                        redirectUrl = '/shopowner/';
-                    }
-                    window.location.href = redirectUrl;
+                    window.location.href = '/shop/login';
                 });
             },
 
@@ -1713,9 +2249,10 @@
 
             // ── POS ───────────────────────────────────────────────────
             resetPOS() {
-                this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', items: [] };
+                this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', applyStoreCredit: false, items: [] };
                 this.posCustomerSearchQuery = '';
                 this.posFilteredCustomers = this.customers;
+                this.posCustomerPrices = {};
                 setTimeout(() => { const el = document.getElementById('pos-barcode'); if (el) el.focus(); }, 200);
             },
 
@@ -1733,11 +2270,58 @@
             selectPosCustomer(customer) {
                 if (customer) {
                     this.pos.selectedCustomer = customer.id;
+                    const availCredit = customer.credit_balance ? parseFloat(customer.credit_balance) : 0;
+                    this.pos.applyStoreCredit = availCredit > 0;
+                    this.loadPosCustomerPrices(customer.id);
                 } else {
                     this.pos.selectedCustomer = ''; // Walk-In Customer
+                    this.pos.applyStoreCredit = false;
+                    this.posCustomerPrices = {};
+                    this.refreshPosCartItemPrices();
                 }
                 this.posCustomerSearchQuery = '';
                 this.posFilteredCustomers = this.customers;
+            },
+
+            loadPosCustomerPrices(customerId) {
+                this.posCustomerPrices = {};
+                fetch(`/api/v1/customers/${customerId}/product-prices`, { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && Array.isArray(d.products)) {
+                            const map = {};
+                            d.products.forEach(p => {
+                                if (p.custom_price !== null && p.custom_price !== undefined && parseFloat(p.custom_price) > 0) {
+                                    map[p.product_id] = parseFloat(p.custom_price);
+                                }
+                            });
+                            this.posCustomerPrices = map;
+                            this.refreshPosCartItemPrices();
+                        }
+                    })
+                    .catch(() => {});
+            },
+
+            refreshPosCartItemPrices() {
+                if (!this.pos.items || this.pos.items.length === 0) return;
+                this.pos.items.forEach(item => {
+                    const prod = (this.products || []).find(p => p.id === item.product_id);
+                    if (prod) {
+                        item.selling_price = this.getPosProductPrice(prod);
+                    }
+                });
+            },
+
+            getPosProductPrice(product) {
+                if (!product) return 0;
+                if (this.pos.selectedCustomer && this.posCustomerPrices[product.id] !== undefined) {
+                    return parseFloat(this.posCustomerPrices[product.id]);
+                }
+                return parseFloat(product.selling_price || 0);
+            },
+
+            hasPosCustomerCustomPrice(product) {
+                return !!(this.pos.selectedCustomer && this.posCustomerPrices[product.id] !== undefined);
             },
 
             getSelectedPosCustomerName() {
@@ -1819,7 +2403,8 @@
                     }
                     this.pos.items[idx].quantity++;
                 } else {
-                    this.pos.items.push({ product_id: product.id, name: product.name, selling_price: parseFloat(product.selling_price), quantity: 1, stock: product.stock });
+                    const price = this.getPosProductPrice(product);
+                    this.pos.items.push({ product_id: product.id, name: product.name, selling_price: price, quantity: 1, stock: product.stock, discount: 0 });
                 }
                 this.showToast(product.name + ' added to cart.');
             },
@@ -1834,7 +2419,7 @@
                 item.quantity++;
             },
             decreaseQty(idx) { if (this.pos.items[idx].quantity > 1) this.pos.items[idx].quantity--; },
-            calculateSubtotal() { return this.pos.items.reduce((sum, item) => sum + (item.selling_price * item.quantity), 0); },
+            calculateSubtotal() { return this.pos.items.reduce((sum, item) => sum + Math.max(0, (item.selling_price * item.quantity) - (parseFloat(item.discount) || 0)), 0); },
             calculateGrandTotal() { return Math.max(0, this.calculateSubtotal() - (this.pos.discount || 0)); },
 
             handleBarcodeScan() {
@@ -1849,18 +2434,47 @@
                 }
             },
 
+            getSelectedCustomerCreditBalance() {
+                if (!this.pos.selectedCustomer) return 0;
+                const c = (this.customers || []).find(cust => cust.id == this.pos.selectedCustomer);
+                return c && c.credit_balance ? parseFloat(c.credit_balance) : 0;
+            },
+
             saveSale() {
                 if (this.pos.items.length === 0) return;
+                const grandTotal = this.calculateGrandTotal();
+                let usedCredit = 0;
+                if (this.pos.selectedCustomer) {
+                    const availCredit = this.getSelectedCustomerCreditBalance();
+                    usedCredit = Math.min(availCredit, grandTotal);
+                }
+
+                if (this.pos.paymentType === 'Store Credit') {
+                    if (!this.pos.selectedCustomer) {
+                        this.showConfirm('Validation Error', 'Customer selection is required to use Store Credit.', () => { });
+                        return;
+                    }
+                    const availCredit = this.getSelectedCustomerCreditBalance();
+                    usedCredit = Math.min(availCredit, grandTotal);
+                }
+
                 if (this.pos.paymentType === 'Credit' && !this.pos.selectedCustomer) {
                     this.showConfirm('Validation Error', 'Customer selection is required for Credit (udhaar) transactions.', () => { });
                     return;
                 }
+
+                let finalPaymentType = this.pos.paymentType;
+                if (usedCredit >= grandTotal) {
+                    finalPaymentType = 'Store Credit';
+                }
+
                 this.loading = true;
                 const body = {
                     customer_id: this.pos.selectedCustomer || null,
-                    subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: this.calculateGrandTotal(),
-                    payment_type: this.pos.paymentType,
-                    items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price }))
+                    subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: grandTotal,
+                    payment_type: finalPaymentType,
+                    used_credit_balance: usedCredit,
+                    items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
                 fetch('/api/v1/sales', { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) })
                     .then(r => {
@@ -1920,18 +2534,28 @@
                     .then(d => {
                         this.loading = false;
                         if (d.id) {
+                            const availableItems = (d.items || []).map(item => ({
+                                product_id: item.product_id,
+                                name: item.product ? item.product.name : 'Unknown Product',
+                                purchasedQty: Math.max(0, item.quantity - (item.returned_quantity || 0)),
+                                returnedQty: 0,
+                                selling_price: parseFloat(item.selling_price)
+                            })).filter(item => item.purchasedQty > 0);
+
+                            if (availableItems.length === 0) {
+                                this.showToast('All items in this sale have already been returned.', 'info');
+                                return;
+                            }
+
                             this.returnForm = {
                                 saleId: d.id,
                                 sale_number: d.sale_number,
+                                customer_id: d.customer_id || null,
+                                customer_name: d.customer ? d.customer.name : null,
                                 payment_type: d.payment_type,
+                                refund_method: d.payment_type === 'Credit' ? 'due_adjustment' : (d.payment_type ? d.payment_type.toLowerCase() : 'cash'),
                                 discount: parseFloat(d.discount) || 0,
-                                items: d.items.map(item => ({
-                                    product_id: item.product_id,
-                                    name: item.product ? item.product.name : 'Unknown Product',
-                                    purchasedQty: item.quantity,
-                                    returnedQty: 0,
-                                    selling_price: parseFloat(item.selling_price)
-                                }))
+                                items: availableItems
                             };
                             this.showReturnModal = true;
                         }
@@ -1958,6 +2582,7 @@
 
                 this.loading = true;
                 const payload = {
+                    refund_method: this.returnForm.refund_method,
                     items: returnItems.map(item => ({
                         product_id: item.product_id,
                         quantity: parseInt(item.returnedQty)
@@ -1995,6 +2620,7 @@
                         name: item.product ? item.product.name : (liveProduct ? liveProduct.name : 'Unknown Product'),
                         selling_price: parseFloat(item.selling_price),
                         quantity: item.quantity,
+                        discount: parseFloat(item.discount) || 0,
                         stock: (liveProduct ? liveProduct.stock : 0) + item.quantity
                     };
                 });
@@ -2020,7 +2646,7 @@
                     customer_id: this.pos.selectedCustomer || null,
                     subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: this.calculateGrandTotal(),
                     payment_type: this.pos.paymentType,
-                    items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price }))
+                    items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
                 fetch('/api/v1/sales/' + this.editingSaleId, { method: 'PUT', headers: this.getHeaders(), body: JSON.stringify(body) })
                     .then(r => r.json().then(data => ({ ok: r.ok, data })))
@@ -2109,12 +2735,58 @@
                     });
             },
 
-            deleteSale(saleId) {
-                this.showConfirm('Delete Sale', 'Are you sure you want to delete this sale record? This action cannot be undone.', () => {
-                    this.loading = true;
-                    fetch('/api/v1/sales/' + saleId, { method: 'DELETE', headers: this.getHeaders() })
-                        .then(r => { this.loading = false; if (r.status === 204) { this.showToast('Sale deleted.'); this.loadSales(); this.loadAllData(); } });
+            openCancelSaleModal(sale) {
+                if (!sale || sale.status === 'Cancelled' || sale.status === 'Returned') return;
+                this.saleToCancel = sale;
+                this.cancelSaleReason = '';
+                this.cancelSaleModalOpen = true;
+            },
+
+            submitCancelSale() {
+                if (!this.saleToCancel) return;
+                if (!this.cancelSaleReason || this.cancelSaleReason.trim().length < 3) {
+                    this.showToast('Please enter a cancellation reason (minimum 3 characters).', 'error');
+                    return;
+                }
+
+                this.loading = true;
+                fetch('/api/v1/sales/' + this.saleToCancel.id + '/cancel', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({ cancellation_reason: this.cancelSaleReason.trim() })
+                })
+                .then(r => r.json().then(data => ({ status: r.status, data })))
+                .then(({ status, data }) => {
+                    this.loading = false;
+                    if (status === 200) {
+                        this.cancelSaleModalOpen = false;
+                        this.saleToCancel = null;
+                        this.cancelSaleReason = '';
+                        this.showToast('Sale cancelled and reversed successfully.', 'success');
+                        this.loadSales();
+                        this.loadAllData();
+                    } else {
+                        let msg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Failed to cancel sale.');
+                        this.showToast(msg, 'error');
+                    }
+                })
+                .catch(() => {
+                    this.loading = false;
+                    this.showToast('Error cancelling sale.', 'error');
                 });
+            },
+
+            deleteSale(saleId) {
+                const s = this.sales.find(x => x.id === saleId);
+                if (s) {
+                    this.openCancelSaleModal(s);
+                } else {
+                    this.showConfirm('Cancel Sale', 'Are you sure you want to cancel this sale record?', () => {
+                        this.loading = true;
+                        fetch('/api/v1/sales/' + saleId, { method: 'DELETE', headers: this.getHeaders() })
+                            .then(r => { this.loading = false; this.showToast('Sale cancelled.'); this.loadSales(); this.loadAllData(); });
+                    });
+                }
             },
 
             printInvoice() {
@@ -2138,7 +2810,13 @@
                 if (!this.selectedSale) return '#';
                 const custName = this.selectedSale.customer ? this.selectedSale.customer.name : 'Customer';
                 const mobile = this.selectedSale.customer ? this.selectedSale.customer.mobile : '';
-                const msg = `Hello ${custName}, thank you! Invoice: ${this.selectedSale.sale_number}, Total: ₹${this.selectedSale.grand_total}. - DukanHisab`;
+                const storeCredit = parseFloat(this.selectedSale.store_credit || this.selectedSale.used_credit_balance || 0);
+                let paymentInfo = `Total: ₹${parseFloat(this.selectedSale.grand_total).toFixed(2)}`;
+                if (storeCredit > 0) {
+                    const netPaid = Math.max(0, parseFloat(this.selectedSale.grand_total) - storeCredit);
+                    paymentInfo += ` (Store Credit: -₹${storeCredit.toFixed(2)}, Paid: ₹${netPaid.toFixed(2)})`;
+                }
+                const msg = `Hello ${custName}, thank you! Invoice: ${this.selectedSale.sale_number}, ${paymentInfo}. - DukanHisab`;
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
             },
 
@@ -2175,7 +2853,13 @@
                 if (!this.selectedPurchase) return '#';
                 const supplierName = this.selectedPurchase.supplier ? this.selectedPurchase.supplier.name : 'Supplier';
                 const mobile = this.selectedPurchase.supplier ? this.selectedPurchase.supplier.mobile : '';
-                const msg = `Hello ${supplierName}, thank you! Purchase Invoice: ${this.selectedPurchase.purchase_number}, Total: ₹${this.selectedPurchase.total_amount}. - DukanHisab`;
+                const paidAmt = parseFloat(this.selectedPurchase.paid_amount || 0);
+                const dueAmt = Math.max(0, parseFloat(this.selectedPurchase.total_amount) - paidAmt);
+                let paymentInfo = `Total: ₹${parseFloat(this.selectedPurchase.total_amount).toFixed(2)}`;
+                if (dueAmt > 0 || paidAmt > 0) {
+                    paymentInfo += `, Paid: ₹${paidAmt.toFixed(2)}, Due: ₹${dueAmt.toFixed(2)}`;
+                }
+                const msg = `Hello ${supplierName}, thank you! Purchase Invoice: ${this.selectedPurchase.purchase_number}, ${paymentInfo}. - DukanHisab`;
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
             },
 
@@ -2201,6 +2885,74 @@
                     email: cust.email || ''
                 };
                 this.showCustomerModal = true;
+            },
+
+            openCustomerPricingModal(customer) {
+                this.customerPricingTarget = customer;
+                this.customerPricingSearch = '';
+                this.customerPricingList = [];
+                this.customerPricingLoading = true;
+                this.showCustomerPricingModal = true;
+
+                fetch(`/api/v1/customers/${customer.id}/product-prices`, { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.customerPricingLoading = false;
+                        if (d && Array.isArray(d.products)) {
+                            this.customerPricingList = d.products.map(p => ({
+                                product_id: p.product_id,
+                                name: p.name,
+                                barcode: p.barcode,
+                                default_price: p.default_price,
+                                custom_price: p.custom_price !== null ? p.custom_price : null,
+                                stock: p.stock
+                            }));
+                        }
+                    })
+                    .catch(() => {
+                        this.customerPricingLoading = false;
+                        this.showToast('Failed to load customer product prices.', 'error');
+                    });
+            },
+
+            filteredCustomerPricingList() {
+                if (!this.customerPricingSearch) return this.customerPricingList;
+                const q = this.customerPricingSearch.toLowerCase();
+                return this.customerPricingList.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(q)) ||
+                    (p.barcode && p.barcode.toLowerCase().includes(q))
+                );
+            },
+
+            saveCustomerPricing() {
+                if (!this.customerPricingTarget) return;
+                this.customerPricingSaving = true;
+
+                const payload = {
+                    prices: this.customerPricingList.map(p => ({
+                        product_id: p.product_id,
+                        custom_price: p.custom_price !== null && p.custom_price !== '' && parseFloat(p.custom_price) > 0 ? parseFloat(p.custom_price) : null
+                    }))
+                };
+
+                fetch(`/api/v1/customers/${this.customerPricingTarget.id}/product-prices`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(d => {
+                    this.customerPricingSaving = false;
+                    this.showToast(d.message || 'Customer prices saved successfully.', 'success');
+                    this.showCustomerPricingModal = false;
+                    if (this.pos.selectedCustomer == this.customerPricingTarget.id) {
+                        this.loadPosCustomerPrices(this.customerPricingTarget.id);
+                    }
+                })
+                .catch(() => {
+                    this.customerPricingSaving = false;
+                    this.showToast('Error saving prices.', 'error');
+                });
             },
             saveCustomer() {
                 if (!this.newCustomer.name || this.newCustomer.name.trim() === '') {
@@ -2266,6 +3018,15 @@
                     return;
                 }
 
+                if (this.newProduct.barcode && this.newProduct.barcode.trim() !== '') {
+                    const bc = this.newProduct.barcode.trim().toLowerCase();
+                    const existing = (this.products || []).find(p => p.barcode && p.barcode.toLowerCase() === bc && p.id != this.newProduct.id);
+                    if (existing) {
+                        this.showConfirm('Validation Error', `This barcode "${this.newProduct.barcode.trim()}" is already assigned to "${existing.name}". Duplicate barcodes are not allowed in the same shop.`, () => { });
+                        return;
+                    }
+                }
+
                 this.loading = true;
                 const isEdit = !!this.newProduct.id;
                 const url = isEdit ? '/api/v1/products/' + this.newProduct.id : '/api/v1/products';
@@ -2287,6 +3048,7 @@
                             if (!isEdit && parseInt(d.stock) > 0) {
                                 const logEntry = {
                                     id: Date.now(),
+                                    product_id: d.id,
                                     product_name: d.name,
                                     change_qty: parseInt(d.stock),
                                     old_stock: 0,
@@ -2329,8 +3091,24 @@
             deleteProduct(prodId) {
                 this.showConfirm('Delete Product', 'Are you sure you want to delete this product? This action cannot be undone.', () => {
                     this.loading = true;
+                    const prod = this.products.find(p => p.id == prodId);
+                    const prodName = prod ? prod.name : null;
                     fetch('/api/v1/products/' + prodId, { method: 'DELETE', headers: this.getHeaders() })
-                        .then(r => { this.loading = false; if (r.status === 204) { this.showToast('Product deleted.'); this.loadProducts(); } });
+                        .then(r => {
+                            this.loading = false;
+                            if (r.status === 204) {
+                                this.showToast('Product deleted.');
+                                // Clean up history entries for the deleted product
+                                const key = this.getHistoryKey();
+                                try {
+                                    let history = JSON.parse(localStorage.getItem(key) || '[]');
+                                    history = history.filter(h => h.product_id != prodId && (!prodName || h.product_name !== prodName));
+                                    localStorage.setItem(key, JSON.stringify(history));
+                                } catch (e) { }
+                                this.loadProducts();
+                                this.loadStockHistory();
+                            }
+                        });
                 });
             },
 
@@ -2530,10 +3308,79 @@
                 });
             },
 
+            openSupplierPricingModal(supplier) {
+                this.supplierPricingTarget = supplier;
+                this.supplierPricingSearch = '';
+                this.supplierPricingList = [];
+                this.supplierPricingLoading = true;
+                this.showSupplierPricingModal = true;
+
+                fetch(`/api/v1/suppliers/${supplier.id}/product-prices`, { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.supplierPricingLoading = false;
+                        if (d && Array.isArray(d.products)) {
+                            this.supplierPricingList = d.products.map(p => ({
+                                product_id: p.product_id,
+                                name: p.name,
+                                barcode: p.barcode,
+                                default_price: p.default_price,
+                                custom_price: p.custom_price !== null ? p.custom_price : null,
+                                stock: p.stock
+                            }));
+                        }
+                    })
+                    .catch(() => {
+                        this.supplierPricingLoading = false;
+                        this.showToast('Failed to load supplier product prices.', 'error');
+                    });
+            },
+
+            filteredSupplierPricingList() {
+                if (!this.supplierPricingSearch) return this.supplierPricingList;
+                const q = this.supplierPricingSearch.toLowerCase();
+                return this.supplierPricingList.filter(p => 
+                    (p.name && p.name.toLowerCase().includes(q)) ||
+                    (p.barcode && p.barcode.toLowerCase().includes(q))
+                );
+            },
+
+            saveSupplierPricing() {
+                if (!this.supplierPricingTarget) return;
+                this.supplierPricingSaving = true;
+
+                const payload = {
+                    prices: this.supplierPricingList.map(p => ({
+                        product_id: p.product_id,
+                        custom_price: p.custom_price !== null && p.custom_price !== '' && parseFloat(p.custom_price) > 0 ? parseFloat(p.custom_price) : null
+                    }))
+                };
+
+                fetch(`/api/v1/suppliers/${this.supplierPricingTarget.id}/product-prices`, {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(d => {
+                    this.supplierPricingSaving = false;
+                    this.showToast(d.message || 'Supplier prices saved successfully.', 'success');
+                    this.showSupplierPricingModal = false;
+                    if (this.newPurchase.supplier_id == this.supplierPricingTarget.id) {
+                        this.loadPurchaseSupplierPrices(this.supplierPricingTarget.id);
+                    }
+                })
+                .catch(() => {
+                    this.supplierPricingSaving = false;
+                    this.showToast('Error saving prices.', 'error');
+                });
+            },
+
             resetNewPurchase() {
-                this.newPurchase = { supplier_id: '', payment_type: 'Cash', items: [] };
+                this.newPurchase = { supplier_id: '', payment_type: 'Cash', paid_amount: null, discount: 0, items: [] };
                 this.purchaseSupplierSearchQuery = '';
                 this.purchaseFilteredSuppliers = this.suppliers;
+                this.purchaseSupplierPrices = {};
             },
             openNewPurchaseModal() {
                 this.resetNewPurchase();
@@ -2552,12 +3399,57 @@
             selectPurchaseSupplier(supplier) {
                 if (supplier) {
                     this.newPurchase.supplier_id = supplier.id;
+                    this.loadPurchaseSupplierPrices(supplier.id);
                 } else {
                     this.newPurchase.supplier_id = '';
+                    this.purchaseSupplierPrices = {};
+                    this.refreshPurchaseCartItemPrices();
                 }
                 this.purchaseSupplierSearchQuery = '';
                 this.purchaseFilteredSuppliers = this.suppliers;
             },
+
+            loadPurchaseSupplierPrices(supplierId) {
+                this.purchaseSupplierPrices = {};
+                fetch(`/api/v1/suppliers/${supplierId}/product-prices`, { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && Array.isArray(d.products)) {
+                            const map = {};
+                            d.products.forEach(p => {
+                                if (p.custom_price !== null && p.custom_price !== undefined && parseFloat(p.custom_price) > 0) {
+                                    map[p.product_id] = parseFloat(p.custom_price);
+                                }
+                            });
+                            this.purchaseSupplierPrices = map;
+                            this.refreshPurchaseCartItemPrices();
+                        }
+                    })
+                    .catch(() => {});
+            },
+
+            refreshPurchaseCartItemPrices() {
+                if (!this.newPurchase.items || this.newPurchase.items.length === 0) return;
+                this.newPurchase.items.forEach(item => {
+                    const prod = (this.products || []).find(p => p.id === item.product_id);
+                    if (prod) {
+                        item.purchase_price = this.getPurchaseProductPrice(prod);
+                    }
+                });
+            },
+
+            getPurchaseProductPrice(product) {
+                if (!product) return 0;
+                if (this.newPurchase.supplier_id && this.purchaseSupplierPrices[product.id] !== undefined) {
+                    return parseFloat(this.purchaseSupplierPrices[product.id]);
+                }
+                return parseFloat(product.purchase_price || 0);
+            },
+
+            hasPurchaseSupplierCustomPrice(product) {
+                return !!(this.newPurchase.supplier_id && this.purchaseSupplierPrices[product.id] !== undefined);
+            },
+
             getSelectedPurchaseSupplierName() {
                 if (!this.newPurchase.supplier_id) return this.t('walk_in_supplier');
                 const sup = this.suppliers.find(s => s.id == this.newPurchase.supplier_id);
@@ -2629,7 +3521,8 @@
                             product_id: prod.id,
                             name: prod.name,
                             quantity: 1,
-                            purchase_price: parseFloat(prod.purchase_price) || 0
+                            purchase_price: this.getPurchaseProductPrice(prod),
+                            discount: 0
                         });
                     }
                     this.showToast(prod.name + ' added to purchase list.');
@@ -2651,18 +3544,67 @@
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
             },
-            calculatePurchaseTotal() { return this.newPurchase.items.reduce((sum, item) => sum + (item.purchase_price * item.quantity), 0); },
+            calculatePurchaseSubtotal() {
+                return this.newPurchase.items.reduce((sum, item) => sum + ((parseFloat(item.purchase_price) || 0) * (parseInt(item.quantity) || 0)), 0);
+            },
+            calculatePurchaseTotalDiscount() {
+                const itemDiscounts = this.newPurchase.items.reduce((sum, item) => sum + (parseFloat(item.discount) || 0), 0);
+                const overallDiscount = parseFloat(this.newPurchase.discount) || 0;
+                return itemDiscounts + overallDiscount;
+            },
+            calculatePurchaseTotal() {
+                const subtotal = this.calculatePurchaseSubtotal();
+                const discount = this.calculatePurchaseTotalDiscount();
+                return Math.max(0, subtotal - discount);
+            },
+            getPurchasePaidAmount() {
+                if (this.newPurchase.paid_amount !== null && this.newPurchase.paid_amount !== undefined && this.newPurchase.paid_amount !== '') {
+                    return Math.min(this.calculatePurchaseTotal(), Math.max(0, parseFloat(this.newPurchase.paid_amount) || 0));
+                }
+                return this.newPurchase.payment_type === 'Credit' ? 0 : this.calculatePurchaseTotal();
+            },
+            getPurchaseDueAmount() {
+                return Math.max(0, this.calculatePurchaseTotal() - this.getPurchasePaidAmount());
+            },
+            setPurchasePaymentType(type) {
+                this.newPurchase.payment_type = type;
+                if (type === 'Credit') {
+                    this.newPurchase.paid_amount = 0;
+                } else {
+                    this.newPurchase.paid_amount = this.calculatePurchaseTotal();
+                }
+            },
+            getPurchaseSaveButtonLabel() {
+                const total = this.calculatePurchaseTotal();
+                const paid = this.getPurchasePaidAmount();
+                const due = total - paid;
+                if (total <= 0) return this.t('save_purchase') || 'Save Purchase';
+                if (due <= 0) return `Pay ₹${paid.toFixed(2)} & Save`;
+                if (paid <= 0) return `Save as Due (₹${due.toFixed(2)})`;
+                return `Pay ₹${paid.toFixed(2)} (Due: ₹${due.toFixed(2)})`;
+            },
             savePurchase() {
                 if (this.newPurchase.items.length === 0) return;
-                if (this.newPurchase.payment_type === 'Credit' && !this.newPurchase.supplier_id) {
-                    this.showConfirm('Validation Error', 'Supplier selection is required for Credit (udhaar) purchases.', () => { });
+                const total = this.calculatePurchaseTotal();
+                const paid = this.getPurchasePaidAmount();
+                const due = total - paid;
+                if (due > 0 && !this.newPurchase.supplier_id) {
+                    this.showConfirm('Validation Error', 'Supplier selection is required for purchases with unpaid due balance.', () => { });
                     return;
                 }
                 this.loading = true;
                 const body = {
-                    supplier_id: this.newPurchase.supplier_id || null, total_amount: this.calculatePurchaseTotal(),
+                    supplier_id: this.newPurchase.supplier_id || null,
+                    total_amount: total,
+                    discount: this.calculatePurchaseTotalDiscount(),
+                    paid_amount: paid,
                     payment_type: this.newPurchase.payment_type,
-                    items: this.newPurchase.items.map(i => ({ product_id: i.product_id, quantity: i.quantity, purchase_price: i.purchase_price }))
+                    items: this.newPurchase.items.map(i => ({
+                        product_id: i.product_id,
+                        quantity: i.quantity,
+                        purchase_price: parseFloat(i.purchase_price) || 0,
+                        discount: parseFloat(i.discount) || 0
+                    }))
                 };
                 fetch('/api/v1/purchases', { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) })
                     .then(r => r.json()).then(d => {
@@ -2678,7 +3620,11 @@
                             this.loadDashboard();
                             this.loadProducts();
                         }
-                        else { this.showToast('Failed to record purchase.', 'error'); }
+                        else { this.showToast(d.errors ? Object.values(d.errors)[0][0] : 'Failed to record purchase.', 'error'); }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Network error.', 'error');
                     });
             },
 

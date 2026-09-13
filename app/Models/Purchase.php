@@ -14,16 +14,31 @@ class Purchase extends Model
         'supplier_id',
         'purchase_number',
         'total_amount',
+        'discount',
+        'paid_amount',
         'payment_type',
         'purchase_date',
         'status',
+        'cancellation_reason',
+        'cancelled_at',
+        'cancelled_by',
         'paid_date',
     ];
 
     protected $casts = [
         'purchase_date' => 'datetime',
+        'cancelled_at' => 'datetime',
         'paid_date' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::deleting(function ($purchase) {
+            if ($purchase->isForceDeleting()) {
+                throw new \Exception("Hard delete is blocked for posted purchase bills. Please cancel the purchase instead.");
+            }
+        });
+    }
 
     public function shop()
     {

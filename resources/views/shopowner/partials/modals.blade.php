@@ -43,9 +43,9 @@
                                 </template>
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedSale.sale_date).toLocaleString()"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="formatDateTime(selectedSale.sale_date)"></span></p>
                             <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && (selectedSale.paid_date || selectedSale.updated_at)">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedSale.paid_date || selectedSale.updated_at).toLocaleString()"></span></p>
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="formatDateTime(selectedSale.paid_date || selectedSale.updated_at)"></span></p>
                             </template>
                         </div>
                     </div>
@@ -76,6 +76,9 @@
                                 <th class="px-4 py-2 text-left font-bold text-slate-500" x-text="t('product')">Item</th>
                                 <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('price')">Price</th>
                                 <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty</th>
+                                <template x-if="selectedSale.items && selectedSale.items.some(i => (parseFloat(i.discount) || 0) > 0)">
+                                    <th class="px-4 py-2 text-right font-bold text-amber-600" x-text="t('discount') || 'Disc.'">Disc.</th>
+                                </template>
                                 <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
                                     <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">Returned</th>
                                 </template>
@@ -91,6 +94,10 @@
                                     <td class="px-4 py-2.5 font-semibold" x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></td>
                                     <td class="px-4 py-2.5 text-right" x-text="'₹' + parseFloat(item.selling_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
+                                    <template x-if="selectedSale.items && selectedSale.items.some(i => (parseFloat(i.discount) || 0) > 0)">
+                                        <td class="px-4 py-2.5 text-right font-semibold text-amber-600"
+                                            x-text="(parseFloat(item.discount) || 0) > 0 ? ('-₹' + parseFloat(item.discount).toFixed(2)) : '-'"></td>
+                                    </template>
                                     <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
                                         <td class="px-4 py-2.5 text-center text-rose-600 font-bold" 
                                             x-text="
@@ -114,14 +121,14 @@
                                             "></td>
                                     </template>
                                     <td class="px-4 py-2.5 text-right font-bold"
-                                        x-text="'₹' + (item.selling_price * (
+                                        x-text="'₹' + Math.max(0, (item.selling_price * (
                                             (() => {
                                                 if (item.returned_quantity > 0) return item.quantity - item.returned_quantity;
                                                 const hasReturnedQty = selectedSale.items.some(i => i.returned_quantity > 0);
                                                 if (!hasReturnedQty && selectedSale.status === 'Returned') return 0;
                                                 return item.quantity;
                                             })()
-                                        )).toFixed(2)"></td>
+                                        )) - (parseFloat(item.discount) || 0)).toFixed(2)"></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -141,16 +148,28 @@
                         </div>
                         
                         <!-- Right Side: Totals -->
-                        <div class="flex flex-col items-end gap-1">
-                            <div class="flex justify-between w-48"><span class="text-slate-500" x-text="t('subtotal') + ':'">Subtotal:</span><span
+                        <div class="flex flex-col items-end gap-1 w-52">
+                            <div class="flex justify-between w-full"><span class="text-slate-500" x-text="t('subtotal') + ':'">Subtotal:</span><span
                                     class="font-semibold">₹<span x-text="selectedSale.subtotal"></span></span></div>
-                            <div class="flex justify-between w-48"><span class="text-slate-500" x-text="t('discount') + ':'">Discount:</span><span
+                            <div class="flex justify-between w-full"><span class="text-slate-500" x-text="t('discount') + ':'">Discount:</span><span
                                     class="font-semibold">-₹<span x-text="selectedSale.discount"></span></span></div>
                             <div
-                                class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                                <span x-text="t('grand_total') + ':'">Grand Total:</span><span class="text-primary">₹<span
+                                class="flex justify-between w-full text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                                <span x-text="t('grand_total') + ':'">Grand Total:</span><span class="text-primary font-extrabold">₹<span
                                         x-text="selectedSale.grand_total"></span></span>
                             </div>
+                            <template x-if="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0">
+                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5">
+                                    <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
+                                        <span x-text="(t('store_credit') || 'Store Credit') + ':'">Store Credit:</span>
+                                        <span>-₹<span x-text="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance).toFixed(2)"></span></span>
+                                    </div>
+                                    <div class="flex justify-between w-full text-xs font-bold" :class="selectedSale.payment_type === 'Credit' ? 'text-rose-600' : 'text-slate-800 dark:text-white'">
+                                        <span x-text="selectedSale.payment_type === 'Credit' ? (t('balance_due') || 'Balance Due') + ':' : ((t('net_paid') || 'Paid') + ' (' + (selectedSale.payment_type || 'Cash') + '):')"></span>
+                                        <span>₹<span x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance)).toFixed(2)"></span></span>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                     <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
@@ -412,9 +431,9 @@
                                 </template>
                             </h3>
                             <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="new Date(selectedPurchase.purchase_date).toLocaleString()"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="formatDateTime(selectedPurchase.purchase_date)"></span></p>
                             <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && (selectedPurchase.paid_date || selectedPurchase.updated_at)">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="new Date(selectedPurchase.paid_date || selectedPurchase.updated_at).toLocaleString()"></span></p>
+                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="formatDateTime(selectedPurchase.paid_date || selectedPurchase.updated_at)"></span></p>
                             </template>
                         </div>
                     </div>
@@ -433,7 +452,7 @@
                             <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('payment_info')">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment Status:</span>
-                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="t(selectedPurchase.status ? selectedPurchase.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedPurchase.status"></span>
+                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : (selectedPurchase.status === 'Partially Paid' ? 'text-blue-600 font-bold' : 'text-emerald-600 font-bold'))" x-text="t(selectedPurchase.status ? selectedPurchase.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedPurchase.status"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal" x-text="t('payment_type') + ':'">Method:</span>
@@ -459,8 +478,12 @@
                         <tbody>
                             <template x-for="item in selectedPurchase.items" :key="item.id">
                                 <tr>
-                                    <td class="px-4 py-2.5 font-semibold"
-                                        x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></td>
+                                    <td class="px-4 py-2.5 font-semibold">
+                                        <span x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></span>
+                                        <template x-if="parseFloat(item.discount || 0) > 0">
+                                            <div class="text-[10px] text-emerald-600 font-medium">Scheme Disc: -₹<span x-text="parseFloat(item.discount).toFixed(2)"></span></div>
+                                        </template>
+                                    </td>
                                     <td class="px-4 py-2.5 text-right"
                                         x-text="'₹' + parseFloat(item.purchase_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
@@ -471,7 +494,7 @@
                                         <td class="px-4 py-2.5 text-center font-semibold text-slate-600 dark:text-slate-400" x-text="item.quantity - (item.returned_quantity || 0)"></td>
                                     </template>
                                     <td class="px-4 py-2.5 text-right font-bold"
-                                        x-text="'₹' + (item.purchase_price * (item.quantity - (item.returned_quantity || 0))).toFixed(2)"></td>
+                                        x-text="'₹' + Math.max(0, (item.purchase_price * (item.quantity - (item.returned_quantity || 0))) - parseFloat(item.discount || 0)).toFixed(2)"></td>
                                 </tr>
                             </template>
                         </tbody>
@@ -491,12 +514,37 @@
                         </div>
 
                         <!-- Right Side: Totals -->
-                        <div class="flex flex-col items-end gap-1">
+                        <div class="flex flex-col items-end gap-1 w-56">
+                            <template x-if="parseFloat(selectedPurchase.discount || 0) > 0">
+                                <div class="flex justify-between w-full text-xs text-slate-500">
+                                    <span x-text="t('subtotal') + ':'">Subtotal:</span>
+                                    <span>₹<span x-text="(parseFloat(selectedPurchase.total_amount) + parseFloat(selectedPurchase.discount)).toFixed(2)"></span></span>
+                                </div>
+                            </template>
+                            <template x-if="parseFloat(selectedPurchase.discount || 0) > 0">
+                                <div class="flex justify-between w-full text-xs text-emerald-600 font-medium">
+                                    <span>Scheme Discount:</span>
+                                    <span>-₹<span x-text="parseFloat(selectedPurchase.discount).toFixed(2)"></span></span>
+                                </div>
+                            </template>
                             <div
-                                class="flex justify-between w-48 text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                                <span x-text="t('total') + ':'">Total Amount:</span><span class="text-primary font-extrabold">₹<span
+                                class="flex justify-between w-full text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-1.5">
+                                <span x-text="t('total') + ':'">Total Amount:</span>
+                                <span class="text-primary font-extrabold">₹<span
                                         x-text="parseFloat(selectedPurchase.total_amount).toFixed(2)"></span></span>
                             </div>
+                            <template x-if="parseFloat(selectedPurchase.paid_amount || 0) > 0 || selectedPurchase.status === 'Partially Paid' || selectedPurchase.status === 'Unpaid'">
+                                <div class="w-full pt-1 border-t border-slate-100 dark:border-gray-700/60 flex flex-col gap-0.5">
+                                    <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
+                                        <span x-text="(t('paid_amount') || 'Paid Amount') + ':'">Paid Amount:</span>
+                                        <span>₹<span x-text="parseFloat(selectedPurchase.paid_amount || 0).toFixed(2)"></span></span>
+                                    </div>
+                                    <div class="flex justify-between w-full text-xs font-bold text-rose-600">
+                                        <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
+                                        <span>₹<span x-text="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)).toFixed(2)"></span></span>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                     <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
@@ -608,12 +656,27 @@
                 </tbody>
             </table>
 
-            <div class="bg-slate-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-2">
-                <div class="flex justify-between text-sm">
-                    <span class="text-slate-500" x-text="t('refund_method') + ':'">Refund Method:</span>
-                    <span class="font-semibold text-slate-800 dark:text-white"
-                        x-text="returnForm.payment_type === 'Credit' ? t('reduce_customer_due') : (t('refund') + ' (' + (t(returnForm.payment_type ? returnForm.payment_type.toLowerCase() : '') || returnForm.payment_type) + ')')"></span>
+            <div class="bg-slate-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
+                    <label class="text-slate-600 dark:text-slate-300 font-semibold" x-text="t('refund_method') + ':'">Refund Method:</label>
+                    <select x-model="returnForm.refund_method"
+                        class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-800 dark:text-white font-medium focus:outline-none focus:border-primary">
+                        <option value="cash">Cash Refund</option>
+                        <option value="bank">Bank Refund</option>
+                        <option value="upi">UPI Refund</option>
+                        <template x-if="returnForm.customer_id">
+                            <option value="credit_note">Issue Credit Note (Store Credit)</option>
+                        </template>
+                        <template x-if="returnForm.payment_type === 'Credit' && returnForm.customer_id">
+                            <option value="due_adjustment">Reduce Customer Khata Due</option>
+                        </template>
+                    </select>
                 </div>
+                <template x-if="returnForm.refund_method === 'credit_note'">
+                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                        A Credit Note voucher will be generated and refund balance will be added to the customer's store credit wallet.
+                    </p>
+                </template>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
                     <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
                     <span class="font-bold text-primary">₹<span x-text="
@@ -761,17 +824,21 @@
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
                                 </div>
-                                <div class="flex justify-between items-center gap-2">
-                                    <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                                <div class="flex justify-between items-center gap-1.5 flex-wrap">
+                                    <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
                                         <button @click="decreaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
-                                        <span class="px-2.5 text-xs font-bold" x-text="item.quantity"></span>
+                                        <span class="px-2 text-xs font-bold" x-text="item.quantity"></span>
                                         <button @click="increaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
                                     </div>
-                                    <div class="flex items-center gap-1">
-                                        <span class="text-xs text-slate-400">₹</span>
-                                        <input type="number" step="0.01" x-model.number="item.selling_price" class="w-16 px-1.5 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
+                                    <div class="flex items-center gap-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                        <span class="text-[10px] text-slate-400">Rate:</span>
+                                        <span>₹<span x-text="parseFloat(item.selling_price).toFixed(2)"></span></span>
                                     </div>
-                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">₹<span x-text="(item.selling_price * item.quantity).toFixed(2)"></span></span>
+                                    <div class="flex items-center gap-0.5">
+                                        <span class="text-[10px] text-amber-500 font-medium">Disc:₹</span>
+                                        <input type="number" step="0.01" min="0" x-model.number="item.discount" placeholder="0" title="Item Discount (₹)" class="w-12 px-1 py-0.5 border border-amber-200 dark:border-amber-800/60 rounded text-center text-xs text-amber-600 dark:text-amber-400 dark:bg-gray-700">
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">₹<span x-text="Math.max(0, (item.selling_price * item.quantity) - (item.discount || 0)).toFixed(2)"></span></span>
                                 </div>
                             </div>
                         </template>
@@ -856,12 +923,24 @@
                             <div @click="addPurchaseItemById(prod.id)"
                                 class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary">
                                 <div>
-                                    <p class="font-bold text-sm text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
-                                    <p class="text-[10px] text-slate-400">Barcode: <span x-text="prod.barcode"></span></p>
+                                    <div class="flex items-start justify-between gap-1.5">
+                                        <p class="font-bold text-sm text-slate-800 dark:text-white truncate" :title="prod.name" x-text="prod.name"></p>
+                                        <template x-if="hasPurchaseSupplierCustomPrice(prod)">
+                                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">Supp</span>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Barcode: <span x-text="prod.barcode"></span></p>
                                 </div>
-                                <div class="flex justify-between items-center mt-3">
-                                    <span class="text-sm font-extrabold text-primary">₹<span x-text="prod.purchase_price"></span></span>
-                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-slate-200 text-slate-700"
+                                <div class="flex justify-between items-end mt-3 pt-2 border-t border-slate-100 dark:border-gray-700/60">
+                                    <div class="flex flex-col">
+                                        <template x-if="hasPurchaseSupplierCustomPrice(prod)">
+                                            <span class="line-through text-[10px] text-slate-400 font-medium">₹<span x-text="parseFloat(prod.purchase_price).toFixed(2)"></span></span>
+                                        </template>
+                                        <span class="text-sm font-extrabold" :class="hasPurchaseSupplierCustomPrice(prod) ? 'text-indigo-600 dark:text-indigo-400' : 'text-primary'">
+                                            ₹<span x-text="parseFloat(getPurchaseProductPrice(prod)).toFixed(2)"></span>
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 bg-slate-200 text-slate-700"
                                         x-text="'Stock: ' + prod.stock"></span>
                                 </div>
                             </div>
@@ -1238,6 +1317,258 @@
     </div>
 </div>
 
+{{-- CUSTOMER PRODUCT PRICING (INVENTORY PRICE) MODAL --}}
+<div x-show="showCustomerPricingModal" x-cloak
+    class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div @click.away="showCustomerPricingModal = false"
+        class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-slate-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
+        
+        {{-- Header --}}
+        <div class="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-gray-700 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span>Customer Product Pricing</span>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold"
+                            x-text="customerPricingTarget ? customerPricingTarget.name : ''"></span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Set custom selling prices for this customer. When billing in POS, these prices will automatically apply.
+                    </p>
+                </div>
+            </div>
+            <button @click="showCustomerPricingModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        {{-- Search bar --}}
+        <div class="py-3 shrink-0">
+            <div class="relative">
+                <input type="text" placeholder="Search product name or barcode..." x-model="customerPricingSearch"
+                    class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+            </div>
+        </div>
+
+        {{-- Products List Table --}}
+        <div class="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] border border-slate-200 dark:border-gray-700 rounded-xl">
+            <template x-if="customerPricingLoading">
+                <div class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <p class="text-xs text-slate-400 mt-2 font-medium">Loading products...</p>
+                </div>
+            </template>
+            <template x-if="!customerPricingLoading">
+                <table class="w-full divide-y divide-slate-200 dark:divide-gray-700 text-left text-xs">
+                    <thead class="bg-slate-50 dark:bg-gray-700/50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase">Product Name</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase">Barcode</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Price</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Customer Price (₹)</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20">Reset</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
+                        <template x-for="item in filteredCustomerPricingList()" :key="item.product_id">
+                            <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-colors"
+                                :class="item.custom_price && parseFloat(item.custom_price) > 0 ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''">
+                                <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">
+                                    <span x-text="item.name"></span>
+                                    <template x-if="item.custom_price && parseFloat(item.custom_price) > 0">
+                                        <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">Custom</span>
+                                    </template>
+                                </td>
+                                <td class="px-3 py-3 text-slate-400 font-mono" x-text="item.barcode || '-'"></td>
+                                <td class="px-3 py-3 text-slate-600 dark:text-slate-300 text-right font-medium">
+                                    ₹<span x-text="parseFloat(item.default_price).toFixed(2)"></span>
+                                </td>
+                                <td class="px-4 py-2 text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-xs font-bold text-slate-400">₹</span>
+                                        <input type="number" step="0.01" min="0" placeholder="Default"
+                                            x-model="item.custom_price"
+                                            class="w-28 px-2.5 py-1.5 border rounded-lg text-right text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-700 dark:text-white"
+                                            :class="item.custom_price && parseFloat(item.custom_price) > 0 ? 'border-indigo-400 text-indigo-600 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-950/40' : 'border-slate-300 dark:border-gray-600 text-slate-700 dark:text-slate-300'">
+                                    </div>
+                                </td>
+                                <td class="px-3 py-3 text-center">
+                                    <button type="button" @click="item.custom_price = null"
+                                        :disabled="!item.custom_price"
+                                        :class="item.custom_price ? 'text-rose-500 hover:text-rose-700' : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'"
+                                        class="p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-700 text-xs font-medium" title="Revert to default price">
+                                        Clear
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="filteredCustomerPricingList().length === 0">
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-slate-400 text-xs">
+                                    No products found matching search.
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+        </div>
+
+        {{-- Footer --}}
+        <div class="pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-between items-center mt-3 shrink-0">
+            <div class="text-[11px] text-slate-400">
+                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="customerPricingList.filter(p => p.custom_price && parseFloat(p.custom_price) > 0).length"></span> product(s) with custom pricing
+            </div>
+            <div class="flex gap-2">
+                <button type="button" @click="showCustomerPricingModal = false"
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 transition-all">
+                    Cancel
+                </button>
+                <button type="button" @click="saveCustomerPricing()"
+                    :disabled="customerPricingSaving"
+                    class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50">
+                    <span x-show="customerPricingSaving" class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
+                    <span x-text="customerPricingSaving ? 'Saving...' : 'Save Prices'">Save Prices</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SUPPLIER PRODUCT PRICING (PURCHASE PRICE) MODAL --}}
+<div x-show="showSupplierPricingModal" x-cloak
+    class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div @click.away="showSupplierPricingModal = false"
+        class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-slate-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
+        
+        {{-- Header --}}
+        <div class="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-gray-700 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span>Supplier Product Pricing</span>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold"
+                            x-text="supplierPricingTarget ? supplierPricingTarget.name : ''"></span>
+                    </h3>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                        Set custom purchase prices for this supplier. When creating purchases, these prices will automatically apply.
+                    </p>
+                </div>
+            </div>
+            <button @click="showSupplierPricingModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        {{-- Search bar --}}
+        <div class="py-3 shrink-0">
+            <div class="relative">
+                <input type="text" placeholder="Search product name or barcode..." x-model="supplierPricingSearch"
+                    class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+            </div>
+        </div>
+
+        {{-- Products List Table --}}
+        <div class="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] border border-slate-200 dark:border-gray-700 rounded-xl">
+            <template x-if="supplierPricingLoading">
+                <div class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <p class="text-xs text-slate-400 mt-2 font-medium">Loading products...</p>
+                </div>
+            </template>
+            <template x-if="!supplierPricingLoading">
+                <table class="w-full divide-y divide-slate-200 dark:divide-gray-700 text-left text-xs">
+                    <thead class="bg-slate-50 dark:bg-gray-700/50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase">Product Name</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase">Barcode</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Purchase Price</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Supplier Price (₹)</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20">Reset</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
+                        <template x-for="item in filteredSupplierPricingList()" :key="item.product_id">
+                            <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-colors"
+                                :class="item.custom_price && parseFloat(item.custom_price) > 0 ? 'bg-indigo-50/40 dark:bg-indigo-900/10' : ''">
+                                <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">
+                                    <span x-text="item.name"></span>
+                                    <template x-if="item.custom_price && parseFloat(item.custom_price) > 0">
+                                        <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">Custom</span>
+                                    </template>
+                                </td>
+                                <td class="px-3 py-3 text-slate-400 font-mono" x-text="item.barcode || '-'"></td>
+                                <td class="px-3 py-3 text-slate-600 dark:text-slate-300 text-right font-medium">
+                                    ₹<span x-text="parseFloat(item.default_price).toFixed(2)"></span>
+                                </td>
+                                <td class="px-4 py-2 text-right">
+                                    <div class="flex items-center justify-end gap-1">
+                                        <span class="text-xs font-bold text-slate-400">₹</span>
+                                        <input type="number" step="0.01" min="0" placeholder="Default"
+                                            x-model="item.custom_price"
+                                            class="w-28 px-2.5 py-1.5 border rounded-lg text-right text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary dark:bg-gray-700 dark:text-white"
+                                            :class="item.custom_price && parseFloat(item.custom_price) > 0 ? 'border-indigo-400 text-indigo-600 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-950/40' : 'border-slate-300 dark:border-gray-600 text-slate-700 dark:text-slate-300'">
+                                    </div>
+                                </td>
+                                <td class="px-3 py-3 text-center">
+                                    <button type="button" @click="item.custom_price = null"
+                                        :disabled="!item.custom_price"
+                                        :class="item.custom_price ? 'text-rose-500 hover:text-rose-700' : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'"
+                                        class="p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-700 text-xs font-medium" title="Revert to default purchase price">
+                                        Clear
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="filteredSupplierPricingList().length === 0">
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-slate-400 text-xs">
+                                    No products found matching search.
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </template>
+        </div>
+
+        {{-- Footer --}}
+        <div class="pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-between items-center mt-3 shrink-0">
+            <div class="text-[11px] text-slate-400">
+                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="supplierPricingList.filter(p => p.custom_price && parseFloat(p.custom_price) > 0).length"></span> product(s) with custom pricing
+            </div>
+            <div class="flex gap-2">
+                <button type="button" @click="showSupplierPricingModal = false"
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 transition-all">
+                    Cancel
+                </button>
+                <button type="button" @click="saveSupplierPricing()"
+                    :disabled="supplierPricingSaving"
+                    class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50">
+                    <span x-show="supplierPricingSaving" class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
+                    <span x-text="supplierPricingSaving ? 'Saving...' : 'Save Prices'">Save Prices</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- 17. LIFETIME OFFER POPUP MODAL --}}
 <div x-show="showLifetimeOfferPopup" x-cloak
     class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -1292,5 +1623,162 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+{{-- 24. SUPPORT TICKET MODALS --}}
+{{-- MODAL: Create New Support Ticket --}}
+<div x-show="newTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
+    <div @click.outside="newTicketModal = false" class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div class="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </div>
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="t('new_support_ticket') || 'Create New Support Ticket'">Create New Support Ticket</h4>
+            </div>
+            <button type="button" @click="newTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form @submit.prevent="submitNewTicket()" class="p-6 space-y-4">
+            {{-- Subject --}}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_subject') || 'Subject'">Subject</label>
+                <input type="text" required x-model="ticketForm.subject" :placeholder="t('ticket_subject_placeholder') || 'Brief summary of issue...'"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+            </div>
+
+            {{-- Message --}}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_message') || 'Issue Details'">Issue Details</label>
+                <textarea required rows="4" x-model="ticketForm.message" :placeholder="t('ticket_message_placeholder') || 'Describe your problem in detail...'"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all"></textarea>
+            </div>
+
+            {{-- Screenshot / Attachment --}}
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_screenshot') || 'Screenshot or Attachment (Optional)'">Screenshot (Optional)</label>
+                <div class="relative border-2 border-dashed border-slate-200 dark:border-gray-600 rounded-2xl p-4 text-center hover:border-primary transition-all">
+                    <template x-if="!ticketForm.screenshotPreview">
+                        <label class="cursor-pointer flex flex-col items-center justify-center">
+                            <svg class="w-8 h-8 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <span class="text-xs font-semibold text-primary">Click to upload screenshot</span>
+                            <span class="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP up to 10MB</span>
+                            <input type="file" accept="image/*,.pdf" @change="onTicketScreenshotChange($event)" class="sr-only">
+                        </label>
+                    </template>
+                    <template x-if="ticketForm.screenshotPreview">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <img :src="ticketForm.screenshotPreview" class="w-12 h-12 object-cover rounded-xl border border-slate-200 dark:border-gray-700">
+                                <div class="text-left">
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[200px]" x-text="ticketForm.screenshot ? ticketForm.screenshot.name : 'Selected file'"></p>
+                                    <span class="text-[10px] text-emerald-600 font-semibold">Ready to upload</span>
+                                </div>
+                            </div>
+                            <button type="button" @click="ticketForm.screenshot = null; ticketForm.screenshotPreview = null" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            {{-- Action Buttons --}}
+            <div class="pt-4 border-t border-slate-100 dark:border-gray-700/50 flex items-center justify-end gap-2">
+                <button type="button" @click="newTicketModal = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all">
+                    Cancel
+                </button>
+                <button type="submit" :disabled="submittingTicket" class="px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                    <template x-if="submittingTicket">
+                        <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                    </template>
+                    <span x-text="submittingTicket ? 'Submitting...' : (t('create_ticket') || 'Submit Ticket')">Submit Ticket</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- MODAL: View Ticket Details & Admin Reply --}}
+<div x-show="viewTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
+    <div @click.outside="viewTicketModal = false" class="bg-white dark:bg-gray-800 rounded-3xl max-w-xl w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <template x-if="selectedTicket">
+            <div>
+                {{-- Header --}}
+                <div class="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-extrabold text-slate-400" x-text="'Ticket #' + selectedTicket.id"></span>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
+                            :class="{
+                                'bg-amber-100 text-amber-700': selectedTicket.status === 'open',
+                                'bg-blue-100 text-blue-700': ['inProgress', 'pending'].includes(selectedTicket.status),
+                                'bg-emerald-100 text-emerald-700': ['resolved', 'closed'].includes(selectedTicket.status)
+                            }"
+                            x-text="selectedTicket.status"></span>
+                    </div>
+                    <button type="button" @click="viewTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                {{-- Body with Message Bubbles --}}
+                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                    {{-- Ticket Subject --}}
+                    <div class="pb-3 border-b border-slate-100 dark:border-gray-700/50">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('ticket_subject') || 'Subject'">Subject</span>
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5" x-text="selectedTicket.subject"></h4>
+                    </div>
+
+                    {{-- User Message --}}
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-700/40 border border-slate-100 dark:border-gray-700 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="font-bold text-slate-700 dark:text-slate-200" x-text="t('your_message') || 'Your Issue Description'">Your Issue Description</span>
+                            <span class="text-[10px] text-slate-400" x-text="formatDateTime(selectedTicket.created_at)"></span>
+                        </div>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed" x-text="selectedTicket.message"></p>
+
+                        <template x-if="selectedTicket.screenshot">
+                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-gray-600">
+                                <span class="block text-[10px] font-semibold text-slate-400 mb-1.5">Attached Image / Screenshot:</span>
+                                <a :href="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" target="_blank" class="inline-block rounded-xl overflow-hidden border border-slate-200 dark:border-gray-600 max-h-48 hover:opacity-95 transition-opacity">
+                                    <img :src="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" class="max-h-48 max-w-full object-contain bg-black/5 dark:bg-white/5">
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Admin Reply Section --}}
+                    <template x-if="selectedTicket.admin_reply">
+                        <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span x-text="t('admin_reply') || 'Support Team Response'">Support Team Response</span>
+                                </div>
+                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400" x-text="selectedTicket.replied_at ? formatDateTime(selectedTicket.replied_at) : ''"></span>
+                            </div>
+                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="selectedTicket.admin_reply"></p>
+                        </div>
+                    </template>
+
+                    <template x-if="!selectedTicket.admin_reply">
+                        <div class="py-2.5 px-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0"></span>
+                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300" x-text="t('waiting_for_reply') || 'Waiting for support response...'">Waiting for support response...</span>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Footer --}}
+                <div class="px-6 py-3.5 border-t border-slate-100 dark:border-gray-700 flex justify-end">
+                    <button type="button" @click="viewTicketModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </template>
     </div>
 </div>

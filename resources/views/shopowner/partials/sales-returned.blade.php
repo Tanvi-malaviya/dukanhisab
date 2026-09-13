@@ -6,7 +6,7 @@
         <div class="flex-1 flex flex-col md:flex-row gap-3">
             <div class="flex-1 min-w-[200px]">
                 <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('search')">Search</label>
-                <input type="text" :placeholder="t('search_placeholder')" x-model="returnedFilter.search" @input.debounce.300ms="returnedSalesPage = 1" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                <input type="text" :placeholder="t('search_sales_placeholder') || t('search_placeholder') || 'Search by Customer Name...'" x-model="returnedFilter.search" @input.debounce.300ms="returnedSalesPage = 1" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div class="w-full md:w-44 shrink-0">
                 <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('date')">Date</label>
@@ -105,7 +105,7 @@
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans" x-text="t('date') + ':'">Date:</span>
-                            <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="new Date(sale.sale_date).toLocaleDateString()"></span>
+                            <span class="text-slate-700 dark:text-slate-300 font-mono" x-text="formatDate(sale.sale_date)"></span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-slate-400 font-sans" x-text="t('payment_type') + ':'">Payment:</span>

@@ -12,10 +12,10 @@
         // reusing stale cached values.
         ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
         localStorage.setItem('shopowner_token', @json($token));
-        window.location.href = '/shopowner/';
+        window.location.href = '/shop/';
     </script>
     <noscript>
-        JavaScript is required to continue. <a href="/shopowner/">Click here</a> if you are not redirected automatically.
+        JavaScript is required to continue. <a href="/shop/">Click here</a> if you are not redirected automatically.
     </noscript>
 </body>
 </html>

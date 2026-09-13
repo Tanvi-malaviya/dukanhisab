@@ -111,20 +111,87 @@ Route::group([
     Route::get('logs', [AuditLogController::class, 'index'])->name('logs.index');
 });
 
-// Add SPA wildcard route for the Shop Web Panel
-Route::get('/dukanhisab/{any?}', function () {
+// Shop Owner Auth Routes (Login, Register, Forgot Password, Reset Password)
+Route::get('/shop/login', function () {
+    return view('shopowner');
+})->name('login');
+
+Route::get('/shop/register', function () {
+    return view('shopowner');
+})->name('shop.register');
+
+Route::get('/shop/forgot-password', function () {
+    return view('shopowner');
+});
+
+Route::get('/shop/reset-password', function () {
+    return view('shopowner');
+});
+
+Route::get('/shop/verify-otp', function () {
+    return view('shopowner');
+});
+
+Route::get('/shop/shop-setup', function () {
+    return view('shopowner');
+});
+
+// Shop Owner Main App Panel SPA Route (Dashboard, Sales, Inventory, etc.)
+Route::get('/shop/{any?}', function () {
     return view('app');
 })->where('any', '.*');
 
-// ShopOwner Web Panel SPA route
+// Backward compatibility redirects
+Route::get('/web/{any?}', function () {
+    $any = request()->route('any');
+    return redirect('/shop' . ($any ? '/' . $any : ''));
+})->where('any', '.*');
+
+Route::get('/dukanhisab/{any?}', function () {
+    $any = request()->route('any');
+    return redirect('/shop' . ($any ? '/' . $any : ''));
+})->where('any', '.*');
+
 Route::get('/shopowner/{any?}', function () {
-    return view('shopowner');
+    $any = request()->route('any');
+    return redirect('/shop' . ($any ? '/' . $any : ''));
 })->where('any', '.*');
 
 // Public Storefront routes
 Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::class, 'show'])->name('store.public');
 
+// Storage files streaming route (direct fallback if public/storage symlink is not served by webserver)
+Route::get('/storage/{path}', function ($path) {
+    $cleanPath = ltrim($path, '/');
+    if (str_starts_with($cleanPath, 'storage/')) {
+        $cleanPath = substr($cleanPath, 8);
+    }
+
+    $candidates = [
+        storage_path('app/public/' . $cleanPath),
+        public_path('storage/' . $cleanPath),
+        storage_path('app/' . $cleanPath),
+        public_path($cleanPath),
+    ];
+
+    foreach ($candidates as $fullPath) {
+        if (file_exists($fullPath) && is_file($fullPath)) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = $finfo ? finfo_file($finfo, $fullPath) : 'image/jpeg';
+            if ($finfo) finfo_close($finfo);
+            return response()->file($fullPath, [
+                'Content-Type' => $mime ?: 'image/jpeg',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+    }
+
+    // Return a clean inline SVG badge instead of aborting 404 (which triggers HTML SPA catch-all)
+    $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#0d9488"/><text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-size="40" font-weight="bold" fill="#ffffff">U</text></svg>';
+    return response($svg, 200)->header('Content-Type', 'image/svg+xml');
+})->where('path', '.*');
+
 // Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!admin|api|shopowner|store).*$');
+})->where('any', '^(?!admin|api|shopowner|shop|store|storage).*$');
