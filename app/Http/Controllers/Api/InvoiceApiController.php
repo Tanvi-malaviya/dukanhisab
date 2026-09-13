@@ -466,6 +466,21 @@ class InvoiceApiController extends Controller
                             <th style="width: 80px; text-align: right;">' . __('price') . '</th>
                             <th style="width: 80px; text-align: center;">' . __('qty') . '</th>';
 
+        $showDiscountCol = ($invoiceConfig->show_discount ?? true);
+        if (!$showDiscountCol) {
+            foreach ($sale->items as $item) {
+                if ((float)($item->discount ?? 0) > 0) {
+                    $showDiscountCol = true;
+                    break;
+                }
+            }
+        }
+
+        if ($showDiscountCol) {
+            $html .= '
+                            <th style="width: 80px; text-align: right;">' . __('discount') . '</th>';
+        }
+
         $isReturned = ($sale->status === 'Returned' || $sale->status === 'Partially Returned');
         $hasReturnedQty = false;
         foreach ($sale->items as $item) {
@@ -499,12 +514,20 @@ class InvoiceApiController extends Controller
                             $netQty = 0;
                         }
 
+                        $itemDiscount = (float)($item->discount ?? 0);
+                        $lineTotal = max(0, ($item->selling_price * $netQty) - $itemDiscount);
+
                         $html .= '
                         <tr>
                             <td style="text-align: center;">' . $i++ . '</td>
                             <td>' . $this->renderMultilingualText($item->product->name ?? __('unknown_product')) . '</td>
                             <td style="text-align: right;">&#8377; ' . number_format($item->selling_price, 2) . '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>';
+
+                        if ($showDiscountCol) {
+                            $html .= '
+                            <td style="text-align: right;">' . ($itemDiscount > 0 ? '&#8377; ' . number_format($itemDiscount, 2) : '-') . '</td>';
+                        }
 
                         if ($isReturned) {
                             $html .= '
@@ -513,7 +536,7 @@ class InvoiceApiController extends Controller
                         }
 
                         $html .= '
-                            <td style="text-align: right;">&#8377; ' . number_format($item->selling_price * $netQty, 2) . '</td>
+                            <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
                         </tr>';
                     }
 
