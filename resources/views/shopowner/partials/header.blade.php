@@ -116,7 +116,7 @@
         <div class="flex items-center gap-2 pl-2 py-0.5 pr-0.5 border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/40 rounded-xl">
             {{-- User Profile Image --}}
             <a href="/shop/settings" @click.prevent="navigateTo('settings')" title="My Profile" class="block w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600 shrink-0 hover:opacity-90 transition-opacity">
-                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
+                <img :src="getAvatarUrl(user ? user.avatar : null, user ? user.name : 'User')" @error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'" class="w-full h-full object-cover">
             </a>
 
             <div class="h-4 w-px bg-slate-200 dark:bg-gray-700"></div>

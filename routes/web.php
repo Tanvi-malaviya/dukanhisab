@@ -160,7 +160,16 @@ Route::get('/shopowner/{any?}', function () {
 // Public Storefront routes
 Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::class, 'show'])->name('store.public');
 
+// Storage files streaming route (direct fallback if public/storage symlink is not served by webserver)
+Route::get('/storage/{path}', function ($path) {
+    $cleanPath = ltrim($path, '/');
+    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($cleanPath);
+    }
+    abort(404);
+})->where('path', '.*');
+
 // Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!admin|api|shopowner|shop|store).*$');
+})->where('any', '^(?!admin|api|shopowner|shop|store|storage).*$');

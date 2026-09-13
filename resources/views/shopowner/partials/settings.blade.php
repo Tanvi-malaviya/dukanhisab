@@ -511,7 +511,7 @@
 
     {{-- My Profile / Account Settings --}}
     <div x-show="settingsTab === 'profile'" class="space-y-6">
-        <form @submit.prevent="submitUserProfileUpdate(profileAvatarFile)" class="space-y-6">
+        <form @submit.prevent="submitUserProfileUpdate(profileAvatarFile, userProfileForm)" class="space-y-6">
 
             {{-- Basic Information --}}
             <div
@@ -539,7 +539,8 @@
                                 <img :src="profileAvatarPreview" class="w-full h-full object-cover">
                             </template>
                             <template x-if="!profileAvatarPreview">
-                                <img :src="user && user.avatar ? '/storage/' + user.avatar : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'"
+                                <img :src="getAvatarUrl(user ? user.avatar : null, user ? user.name : 'User')"
+                                    @error="$el.src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user ? user.name : 'User') + '&background=0d9488&color=fff'"
                                     class="w-full h-full object-cover">
                             </template>
 
