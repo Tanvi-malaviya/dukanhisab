@@ -2,6 +2,20 @@
     function appState() {
         return {
             dark: localStorage.getItem('darkMode') === 'true',
+            getAvatarUrl(avatar, name = 'User') {
+                if (!avatar || !String(avatar).trim()) {
+                    return '';
+                }
+                const clean = String(avatar).trim();
+                if (clean.startsWith('http://') || clean.startsWith('https://')) {
+                    return clean;
+                }
+                const path = clean.startsWith('/') ? clean.substring(1) : clean;
+                if (path.startsWith('storage/')) {
+                    return '/' + path;
+                }
+                return '/storage/' + path;
+            },
             getContrastColor(hexColor) {
                 if (!hexColor) return 'text-slate-900';
                 const str = hexColor.trim().toLowerCase();
@@ -587,6 +601,15 @@
             },
 
             showToast(msg, type = 'success') {
+                if (msg === undefined || msg === null || msg === 'undefined' || msg === 'null' || msg === '') {
+                    if (type === 'warning' || type === 'info') {
+                        msg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
+                              (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                    } else {
+                        msg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_failed']) ||
+                              (this.currentLang === 'gu' ? 'ચુકવણી નિષ્ફળ ગઈ. કૃપા કરીને ફરી પ્રયાસ કરો.' : (this.currentLang === 'hi' ? 'भुगतान विफल रहा। कृपया पुन: प्रयास करें।' : 'Payment failed. Please try again.'));
+                    }
+                }
                 this.toast.message = msg; this.toast.type = type; this.toast.show = true;
                 setTimeout(() => { this.toast.show = false; }, 3500);
             },
@@ -1410,21 +1433,34 @@
                     });
             },
 
-            submitUserProfileUpdate(avatarFile = null) {
+            submitUserProfileUpdate(avatarFile = null, profileForm = null) {
                 this.loading = true;
+                const form = profileForm || this.userProfileForm || (this.user ? {
+                    name: this.user.name,
+                    mobile: this.user.mobile,
+                    email: this.user.email,
+                    date_of_birth: this.user.date_of_birth,
+                    gender: this.user.gender,
+                    currency: this.user.currency || 'INR',
+                    date_format: this.user.date_format || 'DD/MM/YYYY',
+                    time_format: this.user.time_format || '12h',
+                    notification_preferences: this.user.notification_preferences || {}
+                } : {});
+
                 const fd = new FormData();
-                fd.append('name', this.userProfileForm.name);
-                fd.append('display_name', this.userProfileForm.name || '');
-                fd.append('mobile', this.userProfileForm.mobile || '');
-                fd.append('email', this.userProfileForm.email);
-                if (this.userProfileForm.date_of_birth) fd.append('date_of_birth', this.userProfileForm.date_of_birth);
-                if (this.userProfileForm.gender) fd.append('gender', this.userProfileForm.gender);
-                fd.append('currency', this.userProfileForm.currency);
-                fd.append('date_format', this.userProfileForm.date_format);
-                fd.append('time_format', this.userProfileForm.time_format);
-                Object.keys(this.userProfileForm.notification_preferences).forEach(key => {
-                    fd.append('notification_preferences[' + key + ']', this.userProfileForm.notification_preferences[key] ? '1' : '0');
-                });
+                fd.append('name', form.name || (this.user ? this.user.name : ''));
+                fd.append('mobile', form.mobile || (this.user ? this.user.mobile : ''));
+                fd.append('email', form.email || (this.user ? this.user.email : ''));
+                if (form.date_of_birth) fd.append('date_of_birth', form.date_of_birth);
+                if (form.gender) fd.append('gender', form.gender);
+                fd.append('currency', form.currency || 'INR');
+                fd.append('date_format', form.date_format || 'DD/MM/YYYY');
+                fd.append('time_format', form.time_format || '12h');
+                if (form.notification_preferences) {
+                    Object.keys(form.notification_preferences).forEach(key => {
+                        fd.append('notification_preferences[' + key + ']', form.notification_preferences[key] ? '1' : '0');
+                    });
+                }
                 if (avatarFile) fd.append('avatar', avatarFile);
 
                 fetch('/api/v1/shopowner/profile', {
@@ -1460,6 +1496,7 @@
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
                             this.checkLifetimeOffer();
+                            window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         }
                         if (d.shop) {
                             this.shop = d.shop;
@@ -1564,6 +1601,7 @@
                                 description: (d.plan ? d.plan.name : planSlug.toUpperCase()) + ' Subscription Plan',
                                 order_id: d.order_id,
                                 handler: function (response) {
+                                    paymentCompletedOrHandled = true;
                                     self.verifyRazorpayPayment(planSlug, response);
                                 },
                                 prefill: {
@@ -1577,14 +1615,40 @@
                                 modal: {
                                     ondismiss: function () {
                                         self.subscriptionLoading = false;
+                                        if (!paymentCompletedOrHandled) {
+                                            paymentCompletedOrHandled = true;
+                                            const cancelMsg = (self.translations && self.translations[self.currentLang] && self.translations[self.currentLang]['payment_cancelled']) ||
+                                                (self.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (self.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                            self.showToast(cancelMsg, 'warning');
+                                        }
                                     }
                                 }
                             };
 
+                            let paymentCompletedOrHandled = false;
                             const rzp = new Razorpay(options);
                             rzp.on('payment.failed', function (response) {
                                 self.subscriptionLoading = false;
-                                self.showToast(response.error ? response.error.description : 'Payment failed. Please try again.', 'error');
+                                if (paymentCompletedOrHandled) return;
+                                paymentCompletedOrHandled = true;
+
+                                const err = (response && response.error) ? response.error : {};
+                                const reason = String(err.reason || '').toLowerCase();
+                                const desc = String(err.description || '').toLowerCase();
+                                const code = String(err.code || '').toLowerCase();
+                                const isCancelled = reason.includes('cancel') || desc.includes('cancel') || code.includes('cancel') ||
+                                    (!err.description && !err.reason) || desc === 'undefined';
+
+                                if (isCancelled) {
+                                    const cancelMsg = (self.translations && self.translations[self.currentLang] && self.translations[self.currentLang]['payment_cancelled']) ||
+                                        (self.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (self.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                    self.showToast(cancelMsg, 'warning');
+                                } else {
+                                    const errorMsg = (err.description && err.description !== 'undefined')
+                                        ? err.description
+                                        : (err.reason || (self.translations && self.translations[self.currentLang] && self.translations[self.currentLang]['payment_failed']) || 'Payment failed. Please try again.');
+                                    self.showToast(errorMsg, 'error');
+                                }
                             });
                             rzp.open();
                         } else {
@@ -1633,6 +1697,7 @@
                                 name: "DukanHisab",
                                 description: "Subscription to " + d.plan.name,
                                 handler: (response) => {
+                                    paymentCompletedOrHandled = true;
                                     this.subscriptionLoading = true;
                                     fetch('/api/v1/shopowner/subscription/verify', {
                                         method: 'POST',
@@ -1669,6 +1734,17 @@
                                 },
                                 theme: {
                                     color: "#0F766E"
+                                },
+                                modal: {
+                                    ondismiss: () => {
+                                        this.subscriptionLoading = false;
+                                        if (!paymentCompletedOrHandled) {
+                                            paymentCompletedOrHandled = true;
+                                            const cancelMsg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
+                                                (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                            this.showToast(cancelMsg, 'warning');
+                                        }
+                                    }
                                 }
                             };
 
@@ -1678,9 +1754,30 @@
                                 options.order_id = d.order_id;
                             }
 
+                            let paymentCompletedOrHandled = false;
                             const rzp = new Razorpay(options);
                             rzp.on('payment.failed', (response) => {
-                                this.showToast(response.error.description || 'Payment failed.', 'error');
+                                this.subscriptionLoading = false;
+                                if (paymentCompletedOrHandled) return;
+                                paymentCompletedOrHandled = true;
+
+                                const err = (response && response.error) ? response.error : {};
+                                const reason = String(err.reason || '').toLowerCase();
+                                const desc = String(err.description || '').toLowerCase();
+                                const code = String(err.code || '').toLowerCase();
+                                const isCancelled = reason.includes('cancel') || desc.includes('cancel') || code.includes('cancel') ||
+                                    (!err.description && !err.reason) || desc === 'undefined';
+
+                                if (isCancelled) {
+                                    const cancelMsg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
+                                        (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                                    this.showToast(cancelMsg, 'warning');
+                                } else {
+                                    const errorMsg = (err.description && err.description !== 'undefined')
+                                        ? err.description
+                                        : (err.reason || (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_failed']) || 'Payment failed. Please try again.');
+                                    this.showToast(errorMsg, 'error');
+                                }
                             });
                             rzp.open();
                         } else if (d.user) {
