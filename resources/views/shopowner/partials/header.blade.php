@@ -85,7 +85,7 @@
                             <div class="flex items-center gap-2.5">
                                 <div class="w-6 h-6 rounded-md bg-slate-200 dark:bg-gray-600 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-[10px] uppercase"
                                     x-text="s.name.charAt(0)">
-                                </div>
+                                </div> 
                                 <div class="flex flex-col">
                                     <span class="text-xs font-semibold text-slate-700 dark:text-slate-200" x-text="s.name"></span>
                                     <span class="text-[9px] text-slate-400" x-text="s.mobile"></span>
