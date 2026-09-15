@@ -539,7 +539,7 @@
                                 <div class="w-full h-full relative flex items-center justify-center">
                                     <img x-show="user && (user.avatar_url || user.avatar)"
                                         :src="getAvatarUrl(user ? (user.avatar_url || user.avatar) : null, user ? user.name : 'User')"
-                                        x-on:error="$el.style.display = 'none';"
+                                        @error="$el.style.display = 'none';"
                                         class="w-full h-full object-cover absolute inset-0">
                                     <span x-text="user ? (user.name || 'U').trim().charAt(0).toUpperCase() : 'U'"></span>
                                 </div>
