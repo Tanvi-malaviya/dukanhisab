@@ -77,7 +77,7 @@
                             @forelse($payments as $pay)
                                 <tr class="hover:bg-secondary/10 transition-colors">
                                     <td class="px-6 py-4">
-                                        <p class="font-medium text-white">{{ $pay->plan->name }}</p>
+                                        <p class="font-medium text-white">{{ $pay->plan->name ?? ($pay->addOn->title ?? 'N/A') }}</p>
                                         <p class="text-xs text-slate-500 font-mono">Date:
                                             {{ $pay->payment_date->format('Y-m-d H:i') }}</p>
                                     </td>

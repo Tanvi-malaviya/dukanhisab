@@ -44,7 +44,7 @@ class ShopController extends Controller
         $owner = User::find($validated['owner_id']);
         if ($owner && !$owner->canAddShop()) {
             return back()
-                ->withErrors(['owner_id' => "User '{$owner->name}' has reached their plan limit of maximum {$owner->maxShops()} shop(s). Please upgrade their subscription plan."])
+                ->withErrors(['owner_id' => "User '{$owner->name}' has reached their shop limit of {$owner->maxShops()} shop(s). Purchase a Shop Add-on for this user to add more."])
                 ->withInput()
                 ->with('modal_open', 'add_shop');
         }

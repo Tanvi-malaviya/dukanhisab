@@ -115,6 +115,13 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::post('/subscription/verify-payment', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'verifyPayment']);
         Route::post('/subscription/verify', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'verifyPayment']);
 
+        // Add-ons (Shop / Website) — available from both the web panel and the app
+        Route::get('/add-ons', [\App\Http\Controllers\Api\ShopOwner\AddOnApiController::class, 'plans']);
+        Route::get('/add-ons/current', [\App\Http\Controllers\Api\ShopOwner\AddOnApiController::class, 'current']);
+        Route::post('/add-ons/purchase', [\App\Http\Controllers\Api\ShopOwner\AddOnApiController::class, 'purchase']);
+        Route::post('/add-ons/verify-payment', [\App\Http\Controllers\Api\ShopOwner\AddOnApiController::class, 'verifyPayment']);
+        Route::post('/add-ons/{id}/cancel', [\App\Http\Controllers\Api\ShopOwner\AddOnApiController::class, 'cancel']);
+
         // Support tickets (own tickets only)
         Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
         ->names('shopowner.support-tickets')

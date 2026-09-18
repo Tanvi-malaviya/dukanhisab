@@ -241,6 +241,15 @@
                     <span x-text="t('subscription_plan')">Subscription Plan</span>
                 </a>
 
+                {{-- Add Ons --}}
+                <a href="/dukanhisab/addons"
+                    @click.prevent="navigateTo('addons')"
+                    :class="page === 'addons' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span x-text="t('add_ons') || 'Add Ons'">Add Ons</span>
+                </a>
+
                 {{-- Settings --}}
                 <a href="/dukanhisab/settings"
                     @click.prevent="navigateTo('settings')"
@@ -544,6 +553,15 @@
                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
                            </svg>
                            <span x-text="t('subscription_plan')">Subscription Plan</span>
+                       </a>
+
+                       <!-- Add Ons -->
+                       <a href="/dukanhisab/addons"
+                           @click.prevent="navigateTo('addons'); mobileSidebarOpen = false"
+                           :class="page === 'addons' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                           class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                           <span x-text="t('add_ons') || 'Add Ons'">Add Ons</span>
                        </a>
 
                        <!-- Settings -->

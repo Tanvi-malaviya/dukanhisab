@@ -118,7 +118,7 @@
               <a href="/shop/settings" @click.prevent="navigateTo('settings')" title="My Profile" class="relative block w-7 h-7 rounded-lg overflow-hidden border border-slate-200 dark:border-gray-600 shrink-0 hover:opacity-90 transition-opacity bg-teal-700 text-white font-bold text-xs flex items-center justify-center select-none">
                   <img x-show="user && (user.avatar_url || user.avatar)"
                       :src="getAvatarUrl(user ? (user.avatar_url || user.avatar) : null, user ? user.name : 'User')"
-                      @error="$el.style.display = 'none';"
+                      x-on:error="$el.style.display = 'none';"
                       class="w-full h-full object-cover absolute inset-0">
                   <span x-text="user ? (user.name || 'U').trim().charAt(0).toUpperCase() : 'U'"></span>
               </a>

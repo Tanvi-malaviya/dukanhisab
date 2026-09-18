@@ -10,6 +10,8 @@ class Payment extends Model
         'user_id',
         'shop_id',
         'plan_id',
+        'add_on_id',
+        'user_add_on_id',
         'amount',
         'payment_gateway',
         'transaction_id',
@@ -35,6 +37,16 @@ class Payment extends Model
     public function plan()
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');
+    }
+
+    public function addOn()
+    {
+        return $this->belongsTo(AddOn::class, 'add_on_id');
+    }
+
+    public function userAddOn()
+    {
+        return $this->belongsTo(UserAddOn::class, 'user_add_on_id');
     }
 
     public function refund()

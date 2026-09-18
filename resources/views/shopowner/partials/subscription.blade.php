@@ -117,7 +117,7 @@
                         <ul class="space-y-2.5 pt-4 text-xs text-slate-600 dark:text-slate-300">
                             <li class="flex items-center gap-2">
                                 <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                <span x-text="(plan.features && plan.features.max_shops ? plan.features.max_shops : 1) + ' Shop' + ((plan.features && plan.features.max_shops > 1) ? 's' : '')"></span>
+                                <span>1 Shop <a href="#" @click.prevent="navigateTo('addons')" class="text-teal-600 hover:underline">(buy the Shop Add-on for more)</a></span>
                             </li>
                             <li class="flex items-center gap-2">
                                 <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>

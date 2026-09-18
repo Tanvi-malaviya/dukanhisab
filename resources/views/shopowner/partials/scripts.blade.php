@@ -118,6 +118,7 @@
                 'reminders': 'reminders',
                 'settings': 'settings',
                 'subscription': 'subscription',
+                'addons': 'addons',
                 'sales-returned': 'sales-returned',
                 'purchase-returned': 'purchase-returned',
                 'support': 'support',
@@ -307,6 +308,13 @@
             reportsData: { total_sales: 0, sales_count: 0, sales_by_payment_type: [], total_purchases: 0, purchases_count: 0, total_expenses: 0, expenses_count: 0, net_profit: 0 },
             subscriptionPlans: [],
             subscriptionLoading: false,
+            addOns: [],
+            addOnLoading: false,
+            addOnPurchasing: false,
+            userAddOns: [],
+            maxShops: parseInt(localStorage.getItem('shopowner_max_shops') || '1'),
+            hasWebsiteAddon: localStorage.getItem('shopowner_has_website_addon') === 'true',
+            addOnShopQty: 1,
 
             // Pagination State
             salesPage: 1, salesPerPage: 10, returnedSalesPage: 1, returnedSalesPerPage: 10,
@@ -585,6 +593,7 @@
                 else if (pageName === 'reminders') { this.loadCustomers(); this.loadSuppliers(); this.loadProducts(); }
                 else if (pageName === 'settings') this.loadInvoiceSettings();
                 else if (pageName === 'subscription') this.loadSubscriptionPlans();
+                else if (pageName === 'addons') this.loadAddOns();
                 else if (pageName === 'support') this.loadSupportTickets();
             },
 
@@ -629,7 +638,7 @@
             },
 
             // ── DATA LOADERS ──────────────────────────────────────────
-            loadAllData() { this.loadProfile(); this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); this.loadInvoiceSettings(); this.loadSubscriptionPlans(); },
+            loadAllData() { this.loadProfile(); this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); this.loadInvoiceSettings(); this.loadSubscriptionPlans(); this.loadAddOnStatus(); },
 
             loadDashboard() {
                 this.dashboardLoading = true;
@@ -1574,16 +1583,17 @@
                     return;
                 }
 
-                // For Paid Plans (Premium / Business): Create Razorpay Order
+                // For Paid Plans: Yearly plans auto-renew via a recurring Razorpay
+                // Subscription; Lifetime plans are a one-time Razorpay Order.
                 this.subscriptionLoading = true;
-                fetch('/api/v1/shopowner/subscription/create-order', {
+                fetch('/api/v1/shopowner/subscription/upgrade', {
                     method: 'POST',
                     headers: this.getHeaders(),
                     body: JSON.stringify({ plan_slug: planSlug })
                 })
                     .then(r => r.json())
                     .then(d => {
-                        if (!d.order_id) {
+                        if (!d.subscription_id && !d.order_id) {
                             this.subscriptionLoading = false;
                             this.showToast(d.message || 'Failed to initialize payment gateway.', 'error');
                             return;
@@ -1592,17 +1602,14 @@
                         const self = this;
 
                         // Check if Razorpay JS SDK is loaded and keys are ready
-                        if (typeof Razorpay !== 'undefined' && d.key && d.key !== 'rzp_test_placeholder') {
+                        if (typeof Razorpay !== 'undefined' && d.key_id && d.key_id !== 'rzp_test_placeholder') {
                             const options = {
-                                key: d.key,
-                                amount: d.amount,
-                                currency: d.currency || 'INR',
+                                key: d.key_id,
                                 name: (this.shop && this.shop.name) ? this.shop.name : 'DukanHisab',
                                 description: (d.plan ? d.plan.name : planSlug.toUpperCase()) + ' Subscription Plan',
-                                order_id: d.order_id,
                                 handler: function (response) {
                                     paymentCompletedOrHandled = true;
-                                    self.verifyRazorpayPayment(planSlug, response);
+                                    self.verifyRazorpayPayment(planSlug, response, d);
                                 },
                                 prefill: {
                                     name: (d.user && d.user.name) ? d.user.name : (self.user ? self.user.first_name + ' ' + (self.user.last_name || '') : ''),
@@ -1624,6 +1631,14 @@
                                     }
                                 }
                             };
+                            if (d.subscription_id) {
+                                options.subscription_id = d.subscription_id;
+                                options.recurring = 1;
+                            } else {
+                                options.order_id = d.order_id;
+                                options.amount = d.amount;
+                                options.currency = d.currency || 'INR';
+                            }
 
                             let paymentCompletedOrHandled = false;
                             const rzp = new Razorpay(options);
@@ -1653,15 +1668,17 @@
                             rzp.open();
                         } else {
                             // In test mode or when keys are placeholders, confirm test payment completion
+                            const amountLabel = d.plan ? parseFloat(d.plan.price).toFixed(2) : '';
                             this.showConfirm(
                                 'Test Payment Mode',
-                                `Razorpay order created for ₹${parseFloat(d.amount / 100).toFixed(2)} (${d.plan ? d.plan.name : planSlug}). Would you like to simulate a successful payment? (Add your RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
+                                `Razorpay ${d.subscription_id ? 'auto-renewing subscription' : 'order'} created for ₹${amountLabel} (${d.plan ? d.plan.name : planSlug}). Would you like to simulate a successful payment? (Add your RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
                                 () => {
                                     self.verifyRazorpayPayment(planSlug, {
                                         razorpay_order_id: d.order_id,
+                                        razorpay_subscription_id: d.subscription_id,
                                         razorpay_payment_id: 'pay_mock_' + Math.random().toString(36).substring(2, 15),
                                         razorpay_signature: 'sig_mock_verified'
-                                    });
+                                    }, d);
                                 }
                             );
                             this.subscriptionLoading = false;
@@ -1680,7 +1697,8 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify({
                         plan_slug: planSlug,
-                        razorpay_order_id: rzpResponse.razorpay_order_id,
+                        razorpay_order_id: rzpResponse.razorpay_order_id || '',
+                        razorpay_subscription_id: rzpResponse.razorpay_subscription_id || '',
                         razorpay_payment_id: rzpResponse.razorpay_payment_id,
                         razorpay_signature: rzpResponse.razorpay_signature || ''
                     })
@@ -1818,6 +1836,165 @@
                     .catch(() => {
                         this.subscriptionLoading = false;
                         this.showToast('Error cancelling subscription.', 'error');
+                    });
+            },
+
+            // Persists the latest known add-on status to localStorage so the
+            // next page load can hydrate hasWebsiteAddon/maxShops immediately
+            // (same pattern as `user`/`shop`), instead of defaulting to
+            // "no add-on" for a moment while the fresh fetch is in flight.
+            applyAddOnStatus(d) {
+                this.userAddOns = d.add_ons;
+                this.maxShops = d.max_shops;
+                this.hasWebsiteAddon = d.has_website_addon;
+                localStorage.setItem('shopowner_max_shops', String(d.max_shops));
+                localStorage.setItem('shopowner_has_website_addon', d.has_website_addon ? 'true' : 'false');
+            },
+
+            loadAddOns() {
+                this.addOnLoading = true;
+                Promise.all([
+                    fetch('/api/v1/shopowner/add-ons', { headers: this.getHeaders() }).then(r => r.json()),
+                    fetch('/api/v1/shopowner/add-ons/current', { headers: this.getHeaders() }).then(r => r.json())
+                ]).then(([plansRes, currentRes]) => {
+                    this.addOnLoading = false;
+                    if (plansRes.add_ons) this.addOns = plansRes.add_ons;
+                    if (currentRes.add_ons) this.applyAddOnStatus(currentRes);
+                }).catch(() => { this.addOnLoading = false; });
+            },
+
+            // Lightweight status-only fetch, used app-wide to gate the website
+            // settings toggle and the shop limit without loading the full page.
+            loadAddOnStatus() {
+                if (!this.token || !this.hasShop) return;
+                fetch('/api/v1/shopowner/add-ons/current', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.add_ons) this.applyAddOnStatus(d);
+                    })
+                    .catch(() => {});
+            },
+
+            purchaseAddOn(slug, quantity = 1) {
+                this.addOnPurchasing = true;
+                fetch('/api/v1/shopowner/add-ons/purchase', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({ slug: slug, quantity: quantity })
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (!d.subscription_id) {
+                            this.addOnPurchasing = false;
+                            this.showToast(d.message || 'Failed to initialize payment gateway.', 'error');
+                            return;
+                        }
+
+                        const self = this;
+
+                        if (typeof Razorpay !== 'undefined' && d.key_id && d.key_id !== 'rzp_test_placeholder') {
+                            let paymentCompletedOrHandled = false;
+                            const options = {
+                                key: d.key_id,
+                                subscription_id: d.subscription_id,
+                                recurring: 1,
+                                name: (this.shop && this.shop.name) ? this.shop.name : 'DukanHisab',
+                                description: (d.add_on ? d.add_on.title : slug) + ' Add-On',
+                                handler: function (response) {
+                                    paymentCompletedOrHandled = true;
+                                    self.verifyAddOnPayment(slug, quantity, response);
+                                },
+                                prefill: {
+                                    name: (d.user && d.user.name) ? d.user.name : '',
+                                    email: (d.user && d.user.email) ? d.user.email : '',
+                                    contact: (d.user && d.user.mobile) ? d.user.mobile : ''
+                                },
+                                theme: { color: '#0F766E' },
+                                modal: {
+                                    ondismiss: function () {
+                                        self.addOnPurchasing = false;
+                                        if (!paymentCompletedOrHandled) {
+                                            paymentCompletedOrHandled = true;
+                                            self.showToast(self.t('payment_cancelled') || 'Payment was cancelled.', 'warning');
+                                        }
+                                    }
+                                }
+                            };
+                            const rzp = new Razorpay(options);
+                            rzp.on('payment.failed', function (response) {
+                                self.addOnPurchasing = false;
+                                if (paymentCompletedOrHandled) return;
+                                paymentCompletedOrHandled = true;
+                                const err = (response && response.error) ? response.error : {};
+                                self.showToast(err.description || err.reason || 'Payment failed. Please try again.', 'error');
+                            });
+                            rzp.open();
+                        } else {
+                            this.addOnPurchasing = false;
+                            this.showConfirm(
+                                'Test Payment Mode',
+                                `Razorpay auto-renewing subscription created for ${d.add_on ? d.add_on.title : slug} (₹${d.add_on ? (d.add_on.price * quantity).toFixed(2) : ''}). Simulate a successful payment? (Add RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
+                                () => {
+                                    self.verifyAddOnPayment(slug, quantity, {
+                                        razorpay_subscription_id: d.subscription_id,
+                                        razorpay_payment_id: 'pay_mock_' + Math.random().toString(36).substring(2, 15),
+                                        razorpay_signature: 'sig_mock_verified'
+                                    });
+                                }
+                            );
+                        }
+                    })
+                    .catch(() => {
+                        this.addOnPurchasing = false;
+                        this.showToast('Error connecting to payment service.', 'error');
+                    });
+            },
+
+            verifyAddOnPayment(slug, quantity, rzpResponse) {
+                this.addOnPurchasing = true;
+                fetch('/api/v1/shopowner/add-ons/verify-payment', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        slug: slug,
+                        quantity: quantity,
+                        razorpay_subscription_id: rzpResponse.razorpay_subscription_id,
+                        razorpay_payment_id: rzpResponse.razorpay_payment_id,
+                        razorpay_signature: rzpResponse.razorpay_signature || ''
+                    })
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.addOnPurchasing = false;
+                        if (d.user_add_on) {
+                            this.showToast(d.message || 'Add-on activated successfully!');
+                            this.loadAddOns();
+                            this.loadProfile();
+                        } else {
+                            this.showToast(d.message || 'Failed to verify add-on payment.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.addOnPurchasing = false;
+                        this.showToast('Error verifying payment.', 'error');
+                    });
+            },
+
+            cancelAddOn(id) {
+                this.addOnPurchasing = true;
+                fetch('/api/v1/shopowner/add-ons/' + id + '/cancel', {
+                    method: 'POST',
+                    headers: this.getHeaders()
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.addOnPurchasing = false;
+                        this.showToast(d.message || (d.user_add_on ? 'Auto-renewal disabled.' : 'Failed to cancel add-on.'), d.user_add_on ? 'success' : 'error');
+                        if (d.user_add_on) this.loadAddOns();
+                    })
+                    .catch(() => {
+                        this.addOnPurchasing = false;
+                        this.showToast('Error cancelling add-on.', 'error');
                     });
             },
 
@@ -2139,7 +2316,7 @@
 
             handleLogout() {
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
-                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed'].forEach(k => localStorage.removeItem(k));
+                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
                     window.location.href = '/shop/login';
                 });
@@ -2179,16 +2356,11 @@
             },
 
             openAddShopModal() {
-                if (this.user && this.user.active_plan && this.user.active_plan.slug === 'free') {
-                    this.showToast('Please upgrade your plan to Premium or Business to add multiple shops.', 'error');
-                    return;
-                }
-                const max = this.user && this.user.active_plan && this.user.active_plan.features && this.user.active_plan.features.max_shops 
-                    ? parseInt(this.user.active_plan.features.max_shops) 
-                    : 1;
+                const max = this.maxShops || 1;
                 const currentCount = this.user && this.user.shops ? this.user.shops.length : 0;
-                if (max !== -1 && currentCount >= max) {
-                    this.showToast(`Your active plan allows maximum ${max} shop(s). Please upgrade to add more.`, 'error');
+                if (currentCount >= max) {
+                    this.showToast(`You've reached your shop limit (${max}). Buy the Shop Add-on to add more shops.`, 'error');
+                    this.navigateTo('addons');
                     return;
                 }
 

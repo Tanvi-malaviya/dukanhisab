@@ -539,7 +539,7 @@
                                 <div class="w-full h-full relative flex items-center justify-center">
                                     <img x-show="user && (user.avatar_url || user.avatar)"
                                         :src="getAvatarUrl(user ? (user.avatar_url || user.avatar) : null, user ? user.name : 'User')"
-                                        @error="$el.style.display = 'none';"
+                                        x-on:error="$el.style.display = 'none';"
                                         class="w-full h-full object-cover absolute inset-0">
                                     <span x-text="user ? (user.name || 'U').trim().charAt(0).toUpperCase() : 'U'"></span>
                                 </div>
@@ -883,6 +883,21 @@
     <div x-show="settingsTab === 'website'" class="w-full space-y-6" x-cloak>
         <form @submit.prevent="saveWebsiteSettings()" class="w-full space-y-6">
 
+            <!-- Website Add-On upsell banner (shown until the add-on is active) -->
+            <div x-show="!hasWebsiteAddon"
+                class="bg-gradient-to-r from-amber-500/10 to-amber-500/5 dark:from-amber-500/20 dark:to-transparent p-5 rounded-2xl border border-amber-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Website Add-On Required</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Publishing your shop website is part of the Website Add-On (₹200/year, auto-renews). Buy it once to unlock and keep your store live.
+                    </p>
+                </div>
+                <button type="button" @click="navigateTo('addons')"
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shrink-0 cursor-pointer">
+                    Buy Website Add-On
+                </button>
+            </div>
+
             <!-- Quick Link / Status Banner -->
             <div
                 class="bg-gradient-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-transparent p-5 rounded-2xl border border-primary/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -899,8 +914,8 @@
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <label class="relative inline-flex items-center cursor-pointer select-none">
-                        <input type="checkbox" x-model="shopUpdateForm.website_settings.enabled" class="sr-only">
+                    <label class="relative inline-flex items-center select-none" :class="hasWebsiteAddon ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'">
+                        <input type="checkbox" x-model="shopUpdateForm.website_settings.enabled" :disabled="!hasWebsiteAddon" class="sr-only">
                         <div class="w-12 h-6.5 rounded-full p-1 transition-colors duration-200 flex items-center shadow-inner"
                             :class="shopUpdateForm.website_settings.enabled ? 'bg-primary justify-end' : 'bg-slate-300 dark:bg-gray-700 justify-start'">
                             <div class="w-4.5 h-4.5 bg-white rounded-full shadow-md"></div>
@@ -941,9 +956,9 @@
                         class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4 relative">
                         <div class="flex items-center justify-between">
                             <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Branding</h4>
-                            <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
+                            <span x-show="!hasWebsiteAddon" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                                Premium
+                                Website Add-On
                             </span>
                         </div>
 
@@ -954,10 +969,10 @@
                                     class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5" x-text="t('theme_accent_color')">Theme Accent Color</label>
                                 <div class="flex items-center gap-2">
                                     <input type="color" x-model="shopUpdateForm.website_settings.theme_color"
-                                        :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                        :disabled="!hasWebsiteAddon"
                                         class="w-10 h-10 border-0 rounded-xl cursor-pointer p-0 overflow-hidden shadow-sm disabled:opacity-50">
                                     <input type="text" x-model="shopUpdateForm.website_settings.theme_color"
-                                        :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                        :disabled="!hasWebsiteAddon"
                                         class="w-24 px-2 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white text-center font-mono disabled:opacity-50">
                                 </div>
                             </div>
@@ -965,29 +980,29 @@
                                 <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2" x-text="t('color_presets')">Color Presets</label>
                                 <div class="flex flex-wrap gap-1.5">
                                     <button type="button"
-                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#0F766E'"
+                                        @click="if (hasWebsiteAddon) shopUpdateForm.website_settings.theme_color = '#0F766E'"
                                         class="w-6 h-6 rounded-full bg-[#0F766E] border border-white dark:border-gray-800 shadow-sm"
-                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                                        :class="!hasWebsiteAddon ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Teal"></button>
                                     <button type="button"
-                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#1D4ED8'"
+                                        @click="if (hasWebsiteAddon) shopUpdateForm.website_settings.theme_color = '#1D4ED8'"
                                         class="w-6 h-6 rounded-full bg-[#1D4ED8] border border-white dark:border-gray-800 shadow-sm"
-                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                                        :class="!hasWebsiteAddon ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Sapphire Blue"></button>
                                     <button type="button"
-                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#7C3AED'"
+                                        @click="if (hasWebsiteAddon) shopUpdateForm.website_settings.theme_color = '#7C3AED'"
                                         class="w-6 h-6 rounded-full bg-[#7C3AED] border border-white dark:border-gray-800 shadow-sm"
-                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                                        :class="!hasWebsiteAddon ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Purple"></button>
                                     <button type="button"
-                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#B91C1C'"
+                                        @click="if (hasWebsiteAddon) shopUpdateForm.website_settings.theme_color = '#B91C1C'"
                                         class="w-6 h-6 rounded-full bg-[#B91C1C] border border-white dark:border-gray-800 shadow-sm"
-                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                                        :class="!hasWebsiteAddon ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Rose Red"></button>
                                     <button type="button"
-                                        @click="if (user && user.active_plan && user.active_plan.slug !== 'free') shopUpdateForm.website_settings.theme_color = '#D97706'"
+                                        @click="if (hasWebsiteAddon) shopUpdateForm.website_settings.theme_color = '#D97706'"
                                         class="w-6 h-6 rounded-full bg-[#D97706] border border-white dark:border-gray-800 shadow-sm"
-                                        :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
+                                        :class="!hasWebsiteAddon ? 'opacity-50 cursor-not-allowed' : ''"
                                         title="Amber"></button>
                                 </div>
                             </div>
@@ -999,9 +1014,9 @@
                         class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
                             <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Store Profile & SEO Settings</h4>
-                            <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
+                            <span x-show="!hasWebsiteAddon" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                                Premium (SEO)
+                                Website Add-On (SEO)
                             </span>
                         </div>
 
@@ -1017,14 +1032,14 @@
                                 <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('seo_page_title')">SEO Page Title</label>
                                 <input type="text" placeholder="Online Catalog & Store"
                                     x-model="shopUpdateForm.website_settings.seo_title"
-                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    :disabled="!hasWebsiteAddon"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('seo_description')">SEO Description</label>
                                 <input type="text" placeholder="Browse our wide selection of items..."
                                     x-model="shopUpdateForm.website_settings.seo_description"
-                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    :disabled="!hasWebsiteAddon"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                         </div>
@@ -1035,9 +1050,9 @@
                         class="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
                         <div class="flex items-center justify-between">
                             <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Social Media & Communication</h4>
-                            <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
+                            <span x-show="!hasWebsiteAddon" class="px-2 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                                Premium
+                                Website Add-On
                             </span>
                         </div>
 
@@ -1047,7 +1062,7 @@
                                     class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('facebook_profile_link')">Facebook Profile Link</label>
                                 <input type="url" placeholder="https://facebook.com/my-page"
                                     x-model="shopUpdateForm.website_settings.social_facebook"
-                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    :disabled="!hasWebsiteAddon"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                             <div>
@@ -1055,7 +1070,7 @@
                                     class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('instagram_profile_link')">Instagram Profile Link</label>
                                 <input type="url" placeholder="https://instagram.com/my-page"
                                     x-model="shopUpdateForm.website_settings.social_instagram"
-                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    :disabled="!hasWebsiteAddon"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                         </div>
@@ -1065,7 +1080,7 @@
                                     class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('twitter_link')">Twitter / X Link</label>
                                 <input type="url" placeholder="https://twitter.com/my-page"
                                     x-model="shopUpdateForm.website_settings.social_twitter"
-                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    :disabled="!hasWebsiteAddon"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                             <div>
@@ -1073,7 +1088,7 @@
                                     class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('whatsapp_number_link')">WhatsApp Number Link</label>
                                 <input type="text" placeholder="https://wa.me/919999999999"
                                     x-model="shopUpdateForm.website_settings.social_whatsapp"
-                                    :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                    :disabled="!hasWebsiteAddon"
                                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all disabled:bg-slate-50 dark:disabled:bg-gray-900/50 disabled:text-slate-400">
                             </div>
                         </div>
@@ -1132,14 +1147,14 @@
                                     </template>
                                 </div>
                                 <label
-                                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''"
+                                    :class="!hasWebsiteAddon ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''"
                                     class="relative cursor-pointer bg-white dark:bg-gray-700 hover:bg-slate-50 dark:hover:bg-gray-600/80 border border-slate-300 dark:border-gray-600 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2">
                                     <span>Upload Shop Image</span>
-                                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
+                                    <span x-show="!hasWebsiteAddon" class="text-amber-500">
                                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                                     </span>
                                     <input type="file" accept="image/*" @change="onSettingsShopImageChange"
-                                        :disabled="user && user.active_plan && user.active_plan.slug === 'free'"
+                                        :disabled="!hasWebsiteAddon"
                                         class="sr-only">
                                 </label>
                             </div>
