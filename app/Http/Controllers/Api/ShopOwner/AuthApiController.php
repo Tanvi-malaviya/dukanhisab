@@ -496,7 +496,7 @@ class AuthApiController extends Controller
         if (!$shop) {
             if (!$user->canAddShop()) {
                 return response()->json([
-                    'message' => "Your active subscription plan allows maximum {$user->maxShops()} shop(s). Please upgrade your subscription plan."
+                    'message' => "You've reached your shop limit of {$user->maxShops()} shop(s). Buy the Shop Add-on to add more shops."
                 ], 403);
             }
         }
@@ -531,8 +531,11 @@ class AuthApiController extends Controller
                     $websiteSettings['shop_image'] = $shop?->website_settings['shop_image'] ?? null;
                 }
 
-                // Enforce active plan limits for Free plan
-                if ($user->activePlan && $user->activePlan->slug === 'free') {
+                // The website showcase is gated behind the Website Add-on, not the
+                // subscription plan. Without an active add-on it can't be published
+                // and customization fields are reset.
+                if (!$user->hasActiveWebsiteAddon()) {
+                    $websiteSettings['enabled'] = false;
                     $websiteSettings['theme_color'] = '#0F766E';
                     $websiteSettings['seo_title'] = '';
                     $websiteSettings['seo_description'] = '';

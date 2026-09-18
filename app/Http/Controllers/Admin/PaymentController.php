@@ -12,7 +12,7 @@ class PaymentController extends Controller
 {
     public function index(Request $request)
     {
-        $paymentsQuery = Payment::with(['user', 'shop', 'plan']);
+        $paymentsQuery = Payment::with(['user', 'shop', 'plan', 'addOn']);
 
         // Filter status
         if ($request->filled('status')) {
@@ -73,16 +73,7 @@ class PaymentController extends Controller
 
         if ($status === 'successful') {
             $payment->update(['status' => 'refunded']);
-
-            // Update User's active subscription if needed (revert back to Free)
-            $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
-            if ($freePlan && $payment->user) {
-                $payment->user->update(['active_plan_id' => $freePlan->id]);
-                // Revert active subscription statuses
-                \App\Models\Subscription::where('user_id', $payment->user_id)
-                    ->where('status', 'active')
-                    ->update(['status' => 'expired']);
-            }
+            $this->revertEntitlementForRefund($payment);
         } elseif ($status === 'failed') {
             $payment->update(['status' => 'successful']);
         } else {
@@ -116,17 +107,10 @@ class PaymentController extends Controller
             return back()->with('info', 'Refund status is already ' . $newStatus);
         }
 
-        // If transitioning to successful, demote user subscription to free
+        // If transitioning to successful, revert whatever entitlement this payment granted
         if ($newStatus === 'successful') {
             $payment->update(['status' => 'refunded']);
-
-            $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
-            if ($freePlan && $payment->user) {
-                $payment->user->update(['active_plan_id' => $freePlan->id]);
-                \App\Models\Subscription::where('user_id', $payment->user_id)
-                    ->where('status', 'active')
-                    ->update(['status' => 'expired']);
-            }
+            $this->revertEntitlementForRefund($payment);
         } elseif ($newStatus === 'failed') {
             $payment->update(['status' => 'successful']);
         } else {
@@ -144,5 +128,28 @@ class PaymentController extends Controller
         ]);
 
         return back()->with('success', 'Refund status updated to ' . ucfirst($newStatus) . ' successfully.');
+    }
+
+    /**
+     * Revert whatever entitlement a refunded payment granted: a subscription
+     * plan payment demotes the user back to Free, an add-on payment expires
+     * the associated Shop/Website add-on grant instead.
+     */
+    private function revertEntitlementForRefund(Payment $payment): void
+    {
+        if ($payment->plan_id && $payment->user) {
+            $freePlan = \App\Models\SubscriptionPlan::where('slug', 'free')->first();
+            if ($freePlan) {
+                $payment->user->update(['active_plan_id' => $freePlan->id]);
+            }
+            \App\Models\Subscription::where('user_id', $payment->user_id)
+                ->where('status', 'active')
+                ->update(['status' => 'expired']);
+        }
+
+        if ($payment->user_add_on_id) {
+            \App\Models\UserAddOn::where('id', $payment->user_add_on_id)
+                ->update(['status' => 'expired', 'auto_renew' => false, 'ends_at' => now()]);
+        }
     }
 }

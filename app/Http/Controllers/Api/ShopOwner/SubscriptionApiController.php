@@ -9,6 +9,9 @@ use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Razorpay\Api\Api as RazorpayApi;
+use App\Http\Controllers\Api\ShopOwner\AddOnApiController;
 
 class SubscriptionApiController extends Controller
 {
@@ -228,7 +231,13 @@ class SubscriptionApiController extends Controller
             ]);
         }
 
-        // For paid plans, try creating Razorpay Subscription, fallback to Order
+        // Lifetime (one-time) plans never auto-renew — go straight to a one-time Order.
+        if ($plan->billing_period !== 'yearly') {
+            return $this->createRazorpayOneTimeOrder($user, $plan, $keyId, $keySecret);
+        }
+
+        // Yearly plans always auto-renew: create a recurring Razorpay Subscription,
+        // falling back to a one-time Order only if that fails.
         try {
             if (empty($keyId) || empty($keySecret)) {
                 throw new \Exception('Razorpay credentials not configured.');
@@ -240,7 +249,7 @@ class SubscriptionApiController extends Controller
             $cacheKey = 'razorpay_plan_' . $plan->slug . '_' . (int)($plan->price) . '_' . $plan->billing_period;
             $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($api, $plan) {
                 $razorpayPlan = $api->plan->create([
-                    'period' => $plan->billing_period === 'yearly' ? 'yearly' : 'monthly',
+                    'period' => 'yearly',
                     'interval' => 1,
                     'item' => [
                         'name' => $plan->name,
@@ -252,13 +261,16 @@ class SubscriptionApiController extends Controller
                 return $razorpayPlan['id'];
             });
 
-            // Create subscription on Razorpay
+            // Create subscription on Razorpay. total_count is Razorpay's cap on the
+            // number of yearly renewal cycles; 100 years is effectively indefinite
+            // auto-renewal for a human-held account.
             $subscriptionData = [
                 'plan_id' => $razorpayPlanId,
-                'total_count' => $plan->billing_period === 'yearly' ? 5 : 60, // 5 years
+                'total_count' => 100,
                 'quantity' => 1,
                 'customer_notify' => 1,
                 'notes' => [
+                    'type' => 'subscription',
                     'user_id' => (string)$user->id,
                     'plan_slug' => $plan->slug,
                     'plan_id' => (string)$plan->id
@@ -282,48 +294,25 @@ class SubscriptionApiController extends Controller
         } catch (\Exception $e) {
             Log::error('Razorpay Subscription Creation Failed: ' . $e->getMessage());
 
-            // Fallback: Try creating a Razorpay Order for one-time checkout
-            try {
-                if (empty($keyId) || empty($keySecret)) {
-                    // Test/Sandbox fallback if Razorpay keys are not configured
-                    $mockOrderId = 'order_mock_' . bin2hex(random_bytes(8));
-                    return response()->json([
-                        'requires_payment' => true,
-                        'gateway' => 'razorpay',
-                        'key_id' => 'rzp_test_placeholder',
-                        'order_id' => $mockOrderId,
-                        'amount' => (int)($plan->price * 100),
-                        'currency' => 'INR',
-                        'is_test_mode' => true,
-                        'plan' => $plan,
-                        'user' => [
-                            'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
-                            'email' => $user->email,
-                            'mobile' => $user->mobile,
-                        ]
-                    ]);
-                }
+            // Fallback: one-time Order checkout (subscription just won't auto-renew).
+            return $this->createRazorpayOneTimeOrder($user, $plan, $keyId, $keySecret);
+        }
+    }
 
-                $api = new RazorpayApi($keyId, $keySecret);
-                $orderData = [
-                    'receipt' => 'sub_rcpt_' . $user->id . '_' . time(),
-                    'amount' => (int)($plan->price * 100), // paise
-                    'currency' => 'INR',
-                    'notes' => [
-                        'user_id' => (string)$user->id,
-                        'plan_slug' => $plan->slug,
-                        'plan_id' => (string)$plan->id
-                    ]
-                ];
-                $razorpayOrder = $api->order->create($orderData);
-
+    private function createRazorpayOneTimeOrder($user, SubscriptionPlan $plan, ?string $keyId, ?string $keySecret)
+    {
+        try {
+            if (empty($keyId) || empty($keySecret)) {
+                // Test/Sandbox fallback if Razorpay keys are not configured
+                $mockOrderId = 'order_mock_' . bin2hex(random_bytes(8));
                 return response()->json([
                     'requires_payment' => true,
                     'gateway' => 'razorpay',
-                    'key_id' => $keyId,
-                    'order_id' => $razorpayOrder['id'],
-                    'amount' => $orderData['amount'],
+                    'key_id' => 'rzp_test_placeholder',
+                    'order_id' => $mockOrderId,
+                    'amount' => (int)($plan->price * 100),
                     'currency' => 'INR',
+                    'is_test_mode' => true,
                     'plan' => $plan,
                     'user' => [
                         'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
@@ -331,10 +320,39 @@ class SubscriptionApiController extends Controller
                         'mobile' => $user->mobile,
                     ]
                 ]);
-            } catch (\Exception $orderEx) {
-                Log::error('Razorpay Fallback Order Creation Failed: ' . $orderEx->getMessage());
-                return response()->json(['message' => 'Failed to initiate payment gateway: ' . $orderEx->getMessage()], 500);
             }
+
+            $api = new RazorpayApi($keyId, $keySecret);
+            $orderData = [
+                'receipt' => 'sub_rcpt_' . $user->id . '_' . time(),
+                'amount' => (int)($plan->price * 100), // paise
+                'currency' => 'INR',
+                'notes' => [
+                    'type' => 'subscription',
+                    'user_id' => (string)$user->id,
+                    'plan_slug' => $plan->slug,
+                    'plan_id' => (string)$plan->id
+                ]
+            ];
+            $razorpayOrder = $api->order->create($orderData);
+
+            return response()->json([
+                'requires_payment' => true,
+                'gateway' => 'razorpay',
+                'key_id' => $keyId,
+                'order_id' => $razorpayOrder['id'],
+                'amount' => $orderData['amount'],
+                'currency' => 'INR',
+                'plan' => $plan,
+                'user' => [
+                    'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
+                    'email' => $user->email,
+                    'mobile' => $user->mobile,
+                ]
+            ]);
+        } catch (\Exception $orderEx) {
+            Log::error('Razorpay Order Creation Failed: ' . $orderEx->getMessage());
+            return response()->json(['message' => 'Failed to initiate payment gateway: ' . $orderEx->getMessage()], 500);
         }
     }
 
@@ -469,6 +487,15 @@ class SubscriptionApiController extends Controller
         if (in_array($event, ['subscription.charged', 'subscription.activated'])) {
             $subEntity = $payload['subscription']['entity'] ?? null;
             $paymentEntity = $payload['payment']['entity'] ?? null;
+
+            if ($subEntity && ($subEntity['notes']['type'] ?? 'subscription') === 'addon') {
+                app(AddOnApiController::class)->activateFromWebhook(
+                    $subEntity['notes'] ?? [],
+                    $subEntity['id'],
+                    $paymentEntity['id'] ?? $subEntity['id']
+                );
+                return response()->json(['status' => 'success']);
+            }
 
             if ($subEntity) {
                 $userId = $subEntity['notes']['user_id'] ?? null;

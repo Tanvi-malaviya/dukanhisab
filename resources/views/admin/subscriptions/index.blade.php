@@ -40,7 +40,7 @@
                 <ul class="space-y-2 text-xs text-slate-300 pt-2 border-t border-border-dark">
                     <li class="flex items-center gap-2">
                         <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        <span>Max Shops: <strong class="text-white">{{ $plan->features['max_shops'] ?? 1 }}</strong> {{ ($plan->features['max_shops'] ?? 1) > 1 ? 'Shops' : 'Shop' }}</span>
+                        <span>1 Shop <span class="text-slate-500">(buy the Shop Add-on for more)</span></span>
                     </li>
                     <li class="flex items-center gap-2">
                         <svg class="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -169,17 +169,12 @@
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Billing Cycle</label>
                     <select name="billing_period" required class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                         <option value="free">Free</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="yearly">Yearly (Auto-Renewal)</option>
                         <option value="lifetime">Lifetime</option>
                     </select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Max Shops</label>
-                    <input type="number" name="features[max_shops]" value="1" min="1" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
-                </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Max Devices</label>
                     <input type="number" name="features[max_devices]" value="1" min="1" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
@@ -221,17 +216,12 @@
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Billing Cycle</label>
                     <select name="billing_period" id="edit_plan_period" required class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                         <option value="free">Free</option>
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
+                        <option value="yearly">Yearly (Auto-Renewal)</option>
                         <option value="lifetime">Lifetime</option>
                     </select>
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3 pt-2">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Max Shops</label>
-                    <input type="number" name="features[max_shops]" id="edit_plan_max_shops" min="1" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
-                </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Max Devices</label>
                     <input type="number" name="features[max_devices]" id="edit_plan_max_devices" min="1" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
@@ -296,7 +286,6 @@
         document.getElementById('edit_plan_desc').value = plan.description;
         document.getElementById('edit_plan_price').value = plan.price;
         document.getElementById('edit_plan_period').value = plan.billing_period;
-        document.getElementById('edit_plan_max_shops').value = plan.features ? (plan.features.max_shops || 1) : 1;
         document.getElementById('edit_plan_max_devices').value = plan.features ? plan.features.max_devices : 1;
         document.getElementById('edit_plan_status').value = plan.status;
         document.getElementById('editPlanModal').classList.remove('hidden');

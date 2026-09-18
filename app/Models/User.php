@@ -110,6 +110,20 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class);
     }
 
+    public function addOns()
+    {
+        return $this->hasMany(UserAddOn::class);
+    }
+
+    public function activeAddOns()
+    {
+        return $this->addOns()
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('ends_at')->orWhere('ends_at', '>', now());
+            });
+    }
+
     public function supportTickets()
     {
         return $this->hasMany(SupportTicket::class);
@@ -125,12 +139,28 @@ class User extends Authenticatable
         return $this->status === 'suspended';
     }
 
+    /**
+     * Every account starts with 1 free shop. Extra shop slots come only
+     * from active "Shop" Add-on purchases (1 purchase = +1 shop), not from
+     * the subscription plan.
+     */
     public function maxShops(): int
     {
-        if ($this->activePlan && isset($this->activePlan->features['max_shops'])) {
-            return (int) $this->activePlan->features['max_shops'];
-        }
-        return 1;
+        return 1 + $this->activeShopAddonQuantity();
+    }
+
+    public function activeShopAddonQuantity(): int
+    {
+        return (int) $this->activeAddOns()
+            ->whereHas('addOn', fn ($q) => $q->where('type', 'shop'))
+            ->sum('quantity');
+    }
+
+    public function hasActiveWebsiteAddon(): bool
+    {
+        return $this->activeAddOns()
+            ->whereHas('addOn', fn ($q) => $q->where('type', 'website'))
+            ->exists();
     }
 
     public function canAddShop(): bool

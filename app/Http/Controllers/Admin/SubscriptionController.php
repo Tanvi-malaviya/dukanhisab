@@ -52,7 +52,7 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
-            'billing_period' => 'required|in:free,monthly,yearly,lifetime',
+            'billing_period' => 'required|in:free,yearly,lifetime',
             'features' => 'nullable|array',
             'description' => 'nullable|string',
         ]);
@@ -66,10 +66,10 @@ class SubscriptionController extends Controller
         } else {
             $validated['slug'] = Str::slug($validated['name']);
         }
-        
-        // Ensure features structure has defaults
+
+        // Ensure features structure has defaults. Shop limits are handled by
+        // the Add-ons module, not the subscription plan.
         $features = $validated['features'] ?? [];
-        $features['max_shops'] = isset($features['max_shops']) ? (int)$features['max_shops'] : 1;
         $features['max_devices'] = isset($features['max_devices']) ? (int)$features['max_devices'] : 1;
         $features['advanced_reports'] = isset($features['advanced_reports']) ? true : false;
         $features['backup'] = isset($features['backup']) ? true : false;
@@ -89,14 +89,13 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
-            'billing_period' => 'required|in:free,monthly,yearly,lifetime',
+            'billing_period' => 'required|in:free,yearly,lifetime',
             'features' => 'nullable|array',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
         ]);
 
         $features = $validated['features'] ?? [];
-        $features['max_shops'] = isset($features['max_shops']) ? (int)$features['max_shops'] : 1;
         $features['max_devices'] = isset($features['max_devices']) ? (int)$features['max_devices'] : 1;
         $features['advanced_reports'] = isset($features['advanced_reports']) ? true : false;
         $features['backup'] = isset($features['backup']) ? true : false;

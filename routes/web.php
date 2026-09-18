@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ShopController;
 use App\Http\Controllers\Admin\SubscriptionController;
+use App\Http\Controllers\Admin\AddOnController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\AppSettingController;
@@ -66,6 +67,13 @@ Route::group([
     Route::post('subscriptions/{id}/expire', [SubscriptionController::class, 'expireSubscription'])->name('subscriptions.expire');
     Route::post('subscriptions/{id}/extend', [SubscriptionController::class, 'extendSubscription'])->name('subscriptions.extend');
     Route::post('subscriptions/{id}/reactivate', [SubscriptionController::class, 'reactivateSubscription'])->name('subscriptions.reactivate');
+
+    // Add-ons Management
+    Route::get('add-ons', [AddOnController::class, 'index'])->name('addons.index');
+    Route::post('add-ons', [AddOnController::class, 'store'])->name('addons.store');
+    Route::post('add-ons/{id}', [AddOnController::class, 'update'])->name('addons.update');
+    Route::post('add-ons/{id}/expire', [AddOnController::class, 'expire'])->name('addons.expire');
+    Route::post('add-ons/{id}/extend', [AddOnController::class, 'extend'])->name('addons.extend');
 
     // Payment & Refund Management
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');

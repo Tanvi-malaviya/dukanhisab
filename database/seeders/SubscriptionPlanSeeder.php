@@ -20,7 +20,6 @@ class SubscriptionPlanSeeder extends Seeder
                 'price' => 0.00,
                 'billing_period' => 'free',
                 'features' => [
-                    'max_shops' => 1,
                     'max_devices' => 1,
                     'advanced_reports' => false,
                     'backup' => false,
@@ -37,7 +36,6 @@ class SubscriptionPlanSeeder extends Seeder
                 'price' => 365.00,
                 'billing_period' => 'yearly',
                 'features' => [
-                    'max_shops' => 5,
                     'max_devices' => 5,
                     'advanced_reports' => true,
                     'backup' => true,
@@ -54,7 +52,6 @@ class SubscriptionPlanSeeder extends Seeder
                 'price' => 999.00,
                 'billing_period' => 'lifetime',
                 'features' => [
-                    'max_shops' => 5,
                     'max_devices' => 5,
                     'advanced_reports' => true,
                     'backup' => true,
