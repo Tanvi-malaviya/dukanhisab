@@ -33,7 +33,19 @@ class AddOnController extends Controller
         $history = $historyQuery->latest()->paginate(10)->withQueryString();
         $users = User::with('shops')->orderBy('name')->get();
 
-        return view('admin.addons.index', compact('addOns', 'history', 'users'));
+        // Names of the extra shops occupying each purchased Shop Add-on slot.
+        $slotNames = [];
+        $perUser = [];
+        foreach ($history as $row) {
+            if (!$row->user || !$row->addOn || $row->addOn->type !== 'shop') {
+                continue;
+            }
+            $perUser[$row->user_id] ??= $row->user->shopSlotAssignments();
+            $slotNames[$row->id] = collect($perUser[$row->user_id][$row->id] ?? [])
+                ->filter()->map(fn ($s) => $s->name)->values()->all();
+        }
+
+        return view('admin.addons.index', compact('addOns', 'history', 'users', 'slotNames'));
     }
 
     public function assignToUser(Request $request)
@@ -127,6 +139,18 @@ class AddOnController extends Controller
         $userName = $userAddOn->user ? $userAddOn->user->name : 'User';
         AuditLog::log("Expired add-on #{$userAddOn->id} ({$userAddOn->addOn->title}) for user '{$userName}'");
 
+        \App\Support\BillingMail::send(
+            $userAddOn->user,
+            "Your {$userAddOn->addOn->title} add-on has expired",
+            'Add-on expired',
+            "Your {$userAddOn->addOn->title} add-on has been expired by the DukanHisab admin team and will not renew.",
+            [
+                'Add-on' => $userAddOn->addOn->title . ($userAddOn->quantity > 1 ? ' x ' . $userAddOn->quantity : ''),
+                'Status' => 'Expired',
+                'Expired on' => now()->format('d M Y'),
+            ]
+        );
+
         return back()->with('success', 'Add-on has been expired.');
     }
 
@@ -139,8 +163,9 @@ class AddOnController extends Controller
         ]);
 
         $days = (int) $request->input('days');
+        $wasActive = $userAddOn->status === 'active' && $userAddOn->ends_at && $userAddOn->ends_at->isFuture();
 
-        if ($userAddOn->status === 'active' && $userAddOn->ends_at && $userAddOn->ends_at->isFuture()) {
+        if ($wasActive) {
             $newEndsAt = $userAddOn->ends_at->addDays($days);
         } else {
             $newEndsAt = now()->addDays($days);
@@ -152,6 +177,22 @@ class AddOnController extends Controller
         ]);
 
         AuditLog::log("Extended add-on #{$userAddOn->id} by {$days} days", ['new_ends_at' => $newEndsAt->toDateString()]);
+
+        $title = $userAddOn->addOn->title;
+        \App\Support\BillingMail::send(
+            $userAddOn->user,
+            $wasActive ? "Your {$title} add-on has been extended" : "Your {$title} add-on has been reactivated",
+            $wasActive ? 'Add-on extended' : 'Add-on reactivated',
+            $wasActive
+                ? "Good news! Your {$title} add-on has been extended by {$days} day(s) by the DukanHisab admin team."
+                : "Good news! Your {$title} add-on has been reactivated by the DukanHisab admin team and is active again.",
+            [
+                'Add-on' => $title . ($userAddOn->quantity > 1 ? ' x ' . $userAddOn->quantity : ''),
+                ($wasActive ? 'Extended by' : 'Active for') => "{$days} day(s)",
+                'Status' => 'Active',
+                'Valid until' => $newEndsAt->format('d M Y'),
+            ]
+        );
 
         return back()->with('success', "Add-on extended/reactivated successfully by {$days} days.");
     }

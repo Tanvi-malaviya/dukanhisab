@@ -114,6 +114,9 @@
                             </td>
                             <td class="px-6 py-4">
                                 <span class="text-xs font-semibold text-white">{{ $row->addOn ? $row->addOn->title : 'N/A' }}</span>
+                                @if(!empty($slotNames[$row->id]))
+                                    <span class="text-xs font-semibold text-teal-400">– {{ implode(', ', $slotNames[$row->id]) }}</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-xs font-mono">{{ $row->quantity }}</td>
                             <td class="px-6 py-4 text-xs font-mono space-y-0.5">

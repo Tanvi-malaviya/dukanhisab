@@ -164,6 +164,30 @@ class User extends Authenticatable
         return $ids->slice($this->maxShops())->map(fn ($id) => (int) $id)->values()->all();
     }
 
+    /**
+     * Which shop occupies each purchased Shop Add-on slot. The oldest shop is
+     * the free one; extra shops fill the active add-on slots in purchase order.
+     * Returns [userAddOnId => [Shop|null, ...]] where null is an unused slot.
+     */
+    public function shopSlotAssignments(): array
+    {
+        $extraShops = $this->shops()->orderBy('id')->get(['id', 'name'])->slice(1)->values();
+        $rows = $this->activeAddOns()
+            ->whereHas('addOn', fn ($q) => $q->where('type', 'shop'))
+            ->orderBy('id')
+            ->get();
+
+        $result = [];
+        $i = 0;
+        foreach ($rows as $row) {
+            for ($k = 0; $k < $row->quantity; $k++) {
+                $result[$row->id][] = $extraShops[$i] ?? null;
+                $i++;
+            }
+        }
+        return $result;
+    }
+
     public function activeShopAddonQuantity(): int
     {
         return (int) $this->activeAddOns()

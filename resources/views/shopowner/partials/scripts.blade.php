@@ -313,7 +313,8 @@
             addOnLoading: false,
             addOnPurchasing: false,
             addOnPurchasingSlug: null,
-            userAddOns: [],
+            subscriptionPurchasingSlug: null,
+            userAddOns: JSON.parse(localStorage.getItem('shopowner_user_addons') || '[]'),
             maxShops: parseInt(localStorage.getItem('shopowner_max_shops') || '1'),
             hasWebsiteAddon: localStorage.getItem('shopowner_has_website_addon') === 'true',
             addOnShopQty: 1,
@@ -1560,6 +1561,9 @@
                     return;
                 }
 
+                // Remember which plan's button was clicked so it can show a processing state
+                this.subscriptionPurchasingSlug = planSlug;
+
                 // If Free plan, upgrade directly without payment gateway
                 if (planSlug === 'free') {
                     this.subscriptionLoading = true;
@@ -1849,6 +1853,7 @@
             // "no add-on" for a moment while the fresh fetch is in flight.
             applyAddOnStatus(d) {
                 this.userAddOns = d.add_ons || [];
+                localStorage.setItem('shopowner_user_addons', JSON.stringify(this.userAddOns));
                 this.maxShops = d.max_shops || 1;
                 this.hasWebsiteAddon = !!d.has_website_addon;
                 this.addOnStats = {
@@ -2355,7 +2360,7 @@
 
             handleLogout() {
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
-                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon', 'shopowner_locked_shop_ids'].forEach(k => localStorage.removeItem(k));
+                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon', 'shopowner_user_addons', 'shopowner_locked_shop_ids'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
                     window.location.href = '/shop/login';
                 });

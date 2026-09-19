@@ -601,6 +601,7 @@
   "payment_cancelled": "Payment was cancelled.",
   "payment_failed": "Payment failed. Please try again.",
   "add_ons": "Add-Ons",
+  "addons": "Add-Ons",
   "add_ons_desc": "Extend your account beyond your subscription plan — buy extra shop slots or unlock your public shop website. Every add-on renews automatically each year.",
   "extra_purchased": "Extra Purchased",
   "extra_shop_slots": "Extra shop slot(s)",

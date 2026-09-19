@@ -424,7 +424,7 @@ class SubscriptionApiController extends Controller
         if ($plan->slug === 'business') {
             $endsAt = now()->addYears(100);
         } elseif ($plan->billing_period === 'yearly') {
-            $endsAt = now()->addYear();
+            $endsAt = \App\Support\Billing::yearlyPeriodEnd();
         } elseif ($plan->billing_period === 'monthly') {
             $endsAt = now()->addMonth();
         }
@@ -525,6 +525,12 @@ class SubscriptionApiController extends Controller
                     $plan = SubscriptionPlan::where('slug', $planSlug)->first();
 
                     if ($user && $plan) {
+                        // Renewal = user already has this plan active and this payment is new.
+                        // The first charge (recorded by verifyPayment) must not email "renewed".
+                        $isRenewal = $paymentEntity
+                            && $user->subscriptions()->where('plan_id', $plan->id)->where('status', 'active')->exists()
+                            && !Payment::where('transaction_id', $paymentId)->exists();
+
                         $user->active_plan_id = $plan->id;
                         $user->save();
 
@@ -541,7 +547,7 @@ class SubscriptionApiController extends Controller
                         if ($plan->slug === 'business') {
                             $endsAt = now()->addYears(100);
                         } elseif ($plan->billing_period === 'yearly') {
-                            $endsAt = now()->addYear();
+                            $endsAt = \App\Support\Billing::yearlyPeriodEnd();
                         } elseif ($plan->billing_period === 'monthly') {
                             $endsAt = now()->addMonth();
                         }
@@ -569,6 +575,21 @@ class SubscriptionApiController extends Controller
                                     'payment_gateway' => 'razorpay',
                                     'status' => 'successful',
                                     'payment_date' => now(),
+                                ]
+                            );
+                        }
+
+                        if ($isRenewal) {
+                            \App\Support\BillingMail::send(
+                                $user,
+                                "Your {$plan->name} subscription has been renewed",
+                                'Subscription auto-renewed',
+                                "Your {$plan->name} subscription was renewed automatically and your payment was received. Thank you!",
+                                [
+                                    'Plan' => $plan->name,
+                                    'Amount charged' => '₹' . number_format($plan->price, 2),
+                                    'Valid until' => $endsAt ? $endsAt->format('d M Y') : 'Lifetime',
+                                    'Auto-renewal' => 'On (renews again next year)',
                                 ]
                             );
                         }

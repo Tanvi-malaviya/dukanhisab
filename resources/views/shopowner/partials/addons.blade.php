@@ -203,6 +203,10 @@
                             <p class="text-sm font-bold text-slate-800 dark:text-white"
                                 x-text="(ua.add_on ? (t(ua.add_on.slug === 'extra-shop' || ua.add_on.type === 'shop' ? 'extra_shop' : (ua.add_on.slug === 'website-addon' || ua.add_on.type === 'website' ? 'shop_website' : 'add_ons')) || ua.add_on.title) : (t('add_ons') || 'Add-On')) + (ua.quantity > 1 ? ' × ' + ua.quantity : '')">
                             </p>
+                            <!-- Names of the shops created with this Extra Shop purchase -->
+                            <span x-show="ua.shop_slots && ua.shop_slots.some(s => s)"
+                                class="text-sm font-semibold text-teal-600 dark:text-teal-400"
+                                x-text="'– ' + (ua.shop_slots || []).filter(s => s).map(s => s.name).join(', ')"></span>
                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
                                 :class="ua.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'"
                                 x-text="ua.status === 'active' ? (t('active') || 'Active') : (t('expired') || 'Expired')">
@@ -221,6 +225,13 @@
                     </div>
 
                     <div class="flex items-center gap-2 self-end sm:self-center">
+                        <!-- Unused Extra Shop slot: create the shop it paid for -->
+                        <button x-show="ua.status === 'active' && ua.shop_slots && ua.shop_slots.some(s => s === null)" type="button"
+                            @click="openAddShopModal()"
+                            class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                            <span x-text="t('add_new_shop') || 'Add New Shop'">Add New Shop</span>
+                        </button>
                         <button x-show="ua.status === 'active' && ua.auto_renew" type="button"
                             @click="showConfirm(t('disable_auto_renewal_title') || 'Disable Auto-Renewal?', t('disable_auto_renewal_confirm') || 'This add-on will stay active until its current period ends, then it will not renew.', () => cancelAddOn(ua.id))"
                             x-text="t('cancel_auto_renew') || 'Cancel Auto-Renew'"

@@ -48,6 +48,18 @@ class AddOnApiController extends Controller
         $maxShops = $user->maxShops();
         $availableSlots = max(0, $maxShops - $usedShops);
 
+        // Attach the shop occupying each purchased slot (null = unused slot).
+        $slots = $user->shopSlotAssignments();
+        $addOnRows = $user->addOns()->with(['addOn', 'shop'])->latest()->get();
+        $addOnRows->each(function ($row) use ($slots) {
+            if (isset($slots[$row->id])) {
+                $row->setAttribute('shop_slots', array_map(
+                    fn ($s) => $s ? ['id' => $s->id, 'name' => $s->name] : null,
+                    $slots[$row->id]
+                ));
+            }
+        });
+
         return response()->json([
             'max_shops' => $maxShops,
             'shop_count' => $usedShops,
@@ -57,7 +69,7 @@ class AddOnApiController extends Controller
             'expired_extra_shops' => $expiredPurchased,
             'locked_shop_ids' => $user->lockedShopIds(),
             'has_website_addon' => $user->hasActiveWebsiteAddon(),
-            'add_ons' => $user->addOns()->with(['addOn', 'shop'])->latest()->get(),
+            'add_ons' => $addOnRows,
         ]);
     }
 
@@ -296,6 +308,13 @@ class AddOnApiController extends Controller
         }
 
         $shop = $user->shops()->first();
+
+        // A renewal = the purchase already exists and this payment is new. The very
+        // first charge (already recorded by verifyPayment) must not email "renewed".
+        $isRenewal = $paymentId
+            && UserAddOn::where('razorpay_subscription_id', $razorpaySubscriptionId)->exists()
+            && !Payment::where('transaction_id', $paymentId)->exists();
+
         $userAddOn = $this->activateAddOn($user, $addOn, $quantity, $razorpaySubscriptionId, $shop?->id);
 
         // Events without a payment (e.g. subscription.activated) must not create a payment row.
@@ -311,6 +330,21 @@ class AddOnApiController extends Controller
                     'payment_gateway' => 'razorpay',
                     'status' => 'successful',
                     'payment_date' => now(),
+                ]
+            );
+        }
+
+        if ($isRenewal) {
+            \App\Support\BillingMail::send(
+                $user,
+                "Your {$addOn->title} add-on has been renewed",
+                'Add-on auto-renewed',
+                "Your {$addOn->title} add-on was renewed automatically and your payment was received. Thank you!",
+                [
+                    'Add-on' => $addOn->title . ($quantity > 1 ? ' x ' . $quantity : ''),
+                    'Amount charged' => '₹' . number_format($addOn->price * $quantity, 2),
+                    'Valid until' => $userAddOn->ends_at->format('d M Y'),
+                    'Auto-renewal' => 'On (renews again next year)',
                 ]
             );
         }
@@ -334,7 +368,7 @@ class AddOnApiController extends Controller
                 'quantity' => $quantity,
                 'status' => 'active',
                 'starts_at' => now(),
-                'ends_at' => now()->addYear(),
+                'ends_at' => \App\Support\Billing::yearlyPeriodEnd(),
                 'auto_renew' => true,
             ]
         );
