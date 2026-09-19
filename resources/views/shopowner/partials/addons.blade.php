@@ -35,19 +35,6 @@
         </div>
     </div>
 
-    <!-- Loading state -->
-    <div x-show="addOnLoading && addOns.length === 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <template x-for="i in 2" :key="i">
-            <div
-                class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6 animate-pulse">
-                <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24 mb-3"></div>
-                <div class="h-3 bg-slate-100 dark:bg-slate-600 rounded w-40 mb-4"></div>
-                <div class="h-8 bg-slate-200 dark:bg-slate-700 rounded w-20 mb-6"></div>
-                <div class="h-10 bg-slate-200 dark:bg-slate-700 rounded-xl"></div>
-            </div>
-        </template>
-    </div>
-
     <!-- Add-On Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Card 1: Extra Shop -->
@@ -157,17 +144,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Empty state -->
-    <div x-show="!addOnLoading && addOns.length === 0" class="text-center py-12 text-slate-400 text-sm">
-        <svg class="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-            </path>
-        </svg>
-        <p>Could not load add-ons. <button @click="loadAddOns()" class="text-teal-600 underline hover:no-underline">Try
-                again</button></p>
     </div>
 
     <!-- Owned Add-Ons -->
