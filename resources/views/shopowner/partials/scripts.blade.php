@@ -306,11 +306,13 @@
             bankAccounts: [],
             bankAccountsLoading: false,
             reportsData: { total_sales: 0, sales_count: 0, sales_by_payment_type: [], total_purchases: 0, purchases_count: 0, total_expenses: 0, expenses_count: 0, net_profit: 0 },
+            reportsLoading: false,
             subscriptionPlans: [],
             subscriptionLoading: false,
             addOns: [],
             addOnLoading: false,
             addOnPurchasing: false,
+            addOnPurchasingSlug: null,
             userAddOns: [],
             maxShops: parseInt(localStorage.getItem('shopowner_max_shops') || '1'),
             hasWebsiteAddon: localStorage.getItem('shopowner_has_website_addon') === 'true',
@@ -613,10 +615,10 @@
                 if (msg === undefined || msg === null || msg === 'undefined' || msg === 'null' || msg === '') {
                     if (type === 'warning' || type === 'info') {
                         msg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_cancelled']) ||
-                              (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
+                            (this.currentLang === 'gu' ? 'ચુકવણી રદ કરવામાં આવી છે.' : (this.currentLang === 'hi' ? 'भुगतान रद्द कर दिया गया।' : 'Payment was cancelled.'));
                     } else {
                         msg = (this.translations && this.translations[this.currentLang] && this.translations[this.currentLang]['payment_failed']) ||
-                              (this.currentLang === 'gu' ? 'ચુકવણી નિષ્ફળ ગઈ. કૃપા કરીને ફરી પ્રયાસ કરો.' : (this.currentLang === 'hi' ? 'भुगतान विफल रहा। कृपया पुन: प्रयास करें।' : 'Payment failed. Please try again.'));
+                            (this.currentLang === 'gu' ? 'ચુકવણી નિષ્ફળ ગઈ. કૃપા કરીને ફરી પ્રયાસ કરો.' : (this.currentLang === 'hi' ? 'भुगतान विफल रहा। कृपया पुन: प्रयास करें।' : 'Payment failed. Please try again.'));
                     }
                 }
                 this.toast.message = msg; this.toast.type = type; this.toast.show = true;
@@ -760,15 +762,15 @@
                     .catch(() => { this.salesLoading = false; });
             },
 
-            clearSalesFilter() { 
-                this.salesFilter = { date: '', customerId: '', search: '', status: '' }; 
+            clearSalesFilter() {
+                this.salesFilter = { date: '', customerId: '', search: '', status: '' };
                 this.salesCustomerSearchQuery = '';
                 this.salesFilteredCustomers = this.customers;
-                this.loadSales(); 
+                this.loadSales();
             },
 
-            clearReturnedFilter() { 
-                this.returnedFilter = { date: '', customerId: '', search: '', status: '' }; 
+            clearReturnedFilter() {
+                this.returnedFilter = { date: '', customerId: '', search: '', status: '' };
                 this.returnedCustomerSearchQuery = '';
                 this.returnedFilteredCustomers = this.customers;
             },
@@ -829,7 +831,7 @@
                 }
                 this.purchasesLoading = true;
                 let url = '/api/v1/purchases?';
-                
+
                 let status = 'Completed';
                 if (this.page === 'purchase-returned') {
                     status = 'Returned';
@@ -847,7 +849,7 @@
                 }
                 if (filter.supplierId) url += '&supplier_id=' + filter.supplierId;
                 if (filter.search) url += '&search=' + encodeURIComponent(filter.search);
-                
+
                 const isHistoryOrReturned = this.page === 'purchase-history' || this.page === 'purchase-returned';
                 if (paginate || isHistoryOrReturned) {
                     const activePage = this.page === 'purchase-returned' ? this.returnedPurchasesPage : this.purchasesPage;
@@ -914,25 +916,25 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify({ cancellation_reason: this.cancelPurchaseReason.trim() })
                 })
-                .then(r => r.json().then(data => ({ status: r.status, data })))
-                .then(({ status, data }) => {
-                    this.loading = false;
-                    if (status === 200) {
-                        this.cancelPurchaseModalOpen = false;
-                        this.purchaseToCancel = null;
-                        this.cancelPurchaseReason = '';
-                        this.showToast('Purchase bill cancelled and reversed successfully.', 'success');
-                        this.loadPurchases(this.page === 'purchase-history' || this.page === 'purchase-returned');
-                        this.loadAllData();
-                    } else {
-                        let msg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Failed to cancel purchase.');
-                        this.showToast(msg, 'error');
-                    }
-                })
-                .catch(() => {
-                    this.loading = false;
-                    this.showToast('Error cancelling purchase.', 'error');
-                });
+                    .then(r => r.json().then(data => ({ status: r.status, data })))
+                    .then(({ status, data }) => {
+                        this.loading = false;
+                        if (status === 200) {
+                            this.cancelPurchaseModalOpen = false;
+                            this.purchaseToCancel = null;
+                            this.cancelPurchaseReason = '';
+                            this.showToast('Purchase bill cancelled and reversed successfully.', 'success');
+                            this.loadPurchases(this.page === 'purchase-history' || this.page === 'purchase-returned');
+                            this.loadAllData();
+                        } else {
+                            let msg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Failed to cancel purchase.');
+                            this.showToast(msg, 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error cancelling purchase.', 'error');
+                    });
             },
 
             deletePurchase(purchaseId) {
@@ -1196,22 +1198,22 @@
                         description: this.transferForm.description
                     })
                 })
-                .then(r => r.json())
-                .then(res => {
-                    this.loading = false;
-                    if (res.status === 'success' || res.message) {
-                        this.showToast(res.message || 'Bank transfer recorded successfully.');
-                        this.loadBankAccounts();
-                        this.loadCashBook();
-                        this.loadDashboard();
-                    } else {
-                        this.showToast(res.message || 'Failed to record bank transfer.', 'error');
-                    }
-                })
-                .catch(() => {
-                    this.loading = false;
-                    this.showToast('Error recording bank transfer.', 'error');
-                });
+                    .then(r => r.json())
+                    .then(res => {
+                        this.loading = false;
+                        if (res.status === 'success' || res.message) {
+                            this.showToast(res.message || 'Bank transfer recorded successfully.');
+                            this.loadBankAccounts();
+                            this.loadCashBook();
+                            this.loadDashboard();
+                        } else {
+                            this.showToast(res.message || 'Failed to record bank transfer.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error recording bank transfer.', 'error');
+                    });
             },
 
             openRegisterClosureModal() {
@@ -1228,9 +1230,9 @@
                                     d500: den['500'] || 0,
                                     d200: den['200'] || 0,
                                     d100: den['100'] || 0,
-                                    d50:  den['50']  || 0,
-                                    d20:  den['20']  || 0,
-                                    d10:  den['10']  || 0,
+                                    d50: den['50'] || 0,
+                                    d20: den['20'] || 0,
+                                    d10: den['10'] || 0,
                                     coins: den['coins'] || 0,
                                     actual_cash: parseFloat(res.data.last_closure.actual_cash) || 0,
                                     note: res.data.last_closure.note || ''
@@ -1264,9 +1266,9 @@
                 const d500 = (parseInt(f.d500) || 0) * 500;
                 const d200 = (parseInt(f.d200) || 0) * 200;
                 const d100 = (parseInt(f.d100) || 0) * 100;
-                const d50  = (parseInt(f.d50)  || 0) * 50;
-                const d20  = (parseInt(f.d20)  || 0) * 20;
-                const d10  = (parseInt(f.d10)  || 0) * 10;
+                const d50 = (parseInt(f.d50) || 0) * 50;
+                const d20 = (parseInt(f.d20) || 0) * 20;
+                const d10 = (parseInt(f.d10) || 0) * 10;
                 const coins = parseFloat(f.coins) || 0;
                 f.actual_cash = d500 + d200 + d100 + d50 + d20 + d10 + coins;
             },
@@ -1283,9 +1285,9 @@
                         '500': parseInt(this.registerClosureForm.d500) || 0,
                         '200': parseInt(this.registerClosureForm.d200) || 0,
                         '100': parseInt(this.registerClosureForm.d100) || 0,
-                        '50':  parseInt(this.registerClosureForm.d50)  || 0,
-                        '20':  parseInt(this.registerClosureForm.d20)  || 0,
-                        '10':  parseInt(this.registerClosureForm.d10)  || 0,
+                        '50': parseInt(this.registerClosureForm.d50) || 0,
+                        '20': parseInt(this.registerClosureForm.d20) || 0,
+                        '10': parseInt(this.registerClosureForm.d10) || 0,
                         'coins': parseFloat(this.registerClosureForm.coins) || 0
                     },
                     note: this.registerClosureForm.note || null
@@ -1296,24 +1298,24 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify(payload)
                 })
-                .then(r => r.json())
-                .then(res => {
-                    this.loading = false;
-                    if (res.status === 'success' && (res.data || res.closure)) {
-                        this.showToast(res.message || 'Register closed successfully!');
-                        this.showRegisterClosureModal = false;
-                        this.cashbookTab = 'closures';
-                        this.loadRegisterClosures();
-                        this.loadCashBook();
-                        this.loadDashboard();
-                    } else {
-                        this.showToast(res.message || 'Failed to close register.', 'error');
-                    }
-                })
-                .catch(() => {
-                    this.loading = false;
-                    this.showToast('Error submitting register closure.', 'error');
-                });
+                    .then(r => r.json())
+                    .then(res => {
+                        this.loading = false;
+                        if (res.status === 'success' && (res.data || res.closure)) {
+                            this.showToast(res.message || 'Register closed successfully!');
+                            this.showRegisterClosureModal = false;
+                            this.cashbookTab = 'closures';
+                            this.loadRegisterClosures();
+                            this.loadCashBook();
+                            this.loadDashboard();
+                        } else {
+                            this.showToast(res.message || 'Failed to close register.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error submitting register closure.', 'error');
+                    });
             },
 
             loadRegisterClosures() {
@@ -1377,12 +1379,12 @@
                 if (startDate) url += '&start_date=' + startDate;
                 if (endDate) url += '&end_date=' + endDate;
                 fetch(url, { headers: this.getHeaders() })
-                .then(r => r.json())
-                .then(d => {
-                    this.reportsLoading = false;
-                    if (d.total_sales !== undefined) this.reportsData = d;
-                })
-                .catch(() => { this.reportsLoading = false; });
+                    .then(r => r.json())
+                    .then(d => {
+                        this.reportsLoading = false;
+                        if (d.total_sales !== undefined) this.reportsData = d;
+                    })
+                    .catch(() => { this.reportsLoading = false; });
             },
 
             printReport() {
@@ -1514,7 +1516,7 @@
                             localStorage.setItem('shopowner_has_shop', 'true');
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             },
 
             getPlan(slug) {
@@ -1728,22 +1730,22 @@
                                             razorpay_order_id: response.razorpay_order_id || d.order_id || ''
                                         })
                                     })
-                                    .then(vr => vr.json())
-                                    .then(vd => {
-                                        this.subscriptionLoading = false;
-                                        if (vd.user) {
-                                            this.user = vd.user;
-                                            localStorage.setItem('shopowner_user', JSON.stringify(vd.user));
-                                            this.showToast(vd.message || 'Subscription upgraded successfully!');
-                                            this.loadProfile();
-                                        } else {
-                                            this.showToast(vd.message || 'Failed to verify subscription payment.', 'error');
-                                        }
-                                    })
-                                    .catch(() => {
-                                        this.subscriptionLoading = false;
-                                        this.showToast('Network error verifying signature.', 'error');
-                                    });
+                                        .then(vr => vr.json())
+                                        .then(vd => {
+                                            this.subscriptionLoading = false;
+                                            if (vd.user) {
+                                                this.user = vd.user;
+                                                localStorage.setItem('shopowner_user', JSON.stringify(vd.user));
+                                                this.showToast(vd.message || 'Subscription upgraded successfully!');
+                                                this.loadProfile();
+                                            } else {
+                                                this.showToast(vd.message || 'Failed to verify subscription payment.', 'error');
+                                            }
+                                        })
+                                        .catch(() => {
+                                            this.subscriptionLoading = false;
+                                            this.showToast('Network error verifying signature.', 'error');
+                                        });
                                 },
                                 prefill: {
                                     name: d.user.name || '',
@@ -1872,11 +1874,13 @@
                     .then(d => {
                         if (d.add_ons) this.applyAddOnStatus(d);
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             },
 
             purchaseAddOn(slug, quantity = 1) {
+                if (this.addOnPurchasingSlug) return;
                 this.addOnPurchasing = true;
+                this.addOnPurchasingSlug = slug;
                 fetch('/api/v1/shopowner/add-ons/purchase', {
                     method: 'POST',
                     headers: this.getHeaders(),
@@ -1886,6 +1890,7 @@
                     .then(d => {
                         if (!d.subscription_id) {
                             this.addOnPurchasing = false;
+                            this.addOnPurchasingSlug = null;
                             this.showToast(d.message || 'Failed to initialize payment gateway.', 'error');
                             return;
                         }
@@ -1913,6 +1918,7 @@
                                 modal: {
                                     ondismiss: function () {
                                         self.addOnPurchasing = false;
+                                        self.addOnPurchasingSlug = null;
                                         if (!paymentCompletedOrHandled) {
                                             paymentCompletedOrHandled = true;
                                             self.showToast(self.t('payment_cancelled') || 'Payment was cancelled.', 'warning');
@@ -1923,6 +1929,7 @@
                             const rzp = new Razorpay(options);
                             rzp.on('payment.failed', function (response) {
                                 self.addOnPurchasing = false;
+                                self.addOnPurchasingSlug = null;
                                 if (paymentCompletedOrHandled) return;
                                 paymentCompletedOrHandled = true;
                                 const err = (response && response.error) ? response.error : {};
@@ -1931,6 +1938,7 @@
                             rzp.open();
                         } else {
                             this.addOnPurchasing = false;
+                            this.addOnPurchasingSlug = null;
                             this.showConfirm(
                                 'Test Payment Mode',
                                 `Razorpay auto-renewing subscription created for ${d.add_on ? d.add_on.title : slug} (₹${d.add_on ? (d.add_on.price * quantity).toFixed(2) : ''}). Simulate a successful payment? (Add RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
@@ -1946,12 +1954,14 @@
                     })
                     .catch(() => {
                         this.addOnPurchasing = false;
+                        this.addOnPurchasingSlug = null;
                         this.showToast('Error connecting to payment service.', 'error');
                     });
             },
 
             verifyAddOnPayment(slug, quantity, rzpResponse) {
                 this.addOnPurchasing = true;
+                this.addOnPurchasingSlug = slug;
                 fetch('/api/v1/shopowner/add-ons/verify-payment', {
                     method: 'POST',
                     headers: this.getHeaders(),
@@ -1966,6 +1976,7 @@
                     .then(r => r.json())
                     .then(d => {
                         this.addOnPurchasing = false;
+                        this.addOnPurchasingSlug = null;
                         if (d.user_add_on) {
                             this.showToast(d.message || 'Add-on activated successfully!');
                             this.loadAddOns();
@@ -1976,12 +1987,14 @@
                     })
                     .catch(() => {
                         this.addOnPurchasing = false;
+                        this.addOnPurchasingSlug = null;
                         this.showToast('Error verifying payment.', 'error');
                     });
             },
 
             cancelAddOn(id) {
                 this.addOnPurchasing = true;
+                this.addOnPurchasingSlug = 'cancel_' + id;
                 fetch('/api/v1/shopowner/add-ons/' + id + '/cancel', {
                     method: 'POST',
                     headers: this.getHeaders()
@@ -1989,11 +2002,13 @@
                     .then(r => r.json())
                     .then(d => {
                         this.addOnPurchasing = false;
+                        this.addOnPurchasingSlug = null;
                         this.showToast(d.message || (d.user_add_on ? 'Auto-renewal disabled.' : 'Failed to cancel add-on.'), d.user_add_on ? 'success' : 'error');
                         if (d.user_add_on) this.loadAddOns();
                     })
                     .catch(() => {
                         this.addOnPurchasing = false;
+                        this.addOnPurchasingSlug = null;
                         this.showToast('Error cancelling add-on.', 'error');
                     });
             },
@@ -2175,25 +2190,25 @@
                     },
                     body: fd
                 })
-                .then(async r => {
-                    const data = await r.json();
-                    return { ok: r.ok, status: r.status, data };
-                })
-                .then(res => {
-                    this.submittingTicket = false;
-                    if (res.ok) {
-                        this.showToast(this.t('ticket_created_success') || 'Support ticket submitted successfully!');
-                        this.newTicketModal = false;
-                        this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
-                        this.loadSupportTickets();
-                    } else {
-                        this.showToast(res.data.message || 'Failed to submit support ticket.', 'error');
-                    }
-                })
-                .catch(() => {
-                    this.submittingTicket = false;
-                    this.showToast('Error submitting support ticket.', 'error');
-                });
+                    .then(async r => {
+                        const data = await r.json();
+                        return { ok: r.ok, status: r.status, data };
+                    })
+                    .then(res => {
+                        this.submittingTicket = false;
+                        if (res.ok) {
+                            this.showToast(this.t('ticket_created_success') || 'Support ticket submitted successfully!');
+                            this.newTicketModal = false;
+                            this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                            this.loadSupportTickets();
+                        } else {
+                            this.showToast(res.data.message || 'Failed to submit support ticket.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.submittingTicket = false;
+                        this.showToast('Error submitting support ticket.', 'error');
+                    });
             },
 
             openTicketDetails(ticket) {
@@ -2207,14 +2222,14 @@
                     method: 'DELETE',
                     headers: this.getHeaders()
                 })
-                .then(r => r.json())
-                .then(d => {
-                    this.showToast(this.t('ticket_deleted_success') || 'Support ticket deleted.');
-                    this.loadSupportTickets();
-                })
-                .catch(() => {
-                    this.showToast('Failed to delete support ticket.', 'error');
-                });
+                    .then(r => r.json())
+                    .then(d => {
+                        this.showToast(this.t('ticket_deleted_success') || 'Support ticket deleted.');
+                        this.loadSupportTickets();
+                    })
+                    .catch(() => {
+                        this.showToast('Failed to delete support ticket.', 'error');
+                    });
             },
 
             // ── AUTH ──────────────────────────────────────────────────
@@ -2395,28 +2410,28 @@
                     headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token },
                     body: fd
                 })
-                .then(r => r.json())
-                .then(d => {
-                    this.loading = false;
-                    if (d.shop) {
-                        this.addShopModal.show = false;
-                        this.shop = d.shop;
-                        localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
-                        // Update user with refreshed shops list so dropdown shows the new shop
-                        if (d.user) {
-                            this.user = d.user;
-                            localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                    .then(r => r.json())
+                    .then(d => {
+                        this.loading = false;
+                        if (d.shop) {
+                            this.addShopModal.show = false;
+                            this.shop = d.shop;
+                            localStorage.setItem('shopowner_shop', JSON.stringify(d.shop));
+                            // Update user with refreshed shops list so dropdown shows the new shop
+                            if (d.user) {
+                                this.user = d.user;
+                                localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            }
+                            this.showToast('New shop successfully created!');
+                            this.loadAllData();
+                        } else {
+                            this.showToast(d.message || 'Failed to create shop.', 'error');
                         }
-                        this.showToast('New shop successfully created!');
-                        this.loadAllData();
-                    } else {
-                        this.showToast(d.message || 'Failed to create shop.', 'error');
-                    }
-                })
-                .catch(() => {
-                    this.loading = false;
-                    this.showToast('Error creating new shop.', 'error');
-                });
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error creating new shop.', 'error');
+                    });
             },
 
             // ── POS ───────────────────────────────────────────────────
@@ -2471,7 +2486,7 @@
                             this.refreshPosCartItemPrices();
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             },
 
             refreshPosCartItemPrices() {
@@ -2927,25 +2942,25 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify({ cancellation_reason: this.cancelSaleReason.trim() })
                 })
-                .then(r => r.json().then(data => ({ status: r.status, data })))
-                .then(({ status, data }) => {
-                    this.loading = false;
-                    if (status === 200) {
-                        this.cancelSaleModalOpen = false;
-                        this.saleToCancel = null;
-                        this.cancelSaleReason = '';
-                        this.showToast('Sale cancelled and reversed successfully.', 'success');
-                        this.loadSales();
-                        this.loadAllData();
-                    } else {
-                        let msg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Failed to cancel sale.');
-                        this.showToast(msg, 'error');
-                    }
-                })
-                .catch(() => {
-                    this.loading = false;
-                    this.showToast('Error cancelling sale.', 'error');
-                });
+                    .then(r => r.json().then(data => ({ status: r.status, data })))
+                    .then(({ status, data }) => {
+                        this.loading = false;
+                        if (status === 200) {
+                            this.cancelSaleModalOpen = false;
+                            this.saleToCancel = null;
+                            this.cancelSaleReason = '';
+                            this.showToast('Sale cancelled and reversed successfully.', 'success');
+                            this.loadSales();
+                            this.loadAllData();
+                        } else {
+                            let msg = data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Failed to cancel sale.');
+                            this.showToast(msg, 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error cancelling sale.', 'error');
+                    });
             },
 
             deleteSale(saleId) {
@@ -2970,11 +2985,11 @@
                 this.loading = true;
                 fetch('/api/v1/sales/' + this.selectedSale.id + '/invoice?locale=' + this.currentLang, { headers: this.getHeaders() })
                     .then(r => r.blob()).then(blob => {
-                         this.loading = false;
-                         const link = document.createElement('a');
-                         link.href = window.URL.createObjectURL(blob);
-                         link.download = 'Invoice-' + this.selectedSale.sale_number + '.pdf';
-                         link.click();
+                        this.loading = false;
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = 'Invoice-' + this.selectedSale.sale_number + '.pdf';
+                        link.click();
                     }).catch(() => { this.loading = false; this.showToast('Error generating PDF.', 'error'); });
             },
 
@@ -3090,7 +3105,7 @@
             filteredCustomerPricingList() {
                 if (!this.customerPricingSearch) return this.customerPricingList;
                 const q = this.customerPricingSearch.toLowerCase();
-                return this.customerPricingList.filter(p => 
+                return this.customerPricingList.filter(p =>
                     (p.name && p.name.toLowerCase().includes(q)) ||
                     (p.barcode && p.barcode.toLowerCase().includes(q))
                 );
@@ -3112,19 +3127,19 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify(payload)
                 })
-                .then(r => r.json())
-                .then(d => {
-                    this.customerPricingSaving = false;
-                    this.showToast(d.message || 'Customer prices saved successfully.', 'success');
-                    this.showCustomerPricingModal = false;
-                    if (this.pos.selectedCustomer == this.customerPricingTarget.id) {
-                        this.loadPosCustomerPrices(this.customerPricingTarget.id);
-                    }
-                })
-                .catch(() => {
-                    this.customerPricingSaving = false;
-                    this.showToast('Error saving prices.', 'error');
-                });
+                    .then(r => r.json())
+                    .then(d => {
+                        this.customerPricingSaving = false;
+                        this.showToast(d.message || 'Customer prices saved successfully.', 'success');
+                        this.showCustomerPricingModal = false;
+                        if (this.pos.selectedCustomer == this.customerPricingTarget.id) {
+                            this.loadPosCustomerPrices(this.customerPricingTarget.id);
+                        }
+                    })
+                    .catch(() => {
+                        this.customerPricingSaving = false;
+                        this.showToast('Error saving prices.', 'error');
+                    });
             },
             saveCustomer() {
                 if (!this.newCustomer.name || this.newCustomer.name.trim() === '') {
@@ -3320,32 +3335,32 @@
                         note: this.collectCustomerForm.note
                     })
                 })
-                .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, body: d })))
-                .then(res => {
-                    this.loading = false;
-                    if (res.ok) {
-                        this.collectCustomerModalOpen = false;
-                        this.showToast(res.body.message || 'Payment collected successfully!');
-                        this.loadCustomers();
-                        this.loadSales();
-                        this.loadDashboard();
-                    } else if (res.body && res.body.errors) {
-                        let messages = [];
-                        for (const key in res.body.errors) {
-                            if (Array.isArray(res.body.errors[key])) {
-                                messages.push(...res.body.errors[key]);
+                    .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, body: d })))
+                    .then(res => {
+                        this.loading = false;
+                        if (res.ok) {
+                            this.collectCustomerModalOpen = false;
+                            this.showToast(res.body.message || 'Payment collected successfully!');
+                            this.loadCustomers();
+                            this.loadSales();
+                            this.loadDashboard();
+                        } else if (res.body && res.body.errors) {
+                            let messages = [];
+                            for (const key in res.body.errors) {
+                                if (Array.isArray(res.body.errors[key])) {
+                                    messages.push(...res.body.errors[key]);
+                                }
                             }
+                            this.showConfirm('Validation Error', messages.join('\n'), () => { });
+                        } else {
+                            this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
                         }
-                        this.showConfirm('Validation Error', messages.join('\n'), () => { });
-                    } else {
-                        this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
-                    }
-                })
-                .catch((err) => {
-                    this.loading = false;
-                    console.error(err);
-                    this.showConfirm('Error', (err && err.message) ? err.message : 'An error occurred while saving payment.', () => { });
-                });
+                    })
+                    .catch((err) => {
+                        this.loading = false;
+                        console.error(err);
+                        this.showConfirm('Error', (err && err.message) ? err.message : 'An error occurred while saving payment.', () => { });
+                    });
             },
 
             openPaySupplierDueModal(sup) {
@@ -3376,32 +3391,32 @@
                         note: this.paySupplierForm.note
                     })
                 })
-                .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, body: d })))
-                .then(res => {
-                    this.loading = false;
-                    if (res.ok) {
-                        this.paySupplierModalOpen = false;
-                        this.showToast(res.body.message || 'Supplier payment recorded!');
-                        this.loadSuppliers();
-                        this.loadPurchases();
-                        this.loadDashboard();
-                    } else if (res.body && res.body.errors) {
-                        let messages = [];
-                        for (const key in res.body.errors) {
-                            if (Array.isArray(res.body.errors[key])) {
-                                messages.push(...res.body.errors[key]);
+                    .then(r => r.json().then(d => ({ ok: r.ok, status: r.status, body: d })))
+                    .then(res => {
+                        this.loading = false;
+                        if (res.ok) {
+                            this.paySupplierModalOpen = false;
+                            this.showToast(res.body.message || 'Supplier payment recorded!');
+                            this.loadSuppliers();
+                            this.loadPurchases();
+                            this.loadDashboard();
+                        } else if (res.body && res.body.errors) {
+                            let messages = [];
+                            for (const key in res.body.errors) {
+                                if (Array.isArray(res.body.errors[key])) {
+                                    messages.push(...res.body.errors[key]);
+                                }
                             }
+                            this.showConfirm('Validation Error', messages.join('\n'), () => { });
+                        } else {
+                            this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
                         }
-                        this.showConfirm('Validation Error', messages.join('\n'), () => { });
-                    } else {
-                        this.showConfirm('Payment Error', (res.body && res.body.message) ? res.body.message : 'Failed to record payment.', () => { });
-                    }
-                })
-                .catch((err) => {
-                    this.loading = false;
-                    console.error(err);
-                    this.showConfirm('Error', (err && err.message) ? err.message : 'An error occurred while saving payment.', () => { });
-                });
+                    })
+                    .catch((err) => {
+                        this.loading = false;
+                        console.error(err);
+                        this.showConfirm('Error', (err && err.message) ? err.message : 'An error occurred while saving payment.', () => { });
+                    });
             },
 
             openNewExpenseModal() { this.newExpense = { description: '', amount: '', payment_method: 'cash' }; this.showExpenseModal = true; },
@@ -3511,7 +3526,7 @@
             filteredSupplierPricingList() {
                 if (!this.supplierPricingSearch) return this.supplierPricingList;
                 const q = this.supplierPricingSearch.toLowerCase();
-                return this.supplierPricingList.filter(p => 
+                return this.supplierPricingList.filter(p =>
                     (p.name && p.name.toLowerCase().includes(q)) ||
                     (p.barcode && p.barcode.toLowerCase().includes(q))
                 );
@@ -3533,19 +3548,19 @@
                     headers: this.getHeaders(),
                     body: JSON.stringify(payload)
                 })
-                .then(r => r.json())
-                .then(d => {
-                    this.supplierPricingSaving = false;
-                    this.showToast(d.message || 'Supplier prices saved successfully.', 'success');
-                    this.showSupplierPricingModal = false;
-                    if (this.newPurchase.supplier_id == this.supplierPricingTarget.id) {
-                        this.loadPurchaseSupplierPrices(this.supplierPricingTarget.id);
-                    }
-                })
-                .catch(() => {
-                    this.supplierPricingSaving = false;
-                    this.showToast('Error saving prices.', 'error');
-                });
+                    .then(r => r.json())
+                    .then(d => {
+                        this.supplierPricingSaving = false;
+                        this.showToast(d.message || 'Supplier prices saved successfully.', 'success');
+                        this.showSupplierPricingModal = false;
+                        if (this.newPurchase.supplier_id == this.supplierPricingTarget.id) {
+                            this.loadPurchaseSupplierPrices(this.supplierPricingTarget.id);
+                        }
+                    })
+                    .catch(() => {
+                        this.supplierPricingSaving = false;
+                        this.showToast('Error saving prices.', 'error');
+                    });
             },
 
             resetNewPurchase() {
@@ -3597,7 +3612,7 @@
                             this.refreshPurchaseCartItemPrices();
                         }
                     })
-                    .catch(() => {});
+                    .catch(() => { });
             },
 
             refreshPurchaseCartItemPrices() {
@@ -3818,7 +3833,7 @@
                                 try {
                                     const d = JSON.parse(text);
                                     if (d && d.message) msg = d.message;
-                                } catch(e){}
+                                } catch (e) { }
                                 throw new Error(msg);
                             });
                         }
@@ -3870,21 +3885,21 @@
                         headers: headers,
                         body: formData
                     })
-                    .then(r => r.json().then(d => ({ ok: r.ok, body: d })))
-                    .then(res => {
-                        this.loading = false;
-                        if (res.ok) {
-                            this.showToast(res.body.message || 'Data restored successfully!');
-                            fileInput.value = '';
-                            this.loadAllData();
-                        } else {
-                            this.showConfirm('Restore Failed', res.body.message || 'Failed to restore backup.', () => { });
-                        }
-                    })
-                    .catch(err => {
-                        this.loading = false;
-                        this.showConfirm('Error', err.message || 'Failed to restore backup.', () => { });
-                    });
+                        .then(r => r.json().then(d => ({ ok: r.ok, body: d })))
+                        .then(res => {
+                            this.loading = false;
+                            if (res.ok) {
+                                this.showToast(res.body.message || 'Data restored successfully!');
+                                fileInput.value = '';
+                                this.loadAllData();
+                            } else {
+                                this.showConfirm('Restore Failed', res.body.message || 'Failed to restore backup.', () => { });
+                            }
+                        })
+                        .catch(err => {
+                            this.loading = false;
+                            this.showConfirm('Error', err.message || 'Failed to restore backup.', () => { });
+                        });
                 });
             }
         };

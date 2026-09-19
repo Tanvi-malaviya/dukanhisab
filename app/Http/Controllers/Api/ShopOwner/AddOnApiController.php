@@ -9,8 +9,8 @@ use App\Models\User;
 use App\Models\UserAddOn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Razorpay\Api\Api as RazorpayApi;
 
 class AddOnApiController extends Controller
 {
@@ -33,26 +33,17 @@ class AddOnApiController extends Controller
     {
         $user = $request->user();
 
-        // Lazily flip any expired rows so the ledger/UI reflects reality.
-        UserAddOn::where('user_id', $user->id)
-            ->where('status', 'active')
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '<=', now())
-            ->update(['status' => 'expired']);
-
-        $active = $user->activeAddOns()->with('addOn')->get();
-
         return response()->json([
-            'add_ons' => $active,
             'max_shops' => $user->maxShops(),
             'shop_count' => $user->shops()->count(),
             'has_website_addon' => $user->hasActiveWebsiteAddon(),
+            'add_ons' => $user->addOns()->with('addOn')->latest()->get(),
         ]);
     }
 
     /**
-     * Create a recurring Razorpay Subscription (auto-renews yearly) for the
-     * requested add-on.
+     * Start purchasing an add-on. Initializes a Razorpay subscription so
+     * payments recur annually until cancelled.
      */
     public function purchase(Request $request)
     {
@@ -62,10 +53,14 @@ class AddOnApiController extends Controller
         ]);
 
         $user = $request->user();
-        $addOn = AddOn::where('slug', $request->slug)->where('status', 'active')->first();
+        $addOn = AddOn::where('slug', $request->slug)->first();
 
         if (!$addOn) {
-            return response()->json(['message' => 'Add-on not found or unavailable.'], 404);
+            return response()->json(['message' => 'Add-on not found.'], 404);
+        }
+
+        if ($addOn->status !== 'active') {
+            return response()->json(['message' => 'This add-on is currently unavailable.'], 400);
         }
 
         $quantity = $addOn->type === 'website' ? 1 : (int) ($request->input('quantity', 1));
@@ -83,11 +78,9 @@ class AddOnApiController extends Controller
                 throw new \Exception('Razorpay credentials not configured.');
             }
 
-            $api = new RazorpayApi($keyId, $keySecret);
-
             $cacheKey = 'razorpay_addon_plan_' . $addOn->slug . '_' . (int) $addOn->price;
-            $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($api, $addOn) {
-                $razorpayPlan = $api->plan->create([
+            $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($keyId, $keySecret, $addOn) {
+                $planRes = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/plans', [
                     'period' => 'yearly',
                     'interval' => 1,
                     'item' => [
@@ -97,10 +90,15 @@ class AddOnApiController extends Controller
                         'description' => $addOn->description ?? ('Add-on: ' . $addOn->title),
                     ],
                 ]);
-                return $razorpayPlan['id'];
+
+                if (!$planRes->successful()) {
+                    throw new \Exception('Failed to create Razorpay plan: ' . $planRes->body());
+                }
+
+                return $planRes->json('id');
             });
 
-            $razorpaySubscription = $api->subscription->create([
+            $subRes = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/subscriptions', [
                 'plan_id' => $razorpayPlanId,
                 'total_count' => 100,
                 'quantity' => $quantity,
@@ -113,6 +111,12 @@ class AddOnApiController extends Controller
                     'quantity' => (string) $quantity,
                 ],
             ]);
+
+            if (!$subRes->successful()) {
+                throw new \Exception('Failed to create Razorpay subscription: ' . $subRes->body());
+            }
+
+            $razorpaySubscription = $subRes->json();
 
             return response()->json([
                 'requires_payment' => true,
@@ -127,7 +131,7 @@ class AddOnApiController extends Controller
                     'mobile' => $user->mobile,
                 ],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Razorpay Add-on Subscription Creation Failed: ' . $e->getMessage());
 
             // Sandbox / no-credentials fallback so the web panel & app can still be exercised end-to-end.
@@ -233,10 +237,11 @@ class AddOnApiController extends Controller
         $keySecret = config('services.razorpay.secret');
         if (!empty($keyId) && !empty($keySecret) && $userAddOn->razorpay_subscription_id && !str_starts_with($userAddOn->razorpay_subscription_id, 'sub_mock_')) {
             try {
-                (new RazorpayApi($keyId, $keySecret))->subscription
-                    ->fetch($userAddOn->razorpay_subscription_id)
-                    ->cancel(['cancel_at_cycle_end' => 1]);
-            } catch (\Exception $e) {
+                Http::withBasicAuth($keyId, $keySecret)
+                    ->post("https://api.razorpay.com/v1/subscriptions/{$userAddOn->razorpay_subscription_id}/cancel", [
+                        'cancel_at_cycle_end' => 1,
+                    ]);
+            } catch (\Throwable $e) {
                 Log::error('Razorpay Add-on Subscription Cancel Failed: ' . $e->getMessage());
             }
         }

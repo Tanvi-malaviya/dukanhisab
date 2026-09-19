@@ -551,64 +551,66 @@
                     </button>
                 </div>
 
-                <div class="p-6 space-y-4 overflow-y-auto flex-1" x-if="selectedClosure">
-                    {{-- Summary pills --}}
-                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                        <div class="p-2.5 bg-slate-50 dark:bg-gray-700/40 rounded-xl border border-slate-100 dark:border-gray-700">
-                            <span class="text-[10px] font-semibold text-slate-400 block uppercase">Expected</span>
-                            <span class="font-bold text-slate-800 dark:text-white text-sm">₹<span x-text="parseFloat(selectedClosure.expected_cash || 0).toFixed(2)"></span></span>
+                <template x-if="selectedClosure">
+                    <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                        {{-- Summary pills --}}
+                        <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                            <div class="p-2.5 bg-slate-50 dark:bg-gray-700/40 rounded-xl border border-slate-100 dark:border-gray-700">
+                                <span class="text-[10px] font-semibold text-slate-400 block uppercase">Expected</span>
+                                <span class="font-bold text-slate-800 dark:text-white text-sm">₹<span x-text="parseFloat(selectedClosure?.expected_cash || 0).toFixed(2)"></span></span>
+                            </div>
+                            <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
+                                <span class="text-[10px] font-semibold text-indigo-500 block uppercase">Actual Counted</span>
+                                <span class="font-black text-indigo-700 dark:text-indigo-300 text-sm">₹<span x-text="parseFloat(selectedClosure?.actual_cash || 0).toFixed(2)"></span></span>
+                            </div>
                         </div>
-                        <div class="p-2.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/30">
-                            <span class="text-[10px] font-semibold text-indigo-500 block uppercase">Actual Counted</span>
-                            <span class="font-black text-indigo-700 dark:text-indigo-300 text-sm">₹<span x-text="parseFloat(selectedClosure.actual_cash || 0).toFixed(2)"></span></span>
+
+                        {{-- Denominations Table --}}
+                        <div class="bg-slate-50 dark:bg-gray-700/30 rounded-2xl p-3.5 border border-slate-200 dark:border-gray-700 space-y-2">
+                            <h4 class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Physical Notes & Coins</h4>
+                            <div class="divide-y divide-slate-100 dark:divide-gray-700 text-xs">
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">₹500 Notes</span>
+                                    <span class="text-slate-500 font-medium" x-text="(selectedClosure?.denominations && selectedClosure.denominations['500']) ? (selectedClosure.denominations['500'] + ' × ₹500 = ₹' + (selectedClosure.denominations['500'] * 500)) : '0 pcs (₹0)'"></span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">₹200 Notes</span>
+                                    <span class="text-slate-500 font-medium" x-text="(selectedClosure?.denominations && selectedClosure.denominations['200']) ? (selectedClosure.denominations['200'] + ' × ₹200 = ₹' + (selectedClosure.denominations['200'] * 200)) : '0 pcs (₹0)'"></span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">₹100 Notes</span>
+                                    <span class="text-slate-500 font-medium" x-text="(selectedClosure?.denominations && selectedClosure.denominations['100']) ? (selectedClosure.denominations['100'] + ' × ₹100 = ₹' + (selectedClosure.denominations['100'] * 100)) : '0 pcs (₹0)'"></span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">₹50 Notes</span>
+                                    <span class="text-slate-500 font-medium" x-text="(selectedClosure?.denominations && selectedClosure.denominations['50']) ? (selectedClosure.denominations['50'] + ' × ₹50 = ₹' + (selectedClosure.denominations['50'] * 50)) : '0 pcs (₹0)'"></span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">₹20 Notes</span>
+                                    <span class="text-slate-500 font-medium" x-text="(selectedClosure?.denominations && selectedClosure.denominations['20']) ? (selectedClosure.denominations['20'] + ' × ₹20 = ₹' + (selectedClosure.denominations['20'] * 20)) : '0 pcs (₹0)'"></span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">₹10 Notes</span>
+                                    <span class="text-slate-500 font-medium" x-text="(selectedClosure?.denominations && selectedClosure.denominations['10']) ? (selectedClosure.denominations['10'] + ' × ₹10 = ₹' + (selectedClosure.denominations['10'] * 10)) : '0 pcs (₹0)'"></span>
+                                </div>
+                                <div class="flex justify-between py-1.5">
+                                    <span class="font-semibold text-slate-600 dark:text-slate-300">Coins & Change</span>
+                                    <span class="text-slate-500 font-medium">₹<span x-text="parseFloat((selectedClosure?.denominations && selectedClosure.denominations['coins']) || 0).toFixed(2)"></span></span>
+                                </div>
+                            </div>
                         </div>
+
+                        {{-- Remarks if any --}}
+                        <template x-if="selectedClosure?.note">
+                            <div class="p-3 bg-slate-50 dark:bg-gray-700/30 rounded-xl border border-slate-200 dark:border-gray-700 text-xs">
+                                <span class="font-bold text-slate-500 block mb-0.5">Note:</span>
+                                <p class="text-slate-700 dark:text-slate-300 italic" x-text="selectedClosure.note"></p>
+                            </div>
+                        </template>
+
+                        <button type="button" @click="showDenominationModal = false" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-all cursor-pointer">Close</button>
                     </div>
-
-                    {{-- Denominations Table --}}
-                    <div class="bg-slate-50 dark:bg-gray-700/30 rounded-2xl p-3.5 border border-slate-200 dark:border-gray-700 space-y-2">
-                        <h4 class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Physical Notes & Coins</h4>
-                        <div class="divide-y divide-slate-100 dark:divide-gray-700 text-xs">
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹500 Notes</span>
-                                <span class="text-slate-500 font-medium" x-text="(selectedClosure.denominations && selectedClosure.denominations['500']) ? (selectedClosure.denominations['500'] + ' × ₹500 = ₹' + (selectedClosure.denominations['500'] * 500)) : '0 pcs (₹0)'"></span>
-                            </div>
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹200 Notes</span>
-                                <span class="text-slate-500 font-medium" x-text="(selectedClosure.denominations && selectedClosure.denominations['200']) ? (selectedClosure.denominations['200'] + ' × ₹200 = ₹' + (selectedClosure.denominations['200'] * 200)) : '0 pcs (₹0)'"></span>
-                            </div>
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹100 Notes</span>
-                                <span class="text-slate-500 font-medium" x-text="(selectedClosure.denominations && selectedClosure.denominations['100']) ? (selectedClosure.denominations['100'] + ' × ₹100 = ₹' + (selectedClosure.denominations['100'] * 100)) : '0 pcs (₹0)'"></span>
-                            </div>
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹50 Notes</span>
-                                <span class="text-slate-500 font-medium" x-text="(selectedClosure.denominations && selectedClosure.denominations['50']) ? (selectedClosure.denominations['50'] + ' × ₹50 = ₹' + (selectedClosure.denominations['50'] * 50)) : '0 pcs (₹0)'"></span>
-                            </div>
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹20 Notes</span>
-                                <span class="text-slate-500 font-medium" x-text="(selectedClosure.denominations && selectedClosure.denominations['20']) ? (selectedClosure.denominations['20'] + ' × ₹20 = ₹' + (selectedClosure.denominations['20'] * 20)) : '0 pcs (₹0)'"></span>
-                            </div>
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">₹10 Notes</span>
-                                <span class="text-slate-500 font-medium" x-text="(selectedClosure.denominations && selectedClosure.denominations['10']) ? (selectedClosure.denominations['10'] + ' × ₹10 = ₹' + (selectedClosure.denominations['10'] * 10)) : '0 pcs (₹0)'"></span>
-                            </div>
-                            <div class="flex justify-between py-1.5">
-                                <span class="font-semibold text-slate-600 dark:text-slate-300">Coins & Change</span>
-                                <span class="text-slate-500 font-medium">₹<span x-text="parseFloat((selectedClosure.denominations && selectedClosure.denominations['coins']) || 0).toFixed(2)"></span></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Remarks if any --}}
-                    <template x-if="selectedClosure.note">
-                        <div class="p-3 bg-slate-50 dark:bg-gray-700/30 rounded-xl border border-slate-200 dark:border-gray-700 text-xs">
-                            <span class="font-bold text-slate-500 block mb-0.5">Note:</span>
-                            <p class="text-slate-700 dark:text-slate-300 italic" x-text="selectedClosure.note"></p>
-                        </div>
-                    </template>
-
-                    <button type="button" @click="showDenominationModal = false" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-all cursor-pointer">Close</button>
-                </div>
+                </template>
             </div>
         </div>
     </template>
