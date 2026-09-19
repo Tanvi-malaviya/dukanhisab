@@ -20,6 +20,14 @@ class ShopScopeMiddleware
         if (!$shopId || !is_numeric($shopId)) {
             return response()->json(['error' => 'Missing or invalid X-Shop-ID header'], 400);
         }
+        // Shops beyond the user's shop limit (expired Shop Add-on) are locked.
+        $user = $request->user();
+        if ($user && in_array((int) $shopId, $user->lockedShopIds(), true)) {
+            return response()->json([
+                'error' => 'shop_locked',
+                'message' => 'This shop is locked because your Shop Add-on has expired. Renew the Shop Add-on to use it again.',
+            ], 403);
+        }
         // Store on request for later use in controllers
         $request->attributes->set('shop_id', (int) $shopId);
         // Also bind in the container for any class that may resolve it via app('shop_id')

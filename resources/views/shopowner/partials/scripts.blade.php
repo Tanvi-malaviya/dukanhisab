@@ -317,6 +317,7 @@
             maxShops: parseInt(localStorage.getItem('shopowner_max_shops') || '1'),
             hasWebsiteAddon: localStorage.getItem('shopowner_has_website_addon') === 'true',
             addOnShopQty: 1,
+            lockedShopIds: JSON.parse(localStorage.getItem('shopowner_locked_shop_ids') || '[]'),
 
             // Pagination State
             salesPage: 1, salesPerPage: 10, returnedSalesPage: 1, returnedSalesPerPage: 10,
@@ -1851,7 +1852,20 @@
                 this.hasWebsiteAddon = d.has_website_addon;
                 localStorage.setItem('shopowner_max_shops', String(d.max_shops));
                 localStorage.setItem('shopowner_has_website_addon', d.has_website_addon ? 'true' : 'false');
+                this.lockedShopIds = d.locked_shop_ids || [];
+                localStorage.setItem('shopowner_locked_shop_ids', JSON.stringify(this.lockedShopIds));
+
+                // If the active shop got locked (Shop Add-on expired), move to the first usable shop.
+                if (this.shop && this.lockedShopIds.includes(this.shop.id) && this.user && this.user.shops) {
+                    const usable = this.user.shops.find(s => !this.lockedShopIds.includes(s.id));
+                    if (usable) {
+                        this.showToast('Shop "' + this.shop.name + '" is locked. Renew the Shop Add-on to use it again.', 'error');
+                        this.switchShop(usable);
+                    }
+                }
             },
+
+            isShopLocked(s) { return this.lockedShopIds.includes(s.id); },
 
             loadAddOns() {
                 this.addOnLoading = true;
@@ -2331,7 +2345,7 @@
 
             handleLogout() {
                 fetch('/api/v1/shopowner/logout', { method: 'POST', headers: this.getHeaders() }).finally(() => {
-                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon'].forEach(k => localStorage.removeItem(k));
+                    ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon', 'shopowner_locked_shop_ids'].forEach(k => localStorage.removeItem(k));
                     this.token = null; this.user = null; this.shop = null; this.hasShop = false; this.authPage = 'login';
                     window.location.href = '/shop/login';
                 });
@@ -2363,6 +2377,11 @@
             },
 
             switchShop(targetShop) {
+                if (this.isShopLocked(targetShop)) {
+                    this.showToast('This shop is locked. Renew the Shop Add-on to use it again.', 'error');
+                    this.navigateTo('addons');
+                    return;
+                }
                 this.shop = targetShop;
                 localStorage.setItem('shopowner_shop', JSON.stringify(targetShop));
                 this.showToast('Switched to shop: ' + targetShop.name);

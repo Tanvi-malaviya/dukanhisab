@@ -149,6 +149,21 @@ class User extends Authenticatable
         return 1 + $this->activeShopAddonQuantity();
     }
 
+    /**
+     * Shops beyond the current limit (oldest shops stay usable). This is what
+     * happens to extra shops once their Shop Add-on expires or is cancelled.
+     *
+     * @return int[]
+     */
+    public function lockedShopIds(): array
+    {
+        $ids = $this->shops()->orderBy('id')->pluck('id');
+        if ($ids->count() <= 1) {
+            return [];
+        }
+        return $ids->slice($this->maxShops())->map(fn ($id) => (int) $id)->values()->all();
+    }
+
     public function activeShopAddonQuantity(): int
     {
         return (int) $this->activeAddOns()

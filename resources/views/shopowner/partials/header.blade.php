@@ -81,6 +81,7 @@
                 <div class="max-h-60 overflow-y-auto py-1">
                     <template x-for="s in (user && user.shops ? user.shops : [])" :key="s.id">
                         <button @click="switchShop(s); open = false;"
+                            :class="isShopLocked(s) ? 'opacity-60' : ''"
                             class="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between transition-colors">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-6 h-6 rounded-md bg-slate-200 dark:bg-gray-600 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-[10px] uppercase"
@@ -91,7 +92,8 @@
                                     <span class="text-[9px] text-slate-400" x-text="s.mobile"></span>
                                 </div>
                             </div>
-                            <span x-show="shop && shop.id === s.id" class="text-primary font-bold text-sm">✓</span>
+                            <span x-show="isShopLocked(s)" class="px-1.5 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full">Locked</span>
+                            <span x-show="!isShopLocked(s) && shop && shop.id === s.id" class="text-primary font-bold text-sm">✓</span>
                         </button>
                     </template>
                 </div>
