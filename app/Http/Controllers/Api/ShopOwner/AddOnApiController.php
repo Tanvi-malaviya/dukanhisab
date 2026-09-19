@@ -260,7 +260,7 @@ class AddOnApiController extends Controller
      * subscription.charged / subscription.activated events whose notes
      * identify an add-on purchase (first charge or a yearly auto-renewal).
      */
-    public function activateFromWebhook(array $notes, string $razorpaySubscriptionId, string $paymentId): void
+    public function activateFromWebhook(array $notes, string $razorpaySubscriptionId, ?string $paymentId): void
     {
         $userId = $notes['user_id'] ?? null;
         $addonSlug = $notes['addon_slug'] ?? null;
@@ -279,19 +279,22 @@ class AddOnApiController extends Controller
         $shop = $user->shops()->first();
         $userAddOn = $this->activateAddOn($user, $addOn, $quantity, $razorpaySubscriptionId, $shop?->id);
 
-        Payment::updateOrCreate(
-            ['transaction_id' => $paymentId],
-            [
-                'user_id' => $user->id,
-                'shop_id' => $shop?->id,
-                'add_on_id' => $addOn->id,
-                'user_add_on_id' => $userAddOn->id,
-                'amount' => $addOn->price * $quantity,
-                'payment_gateway' => 'razorpay',
-                'status' => 'successful',
-                'payment_date' => now(),
-            ]
-        );
+        // Events without a payment (e.g. subscription.activated) must not create a payment row.
+        if ($paymentId) {
+            Payment::updateOrCreate(
+                ['transaction_id' => $paymentId],
+                [
+                    'user_id' => $user->id,
+                    'shop_id' => $shop?->id,
+                    'add_on_id' => $addOn->id,
+                    'user_add_on_id' => $userAddOn->id,
+                    'amount' => $addOn->price * $quantity,
+                    'payment_gateway' => 'razorpay',
+                    'status' => 'successful',
+                    'payment_date' => now(),
+                ]
+            );
+        }
 
         Log::info("Webhook processed: User {$user->id} add-on '{$addOn->slug}' charged/renewed.");
     }

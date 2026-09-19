@@ -471,18 +471,35 @@ class SubscriptionApiController extends Controller
      */
     public function handleWebhook(Request $request)
     {
-        $webhookSecret = env('RAZORPAY_WEBHOOK_SECRET', '');
-        if (!empty($webhookSecret)) {
-            $payload = $request->getContent();
-            $expectedSignature = hash_hmac('sha256', $payload, $webhookSecret);
-            $actualSignature = $request->header('X-Razorpay-Signature');
-            if ($expectedSignature !== $actualSignature) {
-                return response()->json(['message' => 'Invalid webhook signature'], 400);
-            }
+        // config() (not env()) so this still works after `php artisan config:cache`.
+        // Without a secret anyone could forge a "payment charged" call, so refuse.
+        $webhookSecret = config('services.razorpay.webhook_secret');
+        if (empty($webhookSecret)) {
+            Log::error('Razorpay webhook rejected: RAZORPAY_WEBHOOK_SECRET is not set.');
+            return response()->json(['message' => 'Webhook secret not configured'], 500);
+        }
+        $expectedSignature = hash_hmac('sha256', $request->getContent(), $webhookSecret);
+        if (!hash_equals($expectedSignature, (string) $request->header('X-Razorpay-Signature'))) {
+            return response()->json(['message' => 'Invalid webhook signature'], 400);
         }
 
         $event = $request->input('event');
         $payload = $request->input('payload');
+
+        // Auto-renewal is over (user cancelled, renewal payment kept failing,
+        // all cycles done, or paused). Access is NOT revoked here: the user keeps
+        // what they already paid for until ends_at, and it just won't renew.
+        if (in_array($event, ['subscription.cancelled', 'subscription.halted', 'subscription.completed', 'subscription.paused'])) {
+            $subEntity = $payload['subscription']['entity'] ?? null;
+            if ($subEntity) {
+                if (($subEntity['notes']['type'] ?? 'subscription') === 'addon') {
+                    \App\Models\UserAddOn::where('razorpay_subscription_id', $subEntity['id'])
+                        ->update(['auto_renew' => false]);
+                }
+                Log::info("Webhook {$event}: Razorpay subscription {$subEntity['id']} will not renew; access continues until ends_at.");
+            }
+            return response()->json(['status' => 'success']);
+        }
 
         if (in_array($event, ['subscription.charged', 'subscription.activated'])) {
             $subEntity = $payload['subscription']['entity'] ?? null;
@@ -492,7 +509,7 @@ class SubscriptionApiController extends Controller
                 app(AddOnApiController::class)->activateFromWebhook(
                     $subEntity['notes'] ?? [],
                     $subEntity['id'],
-                    $paymentEntity['id'] ?? $subEntity['id']
+                    $paymentEntity['id'] ?? null
                 );
                 return response()->json(['status' => 'success']);
             }
@@ -540,19 +557,21 @@ class SubscriptionApiController extends Controller
                             ]
                         );
 
-                        // Record Payment
-                        Payment::updateOrCreate(
-                            ['transaction_id' => $paymentId],
-                            [
-                                'user_id' => $user->id,
-                                'shop_id' => $shop->id,
-                                'plan_id' => $plan->id,
-                                'amount' => $plan->price,
-                                'payment_gateway' => 'razorpay',
-                                'status' => 'successful',
-                                'payment_date' => now(),
-                            ]
-                        );
+                        // Record Payment (only when the event carries one; subscription.activated does not)
+                        if ($paymentEntity) {
+                            Payment::updateOrCreate(
+                                ['transaction_id' => $paymentId],
+                                [
+                                    'user_id' => $user->id,
+                                    'shop_id' => $shop->id,
+                                    'plan_id' => $plan->id,
+                                    'amount' => $plan->price,
+                                    'payment_gateway' => 'razorpay',
+                                    'status' => 'successful',
+                                    'payment_date' => now(),
+                                ]
+                            );
+                        }
 
                         Log::info("Webhook processed: User {$user->id} upgraded to plan {$plan->name}");
                     }
