@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\InvoiceSettingController;
+use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\SupportTicketController;
@@ -71,6 +72,7 @@ Route::group([
     // Add-ons Management
     Route::get('add-ons', [AddOnController::class, 'index'])->name('addons.index');
     Route::post('add-ons', [AddOnController::class, 'store'])->name('addons.store');
+    Route::post('add-ons/assign', [AddOnController::class, 'assignToUser'])->name('addons.assign');
     Route::post('add-ons/{id}', [AddOnController::class, 'update'])->name('addons.update');
     Route::post('add-ons/{id}/expire', [AddOnController::class, 'expire'])->name('addons.expire');
     Route::post('add-ons/{id}/extend', [AddOnController::class, 'extend'])->name('addons.extend');
@@ -90,6 +92,11 @@ Route::group([
     // Invoice Layout Settings
     Route::get('settings/invoice', [InvoiceSettingController::class, 'index'])->name('settings.invoice');
     Route::post('settings/invoice', [InvoiceSettingController::class, 'update'])->name('settings.invoice.update');
+
+    // Payment Gateway Settings (Razorpay)
+    Route::get('settings/payment', [PaymentSettingController::class, 'index'])->name('settings.payment');
+    Route::post('settings/payment', [PaymentSettingController::class, 'update'])->name('settings.payment.update');
+    Route::post('settings/payment/test', [PaymentSettingController::class, 'testConnection'])->name('settings.payment.test');
 
     // Advertisement Management
     Route::get('ads', [AdvertisementController::class, 'index'])->name('ads.index');

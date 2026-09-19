@@ -33,12 +33,31 @@ class AddOnApiController extends Controller
     {
         $user = $request->user();
 
+        // Lazily expire any add-ons whose ends_at is in the past
+        UserAddOn::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->whereNotNull('ends_at')
+            ->where('ends_at', '<=', now())
+            ->update(['status' => 'expired']);
+
+        $shopAddOns = $user->addOns()->whereHas('addOn', fn ($q) => $q->where('type', 'shop'))->get();
+        $totalPurchased = (int) $shopAddOns->sum('quantity');
+        $activePurchased = (int) $user->activeShopAddonQuantity();
+        $expiredPurchased = (int) $shopAddOns->filter(fn ($a) => $a->status === 'expired' || ($a->ends_at && $a->ends_at->isPast()))->sum('quantity');
+        $usedShops = $user->shops()->count();
+        $maxShops = $user->maxShops();
+        $availableSlots = max(0, $maxShops - $usedShops);
+
         return response()->json([
-            'max_shops' => $user->maxShops(),
-            'shop_count' => $user->shops()->count(),
+            'max_shops' => $maxShops,
+            'shop_count' => $usedShops,
+            'available_slots' => $availableSlots,
+            'purchased_shops' => $totalPurchased,
+            'active_extra_shops' => $activePurchased,
+            'expired_extra_shops' => $expiredPurchased,
             'locked_shop_ids' => $user->lockedShopIds(),
             'has_website_addon' => $user->hasActiveWebsiteAddon(),
-            'add_ons' => $user->addOns()->with('addOn')->latest()->get(),
+            'add_ons' => $user->addOns()->with(['addOn', 'shop'])->latest()->get(),
         ]);
     }
 

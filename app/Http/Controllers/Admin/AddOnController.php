@@ -16,19 +16,55 @@ class AddOnController extends Controller
         $addOns = AddOn::orderBy('price', 'asc')->get();
 
         // One row per purchase: shop add-ons stack, so a user can hold several.
-        $historyQuery = UserAddOn::with(['user', 'addOn']);
+        $historyQuery = UserAddOn::with(['user.shops', 'shop', 'addOn']);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
-            $historyQuery->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('mobile', 'like', "%{$search}%");
+            $historyQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'like', "%{$search}%")
+                       ->orWhere('email', 'like', "%{$search}%")
+                       ->orWhere('mobile', 'like', "%{$search}%");
+                })->orWhereHas('shop', function ($sq) use ($search) {
+                    $sq->where('name', 'like', "%{$search}%");
+                });
             });
         }
         $history = $historyQuery->latest()->paginate(10)->withQueryString();
+        $users = User::with('shops')->orderBy('name')->get();
 
-        return view('admin.addons.index', compact('addOns', 'history'));
+        return view('admin.addons.index', compact('addOns', 'history', 'users'));
+    }
+
+    public function assignToUser(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'add_on_id' => 'required|exists:add_ons,id',
+            'shop_id' => 'nullable|exists:shops,id',
+            'quantity' => 'required|integer|min:1|max:20',
+            'days' => 'required|integer|min:1',
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+        $addOn = AddOn::findOrFail($validated['add_on_id']);
+        $shopId = !empty($validated['shop_id']) ? $validated['shop_id'] : $user->shops()->first()?->id;
+
+        $userAddOn = UserAddOn::create([
+            'user_id' => $user->id,
+            'shop_id' => $shopId,
+            'add_on_id' => $addOn->id,
+            'quantity' => $validated['quantity'],
+            'status' => 'active',
+            'starts_at' => now(),
+            'ends_at' => now()->addDays((int) $validated['days']),
+            'auto_renew' => true,
+        ]);
+
+        $shopName = $userAddOn->shop?->name ?? 'N/A';
+        AuditLog::log("Manually granted {$addOn->title} (Qty: {$validated['quantity']}) to user '{$user->name}' (Shop: {$shopName}) for {$validated['days']} days");
+
+        return back()->with('success', "{$addOn->title} add-on assigned to user {$user->name} successfully.");
     }
 
     public function store(Request $request)

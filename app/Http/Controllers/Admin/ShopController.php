@@ -55,6 +55,17 @@ class ShopController extends Controller
 
         $shop = Shop::create($validated);
 
+        // Link to an unlinked active shop add-on if one exists
+        if ($owner) {
+            $unlinkedAddOn = \App\Models\UserAddOn::where('user_id', $owner->id)
+                ->whereNull('shop_id')
+                ->where('status', 'active')
+                ->first();
+            if ($unlinkedAddOn) {
+                $unlinkedAddOn->update(['shop_id' => $shop->id]);
+            }
+        }
+
         // Sync owner status to match shop status
         if ($shop->owner) {
             $shop->owner->update(['status' => $shop->status]);

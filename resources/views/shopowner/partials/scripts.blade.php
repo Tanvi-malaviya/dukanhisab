@@ -318,6 +318,7 @@
             hasWebsiteAddon: localStorage.getItem('shopowner_has_website_addon') === 'true',
             addOnShopQty: 1,
             lockedShopIds: JSON.parse(localStorage.getItem('shopowner_locked_shop_ids') || '[]'),
+            addOnStats: JSON.parse(localStorage.getItem('shopowner_addon_stats') || '{"purchased":0,"active":0,"expired":0,"used":1,"available":0,"max":1}'),
 
             // Pagination State
             salesPage: 1, salesPerPage: 10, returnedSalesPage: 1, returnedSalesPerPage: 10,
@@ -1847,11 +1848,20 @@
             // (same pattern as `user`/`shop`), instead of defaulting to
             // "no add-on" for a moment while the fresh fetch is in flight.
             applyAddOnStatus(d) {
-                this.userAddOns = d.add_ons;
-                this.maxShops = d.max_shops;
-                this.hasWebsiteAddon = d.has_website_addon;
-                localStorage.setItem('shopowner_max_shops', String(d.max_shops));
-                localStorage.setItem('shopowner_has_website_addon', d.has_website_addon ? 'true' : 'false');
+                this.userAddOns = d.add_ons || [];
+                this.maxShops = d.max_shops || 1;
+                this.hasWebsiteAddon = !!d.has_website_addon;
+                this.addOnStats = {
+                    purchased: d.purchased_shops || 0,
+                    active: d.active_extra_shops || 0,
+                    expired: d.expired_extra_shops || 0,
+                    used: d.shop_count || (this.user && this.user.shops ? this.user.shops.length : 1),
+                    available: d.available_slots || 0,
+                    max: d.max_shops || 1
+                };
+                localStorage.setItem('shopowner_addon_stats', JSON.stringify(this.addOnStats));
+                localStorage.setItem('shopowner_max_shops', String(this.maxShops));
+                localStorage.setItem('shopowner_has_website_addon', this.hasWebsiteAddon ? 'true' : 'false');
                 this.lockedShopIds = d.locked_shop_ids || [];
                 localStorage.setItem('shopowner_locked_shop_ids', JSON.stringify(this.lockedShopIds));
 

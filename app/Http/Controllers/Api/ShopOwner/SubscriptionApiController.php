@@ -471,7 +471,7 @@ class SubscriptionApiController extends Controller
      */
     public function handleWebhook(Request $request)
     {
-        $webhookSecret = env('RAZORPAY_WEBHOOK_SECRET', '');
+        $webhookSecret = config('services.razorpay.webhook_secret') ?: env('RAZORPAY_WEBHOOK_SECRET', '');
         if (!empty($webhookSecret)) {
             $payload = $request->getContent();
             $expectedSignature = hash_hmac('sha256', $payload, $webhookSecret);
