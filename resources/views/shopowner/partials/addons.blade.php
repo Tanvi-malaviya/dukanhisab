@@ -20,7 +20,7 @@
                             d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
                     </svg>
                     <span
-                        x-text="(user && user.shops ? user.shops.length : 0) + ' / ' + maxShops + ' Shops Used'"></span>
+                        x-text="Math.min(user && user.shops ? user.shops.length : 0, maxShops) + ' / ' + maxShops + ' Shops Used' + (lockedShopIds.length ? ' (' + lockedShopIds.length + ' locked)' : '')"></span>
                 </span>
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

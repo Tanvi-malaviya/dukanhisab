@@ -36,6 +36,7 @@ class AddOnApiController extends Controller
         return response()->json([
             'max_shops' => $user->maxShops(),
             'shop_count' => $user->shops()->count(),
+            'locked_shop_ids' => $user->lockedShopIds(),
             'has_website_addon' => $user->hasActiveWebsiteAddon(),
             'add_ons' => $user->addOns()->with('addOn')->latest()->get(),
         ]);
