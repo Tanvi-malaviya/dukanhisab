@@ -9,8 +9,8 @@ use App\Models\User;
 use App\Models\UserAddOn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Razorpay\Api\Api as RazorpayApi;
 
 class AddOnApiController extends Controller
 {
@@ -33,26 +33,49 @@ class AddOnApiController extends Controller
     {
         $user = $request->user();
 
-        // Lazily flip any expired rows so the ledger/UI reflects reality.
+        // Lazily expire any add-ons whose ends_at is in the past
         UserAddOn::where('user_id', $user->id)
             ->where('status', 'active')
             ->whereNotNull('ends_at')
             ->where('ends_at', '<=', now())
             ->update(['status' => 'expired']);
 
-        $active = $user->activeAddOns()->with('addOn')->get();
+        $shopAddOns = $user->addOns()->whereHas('addOn', fn ($q) => $q->where('type', 'shop'))->get();
+        $totalPurchased = (int) $shopAddOns->sum('quantity');
+        $activePurchased = (int) $user->activeShopAddonQuantity();
+        $expiredPurchased = (int) $shopAddOns->filter(fn ($a) => $a->status === 'expired' || ($a->ends_at && $a->ends_at->isPast()))->sum('quantity');
+        $usedShops = $user->shops()->count();
+        $maxShops = $user->maxShops();
+        $availableSlots = max(0, $maxShops - $usedShops);
+
+        // Attach the shop occupying each purchased slot (null = unused slot).
+        $slots = $user->shopSlotAssignments();
+        $addOnRows = $user->addOns()->with(['addOn', 'shop'])->latest()->get();
+        $addOnRows->each(function ($row) use ($slots) {
+            if (isset($slots[$row->id])) {
+                $row->setAttribute('shop_slots', array_map(
+                    fn ($s) => $s ? ['id' => $s->id, 'name' => $s->name] : null,
+                    $slots[$row->id]
+                ));
+            }
+        });
 
         return response()->json([
-            'add_ons' => $active,
-            'max_shops' => $user->maxShops(),
-            'shop_count' => $user->shops()->count(),
+            'max_shops' => $maxShops,
+            'shop_count' => $usedShops,
+            'available_slots' => $availableSlots,
+            'purchased_shops' => $totalPurchased,
+            'active_extra_shops' => $activePurchased,
+            'expired_extra_shops' => $expiredPurchased,
+            'locked_shop_ids' => $user->lockedShopIds(),
             'has_website_addon' => $user->hasActiveWebsiteAddon(),
+            'add_ons' => $addOnRows,
         ]);
     }
 
     /**
-     * Create a recurring Razorpay Subscription (auto-renews yearly) for the
-     * requested add-on.
+     * Start purchasing an add-on. Initializes a Razorpay subscription so
+     * payments recur annually until cancelled.
      */
     public function purchase(Request $request)
     {
@@ -62,10 +85,14 @@ class AddOnApiController extends Controller
         ]);
 
         $user = $request->user();
-        $addOn = AddOn::where('slug', $request->slug)->where('status', 'active')->first();
+        $addOn = AddOn::where('slug', $request->slug)->first();
 
         if (!$addOn) {
-            return response()->json(['message' => 'Add-on not found or unavailable.'], 404);
+            return response()->json(['message' => 'Add-on not found.'], 404);
+        }
+
+        if ($addOn->status !== 'active') {
+            return response()->json(['message' => 'This add-on is currently unavailable.'], 400);
         }
 
         $quantity = $addOn->type === 'website' ? 1 : (int) ($request->input('quantity', 1));
@@ -83,11 +110,9 @@ class AddOnApiController extends Controller
                 throw new \Exception('Razorpay credentials not configured.');
             }
 
-            $api = new RazorpayApi($keyId, $keySecret);
-
             $cacheKey = 'razorpay_addon_plan_' . $addOn->slug . '_' . (int) $addOn->price;
-            $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($api, $addOn) {
-                $razorpayPlan = $api->plan->create([
+            $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($keyId, $keySecret, $addOn) {
+                $planRes = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/plans', [
                     'period' => 'yearly',
                     'interval' => 1,
                     'item' => [
@@ -97,10 +122,15 @@ class AddOnApiController extends Controller
                         'description' => $addOn->description ?? ('Add-on: ' . $addOn->title),
                     ],
                 ]);
-                return $razorpayPlan['id'];
+
+                if (!$planRes->successful()) {
+                    throw new \Exception('Failed to create Razorpay plan: ' . $planRes->body());
+                }
+
+                return $planRes->json('id');
             });
 
-            $razorpaySubscription = $api->subscription->create([
+            $subRes = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/subscriptions', [
                 'plan_id' => $razorpayPlanId,
                 'total_count' => 100,
                 'quantity' => $quantity,
@@ -113,6 +143,12 @@ class AddOnApiController extends Controller
                     'quantity' => (string) $quantity,
                 ],
             ]);
+
+            if (!$subRes->successful()) {
+                throw new \Exception('Failed to create Razorpay subscription: ' . $subRes->body());
+            }
+
+            $razorpaySubscription = $subRes->json();
 
             return response()->json([
                 'requires_payment' => true,
@@ -127,7 +163,7 @@ class AddOnApiController extends Controller
                     'mobile' => $user->mobile,
                 ],
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Razorpay Add-on Subscription Creation Failed: ' . $e->getMessage());
 
             // Sandbox / no-credentials fallback so the web panel & app can still be exercised end-to-end.
@@ -233,10 +269,11 @@ class AddOnApiController extends Controller
         $keySecret = config('services.razorpay.secret');
         if (!empty($keyId) && !empty($keySecret) && $userAddOn->razorpay_subscription_id && !str_starts_with($userAddOn->razorpay_subscription_id, 'sub_mock_')) {
             try {
-                (new RazorpayApi($keyId, $keySecret))->subscription
-                    ->fetch($userAddOn->razorpay_subscription_id)
-                    ->cancel(['cancel_at_cycle_end' => 1]);
-            } catch (\Exception $e) {
+                Http::withBasicAuth($keyId, $keySecret)
+                    ->post("https://api.razorpay.com/v1/subscriptions/{$userAddOn->razorpay_subscription_id}/cancel", [
+                        'cancel_at_cycle_end' => 1,
+                    ]);
+            } catch (\Throwable $e) {
                 Log::error('Razorpay Add-on Subscription Cancel Failed: ' . $e->getMessage());
             }
         }
@@ -254,7 +291,7 @@ class AddOnApiController extends Controller
      * subscription.charged / subscription.activated events whose notes
      * identify an add-on purchase (first charge or a yearly auto-renewal).
      */
-    public function activateFromWebhook(array $notes, string $razorpaySubscriptionId, string $paymentId): void
+    public function activateFromWebhook(array $notes, string $razorpaySubscriptionId, ?string $paymentId): void
     {
         $userId = $notes['user_id'] ?? null;
         $addonSlug = $notes['addon_slug'] ?? null;
@@ -271,21 +308,46 @@ class AddOnApiController extends Controller
         }
 
         $shop = $user->shops()->first();
+
+        // A renewal = the purchase already exists and this payment is new. The very
+        // first charge (already recorded by verifyPayment) must not email "renewed".
+        $isRenewal = $paymentId
+            && UserAddOn::where('razorpay_subscription_id', $razorpaySubscriptionId)->exists()
+            && !Payment::where('transaction_id', $paymentId)->exists();
+
         $userAddOn = $this->activateAddOn($user, $addOn, $quantity, $razorpaySubscriptionId, $shop?->id);
 
-        Payment::updateOrCreate(
-            ['transaction_id' => $paymentId],
-            [
-                'user_id' => $user->id,
-                'shop_id' => $shop?->id,
-                'add_on_id' => $addOn->id,
-                'user_add_on_id' => $userAddOn->id,
-                'amount' => $addOn->price * $quantity,
-                'payment_gateway' => 'razorpay',
-                'status' => 'successful',
-                'payment_date' => now(),
-            ]
-        );
+        // Events without a payment (e.g. subscription.activated) must not create a payment row.
+        if ($paymentId) {
+            Payment::updateOrCreate(
+                ['transaction_id' => $paymentId],
+                [
+                    'user_id' => $user->id,
+                    'shop_id' => $shop?->id,
+                    'add_on_id' => $addOn->id,
+                    'user_add_on_id' => $userAddOn->id,
+                    'amount' => $addOn->price * $quantity,
+                    'payment_gateway' => 'razorpay',
+                    'status' => 'successful',
+                    'payment_date' => now(),
+                ]
+            );
+        }
+
+        if ($isRenewal) {
+            \App\Support\BillingMail::send(
+                $user,
+                "Your {$addOn->title} add-on has been renewed",
+                'Add-on auto-renewed',
+                "Your {$addOn->title} add-on was renewed automatically and your payment was received. Thank you!",
+                [
+                    'Add-on' => $addOn->title . ($quantity > 1 ? ' x ' . $quantity : ''),
+                    'Amount charged' => '₹' . number_format($addOn->price * $quantity, 2),
+                    'Valid until' => $userAddOn->ends_at->format('d M Y'),
+                    'Auto-renewal' => 'On (renews again next year)',
+                ]
+            );
+        }
 
         Log::info("Webhook processed: User {$user->id} add-on '{$addOn->slug}' charged/renewed.");
     }
@@ -306,7 +368,7 @@ class AddOnApiController extends Controller
                 'quantity' => $quantity,
                 'status' => 'active',
                 'starts_at' => now(),
-                'ends_at' => now()->addYear(),
+                'ends_at' => \App\Support\Billing::yearlyPeriodEnd(),
                 'auto_renew' => true,
             ]
         );

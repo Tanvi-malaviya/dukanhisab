@@ -8,6 +8,10 @@
 
     <x-search-filter :action="route('admin.addons.index')" placeholder="Search user name, email, mobile..." :show-reset="false">
         <x-slot name="actions">
+            <x-button type="button" onclick="openAssignAddOnModal()" variant="secondary" class="flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                Assign to User
+            </x-button>
             <x-button type="button" onclick="openCreateAddOnModal()" variant="primary" class="flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 Add New Add-On
@@ -79,6 +83,7 @@
                     <thead>
                         <tr class="bg-secondary/40 border-b border-border-dark text-[11px] font-semibold uppercase text-slate-400 tracking-wider">
                             <th class="px-6 py-4">User Details</th>
+                            <th class="px-6 py-4">Shop Name</th>
                             <th class="px-6 py-4">Add-On</th>
                             <th class="px-6 py-4">Qty</th>
                             <th class="px-6 py-4">Coverage Dates</th>
@@ -94,7 +99,24 @@
                                 <p class="text-xs text-slate-500">{{ $row->user ? ($row->user->email ?? $row->user->mobile) : 'No user linked' }}</p>
                             </td>
                             <td class="px-6 py-4">
+                                @if($row->shop)
+                                    <span class="font-semibold text-white">{{ $row->shop->name }}</span>
+                                    <span class="block text-[11px] text-slate-500">ID: #{{ $row->shop->id }}</span>
+                                @elseif($row->user && $row->user->shops->count() > 0)
+                                    <div class="space-y-1">
+                                        @foreach($row->user->shops as $s)
+                                            <span class="inline-block px-2 py-0.5 rounded text-xs bg-secondary/60 text-slate-200 border border-border-dark">{{ $s->name }}</span>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-xs text-slate-500 italic">No shop linked</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
                                 <span class="text-xs font-semibold text-white">{{ $row->addOn ? $row->addOn->title : 'N/A' }}</span>
+                                @if(!empty($slotNames[$row->id]))
+                                    <span class="text-xs font-semibold text-teal-400">– {{ implode(', ', $slotNames[$row->id]) }}</span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-xs font-mono">{{ $row->quantity }}</td>
                             <td class="px-6 py-4 text-xs font-mono space-y-0.5">
@@ -125,7 +147,7 @@
                         </tr>
                         @empty
                             <x-empty-state
-                                colspan="6"
+                                colspan="7"
                                 title="No add-on purchases found"
                                 :message="request()->filled('search') ? 'We couldn\'t find any add-on purchase logs matching your current filters.' : 'No one has purchased the Shop or Website add-on yet.'"
                                 :resetUrl="request()->filled('search') ? route('admin.addons.index') : null"
@@ -250,7 +272,90 @@
     </div>
 </div>
 
+<!-- Modal 4: Assign Add-On to User -->
+<div id="assignAddOnModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAssignAddOnModal()"></div>
+    <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-lg shadow-2xl relative z-10 overflow-hidden">
+        <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
+            <h3 class="text-sm font-semibold text-white">Assign Add-On to User</h3>
+            <button onclick="closeAssignAddOnModal()" class="text-slate-400 hover:text-white cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+
+        <form action="{{ route('admin.addons.assign') }}" method="POST" class="p-6 space-y-4">
+            @csrf
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select User *</label>
+                <select name="user_id" id="assign_user_id" required onchange="updateAssignShopOptions()" class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                    <option value="">-- Select User --</option>
+                    @foreach($users as $u)
+                        <option value="{{ $u->id }}" data-shops="{{ json_encode($u->shops) }}">{{ $u->name }} ({{ $u->email ?? $u->mobile }})</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select Add-On *</label>
+                <select name="add_on_id" required class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                    @foreach($addOns as $ao)
+                        <option value="{{ $ao->id }}">{{ $ao->title }} ({{ ucfirst($ao->type) }}) &mdash; ₹{{ number_format($ao->price, 0) }}/yr</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Target Shop (Optional)</label>
+                <select name="shop_id" id="assign_shop_id" class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
+                    <option value="">-- First available or default shop --</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">If unselected, it will be linked to the user's primary or newly created shop.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Quantity *</label>
+                    <input type="number" name="quantity" value="1" min="1" max="20" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Validity (Days) *</label>
+                    <input type="number" name="days" value="365" min="1" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-3 border-t border-border-dark">
+                <x-button type="button" onclick="closeAssignAddOnModal()" variant="secondary">Cancel</x-button>
+                <x-button type="submit" variant="primary">Assign Add-On</x-button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+    function openAssignAddOnModal() {
+        document.getElementById('assignAddOnModal').classList.remove('hidden');
+    }
+    function closeAssignAddOnModal() {
+        document.getElementById('assignAddOnModal').classList.add('hidden');
+    }
+    function updateAssignShopOptions() {
+        const userSelect = document.getElementById('assign_user_id');
+        const shopSelect = document.getElementById('assign_shop_id');
+        shopSelect.innerHTML = '<option value="">-- First available or default shop --</option>';
+        if (!userSelect.value) return;
+
+        const selectedOption = userSelect.options[userSelect.selectedIndex];
+        const shopsData = selectedOption.getAttribute('data-shops');
+        if (shopsData) {
+            try {
+                const shops = JSON.parse(shopsData);
+                shops.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.name;
+                    shopSelect.appendChild(opt);
+                });
+            } catch (e) {}
+        }
+    }
     function openCreateAddOnModal() {
         document.getElementById('createAddOnModal').classList.remove('hidden');
     }

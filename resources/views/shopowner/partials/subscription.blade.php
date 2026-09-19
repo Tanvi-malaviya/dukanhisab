@@ -168,10 +168,15 @@
                                 'border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-white hover:bg-slate-50 dark:hover:bg-gray-700/50': plan.slug === 'free' && !(user && user.active_plan && user.active_plan.id == plan.id),
                                 'opacity-50 cursor-not-allowed border border-slate-200 dark:border-gray-700 text-slate-500 dark:text-slate-400': (user && user.active_plan && user.active_plan.id == plan.id) || plan.is_expired
                             }"
-                            class="w-full py-2.5 rounded-xl text-xs font-bold transition-all disabled:pointer-events-none">
+                            class="w-full py-2.5 rounded-xl text-xs font-bold transition-all disabled:pointer-events-none flex items-center justify-center gap-2">
+                            <svg x-show="subscriptionLoading && subscriptionPurchasingSlug === plan.slug" class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                            </svg>
+                            <span x-show="subscriptionLoading && subscriptionPurchasingSlug === plan.slug" x-text="t('processing') || 'Processing...'">Processing...</span>
                             <span x-show="user && user.active_plan && user.active_plan.id == plan.id" x-text="t('current_plan') || 'Current Plan'"></span>
                             <span x-show="!(user && user.active_plan && user.active_plan.id == plan.id) && plan.is_expired">Offer Expired</span>
-                            <span x-show="!(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired" x-text="plan.slug === 'free' ? (t('free_plan') || 'Free Plan') : (plan.slug === 'business' ? (t('buy_lifetime') || 'Buy Lifetime') : (t('upgrade_to_premium') || 'Upgrade'))"></span>
+                            <span x-show="!(subscriptionLoading && subscriptionPurchasingSlug === plan.slug) && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired" x-text="plan.slug === 'free' ? (t('free_plan') || 'Free Plan') : (plan.slug === 'business' ? (t('buy_lifetime') || 'Buy Lifetime') : (t('upgrade_to_premium') || 'Upgrade'))"></span>
                         </button>
                     </div>
                 </div>

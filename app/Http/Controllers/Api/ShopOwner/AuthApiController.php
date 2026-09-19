@@ -576,6 +576,15 @@ class AuthApiController extends Controller
             $shop = \App\Models\Shop::create($shopData);
             // Initialize default invoice config for the new shop
             \App\Models\InvoiceConfig::create(['shop_id' => $shop->id]);
+
+            // Link to an unlinked active shop add-on if one exists
+            $unlinkedAddOn = \App\Models\UserAddOn::where('user_id', $user->id)
+                ->whereNull('shop_id')
+                ->where('status', 'active')
+                ->first();
+            if ($unlinkedAddOn) {
+                $unlinkedAddOn->update(['shop_id' => $shop->id]);
+            }
         }
 
         $user->load(['shops', 'activePlan', 'currentSubscription']);

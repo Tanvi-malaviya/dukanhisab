@@ -35,8 +35,12 @@ return [
         ],
     ],
 
+    // Testing only: shortens a yearly period to N days. Leave empty in production.
+    'billing_test_days' => env('BILLING_TEST_DAYS'),
+
     'razorpay' => [
         'key' => env('RAZORPAY_KEY_ID', ''),
         'secret' => env('RAZORPAY_KEY_SECRET', ''),
+        'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET', ''),
     ],
 ];

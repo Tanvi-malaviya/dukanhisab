@@ -127,6 +127,19 @@ class SubscriptionController extends Controller
         $userName = $subscription->user ? $subscription->user->name : 'User';
         AuditLog::log("Expired subscription #{$subscription->id} for user '{$userName}'");
 
+        $planName = $subscription->plan ? $subscription->plan->name : 'subscription plan';
+        \App\Support\BillingMail::send(
+            $subscription->user,
+            "Your {$planName} subscription has expired",
+            'Subscription expired',
+            "Your {$planName} subscription has been expired by the DukanHisab admin team. Your account has moved to the Free plan.",
+            [
+                'Plan' => $planName,
+                'Status' => 'Expired',
+                'Expired on' => now()->format('d M Y'),
+            ]
+        );
+
         return back()->with('success', 'Subscription has been expired.');
     }
 
@@ -188,6 +201,20 @@ class SubscriptionController extends Controller
 
         AuditLog::log("Extended subscription #{$subscription->id} by {$days} days", ['new_ends_at' => $newEndsAt->toDateString()]);
 
+        $planName = $subscription->plan ? $subscription->plan->name : 'subscription plan';
+        \App\Support\BillingMail::send(
+            $user,
+            "Your {$planName} subscription has been extended",
+            'Subscription extended',
+            "Good news! Your {$planName} subscription has been extended by {$days} day(s) by the DukanHisab admin team.",
+            [
+                'Plan' => $planName,
+                'Extended by' => "{$days} day(s)",
+                'Status' => 'Active',
+                'Valid until' => $newEndsAt->format('d M Y'),
+            ]
+        );
+
         return back()->with('success', "Subscription extended/reactivated successfully by {$days} days.");
     }
 
@@ -243,6 +270,19 @@ class SubscriptionController extends Controller
 
         $userName = $user ? $user->name : 'User';
         AuditLog::log("Reactivated subscription #{$subscription->id} for user '{$userName}' until {$newEndsAt->toDateString()}");
+
+        $planName = $plan ? $plan->name : 'subscription plan';
+        \App\Support\BillingMail::send(
+            $user,
+            "Your {$planName} subscription has been reactivated",
+            'Subscription reactivated',
+            "Your {$planName} subscription has been reactivated by the DukanHisab admin team.",
+            [
+                'Plan' => $planName,
+                'Status' => 'Active',
+                'Valid until' => $newEndsAt ? $newEndsAt->format('d M Y') : 'Lifetime',
+            ]
+        );
 
         return back()->with('success', $msg);
     }
