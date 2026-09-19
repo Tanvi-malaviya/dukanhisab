@@ -149,6 +149,16 @@
                     Invoice Layout
                 </a>
 
+                <a href="{{ route('admin.settings.payment') }}"
+                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'settings.payment') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
+                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                        </path>
+                    </svg>
+                    Payment Gateway
+                </a>
+
 
 
                 <a href="{{ route('admin.notifications.index') }}"
