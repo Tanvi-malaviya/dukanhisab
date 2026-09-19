@@ -15,21 +15,8 @@ class AddOnController extends Controller
     {
         $addOns = AddOn::orderBy('price', 'asc')->get();
 
-        $allUserAddOns = UserAddOn::select('id', 'user_id', 'add_on_id', 'status')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        $grouped = $allUserAddOns->groupBy(fn ($row) => $row->user_id . '-' . $row->add_on_id);
-        $userAddOnIds = [];
-        foreach ($grouped as $rows) {
-            $rowToShow = $rows->firstWhere('status', 'active') ?: $rows->first();
-            if ($rowToShow) {
-                $userAddOnIds[] = $rowToShow->id;
-            }
-        }
-
-        $historyQuery = UserAddOn::with(['user', 'addOn'])
-            ->whereIn('id', $userAddOnIds);
+        // One row per purchase: shop add-ons stack, so a user can hold several.
+        $historyQuery = UserAddOn::with(['user', 'addOn']);
 
         if ($request->filled('search')) {
             $search = $request->input('search');
