@@ -110,10 +110,10 @@ class AddOnApiController extends Controller
                 throw new \Exception('Razorpay credentials not configured.');
             }
 
-            $cacheKey = 'razorpay_addon_plan_' . $addOn->slug . '_' . (int) $addOn->price;
+            $cacheKey = 'razorpay_addon_plan_' . $addOn->slug . '_' . (int) $addOn->price . '_' . \App\Support\Billing::razorpayPeriod();
             $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($keyId, $keySecret, $addOn) {
                 $planRes = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/plans', [
-                    'period' => 'yearly',
+                    'period' => \App\Support\Billing::razorpayPeriod(),
                     'interval' => 1,
                     'item' => [
                         'name' => $addOn->title,

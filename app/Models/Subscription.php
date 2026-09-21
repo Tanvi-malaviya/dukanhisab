@@ -11,6 +11,7 @@ class Subscription extends Model
         'shop_id',
         'plan_id',
         'status',
+        'razorpay_subscription_id',
         'starts_at',
         'ends_at',
         'trial_ends_at',

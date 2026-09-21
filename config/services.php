@@ -37,6 +37,8 @@ return [
 
     // Testing only: shortens a yearly period to N days. Leave empty in production.
     'billing_test_days' => env('BILLING_TEST_DAYS'),
+    // Testing only: 'weekly' makes Razorpay bill every 7 days instead of yearly.
+    'billing_test_period' => env('BILLING_TEST_PERIOD'),
 
     'razorpay' => [
         'key' => env('RAZORPAY_KEY_ID', ''),
