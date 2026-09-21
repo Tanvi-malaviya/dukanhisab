@@ -87,6 +87,14 @@ class SubscriptionApiController extends Controller
             return response()->json(['message' => 'You do not have an active paid subscription to cancel.'], 400);
         }
 
+        // Stop the recurring charge on Razorpay first; otherwise the customer keeps
+        // getting billed every year even though they cancelled here.
+        if ($subscription->razorpay_subscription_id && !$this->cancelRazorpaySubscription($subscription->razorpay_subscription_id)) {
+            return response()->json([
+                'message' => 'We could not cancel your subscription with the payment gateway. Please try again in a moment.',
+            ], 502);
+        }
+
         $this->downgradeToFree($user, $subscription, 'cancelled');
         $user->load(['activePlan', 'currentSubscription']);
 
@@ -246,10 +254,10 @@ class SubscriptionApiController extends Controller
             $api = new RazorpayApi($keyId, $keySecret);
 
             // Dynamically create or retrieve plan on Razorpay
-            $cacheKey = 'razorpay_plan_' . $plan->slug . '_' . (int)($plan->price) . '_' . $plan->billing_period;
+            $cacheKey = 'razorpay_plan_' . $plan->slug . '_' . (int)($plan->price) . '_' . $plan->billing_period . '_' . \App\Support\Billing::razorpayPeriod();
             $razorpayPlanId = Cache::rememberForever($cacheKey, function () use ($api, $plan) {
                 $razorpayPlan = $api->plan->create([
-                    'period' => 'yearly',
+                    'period' => \App\Support\Billing::razorpayPeriod(),
                     'interval' => 1,
                     'item' => [
                         'name' => $plan->name,
@@ -437,6 +445,7 @@ class SubscriptionApiController extends Controller
                 'starts_at' => now(),
                 'ends_at' => $endsAt,
                 'status' => 'active',
+                'razorpay_subscription_id' => $subscriptionId ?: null,
             ]
         );
 
@@ -525,6 +534,14 @@ class SubscriptionApiController extends Controller
                     $plan = SubscriptionPlan::where('slug', $planSlug)->first();
 
                     if ($user && $plan) {
+                        // The user already cancelled this subscription, but Razorpay still charged.
+                        // Do not re-activate the plan; make sure it is cancelled on Razorpay's side.
+                        if (Subscription::where('razorpay_subscription_id', $razorpaySubId)->where('status', 'cancelled')->exists()) {
+                            Log::warning("Webhook ignored: charge for already-cancelled subscription {$razorpaySubId} (user {$user->id}). Cancelling it on Razorpay.");
+                            $this->cancelRazorpaySubscription($razorpaySubId);
+                            return response()->json(['status' => 'ignored']);
+                        }
+
                         // Renewal = user already has this plan active and this payment is new.
                         // The first charge (recorded by verifyPayment) must not email "renewed".
                         $isRenewal = $paymentEntity
@@ -560,6 +577,7 @@ class SubscriptionApiController extends Controller
                                 'starts_at' => now(),
                                 'ends_at' => $endsAt,
                                 'status' => 'active',
+                                'razorpay_subscription_id' => $razorpaySubId,
                             ]
                         );
 
@@ -601,6 +619,36 @@ class SubscriptionApiController extends Controller
         }
 
         return response()->json(['status' => 'success']);
+    }
+
+    /**
+     * Cancel a recurring subscription on Razorpay. Returns true when it is (now) cancelled,
+     * or when there is nothing to cancel (test/mock ids or no credentials).
+     */
+    private function cancelRazorpaySubscription(string $razorpaySubscriptionId): bool
+    {
+        $keyId = config('services.razorpay.key');
+        $keySecret = config('services.razorpay.secret');
+
+        if (empty($keyId) || empty($keySecret)
+            || str_starts_with($razorpaySubscriptionId, 'sub_mock_')
+            || str_starts_with($razorpaySubscriptionId, 'sub_sim_')) {
+            return true;
+        }
+
+        try {
+            $razorpaySubscription = (new RazorpayApi($keyId, $keySecret))->subscription->fetch($razorpaySubscriptionId);
+
+            if (in_array($razorpaySubscription->status, ['cancelled', 'completed', 'expired'], true)) {
+                return true;
+            }
+
+            $razorpaySubscription->cancel(['cancel_at_cycle_end' => 0]);
+            return true;
+        } catch (\Throwable $e) {
+            Log::error("Razorpay subscription cancel failed ({$razorpaySubscriptionId}): " . $e->getMessage());
+            return false;
+        }
     }
 
     private function downgradeToFree(\App\Models\User $user, \App\Models\Subscription $subscription, string $reason): void
