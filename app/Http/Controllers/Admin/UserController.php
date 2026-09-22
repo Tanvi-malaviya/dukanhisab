@@ -305,44 +305,45 @@ class UserController extends Controller
             ]);
         }
 
-        // Fetch / Calculate Shop Usage Statistics (Simulated Telemetry)
-        $shopsData = $user->shops->map(function($shop) {
-            // Generate deterministic stats based on shop ID
-            $seed = $shop->id;
-            $salesCount = ($seed * 47) % 500 + 120;
-            $salesAmount = $salesCount * 320;
-            $purchasesCount = ($seed * 31) % 300 + 60;
-            $cashBalance = ($seed * 1150) % 25000 + 4000;
-            $bankBalance = ($seed * 2300) % 85000 + 15000;
-            $customerDue = ($seed * 620) % 15000 + 1200;
-            $supplierDue = ($seed * 430) % 12000 + 800;
+        // Fetch / Calculate Shop Usage Statistics (real data, across all of this
+        // user's shops). Same conventions used by the shop-owner dashboard API:
+        // completed sales, non-cancelled/returned purchases, and cash/bank
+        // balances derived from the CashBook ledger.
+        $shopIds = $user->shops->pluck('id');
 
-            return (object) [
-                'shop_id' => $shop->id,
-                'name' => $shop->name,
-                'sales_count' => $salesCount,
-                'sales_amount' => $salesAmount,
-                'purchases_count' => $purchasesCount,
-                'cash_balance' => $cashBalance,
-                'bank_balance' => $bankBalance,
-                'customer_due' => $customerDue,
-                'supplier_due' => $supplierDue,
-            ];
-        });
+        $salesQuery = \App\Models\Sale::whereIn('shop_id', $shopIds)->where('status', 'Completed');
+        $salesAmount = (clone $salesQuery)->sum('grand_total');
+        $salesCount = (clone $salesQuery)->count();
 
-        // Let's summarize the overall user usage statistics
+        $purchasesQuery = \App\Models\Purchase::whereIn('shop_id', $shopIds)
+            ->whereNotIn('status', ['Cancelled', 'Returned']);
+        $purchasesCount = (clone $purchasesQuery)->count();
+
+        $cashIn = \App\Models\CashBook::whereIn('shop_id', $shopIds)
+            ->where('type', 'cash_in')->where('payment_method', 'cash')->sum('amount');
+        $cashOut = \App\Models\CashBook::whereIn('shop_id', $shopIds)
+            ->where('type', 'cash_out')->where('payment_method', 'cash')->sum('amount');
+
+        $bankIn = \App\Models\CashBook::whereIn('shop_id', $shopIds)
+            ->where('type', 'cash_in')->whereIn('payment_method', ['bank', 'upi'])->sum('amount');
+        $bankOut = \App\Models\CashBook::whereIn('shop_id', $shopIds)
+            ->where('type', 'cash_out')->whereIn('payment_method', ['bank', 'upi'])->sum('amount');
+
+        $customerDue = \App\Models\Customer::whereIn('shop_id', $shopIds)->sum('due_amount');
+        $supplierDue = \App\Models\Supplier::whereIn('shop_id', $shopIds)->sum('due_amount');
+
         $overallStats = (object) [
-            'total_sales' => $shopsData->sum('sales_amount'),
-            'total_transactions' => $shopsData->sum('sales_count') + $shopsData->sum('purchases_count'),
-            'cash_balance' => $shopsData->sum('cash_balance'),
-            'bank_balance' => $shopsData->sum('bank_balance'),
-            'customer_due' => $shopsData->sum('customer_due'),
-            'supplier_due' => $shopsData->sum('supplier_due'),
+            'total_sales' => $salesAmount,
+            'total_transactions' => $salesCount + $purchasesCount,
+            'cash_balance' => $cashIn - $cashOut,
+            'bank_balance' => $bankIn - $bankOut,
+            'customer_due' => $customerDue,
+            'supplier_due' => $supplierDue,
         ];
 
         $plans = \App\Models\SubscriptionPlan::where('status', 'active')->get();
 
-        return view('admin.users.show', compact('user', 'logs', 'devices', 'shopsData', 'overallStats', 'plans'));
+        return view('admin.users.show', compact('user', 'logs', 'devices', 'overallStats', 'plans'));
     }
 
     public function revokeDevice($id)

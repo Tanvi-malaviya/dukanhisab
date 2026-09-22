@@ -224,10 +224,10 @@
                                         {{ $payment->payment_date->format('Y-m-d ') }}
                                     </td>
                                     <td class="px-6 py-4 font-semibold text-white">
-                                        {{ $payment->shop->name }}
+                                        {{ $payment->shop->name ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 text-xs font-medium text-slate-400">
-                                        {{ $payment->plan->name }}
+                                        {{ $payment->plan->name ?? ($payment->addOn->title ?? 'N/A') }}
                                     </td>
                                     <td class="px-6 py-4 text-right font-semibold text-white">
                                         ₹{{ number_format($payment->amount, 2) }}

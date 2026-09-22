@@ -1119,7 +1119,13 @@
                     .then(r => r.json())
                     .then(d => {
                         this.cashbookLoading = false;
-                        if (Array.isArray(d)) this.cashbook = d;
+                        if (Array.isArray(d)) {
+                            this.cashbook = d;
+                        } else if (d && Array.isArray(d.transactions)) {
+                            this.cashbook = d.transactions;
+                        } else if (d && Array.isArray(d.data)) {
+                            this.cashbook = d.data;
+                        }
                     })
                     .catch(() => { this.cashbookLoading = false; });
             },
@@ -1128,9 +1134,12 @@
                 let totalIn = 0;
                 let totalOut = 0;
                 this.cashbook.forEach(entry => {
-                    const amount = parseFloat(entry.amount) || 0;
-                    if (entry.type === 'cash_in') totalIn += amount;
-                    else if (entry.type === 'cash_out') totalOut += amount;
+                    // Only count physical cash entries for Cash Book drawer totals
+                    if (entry.payment_method === 'cash') {
+                        const amount = parseFloat(entry.amount) || 0;
+                        if (entry.type === 'cash_in') totalIn += amount;
+                        else if (entry.type === 'cash_out') totalOut += amount;
+                    }
                 });
                 return { totalIn, totalOut, netBalance: totalIn - totalOut };
             },
