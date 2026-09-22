@@ -1134,9 +1134,12 @@
                 let totalIn = 0;
                 let totalOut = 0;
                 this.cashbook.forEach(entry => {
-                    const amount = parseFloat(entry.amount) || 0;
-                    if (entry.type === 'cash_in') totalIn += amount;
-                    else if (entry.type === 'cash_out') totalOut += amount;
+                    // Only count physical cash entries for Cash Book drawer totals
+                    if (entry.payment_method === 'cash') {
+                        const amount = parseFloat(entry.amount) || 0;
+                        if (entry.type === 'cash_in') totalIn += amount;
+                        else if (entry.type === 'cash_out') totalOut += amount;
+                    }
                 });
                 return { totalIn, totalOut, netBalance: totalIn - totalOut };
             },

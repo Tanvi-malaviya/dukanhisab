@@ -30,9 +30,9 @@ class CashBookApiController extends Controller
             $query->where('type', $request->type);
         }
 
-        // Cash Book shows only physical cash by default.
-        // UPI/Bank entries are tracked separately in Bank Accounts.
-        $query->where('payment_method', $request->filled('payment_method') ? $request->payment_method : 'cash');
+        if ($request->filled('payment_method') && $request->payment_method !== 'all') {
+            $query->where('payment_method', $request->payment_method);
+        }
 
         if ($request->filled('start_date')) {
             $query->whereDate('transaction_date', '>=', $request->start_date);
