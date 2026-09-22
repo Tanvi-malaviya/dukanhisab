@@ -71,7 +71,7 @@ class ReportController extends Controller
         });
 
         // 5. Recent payments list
-        $recentPayments = Payment::with(['shop', 'plan'])
+        $recentPayments = Payment::with(['shop', 'plan', 'addOn'])
             ->where('status', 'successful')
             ->latest()
             ->paginate(5);

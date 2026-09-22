@@ -173,13 +173,12 @@ class PurchaseApiController extends Controller
                 $supplier->increment('due_amount', $dueAmount);
             }
 
-            // Log in Cash Book for the paid portion
-            if ($paidAmount > 0) {
+            // Log in Cash Book for the paid portion (skip Credit — no cash changes hands)
+            if ($paidAmount > 0 && $request->payment_type !== 'Credit') {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
                     'UPI' => 'upi',
-                    'Credit' => 'cash',
                 ];
 
                 $desc = 'Purchase: ' . $purchaseNumber;
@@ -421,13 +420,13 @@ class PurchaseApiController extends Controller
             }
 
             // 3. CashBook Reversal: Post an explicit cash_in reversal entry for audit integrity
+            // Skip Credit purchases — no cash was ever paid, so no reversal needed
             $actualPaid = (float)($purchase->paid_amount ?? 0);
-            if ($actualPaid > 0) {
+            if ($actualPaid > 0 && $purchase->payment_type !== 'Credit') {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
                     'UPI' => 'upi',
-                    'Credit' => 'cash',
                 ];
 
                 CashBook::create([
@@ -534,12 +533,12 @@ class PurchaseApiController extends Controller
                 }
 
                 // Log refund in Cash Book (Refund received from supplier) for actual cash paid portion
-                if ($cashRefund > 0) {
+                // Skip Credit purchases — cashRefund will be 0 anyway since due covers full amount
+                if ($cashRefund > 0 && $purchase->payment_type !== 'Credit') {
                     $methodMap = [
                         'Cash' => 'cash',
                         'Bank' => 'bank',
                         'UPI' => 'upi',
-                        'Credit' => 'cash',
                     ];
 
                     CashBook::create([
@@ -608,12 +607,12 @@ class PurchaseApiController extends Controller
             }
 
             // 3. Log cash in in Cash Book for cash refund portion
-            if ($cashRefund > 0) {
+            // Skip Credit purchases — cashRefund will be 0 anyway since due covers full amount
+            if ($cashRefund > 0 && $purchase->payment_type !== 'Credit') {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
                     'UPI' => 'upi',
-                    'Credit' => 'cash',
                 ];
 
                 CashBook::create([

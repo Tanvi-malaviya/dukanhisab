@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-slate-50">
+<html lang="en" class="h-full bg-slate-50" style="overflow: hidden;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +8,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 
     <!-- AlpineJS -->
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
@@ -45,14 +45,12 @@
         body {
             font-family: 'Quicksand', sans-serif;
         }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+        [x-cloak] {
+            display: none !important;
         }
     </style>
 </head>
-<body class="min-h-screen text-slate-900" x-data="authApp()" style="background: linear-gradient(135deg, #0F766E 0%, #115E59 55%, #021b18 100%);">
+<body class="h-screen overflow-hidden text-slate-900" x-data="authApp()" style="background: linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 45%, #ECFDF5 100%);">
 
     <!-- Toast Notification System -->
     <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full">
@@ -88,167 +86,142 @@
     </div>
 
     <!-- Main Container -->
-    <div class="shopowner-auth-container relative min-h-screen w-full overflow-hidden flex flex-col">
+    <!-- Full-page loading gate: shown while a token is being resolved (e.g. right
+         after an admin "Login As" redirect), so no view flashes on screen before
+         we know whether to land on the dashboard, shop-setup, or login. -->
+    <div x-show="checkingAuth" x-cloak class="h-screen w-full flex items-center justify-center" style="background: linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 45%, #ECFDF5 100%);">
+        <svg class="animate-spin h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+    </div>
 
-        <!-- Organic blob shapes (full page, teal palette) -->
+    <div x-show="!checkingAuth" x-cloak class="shopowner-auth-container relative h-screen w-full overflow-hidden flex flex-col">
+
+        <!-- Subtle background blobs (decorative only, low opacity) -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute -top-16 -left-16 w-[40rem] h-[40rem] bg-emerald-400/40"
-                 style="border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; filter: blur(6px);"></div>
-            <div class="absolute top-[8%] -right-32 w-[36rem] h-[36rem] bg-teal-300/30"
-                 style="border-radius: 40% 60% 70% 30% / 50% 60% 40% 50%; filter: blur(6px);"></div>
-            <div class="absolute -bottom-32 left-[12%] w-[38rem] h-[38rem] bg-black/25"
-                 style="border-radius: 50% 50% 40% 60% / 40% 50% 60% 50%; filter: blur(6px);"></div>
-            <div class="absolute bottom-[6%] -right-10 w-[26rem] h-[26rem] bg-emerald-300/30"
-                 style="border-radius: 45% 55% 65% 35% / 55% 45% 55% 45%; filter: blur(6px);"></div>
-            <div class="absolute top-[35%] left-[8%] w-[18rem] h-[18rem] bg-cyan-300/20"
-                 style="border-radius: 55% 45% 35% 65% / 45% 55% 65% 35%; filter: blur(6px);"></div>
+            <div class="absolute top-[6%] right-[18%] w-[26rem] h-[26rem] bg-emerald-100/60 rounded-full" style="filter: blur(40px);"></div>
+            <div class="absolute bottom-[4%] -right-10 w-[20rem] h-[20rem] bg-teal-100/50 rounded-full" style="filter: blur(40px);"></div>
         </div>
 
-        <div class="relative z-10 flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-10 px-6 lg:px-12 py-10">
+        <!-- Top bar: logo (left) + trusted badge (right) -->
+        <div class="relative z-10 w-full max-w-[1440px] mx-auto flex items-center justify-between px-6 lg:px-10 pt-5 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <img src="{{ asset('images/auth/logo-icon.png') }}" alt="DukanHisab logo"
+                     class="w-9 h-9 rounded-xl shadow-md shadow-primary/20 object-cover">
+                <div class="flex flex-col leading-none">
+                    <span class="text-lg font-extrabold tracking-tight text-slate-900">Dukan<span class="text-primary">Hisab</span></span>
+                    <span class="text-[10px] font-semibold text-slate-400 tracking-wide mt-0.5">Simple &middot; Smart &middot; Reliable</span>
+                </div>
+            </div>
+            <div class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-full text-[11px] font-bold">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Trusted by Shopkeepers
+            </div>
+        </div>
 
-        <!-- Left Side: Premium Branding & Showcase -->
-        <div class="auth-branding-container hidden lg:flex flex-col justify-center max-w-xl">
+        <!-- Main row: left content / photo / form card -->
+        <div class="relative z-10 flex-1 min-h-0 w-full max-w-[1440px] mx-auto flex flex-col lg:flex-row items-center justify-center gap-4 px-6 lg:px-10 py-2 overflow-hidden">
 
-            <!-- Branding Header (Glassmorphic Pill style) -->
-            <div class="flex items-center gap-3 z-10 mb-6">
-                <div class="inline-flex items-center justify-center px-4 py-1.5 bg-white/10 backdrop-blur-md border border-white/20 rounded-full shadow-lg font-bold text-white">
-                    <svg class="w-4 h-4 text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            <!-- Left: brand content -->
+            <div class="hidden lg:flex flex-col justify-center min-w-0" style="width: clamp(300px, 33vw, 460px);">
+                <div class="inline-flex items-center gap-1.5 w-fit px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold mb-3">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path>
                     </svg>
-                    <span class="text-sm font-extrabold tracking-tight">Dukan<span class="text-emerald-400">Hisab</span></span>
-                </div>
-            </div>
-
-            <!-- Content Middle -->
-            <div class="w-full z-10 space-y-6">
-                <div class="space-y-3">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md border border-emerald-500/20">
-                        <span class="flex h-2 w-2 relative">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        Simplify Your Retail Business
-                    </div>
-                    <div class="text-3xl xl:text-4xl font-extrabold text-white leading-tight tracking-tight" style="color: #ffffff !important;">
-                        One Platform. <br>
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-200 to-cyan-300">Complete Control</span> of Your Shop.
-                    </div>
-                    <p class="text-teal-100/70 text-xs xl:text-sm leading-relaxed max-w-lg">
-                        Manage your inventory, generate invoices, track customer ledger payments, and keep suppliers in check. Experience automated reminders via WhatsApp to recover dues faster.
-                    </p>
+                    All-in-One Shop Management
                 </div>
 
-                <!-- Features Grid (6 features) -->
-                <div class="grid grid-cols-2 gap-3.5">
-                    <!-- POS & Billing -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/40 transition-all duration-300 group">
-                        <span class="p-2 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 text-emerald-300 rounded-lg shadow-md border border-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-xs xl:text-sm text-white group-hover:text-emerald-300 transition-colors" style="color: #ffffff !important;">POS &amp; Billing</span>
-                            <span class="text-[10px] text-teal-100/50 mt-0.5 leading-tight">Fast barcode checkout</span>
-                        </div>
-                    </div>
+                <h1 class="text-2xl xl:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
+                    Focus on <br>Your Business <br><span class="text-primary">We Handle the Rest</span>
+                </h1>
+                <p class="text-slate-500 text-xs xl:text-sm leading-relaxed mb-4 max-w-sm">
+                    Manage sales, inventory, customers, expenses and reports in one simple platform. Simple, fast and designed for every shopkeeper.
+                </p>
 
-                    <!-- Inventory Tracker -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/40 transition-all duration-300 group">
-                        <span class="p-2 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 text-emerald-300 rounded-lg shadow-md border border-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-xs xl:text-sm text-white group-hover:text-emerald-300 transition-colors" style="color: #ffffff !important;">Stock Control</span>
-                            <span class="text-[10px] text-teal-100/50 mt-0.5 leading-tight">Real-time alerts</span>
+                <!-- Feature cards (colorful pastel backgrounds) -->
+                <div class="grid grid-cols-2 gap-2.5 mb-4">
+                    @foreach ([
+                        ['POS & Billing', 'Fast & easy billing', 'bg-emerald-50 border-emerald-100', 'bg-emerald-500', 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'],
+                        ['Inventory', 'Real-time stock', 'bg-sky-50 border-sky-100', 'bg-sky-500', 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'],
+                        ['Customers', 'Build relationships', 'bg-orange-50 border-orange-100', 'bg-orange-500', 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4'],
+                        ['Expenses', 'Track & control', 'bg-rose-50 border-rose-100', 'bg-rose-500', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+                        ['Reports', 'Insights for growth', 'bg-violet-50 border-violet-100', 'bg-violet-500', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z'],
+                        ['Settings', 'Customize your shop', 'bg-teal-50 border-teal-100', 'bg-teal-500', 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z'],
+                    ] as [$title, $subtitle, $cardBg, $iconBg, $icon])
+                        <div class="flex items-start gap-2.5 p-2.5 rounded-xl border {{ $cardBg }}">
+                            <span class="p-1.5 {{ $iconBg }} text-white rounded-lg shrink-0">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}"></path>
+                                </svg>
+                            </span>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-xs text-slate-800">{{ $title }}</span>
+                                <span class="text-[10px] text-slate-500 mt-0.5 leading-tight">{{ $subtitle }}</span>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Cash & Bank Ledger -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/40 transition-all duration-300 group">
-                        <span class="p-2 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 text-emerald-300 rounded-lg shadow-md border border-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-xs xl:text-sm text-white group-hover:text-emerald-300 transition-colors" style="color: #ffffff !important;">Cash &amp; Bank</span>
-                            <span class="text-[10px] text-teal-100/50 mt-0.5 leading-tight">Instant ledger tracking</span>
-                        </div>
-                    </div>
-
-                    <!-- WhatsApp reminders -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/40 transition-all duration-300 group">
-                        <span class="p-2 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 text-emerald-300 rounded-lg shadow-md border border-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-xs xl:text-sm text-white group-hover:text-emerald-300 transition-colors" style="color: #ffffff !important;">Smart Reminders</span>
-                            <span class="text-[10px] text-teal-100/50 mt-0.5 leading-tight">Auto WhatsApp alerts</span>
-                        </div>
-                    </div>
-
-                    <!-- Expense Tracker -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/40 transition-all duration-300 group">
-                        <span class="p-2 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 text-emerald-300 rounded-lg shadow-md border border-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-xs xl:text-sm text-white group-hover:text-emerald-300 transition-colors" style="color: #ffffff !important;">Expense Tracker</span>
-                            <span class="text-[10px] text-teal-100/50 mt-0.5 leading-tight">Analyze &amp; save money</span>
-                        </div>
-                    </div>
-
-                    <!-- Reports & GST -->
-                    <div class="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-500/30 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-950/40 transition-all duration-300 group">
-                        <span class="p-2 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 text-emerald-300 rounded-lg shadow-md border border-emerald-500/10 group-hover:scale-105 transition-transform duration-300">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path>
-                            </svg>
-                        </span>
-                        <div class="flex flex-col">
-                            <span class="font-bold text-xs xl:text-sm text-white group-hover:text-emerald-300 transition-colors" style="color: #ffffff !important;">Reports &amp; GST</span>
-                            <span class="text-[10px] text-teal-100/50 mt-0.5 leading-tight">One-click tax summaries</span>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
-            </div>
 
-            <!-- Footer copyright inside left panel -->
-            <div class="text-[10px] text-teal-100/60 z-10 mt-8">
-                &copy; {{ date('Y') }} DukanHisab. One Platform. Complete Control.
-            </div>
-        </div>
-
-        <!-- Right Side: Forms Container -->
-        <div class="auth-forms-container w-full max-w-md relative z-10">
-
-            <div class="w-full relative z-10">
-                <!-- Branding Header for Mobile Only -->
-                <div class="flex md:hidden items-center justify-between mb-4">
+                <!-- Stats -->
+                <div class="flex items-center gap-5 bg-white/70 border border-slate-100 rounded-xl px-4 py-2.5 shadow-sm w-fit mb-4">
                     <div class="flex items-center gap-2">
-                        <span class="inline-flex p-2 rounded-xl bg-primary/10 text-primary">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
+                        <span class="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V9l7-6 7 6v12M9 21v-6h6v6"></path></svg>
                         </span>
-                        <span class="text-xl font-extrabold tracking-tight text-slate-900">Dukan<span class="text-primary">Hisab</span></span>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-sm font-extrabold text-slate-800">10,000+</span>
+                            <span class="text-[9px] text-slate-400">Shops Trust Us</span>
+                        </div>
                     </div>
-                    <span class="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full" x-text="subtitleText()"></span>
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="p-1.5 bg-amber-100 text-amber-500 rounded-lg">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.538 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.783.57-1.838-.196-1.538-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.062 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z"></path></svg>
+                        </span>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-sm font-extrabold text-slate-800">4.8</span>
+                            <span class="text-[9px] text-slate-400">User Rating</span>
+                        </div>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="p-1.5 bg-teal-100 text-teal-600 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </span>
+                        <div class="flex flex-col leading-none">
+                            <span class="text-sm font-extrabold text-slate-800">100%</span>
+                            <span class="text-[9px] text-slate-400">Safe &amp; Secure</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="glass-card py-4 px-4 sm:px-5 shadow-md border border-slate-200/50 rounded-xl">
+                <!-- Quote -->
+                <p class="text-primary text-lg xl:text-xl leading-snug" style="font-family: 'Caveat', cursive;">
+                    <span class="text-xl align-top text-primary/50">&ldquo;</span>Simpler Accounting.<br>Happier Business.&rdquo;
+                </p>
+            </div>
 
-                    <!-- Page Header (inside card, top center) -->
+            <!-- Middle: shopkeeper photo -->
+            <div class="hidden xl:flex items-center justify-center shrink-0 self-center" style="width: clamp(150px, 15vw, 240px);">
+                <img src="{{ asset('images/auth/shopkeeper.png') }}" alt="Shopkeeper managing their store with DukanHisab"
+                     class="relative w-full h-auto object-contain"
+                     style="aspect-ratio: 405 / 915; max-height: 66vh; filter: drop-shadow(0 12px 20px rgba(15,118,110,0.18));">
+            </div>
+
+            <!-- Right: form card -->
+            <div class="shrink-0 relative z-10 min-w-0" style="width: clamp(300px, 28vw, 400px);">
+                <div class="w-full bg-white border border-slate-100 shadow-lg rounded-2xl p-6">
+
+                    <!-- Page Header (top center) -->
                     <div class="text-center mb-4">
-                        <div class="text-2xl font-extrabold text-slate-800 tracking-tight" x-text="view === 'login' ? 'Login' : (view === 'register' ? 'Create Account' : (view === 'forgot-password' ? 'Forgot Password' : (view === 'reset-password' ? 'Reset Password' : (view === 'verify-otp' ? 'Verify OTP' : (view === 'shop-setup' ? 'Shop Setup' : 'Dashboard')))))"></div>
-                        <p class="mt-1 text-xs text-slate-400 font-medium" x-text="subtitleText()"></p>
+                        <img src="{{ asset('images/auth/logo-full.png') }}" alt="DukanHisab &ndash; Dukan Ka Hisab, Bilkul Aasan"
+                             class="rounded-2xl shadow-md shadow-primary/20 object-contain mx-auto mb-3"
+                             style="width: 110px; aspect-ratio: 472 / 440;">
+                        <div class="text-2xl font-extrabold text-slate-800 tracking-tight" x-text="view === 'login' ? 'Welcome Back!' : (view === 'register' ? 'Create Account' : (view === 'forgot-password' ? 'Forgot Password' : (view === 'reset-password' ? 'Reset Password' : (view === 'verify-otp' ? 'Verify OTP' : (view === 'shop-setup' ? 'Shop Setup' : 'Dashboard')))))"></div>
+                        <p class="mt-1.5 text-xs text-slate-500 font-medium" x-text="subtitleText()"></p>
                     </div>
 
 
@@ -263,8 +236,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                         </svg>
                                     </span>
-                                    <input id="login-email" type="email" required placeholder="name@company.com" x-model="loginForm.email"
-                                        class="block w-full pl-9 pr-4 py-2 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-xs placeholder-slate-400 focus:outline-none transition-all">
+                                    <input id="login-email" type="email" required placeholder="Enter your email address" x-model="loginForm.email"
+                                        class="block w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-xs placeholder-slate-400 focus:outline-none transition-all">
                                 </div>
                             </div>
 
@@ -276,8 +249,8 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                                         </svg>
                                     </span>
-                                    <input id="login-password" :type="showPassword ? 'text' : 'password'" required placeholder="••••••••" x-model="loginForm.password"
-                                        class="block w-full pl-9 pr-9 py-2 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-xs placeholder-slate-400 focus:outline-none transition-all">
+                                    <input id="login-password" :type="showPassword ? 'text' : 'password'" required placeholder="Enter your password" x-model="loginForm.password"
+                                        class="block w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-xs placeholder-slate-400 focus:outline-none transition-all">
                                     <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center justify-center text-slate-400 hover:text-slate-600">
                                         <template x-if="!showPassword">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
@@ -297,8 +270,11 @@
                                 <a href="#" @click.prevent="setView('forgot-password')" class="text-[11px] font-semibold text-primary hover:text-primary-hover transition-colors">Forgot Password?</a>
                             </div>
 
-                            <button type="submit" :disabled="loading" class="w-full flex justify-center py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-primary/10 cursor-pointer disabled:opacity-50">
-                                <span x-show="!loading">Sign In</span>
+                            <button type="submit" :disabled="loading" class="w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50">
+                                <span x-show="!loading" class="flex items-center gap-1.5">
+                                    Login
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                                </span>
                                 <span x-show="loading" class="flex items-center gap-1.5">
                                     <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                     Signing in...
@@ -306,7 +282,13 @@
                             </button>
                         </form>
 
-                        <div class="mt-4 text-center">
+                        <div class="flex items-center gap-3 my-4">
+                            <div class="flex-1 h-px bg-slate-100"></div>
+                            <span class="text-[10px] font-semibold text-slate-400 uppercase">or</span>
+                            <div class="flex-1 h-px bg-slate-100"></div>
+                        </div>
+
+                        <div class="text-center">
                             <p class="text-xs text-slate-600">Don't have an account? <a href="#" @click.prevent="setView('register')" class="font-semibold text-primary hover:text-primary-hover transition-colors">Sign up</a></p>
                         </div>
                     </div>
@@ -668,12 +650,11 @@
                 </div>
             </div>
 
-            <!-- Footer copyright inside right panel -->
-            <div class="w-full mx-auto mt-6 pt-4 text-center text-[10px] text-white/70 relative z-10 border-t border-white/10">
-                &copy; {{ date('Y') }} DukanHisab Shop Panel. All rights reserved.
-            </div>
         </div>
 
+        <!-- Footer copyright (centered, full width) -->
+        <div class="relative z-10 shrink-0 w-full text-center text-[11px] text-slate-400 pb-2">
+            &copy; {{ date('Y') }} DukanHisab. All rights reserved.
         </div>
     </div>
 
@@ -683,6 +664,12 @@
             return {
                 view: 'login', // login, register, verify-otp, forgot-password, reset-password, shop-setup, dashboard
                 loading: false,
+                // True while we still need to resolve a token into a known state
+                // (fetch profile / redirect to dashboard / fall back to shop-setup).
+                // Keeps the login form (or any other view) from flashing on screen
+                // before we actually know where the user should land — this matters
+                // most right after an admin "Login As" redirect.
+                checkingAuth: !!localStorage.getItem('shopowner_token'),
                 showPassword: false,
                 token: localStorage.getItem('shopowner_token'),
                 user: JSON.parse(localStorage.getItem('shopowner_user')),
@@ -748,7 +735,7 @@
 
                 subtitleText() {
                     switch(this.view) {
-                        case 'login': return 'Sign in to access your shop dashboard';
+                        case 'login': return 'Sign in to access your shop dashboard and continue your work.';
                         case 'register': return 'Create a new account for your shop';
                         case 'verify-otp': return 'Verify your email address';
                         case 'forgot-password': return 'Recover your account password';
@@ -1110,9 +1097,11 @@
                                 localStorage.setItem('token', this.token);
                                 window.location.href = '/shop/dashboard';
                             } else {
+                                this.checkingAuth = false;
                                 this.setView('shop-setup');
                             }
                         } else {
+                            this.checkingAuth = false;
                             this.handleLogoutDirectly();
                         }
                     } catch (e) {
@@ -1120,6 +1109,7 @@
                             localStorage.setItem('token', this.token);
                             window.location.href = '/shop/dashboard';
                         } else {
+                            this.checkingAuth = false;
                             this.setView('shop-setup');
                         }
                     }

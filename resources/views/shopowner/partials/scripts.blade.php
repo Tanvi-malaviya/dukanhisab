@@ -1119,7 +1119,13 @@
                     .then(r => r.json())
                     .then(d => {
                         this.cashbookLoading = false;
-                        if (Array.isArray(d)) this.cashbook = d;
+                        if (Array.isArray(d)) {
+                            this.cashbook = d;
+                        } else if (d && Array.isArray(d.transactions)) {
+                            this.cashbook = d.transactions;
+                        } else if (d && Array.isArray(d.data)) {
+                            this.cashbook = d.data;
+                        }
                     })
                     .catch(() => { this.cashbookLoading = false; });
             },

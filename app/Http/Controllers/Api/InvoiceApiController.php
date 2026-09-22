@@ -83,18 +83,95 @@ class InvoiceApiController extends Controller
 
     private function renderPdf(string $html, string $filename, bool $stream = true)
     {
+        // DomPDF cannot shape Indic scripts (conjuncts/matras come out broken),
+        // so any invoice containing Gujarati/Devanagari text goes through mPDF,
+        // which applies OpenType layout. Everything else keeps using DomPDF.
+        $output = $this->containsIndicScript($html)
+            ? $this->renderWithMpdf($html)
+            : $this->renderWithDompdf($html);
+
+        if ($stream) {
+            return response($output)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
+        }
+
+        return $output;
+    }
+
+    private function containsIndicScript(string $html): bool
+    {
+        // Devanagari: U+0900-097F, Gujarati: U+0A80-0AFF
+        return preg_match('/[\x{0900}-\x{097F}\x{0A80}-\x{0AFF}]/u', $html) === 1;
+    }
+
+    private function renderWithDompdf(string $html): string
+    {
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('A4', 'portrait');
         $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', true);
         $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
 
-        if ($stream) {
-            return response($pdf->output())
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'inline; filename="' . $filename . '"');
-        } else {
-            return $pdf->output();
+        return $pdf->output();
+    }
+
+    private function renderWithMpdf(string $html): string
+    {
+        $tempDir = storage_path('app/mpdf');
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0777, true);
         }
+
+        $defaultConfig = (new \Mpdf\Config\ConfigVariables())->getDefaults();
+        $defaultFontConfig = (new \Mpdf\Config\FontVariables())->getDefaults();
+
+        $mpdf = new \Mpdf\Mpdf([
+            'mode' => 'utf-8',
+            'format' => 'A4',
+            'orientation' => 'P',
+            'margin_left' => 8,
+            'margin_right' => 8,
+            'margin_top' => 8,
+            'margin_bottom' => 8,
+            'tempDir' => $tempDir,
+            'fontDir' => array_merge($defaultConfig['fontDir'], [public_path('fonts')]),
+            // Noto Sans Gujarati/Devanagari use GSUB/GPOS lookups mPDF cannot parse,
+            // so use Hind Vadodara / Hind (OFL) which mPDF shapes correctly.
+            'fontdata' => $defaultFontConfig['fontdata'] + [
+                'muktavaani' => [
+                    'R' => 'MuktaVaani-Regular.ttf',
+                    'B' => 'MuktaVaani-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'hind' => [
+                    'R' => 'Hind-Regular.ttf',
+                    'B' => 'Hind-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+            ],
+            'default_font' => 'muktavaani',
+        ]);
+
+        // Point every font family the invoice HTML asks for at a face that has
+        // Gujarati/Latin/₹ glyphs, so no run falls back to a font without them.
+        $family = preg_match('/[\x{0A80}-\x{0AFF}]/u', $html) ? 'muktavaani' : 'hind';
+        $html = preg_replace(
+            '/"?(DejaVu Sans|NotoSansGujarati|NotoSansDevanagari)"?/',
+            $family,
+            $html
+        );
+
+        // mPDF ignores white-space:nowrap, so give the invoice title/meta column
+        // enough width to keep "Invoice No" and the date on one line each.
+        $html = str_replace(
+            '<td class="invoice-title" style="vertical-align: middle;">',
+            '<td class="invoice-title" style="vertical-align: middle; width: 38%;">',
+            $html
+        );
+
+        $mpdf->WriteHTML($html);
+
+        return $mpdf->Output('', \Mpdf\Output\Destination::STRING_RETURN);
     }
 
     private function buildSaleInvoiceHtml(Sale $sale): string

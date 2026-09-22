@@ -13,7 +13,7 @@ class CashBookApiController extends Controller
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
-        
+
         $query = CashBook::where('shop_id', $shopId);
 
         if ($request->filled('updated_since')) {
@@ -29,9 +29,11 @@ class CashBookApiController extends Controller
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
-        if ($request->filled('payment_method')) {
-            $query->where('payment_method', $request->payment_method);
-        }
+
+        // Cash Book shows only physical cash by default.
+        // UPI/Bank entries are tracked separately in Bank Accounts.
+        $query->where('payment_method', $request->filled('payment_method') ? $request->payment_method : 'cash');
+
         if ($request->filled('start_date')) {
             $query->whereDate('transaction_date', '>=', $request->start_date);
         }
@@ -40,13 +42,29 @@ class CashBookApiController extends Controller
         }
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                  ->orWhere('payment_method', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%");
             });
         }
 
         $transactions = $query->orderBy('transaction_date', 'desc')->get();
+
+        // Return totals alongside transactions so frontend can display correct cash-only summary
+        $cashIn  = $transactions->where('type', 'cash_in')->sum('amount');
+        $cashOut = $transactions->where('type', 'cash_out')->sum('amount');
+
+        // For backward compatibility with existing web panel and mobile apps expecting an array:
+        // If 'with_totals' query param is passed, return object with totals; otherwise return transactions collection
+        // with custom headers or if request expects array.
+        if ($request->boolean('with_totals')) {
+            return response()->json([
+                'transactions' => $transactions,
+                'total_cash_in'  => round($cashIn, 2),
+                'total_cash_out' => round($cashOut, 2),
+                'net_balance'    => round($cashIn - $cashOut, 2),
+            ]);
+        }
+
         return response()->json($transactions);
     }
 
@@ -55,9 +73,11 @@ class CashBookApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
 
         $validator = Validator::make($request->all(), [
-            'type' => 'required|string|in:cash_in,cash_out',
-            'amount' => 'required|numeric|min:0.01',
-            'payment_method' => 'required|string|in:cash,bank,upi',
+            'type'        => 'required|string|in:cash_in,cash_out',
+            'amount'      => 'required|numeric|min:0.01',
+            // Manual Cash Book entries are always physical cash.
+            // UPI/Bank transactions should be recorded via Bank Accounts.
+            'payment_method' => 'sometimes|string|in:cash',
             'description' => 'required|string|max:255',
         ]);
 
@@ -65,8 +85,9 @@ class CashBookApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $data = $request->all();
-        $data['shop_id'] = $shopId;
+        $data                     = $request->all();
+        $data['shop_id']          = $shopId;
+        $data['payment_method']   = 'cash'; // Always cash for manual Cash Book entries
         $data['transaction_date'] = Carbon::now();
 
         $transaction = CashBook::create($data);
