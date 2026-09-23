@@ -580,7 +580,7 @@
                             <!-- Shop Logo / Initial -->
                             <div class="relative inline-block">
                                 <template x-if="shop && shop.logo">
-                                    <img :src="'/Dukanhisab/public/storage/' + shop.logo" class="h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-md">
+                                    <img :src="'/storage/' + shop.logo" class="h-16 w-16 rounded-full object-cover border-2 border-primary/20 shadow-md">
                                 </template>
                                 <template x-if="!shop || !shop.logo">
                                     <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary text-xl font-extrabold shadow-inner">

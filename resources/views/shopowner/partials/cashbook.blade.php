@@ -43,29 +43,23 @@
     </div>
 
     {{-- TOOLBAR & ACTIONS BAR --}}
-    <div class="bg-white dark:bg-gray-800 p-3.5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3" x-data="{ filterType: '', filterMethod: '' }">
+    <div class="bg-white dark:bg-gray-800 p-3.5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3" x-data="{ filterType: '' }">
         {{-- Left: Tab-specific Controls --}}
         <div class="flex-1">
             {{-- When on Ledger Tab --}}
             <template x-if="cashbookTab === 'ledger'">
                 <div class="flex flex-wrap items-center gap-2">
                     <div class="w-36 sm:w-40">
-                        <select x-model="filterType" class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-xl text-xs dark:bg-gray-700 dark:text-white font-medium focus:ring-1 focus:ring-primary">
+                        <select x-model="filterType" @change="loadCashBook(filterType, 'cash')" class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-xl text-xs dark:bg-gray-700 dark:text-white font-medium focus:ring-1 focus:ring-primary">
                             <option value="" x-text="t('all_types') || 'All Types'">All Types</option>
                             <option value="cash_in" x-text="t('cash_in_plus') || 'Cash In (+)'">Cash In (+)</option>
                             <option value="cash_out" x-text="t('cash_out_minus') || 'Cash Out (-)'">Cash Out (-)</option>
                         </select>
                     </div>
-                    <div class="w-36 sm:w-40">
-                        <select x-model="filterMethod" class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-xl text-xs dark:bg-gray-700 dark:text-white font-medium focus:ring-1 focus:ring-primary">
-                            <option value="" x-text="t('all_methods') || 'All Methods'">All Methods</option>
-                            <option value="cash" x-text="t('cash') || 'Cash'">Cash</option>
-                            <option value="upi" x-text="t('upi') || 'UPI'">UPI</option>
-                            <option value="bank" x-text="t('bank') || 'Bank Transfer'">Bank Transfer</option>
-                        </select>
-                    </div>
-                    <button @click="loadCashBook(filterType, filterMethod)" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition-all shadow-sm cursor-pointer" x-text="t('apply') || 'Apply'">Apply</button>
-                    <button @click="filterType = ''; filterMethod = ''; loadCashBook('', '')" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all cursor-pointer" x-text="t('reset') || 'Reset'">Reset</button>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40 text-xs font-bold">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span x-text="t('cash_only_ledger') || 'Physical Cash'">Physical Cash</span>
+                    </span>
                 </div>
             </template>
 
@@ -145,7 +139,7 @@
                         </td>
                     </tr>
                 </template>
-                <template x-for="entry in (cashbookLoading ? [] : cashbook.slice((cashbookPage - 1) * cashbookPerPage, cashbookPage * cashbookPerPage))" :key="entry.id">
+                <template x-for="entry in (cashbookLoading ? [] : cashbook.filter(e => !e.payment_method || e.payment_method === 'cash').slice((cashbookPage - 1) * cashbookPerPage, cashbookPage * cashbookPerPage))" :key="entry.id">
                     <tr class="hover:bg-slate-50/80 dark:hover:bg-gray-700/40 transition-colors">
                         <td class="px-4 py-3.5 whitespace-nowrap">
                             <span :class="entry.type === 'cash_in'
@@ -191,7 +185,7 @@
                 </template>
             </tbody>
         </table>
-        <x-pagination currentPage="cashbookPage" totalItems="cashbook.length" perPage="cashbookPerPage" loading="cashbookLoading" />
+        <x-pagination currentPage="cashbookPage" totalItems="cashbook.filter(e => !e.payment_method || e.payment_method === 'cash').length" perPage="cashbookPerPage" loading="cashbookLoading" />
     </div>
 
     {{-- REGISTER CLOSURES HISTORY TAB --}}

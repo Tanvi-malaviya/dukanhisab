@@ -490,6 +490,7 @@
   "switching_shop": "Switching Shop...",
   "opening_shop": "Opening",
   "loading_shop_records": "Loading shop records...",
+  "cash_only_ledger": "Physical Cash",
   "add_shop": "Add Shop",
   "backup_locked_title": "Cloud Backup & Restore is Locked",
   "backup_locked_desc": "Protect your shop data with encrypted cloud backups. Upgrade to Premium or Business to download, restore, and schedule automatic daily backups.",
