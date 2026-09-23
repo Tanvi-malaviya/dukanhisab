@@ -48,6 +48,10 @@
         [x-cloak] {
             display: none !important;
         }
+        input::-ms-reveal,
+        input::-ms-clear {
+            display: none;
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden text-slate-900" x-data="authApp()" style="background: linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 45%, #ECFDF5 100%);">
@@ -107,8 +111,6 @@
         <!-- Top bar: logo (left) + trusted badge (right) -->
         <div class="relative z-10 w-full max-w-[1440px] mx-auto flex items-center justify-between px-6 lg:px-10 pt-5 shrink-0">
             <div class="flex items-center gap-2.5">
-                <img src="{{ asset('images/auth/logo-icon.png') }}" alt="DukanHisab logo"
-                     class="w-9 h-9 rounded-xl shadow-md shadow-primary/20 object-cover">
                 <div class="flex flex-col leading-none">
                     <span class="text-lg font-extrabold tracking-tight text-slate-900">Dukan<span class="text-primary">Hisab</span></span>
                     <span class="text-[10px] font-semibold text-slate-400 tracking-wide mt-0.5">Simple &middot; Smart &middot; Reliable</span>
@@ -123,7 +125,7 @@
         </div>
 
         <!-- Main row: left content / photo / form card -->
-        <div class="relative z-10 flex-1 min-h-0 w-full max-w-[1440px] mx-auto flex flex-col lg:flex-row items-center justify-center gap-4 px-6 lg:px-10 py-2 overflow-hidden">
+        <div class="relative z-10 flex-1 min-h-0 w-full max-w-[1300px] mx-auto flex flex-col lg:flex-row items-center justify-center gap-2 px-8 lg:px-15 py-2 overflow-hidden">
 
             <!-- Left: brand content -->
             <div class="hidden lg:flex flex-col justify-center min-w-0" style="width: clamp(300px, 33vw, 460px);">
@@ -205,14 +207,14 @@
             </div>
 
             <!-- Middle: shopkeeper photo -->
-            <div class="hidden xl:flex items-center justify-center shrink-0 self-center" style="width: clamp(150px, 15vw, 240px);">
+            <div class="hidden xl:flex items-center justify-center shrink-0 self-center" style="width: clamp(200px, 20vw, 320px);">
                 <img src="{{ asset('images/auth/shopkeeper.png') }}" alt="Shopkeeper managing their store with DukanHisab"
                      class="relative w-full h-auto object-contain"
-                     style="aspect-ratio: 405 / 915; max-height: 66vh; filter: drop-shadow(0 12px 20px rgba(15,118,110,0.18));">
+                     style="aspect-ratio: 405 / 915; max-height: 74vh;">
             </div>
 
             <!-- Right: form card -->
-            <div class="shrink-0 relative z-10 min-w-0" style="width: clamp(300px, 28vw, 400px);">
+            <div class="shrink-0 relative z-10 min-w-0 lg:-ml-10" style="width: clamp(300px, 28vw, 400px);">
                 <div class="w-full bg-white border border-slate-100 shadow-lg rounded-2xl p-6">
 
                     <!-- Page Header (top center) -->
@@ -250,14 +252,18 @@
                                         </svg>
                                     </span>
                                     <input id="login-password" :type="showPassword ? 'text' : 'password'" required placeholder="Enter your password" x-model="loginForm.password"
-                                        class="block w-full pl-9 pr-9 py-2.5 bg-white border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-xs placeholder-slate-400 focus:outline-none transition-all">
-                                    <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center justify-center text-slate-400 hover:text-slate-600">
-                                        <template x-if="!showPassword">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                        </template>
-                                        <template x-if="showPassword">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
-                                        </template>
+                                        class="block w-full pl-9 pr-10 py-2.5 bg-white border border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary rounded-xl text-xs placeholder-slate-400 focus:outline-none transition-all">
+                                    <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 w-9 flex items-center justify-center text-slate-400 hover:text-slate-600 focus:outline-none transition-colors">
+                                        <!-- Eye Open -->
+                                        <svg x-show="!showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        <!-- Eye Closed / Slashed -->
+                                        <svg x-show="showPassword" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"></path>
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
@@ -654,7 +660,7 @@
 
         <!-- Footer copyright (centered, full width) -->
         <div class="relative z-10 shrink-0 w-full text-center text-[11px] text-slate-400 pb-2">
-            &copy; {{ date('Y') }} DukanHisab. All rights reserved.
+            &copy; {{ date('Y') }} Dukan<span class="text-primary font-semibold">Hisab</span>. All rights reserved.
         </div>
     </div>
 
