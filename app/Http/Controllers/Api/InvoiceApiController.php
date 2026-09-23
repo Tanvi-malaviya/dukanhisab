@@ -244,7 +244,7 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoBase64 = $this->getBase64Image($shop->logo);
+        $logoBase64 = $this->getSquareLogoBase64($shop->logo);
         $signatureBase64 = $this->getBase64Image($shop->signature);
 
         $qrBase64 = null;
@@ -752,7 +752,7 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoBase64 = $this->getBase64Image($shop->logo);
+        $logoBase64 = $this->getSquareLogoBase64($shop->logo);
         $signatureBase64 = $this->getBase64Image($shop->signature);
 
         $qrBase64 = null;
@@ -1312,5 +1312,80 @@ class InvoiceApiController extends Controller
         } catch (\Throwable $e) {}
 
         return null;
+    }
+
+    /// The header logo cell is a fixed CSS box (max-width/max-height), but
+    /// DomPDF/mPDF's limited CSS support doesn't reliably contain a
+    /// non-square source image within both bounds at once — a tall/portrait
+    /// upload renders as a stretched rectangle instead of a clean square.
+    /// Pre-render the logo onto a fixed square canvas server-side with GD
+    /// (letterboxed, aspect ratio preserved) so the PDF only ever embeds an
+    /// already-square image and there's nothing left for the renderer's CSS
+    /// engine to get wrong.
+    private function getSquareLogoBase64(?string $relativePath, int $size = 160): ?string
+    {
+        $dataUri = $this->getBase64Image($relativePath);
+        if (!$dataUri || !str_contains($dataUri, ',')) {
+            return $dataUri;
+        }
+
+        if (!extension_loaded('gd')) {
+            return $dataUri;
+        }
+
+        try {
+            $binary = base64_decode(substr($dataUri, strpos($dataUri, ',') + 1));
+            if ($binary === false) {
+                return $dataUri;
+            }
+
+            $source = @imagecreatefromstring($binary);
+            if (!$source) {
+                return $dataUri;
+            }
+
+            $srcW = imagesx($source);
+            $srcH = imagesy($source);
+            if ($srcW <= 0 || $srcH <= 0) {
+                imagedestroy($source);
+                return $dataUri;
+            }
+
+            $scale = min($size / $srcW, $size / $srcH);
+            $newW = max(1, (int) round($srcW * $scale));
+            $newH = max(1, (int) round($srcH * $scale));
+
+            $canvas = imagecreatetruecolor($size, $size);
+            imagesavealpha($canvas, true);
+            $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+            imagefill($canvas, 0, 0, $transparent);
+
+            imagecopyresampled(
+                $canvas,
+                $source,
+                (int) round(($size - $newW) / 2),
+                (int) round(($size - $newH) / 2),
+                0,
+                0,
+                $newW,
+                $newH,
+                $srcW,
+                $srcH,
+            );
+            imagedestroy($source);
+
+            ob_start();
+            imagepng($canvas);
+            $pngBytes = ob_get_clean();
+            imagedestroy($canvas);
+
+            if (!$pngBytes) {
+                return $dataUri;
+            }
+
+            return 'data:image/png;base64,' . base64_encode($pngBytes);
+        } catch (\Throwable $e) {
+            return $dataUri;
+        }
     }
 }
