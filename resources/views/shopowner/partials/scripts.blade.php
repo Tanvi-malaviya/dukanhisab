@@ -230,6 +230,36 @@
 
             toast: { show: false, message: '', type: 'success' },
             loading: false,
+            switchingShop: false,
+            switchingShopName: '',
+
+            clearShopData() {
+                this.dashboardStats = { today_sales: 0, today_purchases: 0, cash_balance: 0, bank_balance: 0, customer_due: 0, supplier_due: 0, low_stock_count: 0, low_stock_products: [], recent_sales: [], recent_purchases: [] };
+                this.products = [];
+                this.productsTotal = 0;
+                this.customers = [];
+                this.customersTotal = 0;
+                this.customerSearchQuery = '';
+                this.suppliers = [];
+                this.sales = [];
+                this.expenses = [];
+                this.purchases = [];
+                this.purchasesTotal = 0;
+                this.returnedPurchasesTotal = 0;
+                this.stockHistory = [];
+                this.cashbook = [];
+                this.bankAccounts = [];
+                this.registerClosures = [];
+                this.reportsData = { total_sales: 0, sales_count: 0, sales_by_payment_type: [], total_purchases: 0, purchases_count: 0, total_expenses: 0, expenses_count: 0, net_profit: 0 };
+                this.posFilteredCustomers = [];
+                this.salesFilteredCustomers = [];
+                this.returnedFilteredCustomers = [];
+                this.purchaseFilteredSuppliers = [];
+                this.purchaseHistoryFilteredSuppliers = [];
+                this.purchaseReturnedFilteredSuppliers = [];
+                if (typeof this.resetPOS === 'function') this.resetPOS();
+                if (typeof this.resetNewPurchase === 'function') this.resetNewPurchase();
+            },
 
             // Data
             dashboardStats: { today_sales: 0, today_purchases: 0, cash_balance: 0, bank_balance: 0, customer_due: 0, supplier_due: 0, low_stock_count: 0, low_stock_products: [], recent_sales: [], recent_purchases: [] },
@@ -579,27 +609,28 @@
 
             // Load data needed for a specific page
             _loadPageData(pageName) {
-                if (!this.token || !this.hasShop) return;
-                if (pageName === 'dashboard') this.loadDashboard();
-                else if (pageName === 'sales-history' || pageName === 'sales-returned') this.loadSales();
-                else if (pageName === 'products') this.loadProducts('', true);
-                else if (pageName === 'customers') { this.customerSearchQuery = ''; this.loadCustomers(); }
-                else if (pageName === 'suppliers') this.loadSuppliers();
-                else if (pageName === 'expenses') this.loadExpenses();
-                else if (pageName === 'sales') { this.loadProducts(); this.loadCustomers(); this.resetPOS(); }
-                else if (pageName === 'purchases') { this.loadProducts(); this.loadSuppliers(); this.resetNewPurchase(); }
-                else if (pageName === 'purchase-history') { this.loadPurchases(true); this.loadSuppliers(); }
-                else if (pageName === 'purchase-returned') { this.loadPurchases(true); this.loadSuppliers(); }
-                else if (pageName === 'inventory') this.loadProducts('', true);
-                else if (pageName === 'cashbook') { this.loadCashBook(); this.loadRegisterClosures(); }
-                else if (pageName === 'bank-accounts') { this.loadBankAccounts(); this.loadCashBook(); }
-                else if (pageName === 'transactions') this.loadCashBook();
-                else if (pageName === 'reports') this.loadReports();
-                else if (pageName === 'reminders') { this.loadCustomers(); this.loadSuppliers(); this.loadProducts(); }
-                else if (pageName === 'settings') this.loadInvoiceSettings();
-                else if (pageName === 'subscription') this.loadSubscriptionPlans();
-                else if (pageName === 'addons') this.loadAddOns();
-                else if (pageName === 'support') this.loadSupportTickets();
+                if (!this.token || !this.hasShop) return Promise.resolve();
+                if (pageName === 'dashboard') return this.loadDashboard();
+                else if (pageName === 'sales-history' || pageName === 'sales-returned') return this.loadSales();
+                else if (pageName === 'products') return this.loadProducts('', true);
+                else if (pageName === 'customers') { this.customerSearchQuery = ''; return this.loadCustomers(); }
+                else if (pageName === 'suppliers') return this.loadSuppliers();
+                else if (pageName === 'expenses') return this.loadExpenses();
+                else if (pageName === 'sales') { this.resetPOS(); return Promise.allSettled([this.loadProducts(), this.loadCustomers()]); }
+                else if (pageName === 'purchases') { this.resetNewPurchase(); return Promise.allSettled([this.loadProducts(), this.loadSuppliers()]); }
+                else if (pageName === 'purchase-history') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
+                else if (pageName === 'purchase-returned') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
+                else if (pageName === 'inventory') { this.loadStockHistory(); return this.loadProducts('', true); }
+                else if (pageName === 'cashbook') return Promise.allSettled([this.loadCashBook(), this.loadRegisterClosures()]);
+                else if (pageName === 'bank-accounts') return Promise.allSettled([this.loadBankAccounts(), this.loadCashBook()]);
+                else if (pageName === 'transactions') return this.loadCashBook();
+                else if (pageName === 'reports') return this.loadReports();
+                else if (pageName === 'reminders') return Promise.allSettled([this.loadCustomers(), this.loadSuppliers(), this.loadProducts()]);
+                else if (pageName === 'settings') return this.loadInvoiceSettings();
+                else if (pageName === 'subscription') return this.loadSubscriptionPlans();
+                else if (pageName === 'addons') return this.loadAddOns();
+                else if (pageName === 'support') return this.loadSupportTickets();
+                return Promise.resolve();
             },
 
             toggleTheme() {
@@ -643,11 +674,24 @@
             },
 
             // ── DATA LOADERS ──────────────────────────────────────────
-            loadAllData() { this.loadProfile(); this.loadDashboard(); this.loadProducts(); this.loadCustomers(); this.loadSuppliers(); this.loadPurchases(); this.loadExpenses(); this.loadInvoiceSettings(); this.loadSubscriptionPlans(); this.loadAddOnStatus(); },
+            loadAllData() {
+                return Promise.allSettled([
+                    this.loadProfile(),
+                    this.loadDashboard(),
+                    this.loadProducts(),
+                    this.loadCustomers(),
+                    this.loadSuppliers(),
+                    this.loadPurchases(),
+                    this.loadExpenses(),
+                    this.loadInvoiceSettings(),
+                    this.loadSubscriptionPlans(),
+                    this.loadAddOnStatus()
+                ]);
+            },
 
             loadDashboard() {
                 this.dashboardLoading = true;
-                fetch('/api/v1/dashboard', { headers: this.getHeaders() })
+                return fetch('/api/v1/dashboard', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.dashboardLoading = false;
@@ -668,7 +712,7 @@
                 if (paginate) {
                     url += `page=${this.productsPage}&per_page=${this.productsPerPage}`;
                 }
-                fetch(url, { headers: this.getHeaders() })
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.productsLoading = false;
@@ -696,7 +740,7 @@
                 if (paginate) {
                     url += `page=${this.customersPage}&per_page=${this.customersPerPage}`;
                 }
-                fetch(url, { headers: this.getHeaders() })
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.customersLoading = false;
@@ -731,7 +775,7 @@
                 this.suppliersPage = 1;
                 this.supplierDuesPage = 1;
                 this.suppliersLoading = true;
-                fetch('/api/v1/suppliers', { headers: this.getHeaders() })
+                return fetch('/api/v1/suppliers', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.suppliersLoading = false;
@@ -756,7 +800,7 @@
                 if (this.salesFilter.customerId) url += '&customer_id=' + this.salesFilter.customerId;
                 if (this.salesFilter.status) url += '&status=' + this.salesFilter.status;
                 if (this.salesFilter.search) url += '&search=' + encodeURIComponent(this.salesFilter.search);
-                fetch(url, { headers: this.getHeaders() })
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.salesLoading = false;
@@ -815,7 +859,7 @@
             loadExpenses() {
                 this.expensesPage = 1;
                 this.expensesLoading = true;
-                fetch('/api/v1/expenses', { headers: this.getHeaders() })
+                return fetch('/api/v1/expenses', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.expensesLoading = false;
@@ -858,7 +902,7 @@
                     const activePage = this.page === 'purchase-returned' ? this.returnedPurchasesPage : this.purchasesPage;
                     url += `&page=${activePage}&per_page=${this.purchasesPerPage}`;
                 }
-                fetch(url, { headers: this.getHeaders() })
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.purchasesLoading = false;
@@ -1115,7 +1159,7 @@
                 if (search) url += '&search=' + encodeURIComponent(search);
                 if (startDate) url += '&start_date=' + startDate;
                 if (endDate) url += '&end_date=' + endDate;
-                fetch(url, { headers: this.getHeaders() })
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.cashbookLoading = false;
@@ -1189,7 +1233,7 @@
 
             loadBankAccounts() {
                 this.bankAccountsLoading = true;
-                fetch('/api/v1/bank-accounts', { headers: this.getHeaders() })
+                return fetch('/api/v1/bank-accounts', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.bankAccountsLoading = false;
@@ -1332,7 +1376,7 @@
 
             loadRegisterClosures() {
                 this.registerClosuresLoading = true;
-                fetch('/api/v1/register-closures', { headers: this.getHeaders() })
+                return fetch('/api/v1/register-closures', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(res => {
                         this.registerClosuresLoading = false;
@@ -1390,7 +1434,7 @@
                 let url = '/api/v1/reports?';
                 if (startDate) url += '&start_date=' + startDate;
                 if (endDate) url += '&end_date=' + endDate;
-                fetch(url, { headers: this.getHeaders() })
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.reportsLoading = false;
@@ -1512,7 +1556,7 @@
                     });
             },
             loadProfile() {
-                fetch('/api/v1/shopowner/profile', { headers: this.getHeaders() })
+                return fetch('/api/v1/shopowner/profile', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         if (d.user) {
@@ -1547,7 +1591,7 @@
 
             loadSubscriptionPlans() {
                 this.subscriptionLoading = true;
-                fetch('/api/v1/shopowner/subscription-plans', { headers: this.getHeaders() })
+                return fetch('/api/v1/shopowner/subscription-plans', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.subscriptionLoading = false;
@@ -1893,7 +1937,7 @@
 
             loadAddOns() {
                 this.addOnLoading = true;
-                Promise.all([
+                return Promise.all([
                     fetch('/api/v1/shopowner/add-ons', { headers: this.getHeaders() }).then(r => r.json()),
                     fetch('/api/v1/shopowner/add-ons/current', { headers: this.getHeaders() }).then(r => r.json())
                 ]).then(([plansRes, currentRes]) => {
@@ -1906,8 +1950,8 @@
             // Lightweight status-only fetch, used app-wide to gate the website
             // settings toggle and the shop limit without loading the full page.
             loadAddOnStatus() {
-                if (!this.token || !this.hasShop) return;
-                fetch('/api/v1/shopowner/add-ons/current', { headers: this.getHeaders() })
+                if (!this.token || !this.hasShop) return Promise.resolve();
+                return fetch('/api/v1/shopowner/add-ons/current', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         if (d.add_ons) this.applyAddOnStatus(d);
@@ -2053,7 +2097,7 @@
 
             loadInvoiceSettings() {
                 this.invoiceSettingsLoading = true;
-                fetch('/api/v1/invoice-settings', { headers: this.getHeaders() })
+                return fetch('/api/v1/invoice-settings', { headers: this.getHeaders() })
                     .then(r => r.json()).then(d => {
                         this.invoiceSettingsLoading = false;
                         this.invoiceSettings = d;
@@ -2158,7 +2202,7 @@
             // ── SUPPORT TICKETS ─────────────────────────────────────────
             loadSupportTickets() {
                 this.supportTicketsLoading = true;
-                fetch('/api/v1/shopowner/support-tickets', { headers: this.getHeaders() })
+                return fetch('/api/v1/shopowner/support-tickets', { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.supportTicketsLoading = false;
@@ -2400,17 +2444,42 @@
                     }).catch(() => { this.loading = false; this.showToast('Error setting up shop.', 'error'); });
             },
 
-            switchShop(targetShop) {
+            async switchShop(targetShop) {
+                if (!targetShop) return;
                 if (this.isShopLocked(targetShop)) {
                     this.showToast('This shop is locked. Renew the Shop Add-on to use it again.', 'error');
                     this.navigateTo('addons');
                     return;
                 }
+                if (this.shop && this.shop.id === targetShop.id && !this.switchingShop) {
+                    return;
+                }
+
+                this.switchingShop = true;
+                this.switchingShopName = targetShop.name || 'Shop';
+
+                // Immediately clear previous shop's data from memory so old shop data never shows in opening shop
+                this.clearShopData();
+
                 this.shop = targetShop;
                 localStorage.setItem('shopowner_shop', JSON.stringify(targetShop));
-                this.showToast('Switched to shop: ' + targetShop.name);
-                this.loadAllData();
                 window.dispatchEvent(new CustomEvent('sync-settings-form'));
+
+                const minTimer = new Promise(resolve => setTimeout(resolve, 600));
+
+                try {
+                    await Promise.allSettled([
+                        this.loadAllData(),
+                        this._loadPageData(this.page),
+                        minTimer
+                    ]);
+                    this.loadStockHistory();
+                } catch (e) {
+                    // Fallback
+                } finally {
+                    this.switchingShop = false;
+                    this.showToast('Switched to shop: ' + targetShop.name);
+                }
             },
 
             openAddShopModal() {
