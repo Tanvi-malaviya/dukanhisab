@@ -57,6 +57,14 @@
             background: rgba(17,24,39,0.85);
             border-color: rgba(31,41,55,0.5);
         }
+        @keyframes shopIndeterminate {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+            100% { transform: translateX(300%); }
+        }
+        .animate-indeterminate {
+            animation: shopIndeterminate 1.5s infinite ease-in-out;
+        }
         /* Invoice Themed Header Contrast Overrides */
         .invoice-theme-header.text-white,
         .invoice-theme-header.text-white * {
@@ -250,6 +258,51 @@
             </div>
         </div>
     </template>
+
+    {{-- ===== SHOP SWITCHING LOADER OVERLAY ===== --}}
+    <div x-show="switchingShop" x-cloak
+         x-transition:enter="transition ease-out duration-250"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-md">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl p-7 max-w-sm w-[90%] mx-auto shadow-2xl border border-slate-100 dark:border-gray-700 flex flex-col items-center text-center transform transition-all">
+            
+            {{-- Animated Shop Icon with pulsing ring --}}
+            <div class="relative flex items-center justify-center mb-4">
+                <div class="absolute w-20 h-20 rounded-3xl bg-teal-500/20 animate-ping"></div>
+                <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-600 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-teal-500/30">
+                    <svg class="w-8 h-8 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <h3 class="text-lg font-extrabold text-slate-800 dark:text-white" x-text="t('switching_shop') || 'Switching Shop...'">
+                Switching Shop...
+            </h3>
+            
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 justify-center">
+                <span x-text="t('opening_shop') || 'Opening'">Opening</span>
+                <span class="font-bold text-teal-600 dark:text-teal-400 truncate max-w-[180px]" x-text="switchingShopName"></span>
+            </p>
+
+            {{-- Smooth Animated Progress Track --}}
+            <div class="w-full bg-slate-100 dark:bg-gray-700 h-2 rounded-full mt-5 overflow-hidden relative">
+                <div class="bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-600 h-full rounded-full w-2/5 animate-indeterminate"></div>
+            </div>
+            
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-3 font-medium flex items-center gap-1.5">
+                <svg class="animate-spin w-3.5 h-3.5 text-teal-600 dark:text-teal-400" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span x-text="t('loading_shop_records') || 'Loading shop records...'">Loading shop records...</span>
+            </p>
+        </div>
+    </div>
 
     {{-- ===== ALL MODALS (outside x-if — always in DOM, Alpine reactivity works correctly) ===== --}}
     @include('shopowner.partials.modals')
