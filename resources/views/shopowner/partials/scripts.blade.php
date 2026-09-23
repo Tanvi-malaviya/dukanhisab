@@ -621,9 +621,9 @@
                 else if (pageName === 'purchase-history') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
                 else if (pageName === 'purchase-returned') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
                 else if (pageName === 'inventory') { this.loadStockHistory(); return this.loadProducts('', true); }
-                else if (pageName === 'cashbook') return Promise.allSettled([this.loadCashBook(), this.loadRegisterClosures()]);
-                else if (pageName === 'bank-accounts') return Promise.allSettled([this.loadBankAccounts(), this.loadCashBook()]);
-                else if (pageName === 'transactions') return this.loadCashBook();
+                else if (pageName === 'cashbook') return Promise.allSettled([this.loadCashBook('', 'cash'), this.loadRegisterClosures()]);
+                else if (pageName === 'bank-accounts') return Promise.allSettled([this.loadBankAccounts(), this.loadCashBook('', 'all')]);
+                else if (pageName === 'transactions') return this.loadCashBook('', 'all');
                 else if (pageName === 'reports') return this.loadReports();
                 else if (pageName === 'reminders') return Promise.allSettled([this.loadCustomers(), this.loadSuppliers(), this.loadProducts()]);
                 else if (pageName === 'settings') return this.loadInvoiceSettings();
@@ -1155,6 +1155,9 @@
                 this.cashbookLoading = true;
                 let url = '/api/v1/cashbooks?';
                 if (type) url += '&type=' + type;
+                if (!paymentMethod && this.page === 'cashbook') {
+                    paymentMethod = 'cash';
+                }
                 if (paymentMethod) url += '&payment_method=' + paymentMethod;
                 if (search) url += '&search=' + encodeURIComponent(search);
                 if (startDate) url += '&start_date=' + startDate;
