@@ -22,6 +22,17 @@ class ShopScopeMiddleware
         }
         // Shops beyond the user's shop limit (expired Shop Add-on) are locked.
         $user = $request->user();
+        // X-Shop-ID is client-supplied — it must be one of THIS user's own
+        // shops. Without this check any authenticated account could read or
+        // write another shop's data just by sending a different id (and a
+        // client left holding a previous account's shop id would silently
+        // write into that other shop).
+        if ($user && !$user->shops()->whereKey((int) $shopId)->exists()) {
+            return response()->json([
+                'error' => 'shop_forbidden',
+                'message' => 'This shop does not belong to your account.',
+            ], 403);
+        }
         if ($user && in_array((int) $shopId, $user->lockedShopIds(), true)) {
             return response()->json([
                 'error' => 'shop_locked',
