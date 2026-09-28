@@ -19,6 +19,13 @@ class Product extends Model
         'purchase_price',
         'stock',
         'low_stock_threshold',
+        'available_for_sale',
+        'available_for_purchase',
+    ];
+
+    protected $casts = [
+        'available_for_sale' => 'boolean',
+        'available_for_purchase' => 'boolean',
     ];
 
     public function shop()

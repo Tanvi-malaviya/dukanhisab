@@ -35,10 +35,12 @@ class ReportApiController extends Controller
             $startDate = $endDate->copy()->startOfDay();
         }
 
-        // 1. Sales Report
+        // 1. Sales Report (all genuine sales — Completed, Unpaid, Partially Paid —
+        // excluding only Cancelled/Returned; see DashboardApiController for why
+        // status = 'Completed' alone would drop every Credit sale.)
         $salesQuery = Sale::where('shop_id', $shopId)
             ->whereBetween('sale_date', [$startDate, $endDate])
-            ->where('status', 'Completed');
+            ->whereNotIn('status', ['Cancelled', 'Returned', 'Partially Returned']);
 
         $totalSales = $salesQuery->sum('grand_total');
         $salesCount = $salesQuery->count();
