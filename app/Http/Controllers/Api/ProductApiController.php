@@ -62,6 +62,8 @@ class ProductApiController extends Controller
             'stock' => 'nullable|integer',
             'low_stock_threshold' => 'nullable|integer',
             'category_id' => 'nullable|exists:categories,id',
+            'available_for_sale' => 'sometimes|boolean',
+            'available_for_purchase' => 'sometimes|boolean',
         ], [
             'barcode.unique' => 'This barcode is already assigned to another product in this shop.',
         ]);
@@ -112,6 +114,8 @@ class ProductApiController extends Controller
             'stock' => 'nullable|integer',
             'low_stock_threshold' => 'nullable|integer',
             'category_id' => 'nullable|exists:categories,id',
+            'available_for_sale' => 'sometimes|boolean',
+            'available_for_purchase' => 'sometimes|boolean',
         ], [
             'barcode.unique' => 'This barcode is already assigned to another product in this shop.',
         ]);

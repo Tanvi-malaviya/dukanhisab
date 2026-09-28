@@ -23,10 +23,14 @@ class DashboardApiController extends Controller
         
         $today = Carbon::today();
 
-        // 1. Today's Sales (Completed sales only)
+        // 1. Today's Sales (all genuine sales — Completed, Unpaid, Partially Paid —
+        // excluding only Cancelled/Returned. A Credit sale gets status "Unpaid" or
+        // "Partially Paid" instead of "Completed" (see SaleApiController::store),
+        // so filtering on status = 'Completed' alone silently dropped every credit
+        // sale from this total.)
         $todaySales = Sale::where('shop_id', $shopId)
             ->whereDate('sale_date', $today)
-            ->where('status', 'Completed')
+            ->whereNotIn('status', ['Cancelled', 'Returned', 'Partially Returned'])
             ->sum('grand_total');
 
         // 2. Today's Purchases
