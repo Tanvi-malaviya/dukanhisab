@@ -105,6 +105,12 @@ class AddOnApiController extends Controller
         $keySecret = config('services.razorpay.secret');
         $amount = (int) round(((float) $addOn->price) * $quantity * 100);
 
+        // A "lifetime" add-on (currently: Shop Website) is a one-time purchase — a single
+        // Razorpay Order, never a recurring Subscription. "Shop" stays a yearly auto-renewal.
+        if ($addOn->billing_period === 'lifetime') {
+            return $this->createOneTimeOrder($user, $addOn, $quantity, $amount, $keyId, $keySecret);
+        }
+
         try {
             if (empty($keyId) || empty($keySecret)) {
                 throw new \Exception('Razorpay credentials not configured.');
@@ -195,7 +201,10 @@ class AddOnApiController extends Controller
             'quantity' => 'nullable|integer|min:1|max:20',
             'razorpay_payment_id' => 'required|string',
             'razorpay_signature' => 'required|string',
-            'razorpay_subscription_id' => 'required|string',
+            // A recurring add-on (Shop) verifies against a subscription id; a one-time add-on
+            // (Website) verifies against an order id — exactly one of the two is required.
+            'razorpay_subscription_id' => 'required_without:razorpay_order_id|nullable|string',
+            'razorpay_order_id' => 'required_without:razorpay_subscription_id|nullable|string',
         ]);
 
         $user = $request->user();
@@ -205,10 +214,19 @@ class AddOnApiController extends Controller
             return response()->json(['message' => 'Add-on not found.'], 404);
         }
 
+        $isOneTime = $addOn->billing_period === 'lifetime';
         $paymentId = $request->razorpay_payment_id;
         $signature = $request->razorpay_signature;
         $subscriptionId = $request->razorpay_subscription_id;
+        $orderId = $request->razorpay_order_id;
         $quantity = $addOn->type === 'website' ? 1 : (int) ($request->input('quantity', 1));
+
+        if ($isOneTime && !$orderId) {
+            return response()->json(['message' => 'A one-time add-on must be verified with an order id.'], 422);
+        }
+        if (!$isOneTime && !$subscriptionId) {
+            return response()->json(['message' => 'A recurring add-on must be verified with a subscription id.'], 422);
+        }
 
         $keySecret = config('services.razorpay.secret');
 
@@ -218,7 +236,9 @@ class AddOnApiController extends Controller
 
         $verified = $isMock;
         if (!$isMock) {
-            $expectedSignature = hash_hmac('sha256', $paymentId . '|' . $subscriptionId, $keySecret);
+            $expectedSignature = $isOneTime
+                ? hash_hmac('sha256', $orderId . '|' . $paymentId, $keySecret)
+                : hash_hmac('sha256', $paymentId . '|' . $subscriptionId, $keySecret);
             $verified = hash_equals($expectedSignature, $signature);
         }
 
@@ -227,7 +247,9 @@ class AddOnApiController extends Controller
         }
 
         $shop = $user->shops()->first();
-        $userAddOn = $this->activateAddOn($user, $addOn, $quantity, $subscriptionId, $shop?->id);
+        // A one-time add-on has no subscription id to key the row on; the order id doubles as
+        // that unique reference instead, and activateAddOn marks it never-expiring, no auto-renew.
+        $userAddOn = $this->activateAddOn($user, $addOn, $quantity, $isOneTime ? $orderId : $subscriptionId, $shop?->id, $isOneTime);
 
         Payment::updateOrCreate(
             ['transaction_id' => $paymentId],
@@ -263,6 +285,10 @@ class AddOnApiController extends Controller
 
         if ($userAddOn->status !== 'active') {
             return response()->json(['message' => 'This add-on is not active.'], 400);
+        }
+
+        if (!$userAddOn->auto_renew && $userAddOn->ends_at === null) {
+            return response()->json(['message' => 'This is a one-time purchase and never renews — there is nothing to cancel.'], 400);
         }
 
         $keyId = config('services.razorpay.key');
@@ -357,7 +383,74 @@ class AddOnApiController extends Controller
      * subscription. Each purchase gets its own subscription id, so shop
      * add-on quantities from separate purchases stack via separate rows.
      */
-    private function activateAddOn(User $user, AddOn $addOn, int $quantity, string $razorpaySubscriptionId, ?int $shopId): UserAddOn
+    /**
+     * One-time Razorpay Order checkout for a "lifetime" add-on — no plan, no recurring
+     * subscription, just a single charge. Falls back to a mock order when Razorpay isn't
+     * configured, same as the recurring path does for a subscription.
+     */
+    private function createOneTimeOrder(User $user, AddOn $addOn, int $quantity, int $amount, ?string $keyId, ?string $keySecret)
+    {
+        $userInfo = [
+            'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: $user->name,
+            'email' => $user->email,
+            'mobile' => $user->mobile,
+        ];
+
+        try {
+            if (empty($keyId) || empty($keySecret)) {
+                throw new \Exception('Razorpay credentials not configured.');
+            }
+
+            $orderRes = Http::withBasicAuth($keyId, $keySecret)->post('https://api.razorpay.com/v1/orders', [
+                'amount' => $amount,
+                'currency' => 'INR',
+                'receipt' => 'addon_rcpt_' . $user->id . '_' . time(),
+                'notes' => [
+                    'type' => 'addon_one_time',
+                    'user_id' => (string) $user->id,
+                    'addon_slug' => $addOn->slug,
+                    'addon_id' => (string) $addOn->id,
+                    'quantity' => (string) $quantity,
+                ],
+            ]);
+
+            if (!$orderRes->successful()) {
+                throw new \Exception('Failed to create Razorpay order: ' . $orderRes->body());
+            }
+
+            return response()->json([
+                'requires_payment' => true,
+                'gateway' => 'razorpay',
+                'is_one_time' => true,
+                'key_id' => $keyId,
+                'order_id' => $orderRes->json('id'),
+                'amount' => $amount,
+                'currency' => 'INR',
+                'add_on' => $addOn,
+                'quantity' => $quantity,
+                'user' => $userInfo,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Razorpay Add-on Order Creation Failed: ' . $e->getMessage());
+
+            $mockOrderId = 'order_mock_' . bin2hex(random_bytes(8));
+            return response()->json([
+                'requires_payment' => true,
+                'gateway' => 'razorpay',
+                'is_one_time' => true,
+                'key_id' => 'rzp_test_placeholder',
+                'order_id' => $mockOrderId,
+                'amount' => $amount,
+                'currency' => 'INR',
+                'is_test_mode' => true,
+                'add_on' => $addOn,
+                'quantity' => $quantity,
+                'user' => $userInfo,
+            ]);
+        }
+    }
+
+    private function activateAddOn(User $user, AddOn $addOn, int $quantity, string $razorpaySubscriptionId, ?int $shopId, bool $oneTime = false): UserAddOn
     {
         return UserAddOn::updateOrCreate(
             ['razorpay_subscription_id' => $razorpaySubscriptionId],
@@ -368,8 +461,8 @@ class AddOnApiController extends Controller
                 'quantity' => $quantity,
                 'status' => 'active',
                 'starts_at' => now(),
-                'ends_at' => \App\Support\Billing::yearlyPeriodEnd(),
-                'auto_renew' => true,
+                'ends_at' => $oneTime ? null : \App\Support\Billing::yearlyPeriodEnd(),
+                'auto_renew' => !$oneTime,
             ]
         );
     }

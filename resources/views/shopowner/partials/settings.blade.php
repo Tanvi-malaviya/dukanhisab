@@ -888,8 +888,8 @@
                 class="bg-gradient-to-r from-amber-500/10 to-amber-500/5 dark:from-amber-500/20 dark:to-transparent p-5 rounded-2xl border border-amber-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div class="space-y-1">
                     <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Website Add-On Required</h4>
-                    <p class="text-xs text-slate-500 dark:text-slate-400">
-                        Publishing your shop website is part of the Website Add-On (₹200/year, auto-renews). Buy it once to unlock and keep your store live.
+                    <p class="text-xs text-slate-500 dark:text-slate-400" x-text="(() => { const wa = (addOns || []).find(a => a.type === 'website'); return 'Publishing your shop website is part of the Website Add-On' + (wa ? ' (₹' + parseFloat(wa.price).toFixed(0) + ', one-time)' : '') + '. Buy it once to unlock and keep your store live — it never expires and never renews.'; })()">
+                        Publishing your shop website is part of the Website Add-On. Buy it once to unlock and keep your store live — it never expires and never renews.
                     </p>
                 </div>
                 <button type="button" @click="navigateTo('addons')"

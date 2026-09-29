@@ -39,6 +39,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     // Product CRUD
     Route::apiResource('products', \App\Http\Controllers\Api\ProductApiController::class);
 
+    // Stock movement audit log (real server-side history, replacing each client's local-only log)
+    Route::get('/stock-movements', [\App\Http\Controllers\Api\StockMovementApiController::class, 'index']);
+    Route::post('/products/{id}/adjust-stock', [\App\Http\Controllers\Api\StockMovementApiController::class, 'adjust']);
+
     // Every customer's / supplier's custom price sheet in one call (offline caching)
     Route::get('/product-prices/customers', [\App\Http\Controllers\Api\CustomerProductPriceApiController::class, 'bulk']);
     Route::get('/product-prices/suppliers', [\App\Http\Controllers\Api\SupplierProductPriceApiController::class, 'bulk']);

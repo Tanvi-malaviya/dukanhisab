@@ -383,7 +383,7 @@
             showCustomerModal: false,
             newCustomer: { name: '', mobile: '', email: '' },
             showProductModal: false,
-            newProduct: { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, category_id: '' },
+            newProduct: { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true },
             showExpenseModal: false,
             newExpense: { description: '', amount: '', payment_method: 'cash' },
             showSupplierModal: false,
@@ -1070,34 +1070,33 @@
                     });
             },
 
-            getHistoryKey() {
-                const shopId = (this.shop && this.shop.id) ? this.shop.id : 'default';
-                return 'dukanhisab_stock_history_' + shopId;
-            },
-
             loadStockHistory() {
                 this.stockHistoryPage = 1;
-                localStorage.removeItem('dukanhisab_stock_history');
-                const key = this.getHistoryKey();
-                try {
-                    let history = JSON.parse(localStorage.getItem(key) || '[]');
-                    // Automatically clean up records of products that have been deleted
-                    if (this.products && this.products.length > 0) {
-                        const existingNames = new Set(this.products.map(p => p.name));
-                        const existingIds = new Set(this.products.map(p => p.id));
-                        const filtered = history.filter(h =>
-                            (h.product_id && existingIds.has(h.product_id)) ||
-                            (!h.product_id && existingNames.has(h.product_name))
-                        );
-                        if (filtered.length !== history.length) {
-                            history = filtered;
-                            localStorage.setItem(key, JSON.stringify(history));
-                        }
-                    }
-                    this.stockHistory = history;
-                } catch (e) {
-                    this.stockHistory = [];
-                }
+                fetch('/api/v1/stock-movements?limit=200', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        const rows = Array.isArray(d) ? d : (d.data || []);
+                        // Shaped to match what the History table already expects (see submitStockAdjustment).
+                        this.stockHistory = rows.map(m => ({
+                            id: m.id,
+                            product_id: m.product_id,
+                            product_name: m.product ? m.product.name : 'Unknown product',
+                            change_qty: m.quantity_change,
+                            old_stock: m.resulting_stock - m.quantity_change,
+                            new_stock: m.resulting_stock,
+                            reason: m.note || this.stockMovementTypeLabel(m.type),
+                            created_at: m.created_at
+                        }));
+                    })
+                    .catch(() => { this.stockHistory = []; });
+            },
+            stockMovementTypeLabel(type) {
+                const labels = {
+                    sale: 'Sale', sale_return: 'Sale Return', sale_cancel: 'Sale Cancelled',
+                    purchase: 'Purchase', purchase_return: 'Purchase Return', purchase_cancel: 'Purchase Cancelled',
+                    adjustment: 'Manual Adjustment'
+                };
+                return labels[type] || type;
             },
 
             submitStockAdjustment() {
@@ -1106,39 +1105,22 @@
                 const qty = parseInt(this.adjustForm.quantity) || 0;
                 if (qty <= 0) return;
 
-                let oldStock = parseInt(prod.stock) || 0;
-                let changeQty = this.adjustForm.type === 'addition' ? qty : -qty;
-                let newStock = oldStock + changeQty;
+                const changeQty = this.adjustForm.type === 'addition' ? qty : -qty;
 
                 this.loading = true;
-                fetch('/api/v1/products/' + prod.id, {
-                    method: 'PUT',
+                fetch('/api/v1/products/' + prod.id + '/adjust-stock', {
+                    method: 'POST',
                     headers: this.getHeaders(),
-                    body: JSON.stringify({ stock: newStock })
+                    body: JSON.stringify({ quantity_change: changeQty, note: this.adjustForm.reason || 'Manual Update' })
                 })
-                    .then(r => r.json())
+                    .then(r => {
+                        if (!r.ok) return r.json().then(e => { throw e; });
+                        return r.json();
+                    })
                     .then(d => {
                         this.loading = false;
                         if (d.id) {
                             this.showToast('Stock adjusted successfully!');
-                            // Log adjustment in shop-scoped stockHistory
-                            const logEntry = {
-                                id: Date.now(),
-                                product_id: prod.id,
-                                product_name: prod.name,
-                                change_qty: changeQty,
-                                old_stock: oldStock,
-                                new_stock: newStock,
-                                reason: this.adjustForm.reason || 'Manual Update',
-                                created_at: new Date().toISOString()
-                            };
-                            const key = this.getHistoryKey();
-                            let history = [];
-                            try {
-                                history = JSON.parse(localStorage.getItem(key) || '[]');
-                            } catch (e) { }
-                            history.unshift(logEntry);
-                            localStorage.setItem(key, JSON.stringify(history));
                             this.loadStockHistory();
                             this.loadProducts();
                         } else {
@@ -1973,7 +1955,8 @@
                 })
                     .then(r => r.json())
                     .then(d => {
-                        if (!d.subscription_id) {
+                        const isOneTime = !!d.is_one_time;
+                        if (!d.subscription_id && !d.order_id) {
                             this.addOnPurchasing = false;
                             this.addOnPurchasingSlug = null;
                             this.showToast(d.message || 'Failed to initialize payment gateway.', 'error');
@@ -1986,13 +1969,11 @@
                             let paymentCompletedOrHandled = false;
                             const options = {
                                 key: d.key_id,
-                                subscription_id: d.subscription_id,
-                                recurring: 1,
                                 name: (this.shop && this.shop.name) ? this.shop.name : 'DukanHisab',
                                 description: (d.add_on ? d.add_on.title : slug) + ' Add-On',
                                 handler: function (response) {
                                     paymentCompletedOrHandled = true;
-                                    self.verifyAddOnPayment(slug, quantity, response);
+                                    self.verifyAddOnPayment(slug, quantity, response, d);
                                 },
                                 prefill: {
                                     name: (d.user && d.user.name) ? d.user.name : '',
@@ -2011,6 +1992,12 @@
                                     }
                                 }
                             };
+                            if (isOneTime) {
+                                options.order_id = d.order_id;
+                            } else {
+                                options.subscription_id = d.subscription_id;
+                                options.recurring = 1;
+                            }
                             const rzp = new Razorpay(options);
                             rzp.on('payment.failed', function (response) {
                                 self.addOnPurchasing = false;
@@ -2026,13 +2013,14 @@
                             this.addOnPurchasingSlug = null;
                             this.showConfirm(
                                 'Test Payment Mode',
-                                `Razorpay auto-renewing subscription created for ${d.add_on ? d.add_on.title : slug} (₹${d.add_on ? (d.add_on.price * quantity).toFixed(2) : ''}). Simulate a successful payment? (Add RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
+                                `Razorpay ${isOneTime ? 'one-time order' : 'auto-renewing subscription'} created for ${d.add_on ? d.add_on.title : slug} (₹${d.add_on ? (d.add_on.price * quantity).toFixed(2) : ''}). Simulate a successful payment? (Add RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET in .env for live checkout)`,
                                 () => {
                                     self.verifyAddOnPayment(slug, quantity, {
+                                        razorpay_order_id: d.order_id,
                                         razorpay_subscription_id: d.subscription_id,
                                         razorpay_payment_id: 'pay_mock_' + Math.random().toString(36).substring(2, 15),
                                         razorpay_signature: 'sig_mock_verified'
-                                    });
+                                    }, d);
                                 }
                             );
                         }
@@ -2044,16 +2032,18 @@
                     });
             },
 
-            verifyAddOnPayment(slug, quantity, rzpResponse) {
+            verifyAddOnPayment(slug, quantity, rzpResponse, purchaseData) {
                 this.addOnPurchasing = true;
                 this.addOnPurchasingSlug = slug;
+                const isOneTime = !!(purchaseData && purchaseData.is_one_time) || !!rzpResponse.razorpay_order_id;
                 fetch('/api/v1/shopowner/add-ons/verify-payment', {
                     method: 'POST',
                     headers: this.getHeaders(),
                     body: JSON.stringify({
                         slug: slug,
                         quantity: quantity,
-                        razorpay_subscription_id: rzpResponse.razorpay_subscription_id,
+                        razorpay_subscription_id: isOneTime ? undefined : rzpResponse.razorpay_subscription_id,
+                        razorpay_order_id: isOneTime ? (rzpResponse.razorpay_order_id || (purchaseData && purchaseData.order_id)) : undefined,
                         razorpay_payment_id: rzpResponse.razorpay_payment_id,
                         razorpay_signature: rzpResponse.razorpay_signature || ''
                     })
@@ -2691,8 +2681,14 @@
                 return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : this.t('all_customers');
             },
 
-            filteredProducts() {
-                return this.products;
+            // Sale/Purchase pickers exclude products the shop owner marked unavailable for that
+            // side (a product can be sale-only, purchase-only, or both) — same flags the mobile
+            // app already reads (`available_for_sale` / `available_for_purchase`).
+            filteredSaleProducts() {
+                return (this.products || []).filter(p => p.available_for_sale !== false);
+            },
+            filteredPurchaseProducts() {
+                return (this.products || []).filter(p => p.available_for_purchase !== false);
             },
 
             addToBill(product) {
@@ -2733,7 +2729,7 @@
                 const product = this.products.find(p => p.barcode === code);
                 if (product) { this.addToBill(product); this.pos.barcodeInput = ''; }
                 else {
-                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '' };
+                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true };
                     this.showProductModal = true; this.pos.barcodeInput = '';
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
@@ -3290,7 +3286,7 @@
                     });
             },
 
-            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, category_id: '' }; this.showProductModal = true; },
+            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true }; this.showProductModal = true; },
             openEditProductModal(product) {
                 this.newProduct = {
                     id: product.id,
@@ -3300,7 +3296,9 @@
                     barcode: product.barcode || '',
                     stock: product.stock,
                     low_stock_threshold: product.low_stock_threshold,
-                    category_id: product.category_id || ''
+                    category_id: product.category_id || '',
+                    available_for_sale: product.available_for_sale !== false,
+                    available_for_purchase: product.available_for_purchase !== false
                 };
                 this.showProductModal = true;
             },
@@ -3349,25 +3347,9 @@
                         this.loading = false;
                         if (d.id) {
                             this.showToast(isEdit ? 'Product updated!' : 'Product added!');
-                            // Log initial stock adjustment for newly created products with stock
+                            // Initial stock for a new product is now logged server-side (ProductApiController::store);
+                            // just refresh the History tab so it shows up there.
                             if (!isEdit && parseInt(d.stock) > 0) {
-                                const logEntry = {
-                                    id: Date.now(),
-                                    product_id: d.id,
-                                    product_name: d.name,
-                                    change_qty: parseInt(d.stock),
-                                    old_stock: 0,
-                                    new_stock: parseInt(d.stock),
-                                    reason: 'Initial Stock (New Product)',
-                                    created_at: new Date().toISOString()
-                                };
-                                const key = this.getHistoryKey();
-                                let history = [];
-                                try {
-                                    history = JSON.parse(localStorage.getItem(key) || '[]');
-                                } catch (e) { }
-                                history.unshift(logEntry);
-                                localStorage.setItem(key, JSON.stringify(history));
                                 this.loadStockHistory();
                             }
                             this.loadProducts();
@@ -3396,20 +3378,13 @@
             deleteProduct(prodId) {
                 this.showConfirm('Delete Product', 'Are you sure you want to delete this product? This action cannot be undone.', () => {
                     this.loading = true;
-                    const prod = this.products.find(p => p.id == prodId);
-                    const prodName = prod ? prod.name : null;
                     fetch('/api/v1/products/' + prodId, { method: 'DELETE', headers: this.getHeaders() })
                         .then(r => {
                             this.loading = false;
                             if (r.status === 204) {
                                 this.showToast('Product deleted.');
-                                // Clean up history entries for the deleted product
-                                const key = this.getHistoryKey();
-                                try {
-                                    let history = JSON.parse(localStorage.getItem(key) || '[]');
-                                    history = history.filter(h => h.product_id != prodId && (!prodName || h.product_name !== prodName));
-                                    localStorage.setItem(key, JSON.stringify(history));
-                                } catch (e) { }
+                                // Its stock-movement history stays on record — an audit log should
+                                // outlive the product, same as a sale/purchase's history does.
                                 this.loadProducts();
                                 this.loadStockHistory();
                             }
@@ -3843,7 +3818,7 @@
                     this.addPurchaseItemById(product.id);
                     this.pos.barcodeInput = '';
                 } else {
-                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '' };
+                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true };
                     this.showProductModal = true;
                     this.pos.barcodeInput = '';
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');

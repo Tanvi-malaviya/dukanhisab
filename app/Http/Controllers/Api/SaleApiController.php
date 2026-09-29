@@ -11,6 +11,7 @@ use App\Models\Customer;
 use App\Models\CashBook;
 use App\Models\CreditNote;
 use App\Models\InvoiceCounter;
+use App\Support\StockMovementLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -18,6 +19,8 @@ use Carbon\Carbon;
 
 class SaleApiController extends Controller
 {
+    use StockMovementLogger;
+
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
@@ -164,6 +167,7 @@ class SaleApiController extends Controller
                 // Decrement Product Stock
                 $product = Product::findOrFail($item['product_id']);
                 $product->decrement('stock', $item['quantity']);
+                $this->logStockMovement($shopId, $product->id, -$item['quantity'], $product->fresh()->stock, 'sale', 'sale', $sale->id);
             }
 
             // Deduct Store Credit from Customer and redeem CreditNotes FIFO
@@ -282,6 +286,7 @@ class SaleApiController extends Controller
                     $product = Product::find($item->product_id);
                     if ($product) {
                         $product->increment('stock', $item->quantity);
+                        $this->logStockMovement($shopId, $product->id, $item->quantity, $product->fresh()->stock, 'sale', 'sale', $sale->id, 'Items edited');
                     }
                 }
 
@@ -310,6 +315,7 @@ class SaleApiController extends Controller
                     ]);
                     $product = Product::findOrFail($item['product_id']);
                     $product->decrement('stock', $item['quantity']);
+                    $this->logStockMovement($shopId, $product->id, -$item['quantity'], $product->fresh()->stock, 'sale', 'sale', $sale->id, 'Items edited');
                 }
 
                 if ($request->has('customer_id')) {
@@ -457,6 +463,7 @@ class SaleApiController extends Controller
                     $product = Product::find($item->product_id);
                     if ($product) {
                         $product->increment('stock', $unreturnedQty);
+                        $this->logStockMovement($shopId, $product->id, $unreturnedQty, $product->fresh()->stock, 'sale_cancel', 'sale', $sale->id, $reason);
                     }
                 }
             }
@@ -590,6 +597,7 @@ class SaleApiController extends Controller
                     // Increment stock of the returned product
                     $product = Product::findOrFail($productId);
                     $product->increment('stock', $returnQty);
+                    $this->logStockMovement($shopId, $product->id, $returnQty, $product->fresh()->stock, 'sale_return', 'sale', $sale->id);
 
                     // Increment returned_quantity of the Sale Item
                     $saleItem->increment('returned_quantity', $returnQty);
@@ -658,6 +666,7 @@ class SaleApiController extends Controller
                 if ($unreturnedQty > 0) {
                     $product = Product::findOrFail($item->product_id);
                     $product->increment('stock', $unreturnedQty);
+                    $this->logStockMovement($shopId, $product->id, $unreturnedQty, $product->fresh()->stock, 'sale_return', 'sale', $sale->id);
 
                     $item->returned_quantity = $item->quantity;
                     $item->save();

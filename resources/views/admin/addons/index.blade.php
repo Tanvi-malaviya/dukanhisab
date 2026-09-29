@@ -43,14 +43,16 @@
 
                 <div class="flex items-baseline gap-1">
                     <span class="text-3xl font-extrabold text-white">₹{{ number_format($addOn->price, 0) }}</span>
-                    <span class="text-xs text-slate-400 font-medium">/ {{ $addOn->billing_period }} (Auto-Renewal)</span>
+                    <span class="text-xs text-slate-400 font-medium">
+                        {{ $addOn->billing_period === 'lifetime' ? 'one-time purchase' : '/ ' . $addOn->billing_period . ' (Auto-Renewal)' }}
+                    </span>
                 </div>
 
                 <p class="text-xs text-slate-300 pt-2 border-t border-border-dark">
                     @if($addOn->type === 'shop')
                         1 Purchase = 1 Extra Shop. Buying multiple purchases stacks the shop limit.
                     @else
-                        Unlocks the public shop website / product showcase feature for 1 year.
+                        Unlocks the public shop website / product showcase feature. Pay once, keep it forever — no renewal.
                     @endif
                 </p>
             </div>

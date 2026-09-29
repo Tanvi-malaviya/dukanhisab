@@ -27,6 +27,7 @@ class SyncBatchController extends Controller
         'invoice_settings' => InvoiceSettingApiController::class,
         'register_closures' => RegisterClosureApiController::class,
         'bank_transfers' => BankTransferApiController::class,
+        'stock_adjustments' => \App\Http\Controllers\Api\StockMovementApiController::class,
     ];
 
     /** Table that stores each resource (expenses are cash-book rows). */

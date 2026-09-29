@@ -558,4 +558,27 @@ class MobileSyncContractTest extends TestCase
         $bulkS = $this->withHeaders($this->h())->getJson('/api/v1/product-prices/suppliers')->assertStatus(200)->json();
         $this->assertEquals($this->withHeaders($this->h())->getJson("/api/v1/suppliers/{$s->id}/product-prices")->json(), $bulkS[(string) $s->id]);
     }
+
+    // ------------------------------------------------------- credit notes
+
+    public function test_credit_notes_support_updated_since_and_reflect_redemption_changes(): void
+    {
+        $p = $this->product();
+        $c = Customer::create(['shop_id' => $this->shop->id, 'name' => 'C', 'mobile' => '9000000011', 'due_amount' => 0]);
+        $saleId = $this->saleVia($p, 1, 'Cash', $c)->json('id');
+        $cursor = $this->later();
+
+        $this->withHeaders($this->h())->postJson("/api/v1/sales/{$saleId}/return", ['refund_method' => 'credit_note'])->assertStatus(200);
+        $cn = collect($this->feed('credit-notes', $cursor))->first();
+        $this->assertNotNull($cn, 'a newly issued credit note must be in the feed');
+        $this->assertEquals(100, (float) $cn['remaining_balance']);
+
+        // Redeem it against a second sale and confirm the feed reflects the new balance.
+        $cursor2 = $this->later();
+        $this->saleVia($p, 1, 'Store Credit', $c);
+        $updated = collect($this->feed('credit-notes', $cursor2))->firstWhere('id', $cn['id']);
+        $this->assertNotNull($updated, 'a redeemed credit note must reach the feed again');
+        $this->assertEquals(0, (float) $updated['remaining_balance']);
+        $this->assertEquals('Redeemed', $updated['status']);
+    }
 }
