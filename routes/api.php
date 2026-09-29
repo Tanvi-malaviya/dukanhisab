@@ -39,6 +39,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     // Product CRUD
     Route::apiResource('products', \App\Http\Controllers\Api\ProductApiController::class);
 
+    // Every customer's / supplier's custom price sheet in one call (offline caching)
+    Route::get('/product-prices/customers', [\App\Http\Controllers\Api\CustomerProductPriceApiController::class, 'bulk']);
+    Route::get('/product-prices/suppliers', [\App\Http\Controllers\Api\SupplierProductPriceApiController::class, 'bulk']);
+
     // Customer CRUD & Due Payments
     Route::apiResource('customers', \App\Http\Controllers\Api\CustomerApiController::class);
     Route::post('/customers/{id}/collect-payment', [\App\Http\Controllers\Api\CustomerApiController::class, 'recordPayment']);
@@ -66,7 +70,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     Route::post('/purchases/{id}/return', [\App\Http\Controllers\Api\PurchaseApiController::class, 'returnPurchase']);
 
     // CashBook
-    Route::apiResource('cashbooks', \App\Http\Controllers\Api\CashBookApiController::class);
+    Route::apiResource('cashbooks', \App\Http\Controllers\Api\CashBookApiController::class)->except(['update']);
 
     // Bank transfers (Deposit / Withdraw)
     Route::post('/bank-transfers', [\App\Http\Controllers\Api\BankTransferApiController::class, 'store']);

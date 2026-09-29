@@ -33,7 +33,8 @@ class ShopOwnerAuthTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-                 ->assertJsonStructure(['message', 'email', 'dev_otp']);
+                 ->assertJsonStructure(['message', 'email'])
+                 ->assertJsonMissingPath('dev_otp');
 
         $this->assertDatabaseHas('users', [
             'name' => 'John Doe',
@@ -127,7 +128,8 @@ class ShopOwnerAuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                 ->assertJsonStructure(['message', 'dev_otp']);
+                 ->assertJsonStructure(['message'])
+                 ->assertJsonMissingPath('dev_otp');
 
         $user->refresh();
         $this->assertNotEquals('111111', $user->otp_code);
@@ -147,7 +149,8 @@ class ShopOwnerAuthTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-                 ->assertJsonStructure(['message', 'dev_otp']);
+                 ->assertJsonStructure(['message'])
+                 ->assertJsonMissingPath('dev_otp');
 
         $user->refresh();
         $this->assertNotNull($user->otp_code);
@@ -337,7 +340,8 @@ class ShopOwnerAuthTest extends TestCase
         $this->assertDatabaseHas('sale_items', [
             'sale_id' => $sale->id,
             'product_id' => $product->id,
-            'quantity' => 1,
+            'quantity' => 3,
+            'returned_quantity' => 2,
         ]);
 
         $product->refresh();

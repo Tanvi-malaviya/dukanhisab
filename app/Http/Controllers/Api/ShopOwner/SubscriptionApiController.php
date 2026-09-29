@@ -394,10 +394,9 @@ class SubscriptionApiController extends Controller
         // Signature verification
         $verified = false;
         
-        // If in mock mode (starts with order_mock_ or key/secret is empty), bypass verification
-        $isMock = (empty($keySecret)) || 
-                  (!empty($orderId) && str_starts_with($orderId, 'order_mock_')) ||
-                  (!empty($paymentId) && str_starts_with($paymentId, 'pay_mock_'));
+        // Mock verification is only allowed when no Razorpay secret is configured AND the app is
+        // not in production. Client-supplied "mock" ids must never bypass a real signature check.
+        $isMock = empty($keySecret) && !app()->isProduction();
 
         if ($isMock) {
             $verified = true;

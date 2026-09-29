@@ -61,7 +61,7 @@ class ProductApiController extends Controller
             ],
             'stock' => 'nullable|integer',
             'low_stock_threshold' => 'nullable|integer',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_id' => ['nullable', Rule::exists('categories', 'id')->where('shop_id', $shopId)],
             'available_for_sale' => 'sometimes|boolean',
             'available_for_purchase' => 'sometimes|boolean',
         ], [
@@ -113,7 +113,7 @@ class ProductApiController extends Controller
             ],
             'stock' => 'nullable|integer',
             'low_stock_threshold' => 'nullable|integer',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_id' => ['nullable', Rule::exists('categories', 'id')->where('shop_id', $shopId)],
             'available_for_sale' => 'sometimes|boolean',
             'available_for_purchase' => 'sometimes|boolean',
         ], [

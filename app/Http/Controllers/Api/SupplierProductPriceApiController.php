@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Models\Product;
 use App\Models\SupplierProductPrice;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class SupplierProductPriceApiController extends Controller
 {
@@ -65,7 +66,7 @@ class SupplierProductPriceApiController extends Controller
 
         $validator = Validator::make($request->all(), [
             'prices' => 'required|array',
-            'prices.*.product_id' => 'required|integer|exists:products,id',
+            'prices.*.product_id' => ['required', 'integer', Rule::exists('products', 'id')->where('shop_id', $shopId)],
             'prices.*.custom_price' => 'nullable|numeric|min:0',
         ]);
 
@@ -97,5 +98,24 @@ class SupplierProductPriceApiController extends Controller
         }
 
         return response()->json(['message' => 'Supplier product prices updated successfully.']);
+    }
+
+    /**
+     * Every supplier's price sheet in one call, keyed by supplier id, each entry shaped exactly like index().
+     * Lets the mobile app cache them all in a single sync round-trip and work offline.
+     */
+    public function bulk(Request $request)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $out = [];
+
+        foreach (SupplierProductPrice::where('shop_id', $shopId)->distinct()->pluck('supplier_id') as $id) {
+            $response = $this->index($request, $id);
+            if ($response->getStatusCode() === 200) {
+                $out[$id] = $response->getData(true);
+            }
+        }
+
+        return response()->json((object) $out);
     }
 }

@@ -92,6 +92,9 @@ class CustomerApiController extends Controller
         }
 
         $customer->update($request->all());
+        if ($request->has('due_amount')) {
+            static::syncCustomerSaleStatuses($customer->id, $shopId);
+        }
         return response()->json($customer);
     }
 

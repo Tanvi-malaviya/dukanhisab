@@ -212,9 +212,9 @@ class AddOnApiController extends Controller
 
         $keySecret = config('services.razorpay.secret');
 
-        $isMock = empty($keySecret)
-            || str_starts_with($subscriptionId, 'sub_mock_')
-            || str_starts_with($paymentId, 'pay_mock_');
+        // Mock verification is only allowed when no Razorpay secret is configured AND the app is
+        // not in production. Client-supplied "mock" ids must never bypass a real signature check.
+        $isMock = empty($keySecret) && !app()->isProduction();
 
         $verified = $isMock;
         if (!$isMock) {

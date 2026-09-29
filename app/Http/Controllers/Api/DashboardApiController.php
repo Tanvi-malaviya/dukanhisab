@@ -30,7 +30,7 @@ class DashboardApiController extends Controller
         // sale from this total.)
         $todaySales = Sale::where('shop_id', $shopId)
             ->whereDate('sale_date', $today)
-            ->whereNotIn('status', ['Cancelled', 'Returned', 'Partially Returned'])
+            ->whereNotIn('status', ['Cancelled', 'Returned'])
             ->sum('grand_total');
 
         // 2. Today's Purchases

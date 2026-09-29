@@ -79,6 +79,7 @@ class CashBookApiController extends Controller
             // UPI/Bank transactions should be recorded via Bank Accounts.
             'payment_method' => 'sometimes|string|in:cash',
             'description' => 'required|string|max:255',
+            'transaction_date' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -88,7 +89,7 @@ class CashBookApiController extends Controller
         $data                     = $request->all();
         $data['shop_id']          = $shopId;
         $data['payment_method']   = 'cash'; // Always cash for manual Cash Book entries
-        $data['transaction_date'] = Carbon::now();
+        $data['transaction_date'] = $request->filled('transaction_date') ? Carbon::parse($request->transaction_date) : Carbon::now();
 
         $transaction = CashBook::create($data);
         return response()->json($transaction, 201);

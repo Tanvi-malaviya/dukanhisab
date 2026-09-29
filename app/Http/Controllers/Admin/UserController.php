@@ -281,30 +281,6 @@ class UserController extends Controller
             ->orderBy('last_used_at', 'desc')
             ->get();
 
-        // If no real devices exist in DB, create some realistic mock device objects so the UI is beautiful & functional
-        if ($devices->isEmpty()) {
-            $devices = collect([
-                (object)[
-                    'id' => 101,
-                    'name' => 'iPhone 15 Pro Max (DukanHisab Mobile)',
-                    'last_used_at' => now()->subMinutes(12)->toDateTimeString(),
-                    'created_at' => now()->subDays(10)->toDateTimeString(),
-                ],
-                (object)[
-                    'id' => 102,
-                    'name' => 'Samsung Galaxy S24 Ultra (DukanHisab Web View)',
-                    'last_used_at' => now()->subHours(6)->toDateTimeString(),
-                    'created_at' => now()->subDays(5)->toDateTimeString(),
-                ],
-                (object)[
-                    'id' => 103,
-                    'name' => 'iPad Air (DukanHisab POS Terminal)',
-                    'last_used_at' => now()->subDays(2)->toDateTimeString(),
-                    'created_at' => now()->subMonths(1)->toDateTimeString(),
-                ]
-            ]);
-        }
-
         // Fetch / Calculate Shop Usage Statistics (real data, across all of this
         // user's shops). Same conventions used by the shop-owner dashboard API:
         // completed sales, non-cancelled/returned purchases, and cash/bank
@@ -348,13 +324,6 @@ class UserController extends Controller
 
     public function revokeDevice($id)
     {
-        // Delete token or simulate revocation
-        if ($id >= 100) {
-            // Simulated device removal
-            AuditLog::log("Revoked active device session #{$id} (Mock Device)");
-            return back()->with('success', 'Device session revoked successfully.');
-        }
-
         \Illuminate\Support\Facades\DB::table('personal_access_tokens')->where('id', $id)->delete();
         AuditLog::log("Revoked active device session #{$id}");
 

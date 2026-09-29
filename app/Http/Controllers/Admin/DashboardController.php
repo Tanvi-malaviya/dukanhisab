@@ -35,9 +35,6 @@ class DashboardController extends Controller
 
         // Active Devices from Sanctum personal access tokens + standard web sessions
         $activeDevices = DB::table('personal_access_tokens')->count() + DB::table('sessions')->count();
-        if ($activeDevices === 0) {
-            $activeDevices = max(5, $totalUsers * 1.2); // Fallback mock multiplier for beautiful display if empty
-        }
 
         // 2. Charts Data (Past 7 Days Daily Registrations)
         $dailyRegsData = User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
@@ -72,27 +69,19 @@ class DashboardController extends Controller
         }
 
         // 4. Monthly Revenue Graph (Past 6 Months)
+        // Grouped in PHP (not with MySQL-only YEAR()/MONTH()) so it works on any database driver.
         $monthlyRevData = Payment::where('status', 'successful')
             ->where('payment_date', '>=', Carbon::now()->subMonths(6)->startOfMonth())
-            ->select(
-                DB::raw('year(payment_date) as yr'),
-                DB::raw('month(payment_date) as mnth'),
-                DB::raw('sum(amount) as total')
-            )
-            ->groupBy('yr', 'mnth')
-            ->orderBy('yr', 'asc')
-            ->orderBy('mnth', 'asc')
-            ->get();
+            ->get(['amount', 'payment_date'])
+            ->groupBy(fn ($p) => Carbon::parse($p->payment_date)->format('Y-m'))
+            ->map(fn ($rows) => (float) $rows->sum('amount'));
 
         $monthlyRevLabels = [];
         $monthlyRevValues = [];
         for ($i = 5; $i >= 0; $i--) {
             $dt = Carbon::now()->subMonths($i);
             $monthlyRevLabels[] = $dt->format('M Y');
-            $match = $monthlyRevData->filter(function($item) use ($dt) {
-                return $item->yr == $dt->year && $item->mnth == $dt->month;
-            })->first();
-            $monthlyRevValues[] = $match ? (float)$match->total : 0.0;
+            $monthlyRevValues[] = (float) ($monthlyRevData[$dt->format('Y-m')] ?? 0.0);
         }
 
         // 5. Active Users Analytics (Daily active count from audit logs or logins)
@@ -104,8 +93,7 @@ class DashboardController extends Controller
                 ->whereDate('created_at', $dt->toDateString())
                 ->distinct('user_id')
                 ->count('user_id');
-            // Ensure a handsome graph curve by scaling mock additions if database just booted
-            $activeAnalyticsValues[] = max($count, round($activeUsers * (0.6 + (sin($i) * 0.15))));
+            $activeAnalyticsValues[] = $count;
         }
 
         return view('admin.dashboard', compact(
