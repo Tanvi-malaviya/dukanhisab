@@ -48,6 +48,11 @@ class AddOnController extends Controller
         return view('admin.addons.index', compact('addOns', 'history', 'users', 'slotNames'));
     }
 
+    /**
+     * Manually grant an add-on to a user — no payment, no Razorpay subscription. The admin picks
+     * either a fixed number of days or "never expires" (a plan-style grant, e.g. for a lifetime
+     * customer's Shop Add-on); it never asks for both.
+     */
     public function assignToUser(Request $request)
     {
         $validated = $request->validate([
@@ -55,12 +60,15 @@ class AddOnController extends Controller
             'add_on_id' => 'required|exists:add_ons,id',
             'shop_id' => 'nullable|exists:shops,id',
             'quantity' => 'required|integer|min:1|max:20',
-            'days' => 'required|integer|min:1',
+            'never_expires' => 'nullable|boolean',
+            'days' => 'required_unless:never_expires,1|nullable|integer|min:1',
+            'admin_note' => 'nullable|string|max:255',
         ]);
 
         $user = User::findOrFail($validated['user_id']);
         $addOn = AddOn::findOrFail($validated['add_on_id']);
         $shopId = !empty($validated['shop_id']) ? $validated['shop_id'] : $user->shops()->first()?->id;
+        $neverExpires = $request->boolean('never_expires');
 
         $userAddOn = UserAddOn::create([
             'user_id' => $user->id,
@@ -69,12 +77,15 @@ class AddOnController extends Controller
             'quantity' => $validated['quantity'],
             'status' => 'active',
             'starts_at' => now(),
-            'ends_at' => now()->addDays((int) $validated['days']),
-            'auto_renew' => true,
+            'ends_at' => $neverExpires ? null : now()->addDays((int) $validated['days']),
+            'auto_renew' => !$neverExpires,
+            'granted_by_admin' => true,
+            'admin_note' => $validated['admin_note'] ?? null,
         ]);
 
         $shopName = $userAddOn->shop?->name ?? 'N/A';
-        AuditLog::log("Manually granted {$addOn->title} (Qty: {$validated['quantity']}) to user '{$user->name}' (Shop: {$shopName}) for {$validated['days']} days");
+        $durationLabel = $neverExpires ? 'no expiry' : "{$validated['days']} days";
+        AuditLog::log("Manually granted {$addOn->title} (Qty: {$validated['quantity']}) to user '{$user->name}' (Shop: {$shopName}) — {$durationLabel}");
 
         return back()->with('success', "{$addOn->title} add-on assigned to user {$user->name} successfully.");
     }

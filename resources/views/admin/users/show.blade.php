@@ -301,6 +301,9 @@
                         Shops Directory
                     </h2>
                     <p class="text-xs text-slate-400 mt-0.5">Manage shops owned by {{ $user->name }}.
+                        @unless($user->canAddShop())
+                            <span class="text-info">Past their plan's shop limit — adding another grants a free Shop Add-on slot, no purchase needed.</span>
+                        @endunless
                     </p>
                 </div>
                 <button onclick="openAddShopModal(true)"
@@ -345,6 +348,12 @@
                                         class="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0 {{ $shop->status === 'active' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300' }}">
                                         {{ $shop->status }}
                                     </span>
+                                    @if($shop->added_by_admin)
+                                        <span title="Added directly from the admin panel, no purchase required"
+                                            class="inline-flex px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider shrink-0 bg-sky-100 text-sky-800 border border-sky-300">
+                                            Admin added
+                                        </span>
+                                    @endif
 
                                     <!-- Edit Shop -->
                                     <button onclick="openEditShopModal(this)"
@@ -1065,32 +1074,89 @@
                     </svg>
                 </button>
             </div>
-            <form action="{{ route('admin.users.subscription', $user->id) }}" method="POST" class="p-6 space-y-4">
+            <form action="{{ route('admin.users.subscription', $user->id) }}" method="POST" class="p-6 space-y-4" id="userPlanForm">
                 @csrf
-                <p class="text-xs text-slate-400">Configure manually active plan for <span
-                        class="text-white font-semibold">{{ $user->name }}</span>.</p>
+                <p class="text-xs text-slate-400">Manually grant a plan to <span class="text-white font-semibold">{{ $user->name }}</span> — free, no payment is created.</p>
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select Subscription
-                        Plan</label>
-                    <select name="plan_id" required
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select Subscription Plan</label>
+                    <select name="plan_id" id="planSelect" required onchange="onPlanModalChange()"
                         class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                         @foreach($plans as $plan)
-                            <option value="{{ $plan->id }}" {{ $user->active_plan_id == $plan->id ? 'selected' : '' }}>
+                            <option value="{{ $plan->id }}" data-billing="{{ $plan->billing_period }}" {{ $user->active_plan_id == $plan->id ? 'selected' : '' }}>
                                 {{ $plan->name }} (₹{{ $plan->price }}/{{ $plan->billing_period }})
                             </option>
                         @endforeach
                     </select>
                 </div>
+
+                <!-- Mode toggle: a plan's own duration (with an optional bonus), or a fully custom length -->
+                <div class="flex rounded-xl border border-border-dark p-1 bg-secondary/20 text-xs font-semibold">
+                    <label class="flex-1 text-center py-1.5 rounded-lg cursor-pointer transition-colors has-[:checked]:bg-primary has-[:checked]:text-white text-slate-400">
+                        <input type="radio" name="mode" value="plan" class="sr-only" checked onchange="onPlanModalChange()"> Use plan's duration
+                    </label>
+                    <label class="flex-1 text-center py-1.5 rounded-lg cursor-pointer transition-colors has-[:checked]:bg-primary has-[:checked]:text-white text-slate-400">
+                        <input type="radio" name="mode" value="custom" class="sr-only" onchange="onPlanModalChange()"> Custom grant
+                    </label>
+                </div>
+
+                <!-- Mode: plan — no days needed for a Lifetime/Free plan; a Yearly plan can take extra grace days -->
+                <div id="planModeFields">
+                    <div id="graceDaysField">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Grace period — bonus days on top (optional)</label>
+                        <input type="number" name="grace_days" value="0" min="0"
+                            class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                        <p class="text-[11px] text-slate-500 mt-1">The end date is set from the plan's own billing period; this just adds a few extra days as goodwill.</p>
+                    </div>
+                    <p id="neverExpiresNotice" class="hidden text-xs text-info bg-info/10 border border-info/20 rounded-xl px-3 py-2">
+                        This plan never expires — no duration to set.
+                    </p>
+                </div>
+
+                <!-- Mode: custom — an arrangement that doesn't match the plan's own period -->
+                <div id="customModeFields" class="hidden space-y-3">
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="never_expires" value="1" id="neverExpiresCheck" onchange="onPlanModalChange()"
+                            class="rounded border-border-dark text-primary focus:ring-primary">
+                        Never expires (lifetime-style grant)
+                    </label>
+                    <div id="customDaysField">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Duration (days)</label>
+                        <input type="number" name="duration_days" value="30" min="1"
+                            class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Duration (Days)</label>
-                    <input type="number" name="duration_days" value="30" min="1" required
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Note (optional, admin-only)</label>
+                    <input type="text" name="admin_note" maxlength="255" placeholder="e.g. Goodwill for delayed support"
                         class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
                 </div>
+
                 <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
                     <x-button type="button" onclick="closeUserPlanModal()" variant="secondary">Cancel</x-button>
-                    <x-button type="submit" variant="primary">Activate Subscription</x-button>
+                    <x-button type="submit" variant="primary">Grant Subscription</x-button>
                 </div>
             </form>
+            <script>
+                function onPlanModalChange() {
+                    const mode = document.querySelector('#userPlanForm input[name="mode"]:checked').value;
+                    const billing = document.getElementById('planSelect').selectedOptions[0]?.dataset.billing;
+                    const neverExpiresByPlan = billing === 'lifetime' || billing === 'free';
+
+                    document.getElementById('planModeFields').classList.toggle('hidden', mode !== 'plan');
+                    document.getElementById('customModeFields').classList.toggle('hidden', mode !== 'custom');
+
+                    // Plan mode: hide grace days entirely for a plan that never expires anyway.
+                    document.getElementById('graceDaysField').classList.toggle('hidden', neverExpiresByPlan);
+                    document.getElementById('neverExpiresNotice').classList.toggle('hidden', !neverExpiresByPlan);
+
+                    // Custom mode: hide the day count once "never expires" is checked.
+                    const customNeverExpires = document.getElementById('neverExpiresCheck').checked;
+                    document.getElementById('customDaysField').classList.toggle('hidden', mode === 'custom' && customNeverExpires);
+                }
+                document.addEventListener('DOMContentLoaded', onPlanModalChange);
+            </script>
         </div>
     </div>
 @endsection

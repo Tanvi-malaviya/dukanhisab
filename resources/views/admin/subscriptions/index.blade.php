@@ -101,6 +101,13 @@
                                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $sub->status === 'active' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger' }}">
                                     {{ ucfirst($sub->status) }}
                                 </span>
+                                @if($sub->granted_by_admin)
+                                    <span title="{{ $sub->admin_note ?? 'Granted manually by an admin, no payment taken.' }}"
+                                        class="block mt-1 w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-info/15 text-info">
+                                        <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 9a1 1 0 012 0v4a1 1 0 11-2 0V9zm1-3a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                                        Admin granted
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">

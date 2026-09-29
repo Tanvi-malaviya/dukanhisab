@@ -375,6 +375,7 @@
   "cash_out_minus": "Cash Out (-)",
   "record_cash_in": "Record Cash In",
   "record_cash_out": "Record Cash Out",
+  "cashbook_manual_entry_is_cash_only": "Manual entries are always cash. For Bank/UPI, use Deposit or Withdraw on Bank Accounts.",
   "amount_rs": "Amount (₹)",
   "description_remarks": "Description / Remarks",
   "reason_for_transaction": "Reason for transaction...",

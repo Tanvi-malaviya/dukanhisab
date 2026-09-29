@@ -129,9 +129,10 @@
                             <span class="px-2 text-xs font-bold" x-text="item.quantity"></span>
                             <button @click="increaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
                         </div>
-                        <div class="flex items-center gap-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">
-                            <span class="text-[10px] text-slate-400">Rate:</span>
-                            <span>₹<span x-text="parseFloat(item.selling_price).toFixed(2)"></span></span>
+                        <div class="flex items-center gap-0.5">
+                            <span class="text-[10px] text-slate-400">Rate:₹</span>
+                            <input type="number" step="0.01" min="0" x-model.number="item.selling_price" @change="item.priceOverridden = true"
+                                class="w-14 px-1 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
                         </div>
                         <div class="flex items-center gap-0.5">
                             <span class="text-[10px] text-amber-500 font-medium">Disc:₹</span>

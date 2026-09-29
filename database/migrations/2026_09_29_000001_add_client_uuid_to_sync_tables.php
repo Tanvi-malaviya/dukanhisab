@@ -16,6 +16,9 @@ return new class extends Migration
     public function up(): void
     {
         foreach ($this->tables as $table) {
+            if (Schema::hasColumn($table, 'client_uuid')) {
+                continue; // Already applied in an earlier partial run of this migration.
+            }
             Schema::table($table, function (Blueprint $t) use ($table) {
                 $t->string('client_uuid', 64)->nullable()->after('id');
                 $t->unique(['shop_id', 'client_uuid'], "{$table}_shop_client_uuid_unique");

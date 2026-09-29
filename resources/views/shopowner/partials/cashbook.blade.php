@@ -342,13 +342,9 @@
                         <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('amount_rs') || 'Amount (₹)'">Amount (₹)</label>
                         <input type="number" step="0.01" required placeholder="0.00" x-model.number="entryForm.amount" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white font-semibold">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('payment_type') || 'Payment Method'">Payment Method</label>
-                        <select x-model="entryForm.payment_method" class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white font-medium">
-                            <option value="cash" x-text="t('cash') || 'Cash'">Cash</option>
-                            <option value="upi" x-text="(t('upi') || 'UPI') + ' / Digital Wallet'">UPI / Digital Wallet</option>
-                            <option value="bank" x-text="t('bank') || 'Bank Transfer'">Bank Transfer</option>
-                        </select>
+                    <div class="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                        <svg class="w-4 h-4 text-primary shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 font-medium" x-text="t('cashbook_manual_entry_is_cash_only') || 'Manual entries are always cash. For Bank/UPI, use Deposit or Withdraw on Bank Accounts.'"></p>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('description_remarks') || 'Description / Remarks'">Description / Remarks</label>

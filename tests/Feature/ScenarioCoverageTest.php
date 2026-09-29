@@ -104,6 +104,18 @@ class ScenarioCoverageTest extends TestCase
         ])->assertStatus(422);
     }
 
+    /** The web/mobile Rate field lets a cashier override the sale price per line — the server must accept it as-is. */
+    public function test_sale_accepts_a_price_different_from_the_products_catalog_price(): void
+    {
+        $p = $this->product(['selling_price' => 100]);
+        $r = $this->withHeaders($this->h())->postJson('/api/v1/sales', [
+            'subtotal' => 80, 'grand_total' => 80, 'payment_type' => 'Cash',
+            'items' => [['product_id' => $p->id, 'quantity' => 1, 'selling_price' => 80]],
+        ])->assertStatus(201);
+        $this->assertEquals(80, (float) $r->json('items.0.selling_price'));
+        $this->assertEquals(100, (float) $p->fresh()->selling_price, 'overriding a sale price must not change the product\'s own catalog price');
+    }
+
     public function test_sale_larger_than_stock_is_allowed_and_stock_goes_negative(): void
     {
         // Deliberate: shops (and offline mobile sync) may sell before stock is entered.
@@ -432,6 +444,23 @@ class ScenarioCoverageTest extends TestCase
         $this->withHeaders($this->h())->putJson("/api/v1/expenses/{$id}", ['amount' => 300])->assertStatus(200);
         $this->assertEquals(300, (float) CashBook::find($id)->amount);
         $this->withHeaders($this->h())->deleteJson("/api/v1/expenses/{$id}")->assertStatus(204);
+    }
+
+    /**
+     * The manual "Add Entry" (Cash In/Out) screens on both web and mobile only ever offer/send
+     * Cash — Bank/UPI money must go through Bank Accounts > Deposit/Withdraw instead. Locking this
+     * in here: if the server rules ever change, a client sending "bank"/"upi" here would otherwise
+     * silently vanish (mobile drops it as a permanent sync conflict with no visible error).
+     */
+    public function test_manual_cashbook_entry_rejects_bank_and_upi(): void
+    {
+        $this->withHeaders($this->h())->postJson('/api/v1/cashbooks', [
+            'type' => 'cash_in', 'amount' => 100, 'payment_method' => 'bank', 'description' => 'x',
+        ])->assertStatus(422);
+        $this->withHeaders($this->h())->postJson('/api/v1/cashbooks', [
+            'type' => 'cash_in', 'amount' => 100, 'payment_method' => 'upi', 'description' => 'x',
+        ])->assertStatus(422);
+        $this->assertSame(0, CashBook::count());
     }
 
     public function test_manual_cashbook_entries_and_system_entries_protected(): void

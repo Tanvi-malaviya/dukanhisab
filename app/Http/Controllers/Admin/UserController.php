@@ -199,20 +199,49 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'User account deleted successfully.');
     }
 
+    /**
+     * Manually assign a subscription — no payment, no Razorpay. Two modes:
+     *
+     *  - "plan": the end date is computed from the plan's own billing period (yearly -> +1 year,
+     *    lifetime/free -> never expires), so there is nothing to type in for a lifetime grant. An
+     *    optional grace period adds bonus days on top (ignored for a plan that never expires).
+     *  - "custom": for an arrangement that doesn't match the plan's normal period — the admin sets
+     *    the exact length themselves, or picks "never expires" directly.
+     */
     public function updateSubscription(Request $request, $id)
     {
         $user = User::findOrFail($id);
 
-        $request->validate([
+        $validated = $request->validate([
             'plan_id' => 'required|exists:subscription_plans,id',
-            'duration_days' => 'required|integer|min:1',
+            'mode' => 'required|in:plan,custom',
+            'grace_days' => 'nullable|integer|min:0|max:3650',
+            'never_expires' => 'nullable|boolean',
+            'duration_days' => [
+                \Illuminate\Validation\Rule::requiredIf(fn () => $request->input('mode') === 'custom' && !$request->boolean('never_expires')),
+                'nullable', 'integer', 'min:1', 'max:36500',
+            ],
+            'admin_note' => 'nullable|string|max:255',
         ]);
 
-        $plan = \App\Models\SubscriptionPlan::findOrFail($request->input('plan_id'));
-        $days = (int) $request->input('duration_days');
-
+        $plan = \App\Models\SubscriptionPlan::findOrFail($validated['plan_id']);
+        $mode = $validated['mode'];
         $startsAt = now();
-        $endsAt = now()->addDays($days);
+
+        if ($mode === 'plan') {
+            $endsAt = $plan->billing_period === 'yearly' ? $startsAt->copy()->addYear() : null;
+            $graceDays = (int) ($validated['grace_days'] ?? 0);
+            if ($endsAt !== null && $graceDays > 0) {
+                $endsAt = $endsAt->addDays($graceDays);
+            }
+            $durationLabel = $endsAt === null
+                ? 'never expires (' . $plan->billing_period . ' plan)'
+                : $endsAt->toDateString() . ($graceDays > 0 ? " (+{$graceDays} grace days)" : '');
+        } else {
+            $neverExpires = $request->boolean('never_expires');
+            $endsAt = $neverExpires ? null : $startsAt->copy()->addDays((int) $validated['duration_days']);
+            $durationLabel = $neverExpires ? 'never expires (custom grant)' : "{$validated['duration_days']} custom days";
+        }
 
         // Deactivate past active subscriptions
         \App\Models\Subscription::where('user_id', $user->id)
@@ -229,21 +258,9 @@ class UserController extends Controller
             'status' => 'active',
             'starts_at' => $startsAt,
             'ends_at' => $endsAt,
+            'granted_by_admin' => true,
+            'admin_note' => $validated['admin_note'] ?? null,
         ]);
-
-        // Create manual payment record if it is a paid plan
-        if ($plan->price > 0) {
-            \App\Models\Payment::create([
-                'user_id' => $user->id,
-                'shop_id' => $firstShop ? $firstShop->id : null,
-                'plan_id' => $plan->id,
-                'amount' => $plan->price,
-                'payment_gateway' => 'manual',
-                'transaction_id' => 'tx_manual_' . strtoupper(\Illuminate\Support\Str::random(10)),
-                'status' => 'successful',
-                'payment_date' => now(),
-            ]);
-        }
 
         // Link active_plan_id on user table
         $user->update([
@@ -252,10 +269,11 @@ class UserController extends Controller
 
         AuditLog::log("Manually updated subscription for user #{$user->id} ({$user->name}) to plan {$plan->name}", [
             'plan_id' => $plan->id,
-            'ends_at' => $endsAt->toDateString()
+            'mode' => $mode,
+            'ends_at' => $endsAt?->toDateString() ?? 'never',
         ]);
 
-        return back()->with('success', "Subscription for user '{$user->name}' successfully updated to {$plan->name} for {$days} days.");
+        return back()->with('success', "Subscription for user '{$user->name}' successfully updated to {$plan->name} — {$durationLabel}.");
     }
 
     public function show($id)

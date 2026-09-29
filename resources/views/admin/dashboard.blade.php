@@ -4,18 +4,62 @@
 @section('page_title', 'Dashboard ')
 
 @section('content')
-<div class="space-y-2">
-    
+<div class="space-y-4">
+
+    <!-- Needs Attention: real, actionable counts — this is where an admin should look first -->
+    <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <a href="{{ route('admin.support.index') }}?status=open"
+            class="flex items-center gap-3 p-4 rounded-2xl border {{ $openTicketsCount > 0 ? 'bg-warning/10 border-warning/30' : 'bg-card-dark border-border-dark' }} hover:shadow-sm transition-shadow">
+            <span class="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 {{ $openTicketsCount > 0 ? 'bg-warning/20 text-warning' : 'bg-slate-500/10 text-slate-400' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+            </span>
+            <div class="min-w-0">
+                <p class="text-2xl font-extrabold text-white leading-none">{{ $openTicketsCount }}</p>
+                <p class="text-[11px] text-slate-400 font-medium truncate">Open support tickets</p>
+            </div>
+        </a>
+        <a href="{{ route('admin.payments.index') }}?status=pending"
+            class="flex items-center gap-3 p-4 rounded-2xl border {{ $pendingRefundsCount > 0 ? 'bg-danger/10 border-danger/30' : 'bg-card-dark border-border-dark' }} hover:shadow-sm transition-shadow">
+            <span class="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 {{ $pendingRefundsCount > 0 ? 'bg-danger/20 text-danger' : 'bg-slate-500/10 text-slate-400' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+            </span>
+            <div class="min-w-0">
+                <p class="text-2xl font-extrabold text-white leading-none">{{ $pendingRefundsCount }}</p>
+                <p class="text-[11px] text-slate-400 font-medium truncate">Refunds awaiting action</p>
+            </div>
+        </a>
+        <a href="{{ route('admin.subscriptions.index') }}"
+            class="flex items-center gap-3 p-4 rounded-2xl border {{ $expiringSoonCount > 0 ? 'bg-info/10 border-info/30' : 'bg-card-dark border-border-dark' }} hover:shadow-sm transition-shadow">
+            <span class="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 {{ $expiringSoonCount > 0 ? 'bg-info/20 text-info' : 'bg-slate-500/10 text-slate-400' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </span>
+            <div class="min-w-0">
+                <p class="text-2xl font-extrabold text-white leading-none">{{ $expiringSoonCount }}</p>
+                <p class="text-[11px] text-slate-400 font-medium truncate">Subscriptions expiring in 7 days</p>
+            </div>
+        </a>
+        <a href="{{ route('admin.users.index') }}?status=suspended"
+            class="flex items-center gap-3 p-4 rounded-2xl border {{ $suspendedUsersCount > 0 ? 'bg-slate-500/10 border-border-dark' : 'bg-card-dark border-border-dark' }} hover:shadow-sm transition-shadow">
+            <span class="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-slate-500/10 text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+            </span>
+            <div class="min-w-0">
+                <p class="text-2xl font-extrabold text-white leading-none">{{ $suspendedUsersCount }}</p>
+                <p class="text-[11px] text-slate-400 font-medium truncate">Suspended accounts</p>
+            </div>
+        </a>
+    </div>
+
     <!-- Metrics Cards Grid -->
     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        
+
         <!-- Total Users -->
         <div class="card-purchase border p-6 rounded-2xl flex items-center justify-between shadow-sm">
             <div>
                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Users</p>
                 <h3 class="text-3xl font-bold text-white mt-2">{{ number_format($totalUsers) }}</h3>
-                <span class="inline-flex items-center text-[10px] text-primary font-medium mt-2 bg-primary/10 px-2 py-0.5 rounded">
-                    +12.3% this week
+                <span class="inline-flex items-center text-[10px] {{ $userGrowthPct >= 0 ? 'text-primary bg-primary/10' : 'text-danger bg-danger/10' }} font-medium mt-2 px-2 py-0.5 rounded">
+                    {{ $userGrowthPct >= 0 ? '+' : '' }}{{ $userGrowthPct }}% vs last week
                 </span>
             </div>
             <span class="p-3 card-icon rounded-xl border border-blue-200 shadow-2xs">
@@ -47,7 +91,7 @@
                 <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Premium Users</p>
                 <h3 class="text-3xl font-bold text-white mt-2">{{ number_format($premiumUsers) }}</h3>
                 <span class="inline-flex items-center text-[10px] text-warning font-medium mt-2 bg-warning/10 px-2 py-0.5 rounded">
-                    SaaS MRR Growth
+                    {{ $totalUsers > 0 ? round(($premiumUsers / $totalUsers) * 100, 1) : 0 }}% of all users
                 </span>
             </div>
             <span class="p-3 card-icon rounded-xl border border-amber-200 shadow-2xs">

@@ -7,6 +7,9 @@ use App\Models\User;
 use App\Models\Shop;
 use App\Models\Payment;
 use App\Models\SubscriptionPlan;
+use App\Models\Subscription;
+use App\Models\SupportTicket;
+use App\Models\Refund;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -35,6 +38,23 @@ class DashboardController extends Controller
 
         // Active Devices from Sanctum personal access tokens + standard web sessions
         $activeDevices = DB::table('personal_access_tokens')->count() + DB::table('sessions')->count();
+
+        // Real week-over-week signup growth (replaces a previously hardcoded "+12.3%").
+        $signupsThisWeek = User::where('created_at', '>=', Carbon::now()->subDays(7))->count();
+        $signupsPriorWeek = User::whereBetween('created_at', [Carbon::now()->subDays(14), Carbon::now()->subDays(7)])->count();
+        $userGrowthPct = $signupsPriorWeek > 0
+            ? round((($signupsThisWeek - $signupsPriorWeek) / $signupsPriorWeek) * 100, 1)
+            : ($signupsThisWeek > 0 ? 100.0 : 0.0);
+
+        // "Needs attention" panel — the whole point of a dashboard someone actually uses: it should
+        // surface what needs a click today, not just totals.
+        $openTicketsCount = SupportTicket::whereIn('status', ['open', 'pending', 'inProgress'])->count();
+        $pendingRefundsCount = Refund::where('status', 'pending')->count();
+        $expiringSoonCount = Subscription::where('status', 'active')
+            ->whereNotNull('ends_at')
+            ->whereBetween('ends_at', [now(), now()->addDays(7)])
+            ->count();
+        $suspendedUsersCount = User::where('status', 'suspended')->count();
 
         // 2. Charts Data (Past 7 Days Daily Registrations)
         $dailyRegsData = User::select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
@@ -104,6 +124,11 @@ class DashboardController extends Controller
             'todayRevenue',
             'monthlyRevenue',
             'activeDevices',
+            'userGrowthPct',
+            'openTicketsCount',
+            'pendingRefundsCount',
+            'expiringSoonCount',
+            'suspendedUsersCount',
             'dailyRegsLabels',
             'dailyRegsValues',
             'dailySalesValues',
