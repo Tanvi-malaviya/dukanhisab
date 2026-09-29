@@ -375,6 +375,7 @@
   "cash_out_minus": "नकद जावक (-)",
   "record_cash_in": "नकद आवक दर्ज करें",
   "record_cash_out": "नकद जावक दर्ज करें",
+  "cashbook_manual_entry_is_cash_only": "मैनुअल एंट्री हमेशा नकद होती है। बैंक/UPI के लिए, बैंक खातों पर जमा या निकासी का उपयोग करें।",
   "amount_rs": "राशि (₹)",
   "description_remarks": "विवरण / टिप्पणी",
   "reason_for_transaction": "लेन-देन का कारण...",

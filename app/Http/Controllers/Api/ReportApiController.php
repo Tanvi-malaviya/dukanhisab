@@ -36,11 +36,11 @@ class ReportApiController extends Controller
         }
 
         // 1. Sales Report (all genuine sales — Completed, Unpaid, Partially Paid —
-        // excluding only Cancelled/Returned; see DashboardApiController for why
+        // excluding only Cancelled/Returned (a Partially Returned sale still counts for the part that was kept: its grand_total is already net of the returned items); see DashboardApiController for why
         // status = 'Completed' alone would drop every Credit sale.)
         $salesQuery = Sale::where('shop_id', $shopId)
             ->whereBetween('sale_date', [$startDate, $endDate])
-            ->whereNotIn('status', ['Cancelled', 'Returned', 'Partially Returned']);
+            ->whereNotIn('status', ['Cancelled', 'Returned']);
 
         $totalSales = $salesQuery->sum('grand_total');
         $salesCount = $salesQuery->count();

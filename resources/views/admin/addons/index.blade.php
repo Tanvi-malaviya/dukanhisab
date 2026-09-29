@@ -127,6 +127,13 @@
                                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $row->status === 'active' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger' }}">
                                     {{ ucfirst($row->status) }}
                                 </span>
+                                @if($row->granted_by_admin)
+                                    <span title="{{ $row->admin_note ?? 'Granted manually by an admin, no payment taken.' }}"
+                                        class="block mt-1 w-fit inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-info/15 text-info">
+                                        <svg class="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 9a1 1 0 012 0v4a1 1 0 11-2 0V9zm1-3a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+                                        Admin granted
+                                    </span>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
@@ -310,20 +317,32 @@
                 <p class="text-[11px] text-slate-500 mt-1">If unselected, it will be linked to the user's primary or newly created shop.</p>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Quantity *</label>
-                    <input type="number" name="quantity" value="1" min="1" max="20" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Validity (Days) *</label>
-                    <input type="number" name="days" value="365" min="1" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
-                </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Quantity *</label>
+                <input type="number" name="quantity" value="1" min="1" max="20" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
             </div>
+
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <input type="checkbox" name="never_expires" value="1" id="addonNeverExpires" onchange="document.getElementById('addonDaysField').classList.toggle('hidden', this.checked)"
+                    class="rounded border-border-dark text-primary focus:ring-primary">
+                Never expires (e.g. a lifetime customer's Shop Add-on)
+            </label>
+            <div id="addonDaysField">
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Validity (Days) *</label>
+                <input type="number" name="days" value="365" min="1" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Note (optional, admin-only)</label>
+                <input type="text" name="admin_note" maxlength="255" placeholder="e.g. Complimentary for a support delay"
+                    class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+            </div>
+
+            <p class="text-[11px] text-slate-500 bg-secondary/20 rounded-xl px-3 py-2">This is a free grant — no payment record is created, and it never shows on the shop owner's app or web panel as anything other than a normal add-on.</p>
 
             <div class="flex justify-end gap-3 pt-3 border-t border-border-dark">
                 <x-button type="button" onclick="closeAssignAddOnModal()" variant="secondary">Cancel</x-button>
-                <x-button type="submit" variant="primary">Assign Add-On</x-button>
+                <x-button type="submit" variant="primary">Grant Add-On</x-button>
             </div>
         </form>
     </div>

@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class UserAddOn extends Model
 {
+    // Admin-only bookkeeping — hidden from the shop-owner app/web for the same reason as
+    // [[Subscription::$hidden]].
+    protected $hidden = ['granted_by_admin', 'admin_note'];
+
     protected $fillable = [
         'user_id',
         'shop_id',
@@ -16,6 +20,8 @@ class UserAddOn extends Model
         'ends_at',
         'auto_renew',
         'razorpay_subscription_id',
+        'granted_by_admin',
+        'admin_note',
     ];
 
     protected $casts = [
@@ -23,6 +29,7 @@ class UserAddOn extends Model
         'ends_at' => 'datetime',
         'auto_renew' => 'boolean',
         'quantity' => 'integer',
+        'granted_by_admin' => 'boolean',
     ];
 
     public function user()

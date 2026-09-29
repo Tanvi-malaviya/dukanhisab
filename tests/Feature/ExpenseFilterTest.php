@@ -14,7 +14,7 @@ class ExpenseFilterTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_expenses_only_include_operational_expenses_not_purchases_or_returns(): void
+    public function test_expenses_list_includes_expenses_and_purchases_but_not_sales_returns(): void
     {
         $user = User::factory()->create();
 
@@ -71,9 +71,12 @@ class ExpenseFilterTest extends TestCase
         $resp->assertStatus(200);
         $data = $resp->json();
 
-        // Must ONLY contain the 1 operational expense, not the purchase or return
-        $this->assertCount(1, $data);
-        $this->assertEquals('Shop Electricity Bill', $data[0]['description']);
-        $this->assertEquals('150.00', $data[0]['amount']);
+        // Expenses screen lists operational expenses and purchase payments (see ExpenseApiController),
+        // but never sales-return refunds.
+        $this->assertCount(2, $data);
+        $descriptions = collect($data)->pluck('description')->all();
+        $this->assertContains('Shop Electricity Bill', $descriptions);
+        $this->assertContains('Purchase: PUR-20260910-0001', $descriptions);
+        $this->assertNotContains('Return: INV-20260910-0007', $descriptions);
     }
 }

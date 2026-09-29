@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use App\Models\CashBook;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class PurchaseApiController extends Controller
@@ -18,12 +19,6 @@ class PurchaseApiController extends Controller
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
-
-        // Automatically sync purchase statuses with current supplier due balances
-        $supplierIds = Supplier::where('shop_id', $shopId)->pluck('id');
-        foreach ($supplierIds as $supId) {
-            SupplierApiController::syncSupplierPurchaseStatuses($supId, $shopId);
-        }
 
         $query = Purchase::where('shop_id', $shopId)->with(['supplier', 'items.product']);
 
@@ -82,14 +77,14 @@ class PurchaseApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
 
         $validator = Validator::make($request->all(), [
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            'supplier_id' => ['nullable', Rule::exists('suppliers', 'id')->where('shop_id', $shopId)],
             'total_amount' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
             'payment_type' => 'required|string|in:Cash,Bank,UPI,Credit',
             'purchase_date' => 'nullable|date',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('shop_id', $shopId)],
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.purchase_price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
@@ -198,6 +193,9 @@ class PurchaseApiController extends Controller
                 ]);
             }
 
+            SupplierApiController::syncSupplierPurchaseStatuses($purchase->supplier_id, $shopId);
+
+            $purchase->refresh();
             return response()->json($purchase->load('items.product', 'supplier'), 201);
         });
     }
@@ -215,11 +213,11 @@ class PurchaseApiController extends Controller
         $purchase = Purchase::where('shop_id', $shopId)->with('items')->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'supplier_id' => 'nullable|exists:suppliers,id',
+            'supplier_id' => ['nullable', Rule::exists('suppliers', 'id')->where('shop_id', $shopId)],
             'payment_type' => 'sometimes|required|string|in:Cash,UPI,Bank,Credit',
             'purchase_date' => 'sometimes|required|date',
             'items' => 'sometimes|array|min:1',
-            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.product_id' => ['required_with:items', Rule::exists('products', 'id')->where('shop_id', $shopId)],
             'items.*.quantity' => 'required_with:items|integer|min:1',
             'items.*.purchase_price' => 'required_with:items|numeric|min:0',
             'total_amount' => 'sometimes|numeric|min:0',
@@ -281,6 +279,8 @@ class PurchaseApiController extends Controller
                 }
                 $purchase->total_amount = $request->input('total_amount', $purchase->total_amount);
                 $purchase->save();
+                // Items were replaced: bump updated_at even if no header column changed, so synced clients re-pull it.
+                $purchase->touch();
 
                 $newPaymentType = $purchase->payment_type;
                 $newSupplierId = $purchase->supplier_id;
@@ -309,6 +309,9 @@ class PurchaseApiController extends Controller
                     ]);
                 }
 
+                foreach (array_unique(array_filter([$purchase->supplier_id, $oldSupplierId])) as $sid) { SupplierApiController::syncSupplierPurchaseStatuses($sid, $shopId); }
+
+                $purchase->refresh();
                 return response()->json($purchase->load('items.product', 'supplier'));
             });
         }
@@ -369,6 +372,9 @@ class PurchaseApiController extends Controller
                 ]);
             }
 
+            foreach (array_unique(array_filter([$purchase->supplier_id, $oldSupplierId])) as $sid) { SupplierApiController::syncSupplierPurchaseStatuses($sid, $shopId); }
+
+            $purchase->refresh();
             return response()->json($purchase->load('supplier'));
         });
     }
@@ -449,6 +455,9 @@ class PurchaseApiController extends Controller
                 'cancelled_by' => $userId,
             ]);
 
+            SupplierApiController::syncSupplierPurchaseStatuses($purchase->supplier_id, $shopId);
+
+            $purchase->refresh();
             return response()->json($purchase->load('items.product', 'supplier'));
         });
     }
@@ -476,7 +485,7 @@ class PurchaseApiController extends Controller
         if ($request->has('items') && is_array($request->items)) {
             $validator = Validator::make($request->all(), [
                 'items' => 'required|array|min:1',
-                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('shop_id', $shopId)],
                 'items.*.quantity' => 'required|integer|min:1',
             ]);
 
@@ -571,6 +580,9 @@ class PurchaseApiController extends Controller
                 }
                 $purchase->save();
 
+                SupplierApiController::syncSupplierPurchaseStatuses($purchase->supplier_id, $shopId);
+
+                $purchase->refresh();
                 return response()->json($purchase->load('items.product', 'supplier'));
             });
         }
@@ -632,6 +644,9 @@ class PurchaseApiController extends Controller
             $purchase->paid_amount = 0;
             $purchase->save();
 
+            SupplierApiController::syncSupplierPurchaseStatuses($purchase->supplier_id, $shopId);
+
+            $purchase->refresh();
             return response()->json($purchase->load('items.product', 'supplier'));
         });
     }

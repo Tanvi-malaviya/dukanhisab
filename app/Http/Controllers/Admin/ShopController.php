@@ -41,13 +41,30 @@ class ShopController extends Controller
 
         $validated = $validator->validated();
 
+        // The admin panel is never limited by a user's plan/add-on shop quota: past it, this
+        // silently grants one more Shop Add-on slot (no payment, never expires) so the extra
+        // shop stays usable instead of getting locked by ShopScopeMiddleware the same way an
+        // unpaid one would.
         $owner = User::find($validated['owner_id']);
+        $addedByAdmin = false;
         if ($owner && !$owner->canAddShop()) {
-            return back()
-                ->withErrors(['owner_id' => "User '{$owner->name}' has reached their shop limit of {$owner->maxShops()} shop(s). Purchase a Shop Add-on for this user to add more."])
-                ->withInput()
-                ->with('modal_open', 'add_shop');
+            $shopAddOn = \App\Models\AddOn::where('type', 'shop')->first();
+            if ($shopAddOn) {
+                \App\Models\UserAddOn::create([
+                    'user_id' => $owner->id,
+                    'add_on_id' => $shopAddOn->id,
+                    'quantity' => 1,
+                    'status' => 'active',
+                    'starts_at' => now(),
+                    'ends_at' => null,
+                    'auto_renew' => false,
+                    'granted_by_admin' => true,
+                    'admin_note' => 'Auto-granted to cover a shop added directly from the admin panel.',
+                ]);
+                $addedByAdmin = true;
+            }
         }
+        $validated['added_by_admin'] = $addedByAdmin;
 
         if ($request->hasFile('logo')) {
             $validated['logo'] = $request->file('logo')->store('logos', 'public');

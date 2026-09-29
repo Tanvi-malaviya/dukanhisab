@@ -91,6 +91,9 @@ class SupplierApiController extends Controller
         }
 
         $supplier->update($request->all());
+        if ($request->has('due_amount')) {
+            static::syncSupplierPurchaseStatuses($supplier->id, $shopId);
+        }
         return response()->json($supplier);
     }
 

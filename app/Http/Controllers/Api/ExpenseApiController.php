@@ -21,7 +21,8 @@ class ExpenseApiController extends Controller
             });
 
         if ($request->filled('updated_since')) {
-            $query->where('updated_at', '>=', Carbon::parse($request->updated_since));
+            // Include soft-deleted rows so the mobile app can remove expenses deleted elsewhere.
+            $query->withTrashed()->where('updated_at', '>=', Carbon::parse($request->updated_since));
         }
 
         if ($request->filled('search')) {
@@ -46,6 +47,7 @@ class ExpenseApiController extends Controller
             'amount' => 'required|numeric|min:0.01',
             'payment_method' => 'required|string|in:cash,bank,upi',
             'description' => 'required|string|max:255',
+            'transaction_date' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
@@ -59,7 +61,7 @@ class ExpenseApiController extends Controller
             'payment_method' => $request->payment_method,
             'description' => $request->description,
             'reference_type' => 'expense',
-            'transaction_date' => Carbon::now(),
+            'transaction_date' => $request->filled('transaction_date') ? Carbon::parse($request->transaction_date) : Carbon::now(),
         ]);
 
         return response()->json($expense, 201);

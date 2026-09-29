@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Shop extends Model
 {
+    // Admin-only bookkeeping — hidden from the shop-owner app/web for the same reason as
+    // [[Subscription::$hidden]].
+    protected $hidden = ['added_by_admin'];
+
     protected $fillable = [
         'owner_id',
         'name',
@@ -26,10 +30,12 @@ class Shop extends Model
         'status',
         'active_plan_id',
         'website_settings',
+        'added_by_admin',
     ];
 
     protected $casts = [
         'website_settings' => 'array',
+        'added_by_admin' => 'boolean',
     ];
 
     public function owner()

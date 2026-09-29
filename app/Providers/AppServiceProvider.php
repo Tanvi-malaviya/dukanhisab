@@ -46,5 +46,16 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable $e) {
             // Graceful fallback during installation or migrations
         }
+
+        // Open-ticket count for the sidebar's "Support Desk" badge — every admin page shares the
+        // one layout, so this is computed once per request here rather than duplicated in every
+        // admin controller.
+        \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
+            try {
+                $view->with('openTicketsBadge', \App\Models\SupportTicket::whereIn('status', ['open', 'pending', 'inProgress'])->count());
+            } catch (\Throwable $e) {
+                $view->with('openTicketsBadge', 0);
+            }
+        });
     }
 }

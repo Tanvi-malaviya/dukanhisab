@@ -375,6 +375,7 @@
   "cash_out_minus": "રોકડ જાવક (-)",
   "record_cash_in": "રોકડ આવક નોંધો",
   "record_cash_out": "રોકડ જાવક નોંધો",
+  "cashbook_manual_entry_is_cash_only": "મેન્યુઅલ એન્ટ્રી હંમેશા રોકડ હોય છે. બેંક/UPI માટે, બેંક ખાતા પર ડિપોઝિટ અથવા ઉપાડનો ઉપયોગ કરો.",
   "amount_rs": "રકમ (₹)",
   "description_remarks": "વિગત / નોંધ",
   "reason_for_transaction": "લેવડ-દેવડનું કારણ...",

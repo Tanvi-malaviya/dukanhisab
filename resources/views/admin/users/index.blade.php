@@ -737,32 +737,80 @@
             <form id="overrideForm" method="POST" class="p-6 space-y-4">
                 @csrf
 
-                <p class="text-xs text-slate-400">Configure manually active plan for <span class="text-white font-semibold"
-                        id="override_shop_name">Shop</span>.</p>
+                <p class="text-xs text-slate-400">Manually grant a plan to <span class="text-white font-semibold"
+                        id="override_shop_name">this user</span> — free, no payment is created.</p>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select Subscription
-                        Plan</label>
-                    <select name="plan_id" required
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Select Subscription Plan</label>
+                    <select name="plan_id" id="overridePlanSelect" required onchange="onOverridePlanChange()"
                         class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                         @foreach($plans as $plan)
-                            <option value="{{ $plan->id }}">{{ $plan->name }} (₹{{ $plan->price }}/{{ $plan->billing_period }})
+                            <option value="{{ $plan->id }}" data-billing="{{ $plan->billing_period }}">{{ $plan->name }} (₹{{ $plan->price }}/{{ $plan->billing_period }})
                             </option>
                         @endforeach
                     </select>
                 </div>
 
+                <div class="flex rounded-xl border border-border-dark p-1 bg-secondary/20 text-xs font-semibold">
+                    <label class="flex-1 text-center py-1.5 rounded-lg cursor-pointer transition-colors has-[:checked]:bg-primary has-[:checked]:text-white text-slate-400">
+                        <input type="radio" name="mode" value="plan" class="sr-only" checked onchange="onOverridePlanChange()"> Use plan's duration
+                    </label>
+                    <label class="flex-1 text-center py-1.5 rounded-lg cursor-pointer transition-colors has-[:checked]:bg-primary has-[:checked]:text-white text-slate-400">
+                        <input type="radio" name="mode" value="custom" class="sr-only" onchange="onOverridePlanChange()"> Custom grant
+                    </label>
+                </div>
+
+                <div id="overridePlanModeFields">
+                    <div id="overrideGraceDaysField">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Grace period — bonus days on top (optional)</label>
+                        <input type="number" name="grace_days" value="0" min="0"
+                            class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                        <p class="text-[11px] text-slate-500 mt-1">The end date is set from the plan's own billing period; this just adds a few extra days as goodwill.</p>
+                    </div>
+                    <p id="overrideNeverExpiresNotice" class="hidden text-xs text-info bg-info/10 border border-info/20 rounded-xl px-3 py-2">
+                        This plan never expires — no duration to set.
+                    </p>
+                </div>
+
+                <div id="overrideCustomModeFields" class="hidden space-y-3">
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                        <input type="checkbox" name="never_expires" value="1" id="overrideNeverExpiresCheck" onchange="onOverridePlanChange()"
+                            class="rounded border-border-dark text-primary focus:ring-primary">
+                        Never expires (lifetime-style grant)
+                    </label>
+                    <div id="overrideCustomDaysField">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Duration (days)</label>
+                        <input type="number" name="duration_days" value="30" min="1"
+                            class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
+                    </div>
+                </div>
+
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Duration (Days)</label>
-                    <input type="number" name="duration_days" value="30" min="1" required
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Note (optional, admin-only)</label>
+                    <input type="text" name="admin_note" maxlength="255" placeholder="e.g. Goodwill for delayed support"
                         class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
                 </div>
 
                 <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
                     <x-button type="button" onclick="closePlanOverrideModal()" variant="secondary">Cancel</x-button>
-                    <x-button type="submit" variant="primary">Activate Subscription</x-button>
+                    <x-button type="submit" variant="primary">Grant Subscription</x-button>
                 </div>
             </form>
+            <script>
+                function onOverridePlanChange() {
+                    const mode = document.querySelector('#overrideForm input[name="mode"]:checked').value;
+                    const billing = document.getElementById('overridePlanSelect').selectedOptions[0]?.dataset.billing;
+                    const neverExpiresByPlan = billing === 'lifetime' || billing === 'free';
+
+                    document.getElementById('overridePlanModeFields').classList.toggle('hidden', mode !== 'plan');
+                    document.getElementById('overrideCustomModeFields').classList.toggle('hidden', mode !== 'custom');
+                    document.getElementById('overrideGraceDaysField').classList.toggle('hidden', neverExpiresByPlan);
+                    document.getElementById('overrideNeverExpiresNotice').classList.toggle('hidden', !neverExpiresByPlan);
+
+                    const customNeverExpires = document.getElementById('overrideNeverExpiresCheck').checked;
+                    document.getElementById('overrideCustomDaysField').classList.toggle('hidden', mode === 'custom' && customNeverExpires);
+                }
+            </script>
         </div>
     </div>
 
@@ -889,6 +937,7 @@
             document.getElementById('overrideForm').action = "{{ route('admin.users.subscription', ['id' => ':id']) }}".replace(':id', userId);
             document.getElementById('override_shop_name').innerText = userName;
             document.getElementById('overrideModal').classList.remove('hidden');
+            if (typeof onOverridePlanChange === 'function') onOverridePlanChange();
         }
 
         function closePlanOverrideModal() {

@@ -2607,6 +2607,9 @@
             refreshPosCartItemPrices() {
                 if (!this.pos.items || this.pos.items.length === 0) return;
                 this.pos.items.forEach(item => {
+                    // A rate the cashier typed by hand must survive a customer switch —
+                    // only re-price lines still on their default/customer-list price.
+                    if (item.priceOverridden) return;
                     const prod = (this.products || []).find(p => p.id === item.product_id);
                     if (prod) {
                         item.selling_price = this.getPosProductPrice(prod);
@@ -2706,7 +2709,7 @@
                     this.pos.items[idx].quantity++;
                 } else {
                     const price = this.getPosProductPrice(product);
-                    this.pos.items.push({ product_id: product.id, name: product.name, selling_price: price, quantity: 1, stock: product.stock, discount: 0 });
+                    this.pos.items.push({ product_id: product.id, name: product.name, selling_price: price, quantity: 1, stock: product.stock, discount: 0, priceOverridden: false });
                 }
                 this.showToast(product.name + ' added to cart.');
             },

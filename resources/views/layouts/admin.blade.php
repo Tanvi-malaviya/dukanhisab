@@ -63,143 +63,67 @@
             </div>
 
             <!-- Navigation Links -->
-            <div class="flex-1 flex flex-col overflow-y-auto px-4 py-6 space-y-1">
+            <div class="flex-1 flex flex-col overflow-y-auto px-3 py-5 space-y-4">
                 @php
                     $route = Request::route()->getName();
+                    // Section, item: [route, icon path, label, active-when]. One data-driven list instead of
+                    // 20 hand-written <a> tags — the thing every admin screen has in common is this nav, so
+                    // it's the highest-leverage place to make the panel consistent and easy to scan.
+                    $navSections = [
+                        null => [
+                            ['admin.dashboard', 'M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z', 'Dashboard', 'admin.dashboard'],
+                        ],
+                        'Customers' => [
+                            ['admin.users.index', 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', 'Users & Shops', 'admin.users|admin.shops'],
+                            ['admin.support.index', 'M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z', 'Support Desk', 'admin.support'],
+                        ],
+                        'Billing' => [
+                            ['admin.subscriptions.index', 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z', 'Subscription Plans', 'admin.subscriptions'],
+                            ['admin.addons.index', 'M12 4v16m8-8H4', 'Add-Ons', 'admin.addons'],
+                            ['admin.payments.index', 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', 'Payments Ledger', 'admin.payments'],
+                        ],
+                        'Insights & Marketing' => [
+                            ['admin.reports.index', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'Analytics & Reports', 'admin.reports'],
+                            ['admin.notifications.index', 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9', 'Broadcast Center', 'admin.notifications'],
+                            ['admin.ads.index', 'M7 4v16l6-4 6 4V4a1 1 0 00-1-1H8a1 1 0 00-1 1z', 'Advertisements', 'admin.ads'],
+                        ],
+                        'System' => [
+                            ['admin.settings.app', 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z', 'App Config', 'settings.app'],
+                            ['admin.settings.invoice', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'Invoice Layout', 'settings.invoice'],
+                            ['admin.settings.payment', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', 'Payment Gateway', 'settings.payment'],
+                            ['admin.backups.index', 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', 'Database Backups', 'admin.backups'],
+                            ['admin.logs.index', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'Audit Trails', 'admin.logs'],
+                        ],
+                    ];
                 @endphp
-                <a href="{{ route('admin.dashboard') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ $route === 'admin.dashboard' ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z">
-                        </path>
-                    </svg>
-                    Dashboard
-                </a>
 
-                <a href="{{ route('admin.users.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.users') || str_contains($route, 'admin.shops') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
-                        </path>
-                    </svg>
-                    Users & Shops
-                </a>
-
-                <a href="{{ route('admin.subscriptions.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.subscriptions') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z">
-                        </path>
-                    </svg>
-                    Subscription Plans
-                </a>
-
-                <a href="{{ route('admin.addons.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.addons') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 4v16m8-8H4">
-                        </path>
-                    </svg>
-                    Add-Ons
-                </a>
-
-                <a href="{{ route('admin.payments.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.payments') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z">
-                        </path>
-                    </svg>
-                    Payments Ledger
-                </a>
-
-                <a href="{{ route('admin.reports.index') }}"
-                    class="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.reports') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
-                        </path>
-                    </svg>
-                    Analytics & Reports
-                </a>
-
-                <div class="pt-4 pb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">System Settings
-                </div>
-
-                <a href="{{ route('admin.settings.app') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'settings.app') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                    </svg>
-                    App Config
-                </a>
-
-                <a href="{{ route('admin.settings.invoice') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'settings.invoice') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                    Invoice Layout
-                </a>
-
-                <a href="{{ route('admin.settings.payment') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'settings.payment') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
-                        </path>
-                    </svg>
-                    Payment Gateway
-                </a>
-
-
-
-                <a href="{{ route('admin.notifications.index') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.notifications') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
-                        </path>
-                    </svg>
-                    Broadcast Center
-                </a>
-
-                <a href="{{ route('admin.support.index') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.support') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z">
-                        </path>
-                    </svg>
-                    Support Desk
-                </a>
-
-                <a href="{{ route('admin.backups.index') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.backups') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
-                        </path>
-                    </svg>
-                    Database Backups
-                </a>
-
-                <a href="{{ route('admin.logs.index') }}"
-                    class="flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 {{ str_contains($route, 'admin.logs') ? 'bg-primary text-white font-semibold' : 'hover:bg-secondary hover:text-white' }}">
-                    <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                    Audit Trails
-                </a>
+                @foreach ($navSections as $section => $items)
+                    <div>
+                        @if ($section)
+                            <div class="px-3 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ $section }}</div>
+                        @endif
+                        <div class="space-y-0.5">
+                            @foreach ($items as [$routeName, $iconPath, $label, $activeWhen])
+                                @php
+                                    $isActive = collect(explode('|', $activeWhen))->contains(fn ($needle) => str_contains($route, $needle));
+                                @endphp
+                                <a href="{{ route($routeName) }}"
+                                    class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 {{ $isActive ? 'bg-primary text-white font-semibold shadow-sm' : 'text-slate-300 hover:bg-secondary/60 hover:text-white' }}">
+                                    @if ($isActive)
+                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 h-5 w-1 rounded-r bg-white/80"></span>
+                                    @endif
+                                    <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $iconPath }}"></path>
+                                    </svg>
+                                    <span class="truncate">{{ $label }}</span>
+                                    @if ($routeName === 'admin.support.index' && ($openTicketsBadge ?? 0) > 0)
+                                        <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full {{ $isActive ? 'bg-white/20 text-white' : 'bg-warning/20 text-warning' }}">{{ $openTicketsBadge }}</span>
+                                    @endif
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endforeach
             </div>
 
             <!-- Authenticated Admin Profile Card -->

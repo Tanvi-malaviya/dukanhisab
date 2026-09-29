@@ -13,6 +13,7 @@ use App\Models\CreditNote;
 use App\Models\InvoiceCounter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class SaleApiController extends Controller
@@ -21,12 +22,6 @@ class SaleApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
 
-        // Automatically sync sale statuses with current customer due balances
-        $customerIds = Customer::where('shop_id', $shopId)->pluck('id');
-        foreach ($customerIds as $custId) {
-            CustomerApiController::syncCustomerSaleStatuses($custId, $shopId);
-        }
-        
         $query = Sale::where('shop_id', $shopId)->with(['customer', 'items.product']);
 
         if ($request->filled('updated_since')) {
@@ -87,14 +82,14 @@ class SaleApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
 
         $validator = Validator::make($request->all(), [
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('shop_id', $shopId)],
             'subtotal' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'grand_total' => 'required|numeric|min:0',
             'payment_type' => 'required|string|in:Cash,UPI,Bank,Credit,Store Credit',
             'used_credit_balance' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('shop_id', $shopId)],
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.selling_price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
@@ -235,6 +230,9 @@ class SaleApiController extends Controller
                 ]);
             }
 
+            $this->syncCreditStatuses((int) $shopId, $sale->customer_id);
+
+            $sale->refresh();
             return response()->json($sale->load('items.product', 'customer'), 201);
         });
     }
@@ -252,12 +250,12 @@ class SaleApiController extends Controller
         $sale = Sale::where('shop_id', $shopId)->with('items')->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'customer_id' => 'nullable|exists:customers,id',
+            'customer_id' => ['nullable', Rule::exists('customers', 'id')->where('shop_id', $shopId)],
             'payment_type' => 'sometimes|required|string|in:Cash,UPI,Bank,Credit',
             'sale_date' => 'sometimes|required|date',
             'status' => 'sometimes|required|string|in:Completed,Returned,Partially Returned',
             'items' => 'sometimes|array|min:1',
-            'items.*.product_id' => 'required_with:items|exists:products,id',
+            'items.*.product_id' => ['required_with:items', Rule::exists('products', 'id')->where('shop_id', $shopId)],
             'items.*.quantity' => 'required_with:items|integer|min:1',
             'items.*.selling_price' => 'required_with:items|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
@@ -324,6 +322,8 @@ class SaleApiController extends Controller
                 $sale->discount = $request->input('discount', $sale->discount);
                 $sale->grand_total = $request->input('grand_total', $sale->grand_total);
                 $sale->save();
+                // Items were replaced: bump updated_at even if no header column changed, so synced clients re-pull it.
+                $sale->touch();
 
                 $newPaymentType = $sale->payment_type;
                 $newCustomerId = $sale->customer_id;
@@ -352,6 +352,9 @@ class SaleApiController extends Controller
                     ]);
                 }
 
+                $this->syncCreditStatuses((int) $shopId, $sale->customer_id, $oldCustomerId);
+
+                $sale->refresh();
                 return response()->json($sale->load('items.product', 'customer'));
             });
         }
@@ -416,6 +419,9 @@ class SaleApiController extends Controller
                 ]);
             }
 
+            $this->syncCreditStatuses((int) $shopId, $sale->customer_id, $oldCustomerId);
+
+            $sale->refresh();
             return response()->json($sale->load('customer'));
         });
     }
@@ -524,6 +530,9 @@ class SaleApiController extends Controller
                 'cancelled_by' => $userId,
             ]);
 
+            $this->syncCreditStatuses((int) $shopId, $sale->customer_id);
+
+            $sale->refresh();
             return response()->json($sale->load('items.product', 'customer'));
         });
     }
@@ -553,7 +562,7 @@ class SaleApiController extends Controller
         if ($request->has('items') && is_array($request->items)) {
             $validator = Validator::make($request->all(), [
                 'items' => 'required|array|min:1',
-                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('shop_id', $shopId)],
                 'items.*.quantity' => 'required|integer|min:1',
                 'refund_method' => 'nullable|string|in:cash,bank,upi,credit_note,due_adjustment',
             ]);
@@ -626,6 +635,9 @@ class SaleApiController extends Controller
                 }
                 $sale->save();
 
+                $this->syncCreditStatuses((int) $shopId, $sale->customer_id);
+
+                $sale->refresh();
                 return response()->json($sale->load('items.product', 'customer', 'creditNotes'));
             });
         }
@@ -663,6 +675,9 @@ class SaleApiController extends Controller
             $sale->grand_total = 0; // Everything is returned
             $sale->save();
 
+            $this->syncCreditStatuses((int) $shopId, $sale->customer_id);
+
+            $sale->refresh();
             return response()->json($sale->load('items.product', 'customer', 'creditNotes'));
         });
     }
@@ -725,6 +740,14 @@ class SaleApiController extends Controller
                 'reference_type' => 'sale',
                 'transaction_date' => Carbon::now(),
             ]);
+        }
+    }
+
+    /** Keep credit-sale statuses (Unpaid / Partially Paid / Completed) in step with the customers' dues at write time. */
+    private function syncCreditStatuses(int $shopId, ?int ...$customerIds): void
+    {
+        foreach (array_unique(array_filter($customerIds)) as $customerId) {
+            CustomerApiController::syncCustomerSaleStatuses($customerId, $shopId);
         }
     }
 }
