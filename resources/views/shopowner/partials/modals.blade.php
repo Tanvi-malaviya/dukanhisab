@@ -304,6 +304,16 @@
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
             </div>
+            <div class="flex gap-4 pt-1">
+                <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                    <input type="checkbox" x-model="newProduct.available_for_sale" class="rounded border-slate-300 dark:border-gray-600 text-primary focus:ring-primary">
+                    <span x-text="t('available_for_sale') || 'Available for Sale'">Available for Sale</span>
+                </label>
+                <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
+                    <input type="checkbox" x-model="newProduct.available_for_purchase" class="rounded border-slate-300 dark:border-gray-600 text-primary focus:ring-primary">
+                    <span x-text="t('available_for_purchase') || 'Available for Purchase'">Available for Purchase</span>
+                </label>
+            </div>
             <button type="submit"
                 class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
                 x-text="newProduct.id ? t('save') : t('add_product')"></button>
@@ -743,7 +753,7 @@
                     </div>
 
                     <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
-                        <template x-for="prod in filteredProducts()" :key="prod.id">
+                        <template x-for="prod in filteredSaleProducts()" :key="prod.id">
                             <div @click="prod.stock > 0 ? addToBill(prod) : showToast('Product is Out of Stock!', 'error')"
                                 :class="prod.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary'"
                                 class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between">
@@ -920,7 +930,7 @@
                     </div>
 
                     <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
-                        <template x-for="prod in filteredProducts()" :key="prod.id">
+                        <template x-for="prod in filteredPurchaseProducts()" :key="prod.id">
                             <div @click="addPurchaseItemById(prod.id)"
                                 class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary">
                                 <div>

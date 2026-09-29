@@ -23,7 +23,7 @@
         </div>
 
         <div class="overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[calc(100vh-210px)] content-start">
-            <template x-for="prod in filteredProducts()" :key="prod.id">
+            <template x-for="prod in filteredSaleProducts()" :key="prod.id">
                 <div @click="prod.stock > 0 ? addToBill(prod) : showToast('Product is Out of Stock!', 'error')"
                     :class="prod.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : 'bg-slate-50 dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary'"
                     class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between">

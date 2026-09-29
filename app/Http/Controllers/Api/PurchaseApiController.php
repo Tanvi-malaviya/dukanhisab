@@ -12,10 +12,13 @@ use App\Models\CashBook;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Support\StockMovementLogger;
 use Carbon\Carbon;
 
 class PurchaseApiController extends Controller
 {
+    use StockMovementLogger;
+
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
@@ -156,6 +159,7 @@ class PurchaseApiController extends Controller
                 // Increment Product Stock and update purchase price (COGS reduced by scheme discount)
                 $product = Product::findOrFail($item['product_id']);
                 $product->increment('stock', $itemQty);
+                $this->logStockMovement($shopId, $product->id, $itemQty, $product->fresh()->stock, 'purchase', 'purchase', $purchase->id);
 
                 // Calculate Net discounted unit cost
                 $netUnitCost = round((($itemQty * $itemPrice) - $itemDiscount) / $itemQty, 2);
@@ -241,6 +245,7 @@ class PurchaseApiController extends Controller
                     $product = Product::find($item->product_id);
                     if ($product) {
                         $product->decrement('stock', $item->quantity);
+                        $this->logStockMovement($shopId, $product->id, -$item->quantity, $product->fresh()->stock, 'purchase', 'purchase', $purchase->id, 'Items edited');
                     }
                 }
 
@@ -269,6 +274,7 @@ class PurchaseApiController extends Controller
                     $product = Product::findOrFail($item['product_id']);
                     $product->increment('stock', $item['quantity']);
                     $product->update(['purchase_price' => $item['purchase_price']]);
+                    $this->logStockMovement($shopId, $product->id, $item['quantity'], $product->fresh()->stock, 'purchase', 'purchase', $purchase->id, 'Items edited');
                 }
 
                 if ($request->has('supplier_id')) {
@@ -410,6 +416,7 @@ class PurchaseApiController extends Controller
                     $product = Product::find($item->product_id);
                     if ($product) {
                         $product->decrement('stock', $unreturnedQty);
+                        $this->logStockMovement($shopId, $product->id, -$unreturnedQty, $product->fresh()->stock, 'purchase_cancel', 'purchase', $purchase->id, $reason);
                     }
                 }
             }
@@ -512,6 +519,7 @@ class PurchaseApiController extends Controller
                     // Decrement Product Stock (since we returned them to supplier, inventory decreases)
                     $product = Product::findOrFail($productId);
                     $product->decrement('stock', $returnQty);
+                    $this->logStockMovement($shopId, $product->id, -$returnQty, $product->fresh()->stock, 'purchase_return', 'purchase', $purchase->id);
 
                     // Update returned_quantity of the Purchase Item
                     $purchaseItem->increment('returned_quantity', $returnQty);
@@ -596,6 +604,7 @@ class PurchaseApiController extends Controller
                 if ($unreturnedQty > 0) {
                     $product = Product::findOrFail($item->product_id);
                     $product->decrement('stock', $unreturnedQty);
+                    $this->logStockMovement($shopId, $product->id, -$unreturnedQty, $product->fresh()->stock, 'purchase_return', 'purchase', $purchase->id);
 
                     $item->returned_quantity = $item->quantity;
                     $item->save();

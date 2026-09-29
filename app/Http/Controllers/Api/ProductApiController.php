@@ -7,10 +7,13 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use App\Support\StockMovementLogger;
 use Carbon\Carbon;
 
 class ProductApiController extends Controller
 {
+    use StockMovementLogger;
+
     public function index(Request $request)
     {
         $shopId = $request->attributes->get('shop_id');
@@ -84,6 +87,12 @@ class ProductApiController extends Controller
         }
 
         $product = Product::create($data);
+
+        $initialStock = (int) ($data['stock'] ?? 0);
+        if ($initialStock > 0) {
+            $this->logStockMovement($shopId, $product->id, $initialStock, $initialStock, 'adjustment', null, null, 'Initial stock (new product)');
+        }
+
         return response()->json($product, 201);
     }
 

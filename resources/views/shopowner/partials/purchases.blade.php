@@ -30,7 +30,7 @@
         </div>
 
         <div class="overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[calc(100vh-210px)] content-start">
-            <template x-for="prod in filteredProducts()" :key="prod.id">
+            <template x-for="prod in filteredPurchaseProducts()" :key="prod.id">
                 <div @click="addPurchaseItemById(prod.id)"
                     class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-slate-50 dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary">
                     <div>

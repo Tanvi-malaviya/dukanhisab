@@ -101,7 +101,8 @@ class AddOnController extends Controller
         ]);
 
         $validated['slug'] = $validated['type'];
-        $validated['billing_period'] = 'yearly';
+        // Website is a one-time purchase (never expires); Shop is a yearly auto-renewal.
+        $validated['billing_period'] = $validated['type'] === 'website' ? 'lifetime' : 'yearly';
         $validated['status'] = 'active';
 
         if ($request->hasFile('image')) {
