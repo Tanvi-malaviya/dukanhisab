@@ -89,6 +89,7 @@
   "completed": "भुगतान किया",
   "unpaid": "बकाया",
   "partially_paid": "आंशिक भुगतान",
+  "fully_paid": "पूर्ण भुगतान",
   "partially_returned": "आंशिक वापसी",
   "returned": "वापस किया",
   "customer_name": "ग्राहक",

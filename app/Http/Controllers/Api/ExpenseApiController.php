@@ -17,10 +17,13 @@ class ExpenseApiController extends Controller
         $query = CashBook::where('shop_id', $shopId)
             ->where('type', 'cash_out')
             ->where(function ($q) {
+                // Operational expenses (reference_type null/'expense') and purchase payments
+                // (reference_type 'purchase') both belong here. Sales-return refunds
+                // (reference_type 'sale') and cancellation reversals ('sale_cancel') don't —
+                // those are reversed revenue, not a business expense.
                 $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
+                  ->orWhereIn('reference_type', ['expense', 'purchase']);
             })
-            ->where('description', 'not like', 'Purchase:%')
             ->where('description', 'not like', 'Return:%')
             ->where('description', 'not like', 'Reversal:%')
             ->with('expenseCategory');

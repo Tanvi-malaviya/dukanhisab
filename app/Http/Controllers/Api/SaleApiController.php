@@ -273,8 +273,10 @@ class SaleApiController extends Controller
         }
 
         if ($request->has('items')) {
-            if ($sale->status !== 'Completed') {
-                return response()->json(['message' => 'Cannot edit items of a returned sale.'], 400);
+            // Completed/Unpaid/Partially Paid are all still "live" sales — only a return or
+            // cancellation has already reversed stock/dues, which item edits must not re-touch.
+            if (in_array($sale->status, ['Returned', 'Partially Returned', 'Cancelled'])) {
+                return response()->json(['message' => 'Cannot edit items of a ' . strtolower($sale->status) . ' sale.'], 400);
             }
 
             return DB::transaction(function () use ($request, $sale, $shopId) {
@@ -290,11 +292,17 @@ class SaleApiController extends Controller
                     }
                 }
 
-                // Revert old payment effects
+                // Revert old payment effects. Only the portion actually added to the customer's
+                // due at creation (grand_total net of any store credit used) comes back off —
+                // subtracting the full grand_total here would under-count for a sale that was
+                // partially or fully covered by store credit (Partially Paid/Completed credit sales).
                 if ($oldPaymentType === 'Credit' && $oldCustomerId) {
                     $oldCust = Customer::find($oldCustomerId);
                     if ($oldCust) {
-                        $oldCust->decrement('due_amount', $sale->grand_total);
+                        $oldNetDue = max(0, (float) $sale->grand_total - (float) ($sale->store_credit ?? 0));
+                        if ($oldNetDue > 0) {
+                            $oldCust->decrement('due_amount', $oldNetDue);
+                        }
                     }
                 } else {
                     CashBook::where('shop_id', $shopId)
@@ -327,6 +335,19 @@ class SaleApiController extends Controller
                 $sale->subtotal = $request->input('subtotal', $sale->subtotal);
                 $sale->discount = $request->input('discount', $sale->discount);
                 $sale->grand_total = $request->input('grand_total', $sale->grand_total);
+
+                // Re-derive the payment status against the (possibly changed) grand total and the
+                // store credit already applied to this sale, same rule as a brand-new sale — so an
+                // item edit doesn't leave a stale "Unpaid"/"Partially Paid" badge behind.
+                $newNetDue = max(0, (float) $sale->grand_total - (float) ($sale->store_credit ?? 0));
+                if ($sale->payment_type === 'Credit') {
+                    $sale->status = $newNetDue <= 0
+                        ? 'Completed'
+                        : (((float) ($sale->store_credit ?? 0) > 0) ? 'Partially Paid' : 'Unpaid');
+                } else {
+                    $sale->status = 'Completed';
+                }
+
                 $sale->save();
                 // Items were replaced: bump updated_at even if no header column changed, so synced clients re-pull it.
                 $sale->touch();
@@ -334,11 +355,11 @@ class SaleApiController extends Controller
                 $newPaymentType = $sale->payment_type;
                 $newCustomerId = $sale->customer_id;
 
-                // Apply new payment effects
+                // Apply new payment effects (net of any store credit already used on this sale)
                 if ($newPaymentType === 'Credit' && $newCustomerId) {
                     $newCust = Customer::find($newCustomerId);
-                    if ($newCust) {
-                        $newCust->increment('due_amount', $sale->grand_total);
+                    if ($newCust && $newNetDue > 0) {
+                        $newCust->increment('due_amount', $newNetDue);
                     }
                 } elseif ($newPaymentType !== 'Credit') {
                     $methodMap = [
