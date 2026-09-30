@@ -980,6 +980,7 @@
                         if (status === 200 || status === 201) {
                             this.showToast(isEdit ? 'Category updated!' : 'Category created!', 'success');
                             this.expenseCategoryForm = { id: null, name: '' };
+                            this.manageExpenseCategoriesModalOpen = false;
                             this.loadExpenseCategories().then(() => {
                                 if (!isEdit && data && data.id) {
                                     this.newExpense.expense_category_id = data.id;
