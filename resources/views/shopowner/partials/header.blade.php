@@ -48,13 +48,19 @@
                             :class="!n.read ? 'bg-primary/5 dark:bg-primary/10' : ''"
                             class="px-4 py-3 flex items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-gray-700/40 cursor-pointer group">
                             <span class="text-base leading-none mt-0.5" x-text="notificationIcon(n.type)"></span>
-                            <div class="flex-1 min-w-0">
+                            <div class="flex-1 min-w-0 space-y-1">
                                 <div class="flex items-center gap-1.5">
                                     <p class="text-xs font-bold text-slate-800 dark:text-white truncate" x-text="n.title"></p>
                                     <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 whitespace-normal" x-text="n.message"></p>
-                                <p class="text-[10px] text-slate-400 mt-1" x-text="timeAgo(n.created_at)"></p>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 whitespace-normal" x-text="n.message"></p>
+                                {{-- Notification image thumbnail --}}
+                                <template x-if="n.image_url">
+                                    <a :href="n.image_url" target="_blank" @click.stop>
+                                        <img :src="n.image_url" class="mt-1.5 w-full max-h-28 object-cover rounded-lg border border-slate-200 dark:border-gray-600 hover:opacity-90 transition-opacity cursor-zoom-in">
+                                    </a>
+                                </template>
+                                <p class="text-[10px] text-slate-400" x-text="timeAgo(n.created_at)"></p>
                             </div>
                             <button @click.stop="deleteNotification(n)"
                                 class="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-rose-500 transition-all shrink-0" title="Delete">

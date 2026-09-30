@@ -132,8 +132,18 @@
                             <span class="text-sm font-extrabold text-rose-700 dark:text-rose-300 font-mono">
                                 ₹<span x-text="parseFloat(
                                     sale.items.some(i => i.returned_quantity > 0)
-                                        ? sale.items.reduce((sum, item) => sum + (parseFloat(item.returned_quantity) * parseFloat(item.selling_price)), 0)
-                                        : (sale.status === 'Returned' ? sale.items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.selling_price)), 0) : 0)
+                                        ? sale.items.reduce((sum, item) => {
+                                            const origQty = parseFloat(item.quantity) || 1;
+                                            const disc = parseFloat(item.discount) || 0;
+                                            const effPrice = Math.max(0, parseFloat(item.selling_price) - (disc / origQty));
+                                            return sum + (parseFloat(item.returned_quantity || 0) * effPrice);
+                                        }, 0)
+                                        : (sale.status === 'Returned' ? sale.items.reduce((sum, item) => {
+                                            const origQty = parseFloat(item.quantity) || 1;
+                                            const disc = parseFloat(item.discount) || 0;
+                                            const effPrice = Math.max(0, parseFloat(item.selling_price) - (disc / origQty));
+                                            return sum + (parseFloat(item.quantity || 0) * effPrice);
+                                        }, 0) : 0)
                                 ).toFixed(2)"></span>
                             </span>
                         </div>

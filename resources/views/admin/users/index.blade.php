@@ -751,12 +751,14 @@
                     </select>
                 </div>
 
-                <div class="flex rounded-xl border border-border-dark p-1 bg-secondary/20 text-xs font-semibold">
-                    <label class="flex-1 text-center py-1.5 rounded-lg cursor-pointer transition-colors has-[:checked]:bg-primary has-[:checked]:text-white text-slate-400">
-                        <input type="radio" name="mode" value="plan" class="sr-only" checked onchange="onOverridePlanChange()"> Use plan's duration
+                <div class="flex rounded-xl border border-slate-200 dark:border-slate-700 p-1 bg-slate-100 dark:bg-slate-800 text-xs font-semibold gap-1">
+                    <label class="tab-segment flex-1 text-center py-2 px-3 rounded-lg cursor-pointer transition-all duration-150 select-none flex items-center justify-center font-semibold">
+                        <input type="radio" name="mode" value="plan" class="sr-only" checked onchange="onOverridePlanChange()">
+                        <span class="tab-text">Use plan's duration</span>
                     </label>
-                    <label class="flex-1 text-center py-1.5 rounded-lg cursor-pointer transition-colors has-[:checked]:bg-primary has-[:checked]:text-white text-slate-400">
-                        <input type="radio" name="mode" value="custom" class="sr-only" onchange="onOverridePlanChange()"> Custom grant
+                    <label class="tab-segment flex-1 text-center py-2 px-3 rounded-lg cursor-pointer transition-all duration-150 select-none flex items-center justify-center font-semibold">
+                        <input type="radio" name="mode" value="custom" class="sr-only" onchange="onOverridePlanChange()">
+                        <span class="tab-text">Custom grant</span>
                     </label>
                 </div>
 
@@ -798,9 +800,27 @@
             </form>
             <script>
                 function onOverridePlanChange() {
-                    const mode = document.querySelector('#overrideForm input[name="mode"]:checked').value;
+                    const checkedRadio = document.querySelector('#overrideForm input[name="mode"]:checked');
+                    const mode = checkedRadio ? checkedRadio.value : 'plan';
                     const billing = document.getElementById('overridePlanSelect').selectedOptions[0]?.dataset.billing;
                     const neverExpiresByPlan = billing === 'lifetime' || billing === 'free';
+
+                    // Synchronize tab styling
+                    document.querySelectorAll('#overrideForm .tab-segment').forEach(label => {
+                        const input = label.querySelector('input[name="mode"]');
+                        const span = label.querySelector('.tab-text') || label;
+                        if (input && input.checked) {
+                            label.classList.add('active');
+                            label.style.setProperty('background-color', '#0F766E', 'important');
+                            label.style.setProperty('color', '#FFFFFF', 'important');
+                            span.style.setProperty('color', '#FFFFFF', 'important');
+                        } else if (input) {
+                            label.classList.remove('active');
+                            label.style.setProperty('background-color', 'transparent', 'important');
+                            label.style.setProperty('color', '#475569', 'important');
+                            span.style.setProperty('color', '#475569', 'important');
+                        }
+                    });
 
                     document.getElementById('overridePlanModeFields').classList.toggle('hidden', mode !== 'plan');
                     document.getElementById('overrideCustomModeFields').classList.toggle('hidden', mode !== 'custom');
@@ -810,6 +830,7 @@
                     const customNeverExpires = document.getElementById('overrideNeverExpiresCheck').checked;
                     document.getElementById('overrideCustomDaysField').classList.toggle('hidden', mode === 'custom' && customNeverExpires);
                 }
+                document.addEventListener('DOMContentLoaded', onOverridePlanChange);
             </script>
         </div>
     </div>

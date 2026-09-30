@@ -69,6 +69,68 @@ html:not(.dark) div.text-white {
     color: #0F172A !important;
 }
 
+/* Preserve white text for primary colored surfaces, buttons, and segmented tabs in light mode */
+html:not(.dark) .bg-primary,
+html:not(.dark) .bg-primary *,
+html:not(.dark) [class*="bg-primary"],
+html:not(.dark) [class*="bg-primary"] *,
+html:not(.dark) .tab-segment:has(input:checked),
+html:not(.dark) .tab-segment:has(input:checked) *,
+html:not(.dark) .tab-segment.active,
+html:not(.dark) .tab-segment.active * {
+    color: #FFFFFF !important;
+}
+
+/* Modal Segmented Tab Controls */
+.tab-segment {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    background-color: transparent !important;
+    color: #475569 !important;
+    user-select: none;
+}
+
+.tab-segment:hover:not(:has(input:checked)) {
+    color: #0F172A !important;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.tab-segment:has(input:checked),
+.tab-segment.active {
+    background-color: #0F766E !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 1px 3px 0 rgba(15, 118, 110, 0.3), 0 1px 2px -1px rgba(15, 118, 110, 0.2);
+}
+
+.tab-segment:has(input:checked) span,
+.tab-segment.active span {
+    color: #FFFFFF !important;
+}
+
+.dark .tab-segment {
+    color: #94A3B8 !important;
+}
+
+.dark .tab-segment:hover:not(:has(input:checked)) {
+    color: #F8FAFC !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark .tab-segment:has(input:checked),
+.dark .tab-segment.active {
+    background-color: #0F766E !important;
+    color: #FFFFFF !important;
+}
+
 /* Dashboard Multi-colored Metric Cards & Icon Styling - Light mode */
 html:not(.dark) .card-purchase {
     background-color: #EFF6FF !important; /* soft blue-50 */

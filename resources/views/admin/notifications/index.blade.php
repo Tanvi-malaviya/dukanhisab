@@ -20,7 +20,7 @@
                     Create Broadcast Campaign
                 </div>
 
-                <form action="{{ route('admin.notifications.send') }}" method="POST" class="p-6 space-y-5">
+                <form action="{{ route('admin.notifications.send') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5" id="broadcastForm">
                     @csrf
 
                     <div>
@@ -30,12 +30,57 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Announcement Message
-                            Content</label>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Announcement Message Content</label>
                         <textarea name="message" required rows="4"
                             placeholder="Enter short, informative summary here (Max 1000 characters)..."
                             class="block w-full px-3.5 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white placeholder-slate-500"></textarea>
                     </div>
+
+                    {{-- Image Upload --}}
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">
+                            Notification Image
+                            <span class="text-slate-500 normal-case font-normal">(Optional — shown to shop owners in the bell panel)</span>
+                        </label>
+
+                        {{-- Drop/Click Zone --}}
+                        <label for="notif_image_input" class="cursor-pointer block" id="notif_upload_label">
+                            {{-- Before selection: dashed upload zone --}}
+                            <div id="notif_upload_placeholder"
+                                class="w-full h-28 rounded-xl border-2 border-dashed border-border-dark hover:border-primary/60 bg-secondary/20 flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-primary transition-colors">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <div class="text-center">
+                                    <p class="text-xs font-semibold">Click to upload image</p>
+                                    <p class="text-[10px] text-slate-600 mt-0.5">JPG, PNG, GIF, WEBP &bull; Max 2MB &bull; Recommended 800×400px</p>
+                                </div>
+                            </div>
+
+                            {{-- After selection: image preview --}}
+                            <div id="notif_preview_box" class="hidden relative rounded-xl overflow-hidden border-2 border-primary/40 bg-black/20">
+                                <img id="notif_img_preview" src="" alt="Preview" class="w-full max-h-48 object-cover block">
+                                <div class="absolute top-0 left-0 right-0 px-3 py-1.5 bg-black/50 flex items-center justify-between">
+                                    <span class="text-[11px] text-white font-semibold flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        Image selected
+                                    </span>
+                                    <span id="notif_file_name" class="text-[10px] text-slate-300 truncate max-w-[200px]"></span>
+                                </div>
+                            </div>
+                        </label>
+                        <input type="file" name="image" id="notif_image_input" accept="image/*" class="hidden" onchange="previewNotifImage(this)">
+
+                        <div class="flex items-center justify-between mt-2">
+                            <p class="text-[10px] text-slate-600">Image will appear as a banner in the notification card on the shop owner's web panel.</p>
+                            <button type="button" onclick="clearNotifImage()" id="notif_img_clear_btn"
+                                class="hidden text-[11px] text-rose-400 hover:text-rose-600 font-semibold transition-colors flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                Remove image
+                            </button>
+                        </div>
+                    </div>
+
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -126,6 +171,7 @@
                                 <th class="px-4 py-2.5">Recipient Name</th>
                                 <th class="px-4 py-2.5">Campaign Title</th>
                                 <th class="px-4 py-2.5">Message payload</th>
+                                <th class="px-4 py-2.5">Image</th>
                                 <th class="px-4 py-2.5 text-right">Category</th>
                             </tr>
                         </thead>
@@ -145,6 +191,15 @@
                                         title="{{ $notif->data['message'] ?? '' }}">
                                         {{ $notif->data['message'] ?? '' }}
                                     </td>
+                                    <td class="px-4 py-2">
+                                        @if(!empty($notif->data['image_url']))
+                                            <a href="{{ $notif->data['image_url'] }}" target="_blank">
+                                                <img src="{{ $notif->data['image_url'] }}" class="h-8 w-14 object-cover rounded-lg border border-border-dark hover:opacity-80 transition-opacity" title="View notification image">
+                                            </a>
+                                        @else
+                                            <span class="text-slate-600 text-xs">—</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-2 text-right whitespace-nowrap flex items-center justify-end gap-2.5">
                                         <span
                                             class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider
@@ -152,7 +207,7 @@
                                             {{ $notif->data['type'] ?? 'Broadcast' }}
                                         </span>
                                         <button
-                                            onclick="showNotifModal({{ json_encode($notif->data['title'] ?? '') }}, {{ json_encode($notif->data['message'] ?? '') }}, '{{ Carbon\Carbon::parse($notif->created_at)->format('Y-m-d') }}', {{ json_encode($notif->recipient_name ?? 'Unknown User') }}, '{{ $notif->data['type'] ?? 'Broadcast' }}')"
+                                            onclick="showNotifModal({{ json_encode($notif->data['title'] ?? '') }}, {{ json_encode($notif->data['message'] ?? '') }}, '{{ Carbon\Carbon::parse($notif->created_at)->format('Y-m-d') }}', {{ json_encode($notif->recipient_name ?? 'Unknown User') }}, '{{ $notif->data['type'] ?? 'Broadcast' }}', {{ json_encode($notif->data['image_url'] ?? '') }})"
                                             class="p-1 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors cursor-pointer"
                                             title="View Full Message">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2"
@@ -238,6 +293,14 @@
                     <textarea id="modal-message" readonly rows="4"
                         class="block w-full px-3 py-1.5 bg-secondary/40 border border-border-dark focus:outline-none rounded-xl text-sm text-white cursor-default select-all resize-none"></textarea>
                 </div>
+
+                {{-- Notification Image Preview --}}
+                <div id="modal-image-wrap" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Notification Image</label>
+                    <a id="modal-image-link" href="#" target="_blank" class="block">
+                        <img id="modal-image" src="" class="w-full max-h-48 object-cover rounded-xl border border-border-dark hover:opacity-90 transition-opacity">
+                    </a>
+                </div>
             </div>
 
             <!-- Footer -->
@@ -247,30 +310,65 @@
         </div>
     </div>
 
-    <script>
-        function showNotifModal(title, message, date, recipient, type) {
-            document.getElementById('modal-title').value = title;
-            document.getElementById('modal-message').value = message;
-            document.getElementById('modal-date').value = date;
-            document.getElementById('modal-recipient').value = recipient;
 
-            const badge = document.getElementById('modal-type-badge');
-            badge.innerText = type;
-            badge.className = 'inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ';
+<script>
+    function showNotifModal(title, message, date, recipient, type, imageUrl) {
+        document.getElementById('modal-title').value = title;
+        document.getElementById('modal-message').value = message;
+        document.getElementById('modal-date').value = date;
+        document.getElementById('modal-recipient').value = recipient;
 
-            if (type === 'maintenance') {
-                badge.classList.add('bg-warning/20', 'text-warning');
-            } else if (type === 'promotional') {
-                badge.classList.add('bg-success/20', 'text-success');
-            } else {
-                badge.classList.add('bg-info/20', 'text-info');
-            }
-
-            document.getElementById('notif-detail-modal').classList.remove('hidden');
+        const badge = document.getElementById('modal-type-badge');
+        badge.innerText = type;
+        badge.className = 'inline-flex px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ';
+        if (type === 'maintenance') {
+            badge.classList.add('bg-warning/20', 'text-warning');
+        } else if (type === 'promotional') {
+            badge.classList.add('bg-success/20', 'text-success');
+        } else {
+            badge.classList.add('bg-info/20', 'text-info');
         }
 
-        function closeNotifModal() {
-            document.getElementById('notif-detail-modal').classList.add('hidden');
+        const imgWrap = document.getElementById('modal-image-wrap');
+        const imgEl   = document.getElementById('modal-image');
+        const imgLink = document.getElementById('modal-image-link');
+        if (imageUrl) {
+            imgEl.src = imageUrl;
+            imgLink.href = imageUrl;
+            imgWrap.classList.remove('hidden');
+        } else {
+            imgWrap.classList.add('hidden');
+            imgEl.src = '';
         }
-    </script>
+        document.getElementById('notif-detail-modal').classList.remove('hidden');
+    }
+
+    function closeNotifModal() {
+        document.getElementById('notif-detail-modal').classList.add('hidden');
+    }
+
+    function previewNotifImage(input) {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            document.getElementById('notif_upload_placeholder').classList.add('hidden');
+            document.getElementById('notif_preview_box').classList.remove('hidden');
+            document.getElementById('notif_img_preview').src = e.target.result;
+            document.getElementById('notif_file_name').textContent = file.name;
+            document.getElementById('notif_img_clear_btn').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearNotifImage() {
+        document.getElementById('notif_image_input').value = '';
+        document.getElementById('notif_img_preview').src = '';
+        document.getElementById('notif_file_name').textContent = '';
+        document.getElementById('notif_preview_box').classList.add('hidden');
+        document.getElementById('notif_upload_placeholder').classList.remove('hidden');
+        document.getElementById('notif_img_clear_btn').classList.add('hidden');
+    }
+</script>
+
 @endsection

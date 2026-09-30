@@ -24,4 +24,14 @@ class SupportTicket extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function messages()
+    {
+        return $this->hasMany(SupportTicketMessage::class, 'support_ticket_id')->orderBy('created_at', 'asc');
+    }
+
+    public function getScreenshotUrlAttribute()
+    {
+        return $this->screenshot ? asset('storage/' . $this->screenshot) : null;
+    }
 }

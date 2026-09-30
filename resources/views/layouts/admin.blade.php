@@ -65,7 +65,7 @@
             <!-- Navigation Links -->
             <div class="flex-1 flex flex-col overflow-y-auto px-3 py-5 space-y-4">
                 @php
-                    $route = Request::route()->getName();
+                    $route = Request::route()?->getName() ?? '';
                     // Section, item: [route, icon path, label, active-when]. One data-driven list instead of
                     // 20 hand-written <a> tags — the thing every admin screen has in common is this nav, so
                     // it's the highest-leverage place to make the panel consistent and easy to scan.
@@ -91,6 +91,7 @@
                             ['admin.settings.app', 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z', 'App Config', 'settings.app'],
                             ['admin.settings.invoice', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'Invoice Layout', 'settings.invoice'],
                             ['admin.settings.payment', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', 'Payment Gateway', 'settings.payment'],
+                            ['admin.settings.translations', 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129', 'Translations', 'settings.translations'],
                             ['admin.backups.index', 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', 'Database Backups', 'admin.backups'],
                             ['admin.logs.index', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'Audit Trails', 'admin.logs'],
                         ],
