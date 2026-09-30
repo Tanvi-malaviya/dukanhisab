@@ -69,11 +69,13 @@ html:not(.dark) div.text-white {
     color: #0F172A !important;
 }
 
-/* Preserve white text for primary colored surfaces, buttons, and segmented tabs in light mode */
-html:not(.dark) .bg-primary,
-html:not(.dark) .bg-primary *,
-html:not(.dark) [class*="bg-primary"],
-html:not(.dark) [class*="bg-primary"] *,
+/* Preserve white text for primary solid buttons, badges, and segmented tabs in light mode */
+html:not(.dark) button.bg-primary:not([class*="/"]),
+html:not(.dark) button.bg-primary:not([class*="/"]) *,
+html:not(.dark) a.bg-primary:not([class*="/"]),
+html:not(.dark) a.bg-primary:not([class*="/"]) *,
+html:not(.dark) .btn-primary,
+html:not(.dark) .btn-primary *,
 html:not(.dark) .tab-segment:has(input:checked),
 html:not(.dark) .tab-segment:has(input:checked) *,
 html:not(.dark) .tab-segment.active,
