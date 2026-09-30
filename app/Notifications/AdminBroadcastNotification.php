@@ -11,16 +11,18 @@ class AdminBroadcastNotification extends Notification
 
     public string $title;
     public string $message;
-    public string $type; // promo, maintenance, feature
+    public string $type;
+    public ?string $imageUrl;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct(string $title, string $message, string $type)
+    public function __construct(string $title, string $message, string $type, ?string $imageUrl = null)
     {
-        $this->title = $title;
-        $this->message = $message;
-        $this->type = $type;
+        $this->title    = $title;
+        $this->message  = $message;
+        $this->type     = $type;
+        $this->imageUrl = $imageUrl;
     }
 
     /**
@@ -40,11 +42,17 @@ class AdminBroadcastNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
-        return [
-            'title' => $this->title,
-            'message' => $this->message,
-            'type' => $this->type,
-            'sent_at' => now()->toDateTimeString(),
+        $data = [
+            'title'    => $this->title,
+            'message'  => $this->message,
+            'type'     => $this->type,
+            'sent_at'  => now()->toDateTimeString(),
         ];
+
+        if ($this->imageUrl) {
+            $data['image_url'] = $this->imageUrl;
+        }
+
+        return $data;
     }
 }

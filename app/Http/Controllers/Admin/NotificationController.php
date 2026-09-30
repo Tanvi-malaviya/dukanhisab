@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Notifications\AdminBroadcastNotification;
 use Illuminate\Support\Facades\DB;
 use App\Models\AuditLog;
+use Illuminate\Support\Facades\Storage;
 
 class NotificationController extends Controller
 {
@@ -39,16 +40,24 @@ class NotificationController extends Controller
     public function send(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
+            'title'   => 'required|string|max:255',
             'message' => 'required|string|max:1000',
-            'type' => 'required|in:promotional,maintenance,new_feature',
-            'target' => 'required|in:all,free,premium',
+            'type'    => 'required|in:promotional,maintenance,new_feature',
+            'target'  => 'required|in:all,free,premium',
+            'image'   => 'nullable|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
         ]);
 
-        $title = $request->input('title');
+        $title   = $request->input('title');
         $message = $request->input('message');
-        $type = $request->input('type');
-        $target = $request->input('target');
+        $type    = $request->input('type');
+        $target  = $request->input('target');
+
+        // Handle optional image upload
+        $imageUrl = null;
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $path = $request->file('image')->store('notifications', 'public');
+            $imageUrl = Storage::url($path);
+        }
 
         $query = User::query();
 
@@ -70,15 +79,16 @@ class NotificationController extends Controller
         }
 
         // Chunk process notifications for scalability
-        $query->chunk(100, function ($users) use ($title, $message, $type) {
+        $query->chunk(100, function ($users) use ($title, $message, $type, $imageUrl) {
             foreach ($users as $user) {
-                $user->notify(new AdminBroadcastNotification($title, $message, $type));
+                $user->notify(new AdminBroadcastNotification($title, $message, $type, $imageUrl));
             }
         });
 
         AuditLog::log("Dispatched broadcast notification: {$title} to target segment: {$target}", [
-            'type' => $type,
-            'recipient_count' => $usersCount
+            'type'            => $type,
+            'recipient_count' => $usersCount,
+            'has_image'       => !is_null($imageUrl),
         ]);
 
         return back()->with('success', "Notification dispatched successfully to {$usersCount} users.");

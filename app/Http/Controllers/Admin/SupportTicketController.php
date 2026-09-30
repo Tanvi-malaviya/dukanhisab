@@ -12,7 +12,7 @@ class SupportTicketController extends Controller
 {
     public function index(Request $request)
     {
-        $query = SupportTicket::with('user');
+        $query = SupportTicket::with(['user', 'messages.senderAdmin', 'messages.senderUser']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
@@ -35,7 +35,14 @@ class SupportTicketController extends Controller
 
         $tickets = $query->latest()->paginate(10)->withQueryString();
 
-        return view('admin.support.index', compact('tickets'));
+        $stats = [
+            'total' => SupportTicket::count(),
+            'open' => SupportTicket::where('status', 'open')->count(),
+            'in_progress' => SupportTicket::whereIn('status', ['inProgress', 'pending'])->count(),
+            'resolved' => SupportTicket::whereIn('status', ['resolved', 'closed'])->count(),
+        ];
+
+        return view('admin.support.index', compact('tickets', 'stats'));
     }
 
     public function reply(Request $request, $id)
@@ -43,17 +50,37 @@ class SupportTicketController extends Controller
         $ticket = SupportTicket::findOrFail($id);
 
         $request->validate([
-            'admin_reply' => 'required|string|max:2000',
+            'admin_reply' => 'required|string|max:5000',
+            'status' => 'nullable|string|in:open,pending,inProgress,resolved,closed',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf,doc,docx,xls,xlsx,zip|max:10240',
         ]);
 
+        $admin = auth('admin')->user();
+        $adminReplyText = $request->input('admin_reply');
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('support-tickets', 'public');
+        }
+
+        // Create message in conversation thread
+        $ticket->messages()->create([
+            'sender_type' => 'admin',
+            'sender_id' => $admin?->id,
+            'message' => $adminReplyText,
+            'attachment' => $attachmentPath,
+        ]);
+
+        $status = $request->input('status', ($ticket->status === 'open' ? 'inProgress' : $ticket->status));
+
         $ticket->update([
-            'admin_reply' => $request->input('admin_reply'),
-            'status' => 'inProgress',
+            'admin_reply' => $adminReplyText,
+            'status' => $status,
             'replied_at' => now(),
         ]);
 
         $ticket->load('user');
-        if ($ticket->user) {
+        if ($ticket->user && !empty($ticket->user->email)) {
             try {
                 Mail::send('shopowner.emails.support-ticket-replied', [
                     'user' => $ticket->user,
@@ -69,7 +96,7 @@ class SupportTicketController extends Controller
 
         AuditLog::log("Replied to support ticket #{$ticket->id} (Subject: {$ticket->subject})");
 
-        return back()->with('success', 'Reply submitted and ticket status updated to In Progress.');
+        return back()->with('success', 'Reply submitted successfully.');
     }
 
     public function updateStatus($id, $status)

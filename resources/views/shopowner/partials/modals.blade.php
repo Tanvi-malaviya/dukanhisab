@@ -1858,13 +1858,13 @@
     </div>
 </div>
 
-{{-- MODAL: View Ticket Details & Admin Reply --}}
-<div x-show="viewTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
-    <div @click.outside="viewTicketModal = false" class="bg-white dark:bg-gray-800 rounded-3xl max-w-xl w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+{{-- MODAL: View Ticket Details & Multi-Message Conversation Thread --}}
+<div x-show="viewTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/55 backdrop-blur-sm" x-cloak>
+    <div @click.outside="viewTicketModal = false" class="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[92vh]">
         <template x-if="selectedTicket">
-            <div>
+            <div class="flex flex-col h-full min-h-0">
                 {{-- Header --}}
-                <div class="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-2">
                         <span class="text-xs font-extrabold text-slate-400" x-text="'Ticket #' + selectedTicket.id"></span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
@@ -1880,24 +1880,27 @@
                     </button>
                 </div>
 
-                {{-- Body with Message Bubbles --}}
-                <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {{-- Scrollable Conversation Thread --}}
+                <div class="p-4 space-y-2.5 overflow-y-auto flex-1">
                     {{-- Ticket Subject --}}
-                    <div class="pb-3 border-b border-slate-100 dark:border-gray-700/50">
+                    <div class="pb-2 border-b border-slate-100 dark:border-gray-700/50">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('ticket_subject') || 'Subject'">Subject</span>
                         <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5" x-text="selectedTicket.subject"></h4>
                     </div>
 
-                    {{-- User Message --}}
-                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-700/40 border border-slate-100 dark:border-gray-700 space-y-2">
+                    {{-- Original User Issue --}}
+                    <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-gray-700/40 border border-slate-100 dark:border-gray-700 space-y-1">
                         <div class="flex items-center justify-between text-xs">
-                            <span class="font-bold text-slate-700 dark:text-slate-200" x-text="t('your_message') || 'Your Issue Description'">Your Issue Description</span>
+                            <span class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+                                <span class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">You</span>
+                                <span x-text="t('your_message') || 'Initial Issue Description'">Initial Issue Description</span>
+                            </span>
                             <span class="text-[10px] text-slate-400" x-text="formatDateTime(selectedTicket.created_at)"></span>
                         </div>
                         <p class="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed" x-text="selectedTicket.message"></p>
 
                         <template x-if="selectedTicket.screenshot">
-                            <div class="mt-3 pt-3 border-t border-slate-200 dark:border-gray-600">
+                            <div class="mt-2 pt-2 border-t border-slate-200 dark:border-gray-600">
                                 <span class="block text-[10px] font-semibold text-slate-400 mb-1.5">Attached Image / Screenshot:</span>
                                 <a :href="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" target="_blank" class="inline-block rounded-xl overflow-hidden border border-slate-200 dark:border-gray-600 max-h-48 hover:opacity-95 transition-opacity">
                                     <img :src="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" class="max-h-48 max-w-full object-contain bg-black/5 dark:bg-white/5">
@@ -1906,30 +1909,161 @@
                         </template>
                     </div>
 
-                    {{-- Admin Reply Section --}}
-                    <template x-if="selectedTicket.admin_reply">
-                        <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2">
+                    {{-- Dynamic Conversation History (Messages Thread) --}}
+                    <template x-if="selectedTicket.messages && selectedTicket.messages.length > 0">
+                        <div class="space-y-2">
+                            <template x-for="msg in selectedTicket.messages" :key="msg.id">
+                                <div>
+                                    {{-- Admin Message Bubble --}}
+                                    <template x-if="msg.sender_type === 'admin'">
+                                        <div class="p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
+                                            <div class="flex items-center justify-between text-xs">
+                                                <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                    <span x-text="msg.sender_name || 'Support Team'">Support Team</span>
+                                                </div>
+                                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-mono" x-text="formatDateTime(msg.created_at)"></span>
+                                            </div>
+                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="msg.message"></p>
+                                            <template x-if="msg.attachment">
+                                                <div class="mt-1.5 pt-1.5 border-t border-emerald-200/60 dark:border-emerald-800/50 space-y-1.5">
+                                                    {{-- PDF chip --}}
+                                                    <template x-if="msg.attachment.toLowerCase().endsWith('.pdf')">
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank"
+                                                            class="inline-flex items-center gap-1.5 text-[11px] text-emerald-800 dark:text-emerald-300 hover:underline font-semibold bg-white/80 dark:bg-gray-800/80 border border-emerald-200 dark:border-emerald-700/80 px-2.5 py-1 rounded-lg">
+                                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+                                                            <span>View Attached PDF</span>
+                                                        </a>
+                                                    </template>
+                                                    {{-- Image thumbnail --}}
+                                                    <template x-if="!msg.attachment.toLowerCase().endsWith('.pdf')">
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank" class="inline-block">
+                                                            <img :src="msg.attachment_url || ('/storage/' + msg.attachment)" class="h-14 w-auto rounded-lg border border-emerald-200 dark:border-emerald-700 object-cover shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in" title="Click to view full image">
+                                                        </a>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    {{-- User Follow-up Message Bubble --}}
+                                    <template x-if="msg.sender_type === 'user'">
+                                        <div class="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1">
+                                            <div class="flex items-center justify-between text-xs">
+                                                <span class="font-bold text-primary dark:text-primary-light flex items-center gap-1.5">
+                                                    <span class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">You</span>
+                                                    <span>Follow-up Reply</span>
+                                                </span>
+                                                <span class="text-[10px] text-slate-400 font-mono" x-text="formatDateTime(msg.created_at)"></span>
+                                            </div>
+                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="msg.message"></p>
+                                            <template x-if="msg.attachment">
+                                                <div class="mt-1.5 pt-1.5 border-t border-primary/10 space-y-1.5">
+                                                    {{-- PDF chip --}}
+                                                    <template x-if="msg.attachment.toLowerCase().endsWith('.pdf')">
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank"
+                                                            class="inline-flex items-center gap-1.5 text-[11px] text-primary hover:underline font-semibold bg-white/80 dark:bg-gray-800/80 border border-primary/20 px-2.5 py-1 rounded-lg">
+                                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+                                                            <span>View Attached PDF</span>
+                                                        </a>
+                                                    </template>
+                                                    {{-- Image thumbnail --}}
+                                                    <template x-if="!msg.attachment.toLowerCase().endsWith('.pdf')">
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank" class="inline-block">
+                                                            <img :src="msg.attachment_url || ('/storage/' + msg.attachment)" class="h-14 w-auto rounded-lg border border-primary/20 object-cover shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in" title="Click to view full image">
+                                                        </a>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- Legacy Admin Reply Fallback (for older tickets without messages table rows) --}}
+                    <template x-if="(!selectedTicket.messages || selectedTicket.messages.length === 0) && selectedTicket.admin_reply">
+                        <div class="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
                             <div class="flex items-center justify-between text-xs">
                                 <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     <span x-text="t('admin_reply') || 'Support Team Response'">Support Team Response</span>
                                 </div>
-                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400" x-text="selectedTicket.replied_at ? formatDateTime(selectedTicket.replied_at) : ''"></span>
+                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-mono" x-text="selectedTicket.replied_at ? formatDateTime(selectedTicket.replied_at) : ''"></span>
                             </div>
                             <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="selectedTicket.admin_reply"></p>
                         </div>
                     </template>
 
-                    <template x-if="!selectedTicket.admin_reply">
+                    {{-- Waiting Indicator (if no admin reply yet) --}}
+                    <template x-if="(!selectedTicket.messages || selectedTicket.messages.filter(m => m.sender_type === 'admin').length === 0) && !selectedTicket.admin_reply">
                         <div class="py-2.5 px-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0"></span>
-                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300" x-text="t('waiting_for_reply') || 'Waiting for support response...'">Waiting for support response...</span>
+                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300" x-text="t('waiting_for_reply') || 'Waiting for support team response...'">Waiting for support team response...</span>
+                        </div>
+                    </template>
+
+                    {{-- Send Follow-up Message Section (Active if ticket is not closed) --}}
+                    <template x-if="selectedTicket.status !== 'closed'">
+                        <div class="mt-2 pt-2.5 border-t border-slate-200 dark:border-gray-700 space-y-1.5">
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                                <span>Send Follow-up</span>
+                            </label>
+
+                            <textarea x-model="ticketReplyForm.message" rows="2"
+                                placeholder="Type your follow-up reply..."
+                                class="w-full px-3 py-2 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-xs text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all resize-none"></textarea>
+
+                            {{-- Attachment preview --}}
+                            <template x-if="ticketReplyForm.attachment">
+                                <div class="flex items-center gap-2">
+                                    <template x-if="ticketReplyForm.attachmentPreview">
+                                        <div class="relative inline-block">
+                                            <img :src="ticketReplyForm.attachmentPreview" class="h-12 w-auto rounded-lg border border-slate-200 object-cover shadow-sm">
+                                            <button type="button" @click="ticketReplyForm.attachment = null; ticketReplyForm.attachmentPreview = null; document.getElementById('ticketReplyFileInput').value=''" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold hover:bg-rose-600 leading-none">&times;</button>
+                                        </div>
+                                    </template>
+                                    <template x-if="!ticketReplyForm.attachmentPreview">
+                                        <div class="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-lg px-2 py-1">
+                                            <svg class="w-3.5 h-3.5 text-rose-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+                                            <span class="text-[11px] text-rose-700 font-medium truncate max-w-[120px]" x-text="ticketReplyForm.attachment.name"></span>
+                                            <button type="button" @click="ticketReplyForm.attachment = null; document.getElementById('ticketReplyFileInput').value=''" class="text-rose-400 hover:text-rose-600 font-bold ml-0.5">&times;</button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <div class="flex items-center justify-between gap-2">
+                                <label class="px-2.5 py-1.5 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium cursor-pointer flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-gray-600">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                    <span>Attach</span>
+                                    <input type="file" id="ticketReplyFileInput" @change="handleTicketReplyFile($event)" accept="image/*,application/pdf" class="hidden">
+                                </label>
+
+                                <button type="button" @click="sendTicketReply(selectedTicket.id)"
+                                    :disabled="sendingTicketReply || !ticketReplyForm.message || !ticketReplyForm.message.trim()"
+                                    class="px-4 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
+                                    <svg x-show="sendingTicketReply" class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <svg x-show="!sendingTicketReply" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                    <span x-text="sendingTicketReply ? 'Sending...' : 'Send'">Send</span>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Closed Notice (if ticket is closed) --}}
+                    <template x-if="selectedTicket.status === 'closed'">
+                        <div class="mt-2 p-2.5 rounded-xl bg-slate-100 dark:bg-gray-700/60 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <span>This ticket has been closed. If you have any further questions or new issues, please create a new ticket.</span>
                         </div>
                     </template>
                 </div>
 
                 {{-- Footer --}}
-                <div class="px-6 py-3.5 border-t border-slate-100 dark:border-gray-700 flex justify-end">
+                <div class="px-4 py-2.5 border-t border-slate-100 dark:border-gray-700 flex justify-end shrink-0 bg-slate-50/50 dark:bg-gray-800">
                     <button type="button" @click="viewTicketModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all">
                         Close
                     </button>

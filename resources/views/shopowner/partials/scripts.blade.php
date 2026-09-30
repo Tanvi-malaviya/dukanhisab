@@ -205,6 +205,31 @@
                 return timePart ? `${datePart} ${timePart}` : datePart;
             },
 
+            formatChatTime(dateVal) {
+                if (!dateVal) return '';
+                try {
+                    const d = (dateVal instanceof Date) ? dateVal : new Date(typeof dateVal === 'string' && !dateVal.includes('T') ? dateVal.replace(' ', 'T') : dateVal);
+                    if (isNaN(d.getTime())) return '';
+                    const now = new Date();
+                    const isToday = d.toDateString() === now.toDateString();
+                    
+                    let hours = d.getHours();
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12 || 12;
+                    const timeStr = `${hours}:${minutes} ${ampm}`;
+
+                    if (isToday) {
+                        return timeStr;
+                    }
+                    const day = d.getDate();
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    return `${day} ${months[d.getMonth()]}, ${timeStr}`;
+                } catch(e) {
+                    return '';
+                }
+            },
+
             // Auth States
             token: localStorage.getItem('shopowner_token') || localStorage.getItem('token'),
             user: JSON.parse(localStorage.getItem('shopowner_user') || 'null'),
@@ -311,6 +336,8 @@
             selectedTicket: null,
             ticketForm: { subject: '', message: '', screenshot: null, screenshotPreview: null },
             submittingTicket: false,
+            ticketReplyForm: { message: '', attachment: null, attachmentPreview: null },
+            sendingTicketReply: false,
             // Notification inbox (fed by the admin's Broadcast Center)
             notifications: [],
             notificationsLoading: false,
@@ -2598,7 +2625,77 @@
 
             openTicketDetails(ticket) {
                 this.selectedTicket = ticket;
+                this.ticketReplyForm = { message: '', attachment: null, attachmentPreview: null };
+                const input = document.getElementById('ticketReplyFileInput');
+                if (input) input.value = '';
                 this.viewTicketModal = true;
+            },
+
+            handleTicketReplyFile(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    this.ticketReplyForm.attachment = null;
+                    this.ticketReplyForm.attachmentPreview = null;
+                    return;
+                }
+                this.ticketReplyForm.attachment = file;
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.ticketReplyForm.attachmentPreview = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.ticketReplyForm.attachmentPreview = null;
+                }
+            },
+
+            sendTicketReply(ticketId) {
+                if (!this.ticketReplyForm.message || !this.ticketReplyForm.message.trim()) {
+                    this.showToast('Please type your reply message.', 'error');
+                    return;
+                }
+
+                this.sendingTicketReply = true;
+                const fd = new FormData();
+                fd.append('message', this.ticketReplyForm.message.trim());
+                if (this.ticketReplyForm.attachment) {
+                    fd.append('attachment', this.ticketReplyForm.attachment);
+                }
+
+                fetch('/api/v1/shopowner/support-tickets/' + ticketId + '/reply', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + this.token,
+                        'X-Shop-ID': this.shop ? this.shop.id : '',
+                        'X-Locale': this.currentLang || 'en'
+                    },
+                    body: fd
+                })
+                    .then(async r => {
+                        const data = await r.json();
+                        return { ok: r.ok, status: r.status, data };
+                    })
+                    .then(res => {
+                        this.sendingTicketReply = false;
+                        if (res.ok) {
+                            this.showToast('Reply sent successfully!');
+                            this.ticketReplyForm = { message: '', attachment: null, attachmentPreview: null };
+                            const input = document.getElementById('ticketReplyFileInput');
+                            if (input) input.value = '';
+                            if (res.data.ticket) {
+                                this.selectedTicket = res.data.ticket;
+                            }
+                            this.loadSupportTickets();
+                        } else {
+                            this.showToast(res.data.message || 'Failed to send reply.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.sendingTicketReply = false;
+                        this.showToast('Error sending reply.', 'error');
+                    });
             },
 
             deleteTicket(id) {
