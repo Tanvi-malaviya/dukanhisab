@@ -475,10 +475,12 @@ class ScenarioCoverageTest extends TestCase
         $this->withHeaders($this->h())->deleteJson("/api/v1/cashbooks/{$sysId}")->assertStatus(400);
     }
 
-    public function test_bank_accounts_endpoint_is_read_only(): void
+    public function test_bank_accounts_can_be_created_and_listed(): void
     {
+        // Real, shop-owned bank accounts (see BankAccountTest.php for the full behaviour) — this
+        // just confirms the endpoint is wired into this shop's normal scoping.
         $this->withHeaders($this->h())->getJson('/api/v1/bank-accounts')->assertStatus(200);
-        $this->withHeaders($this->h())->postJson('/api/v1/bank-accounts', ['name' => 'x'])->assertStatus(400);
+        $this->withHeaders($this->h())->postJson('/api/v1/bank-accounts', ['name' => 'x'])->assertStatus(201);
     }
 
     // ----------------------------------------------- Reports and dashboard

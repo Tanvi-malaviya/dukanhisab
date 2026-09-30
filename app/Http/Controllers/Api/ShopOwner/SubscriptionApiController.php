@@ -123,6 +123,12 @@ class SubscriptionApiController extends Controller
             return response()->json(['message' => 'Subscription plan not found.'], 404);
         }
 
+        // The admin's "Gateway Enable/Disable" toggle (Admin > Settings > Payment Gateway) only
+        // ever set the runtime config; nothing actually checked it before this.
+        if (!config('services.razorpay.enabled', true)) {
+            return response()->json(['message' => 'Payments are temporarily unavailable. Please try again later.'], 503);
+        }
+
         if ($plan->slug === 'business') {
             $user->load(['activePlan']);
             $hasLifetimeActive = ($user->activePlan && $user->activePlan->slug === 'business');
@@ -204,6 +210,13 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        // Free is always allowed — it downgrades locally and never touches the gateway. The
+        // admin's "Gateway Enable/Disable" toggle (Admin > Settings > Payment Gateway) only ever
+        // set the runtime config; nothing actually checked it before this.
+        if ($plan->slug !== 'free' && !config('services.razorpay.enabled', true)) {
+            return response()->json(['message' => 'Payments are temporarily unavailable. Please try again later.'], 503);
         }
 
         if ($plan->slug === 'business') {

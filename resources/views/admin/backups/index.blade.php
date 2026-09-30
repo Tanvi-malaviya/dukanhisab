@@ -5,9 +5,14 @@
 
 @section('content')
 <div class="space-y-2">
-    
-    <!-- Actions Area -->
-    <div class="flex justify-end">
+
+    <!-- Summary + Actions -->
+    <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-4 text-xs text-slate-400">
+            <span><span class="text-white font-bold">{{ $files->count() }}</span> archive{{ $files->count() === 1 ? '' : 's' }} stored</span>
+            <span class="w-px h-4 bg-border-dark"></span>
+            <span><span class="text-white font-bold">{{ $totalSize }}</span> total</span>
+        </div>
         <form action="{{ route('admin.backups.create') }}" method="POST">
             @csrf
             <x-button type="submit" variant="primary">Generate Backup Archive</x-button>
@@ -18,8 +23,8 @@
     <div class="p-4 rounded-xl bg-info/10 border border-info/30 text-info text-xs flex gap-3">
         <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <div>
-            <span class="font-bold">Automated php-native SQL Dump engine:</span>
-            <p class="mt-1 text-slate-300">Creates fully compatible standard SQL tables structure and inserts directly from active database. Restores can be completed in-system instantly.</p>
+            <span class="font-bold">On-demand SQL dump — click "Generate Backup Archive" to run one:</span>
+            <p class="mt-1 text-slate-300">There is no scheduled/automatic backup yet — this only runs when you trigger it here. Restoring overwrites every table in the live database immediately, with no undo.</p>
         </div>
     </div>
 

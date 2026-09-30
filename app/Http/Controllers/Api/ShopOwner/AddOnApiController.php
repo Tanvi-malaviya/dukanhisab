@@ -84,6 +84,12 @@ class AddOnApiController extends Controller
             'quantity' => 'nullable|integer|min:1|max:20',
         ]);
 
+        // The admin's "Gateway Enable/Disable" toggle (Admin > Settings > Payment Gateway) only
+        // ever set the runtime config; nothing actually checked it before this.
+        if (!config('services.razorpay.enabled', true)) {
+            return response()->json(['message' => 'Payments are temporarily unavailable. Please try again later.'], 503);
+        }
+
         $user = $request->user();
         $addOn = AddOn::where('slug', $request->slug)->first();
 

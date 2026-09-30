@@ -25,7 +25,7 @@ class PaymentSettingController extends Controller
             'razorpay_webhook_secret' => AppSetting::get('razorpay_webhook_secret', $defaultWebhook),
         ];
 
-        $webhookUrl = url('/api/razorpay/webhook');
+        $webhookUrl = url('/api/v1/shopowner/razorpay/webhook');
 
         return view('admin.settings.payment', compact('settings', 'webhookUrl'));
     }

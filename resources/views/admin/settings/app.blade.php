@@ -6,15 +6,23 @@
 @section('content')
 <div class="space-y-6 max-w-4xl">
 
+    @if($settings['maintenance_mode'] === 'yes')
+        <div class="p-4 rounded-2xl bg-danger/10 border border-danger/30 flex items-center gap-3">
+            <svg class="w-5 h-5 text-danger shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <p class="text-sm text-danger font-semibold">Maintenance mode is ON right now — every shop's web panel and app sync are blocked platform-wide.</p>
+        </div>
+    @endif
+
     <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 font-semibold text-white text-sm">
             Platform Application Configuration Parameters
         </div>
-        
+
         <form action="{{ route('admin.settings.app.update') }}" method="POST" class="p-6 space-y-6">
             @csrf
 
             <!-- Version Config -->
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider -mb-1">Version Control</div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Live Application Version</label>
@@ -40,6 +48,7 @@
             </div>
 
             <!-- Maintenance & Announcement -->
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pt-2 border-t border-border-dark">Maintenance &amp; Announcements</div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div class="md:col-span-1">
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">System Maintenance Gate</label>
@@ -61,6 +70,7 @@
             </div>
 
             <!-- Feature Flags JSON -->
+            <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pt-2 border-t border-border-dark">Feature Flags</div>
             <div>
                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Feature Flags Configuration (JSON Format)</label>
                 <textarea name="feature_flags" required rows="5" 

@@ -66,15 +66,20 @@
                         <span class="text-white font-semibold font-mono">{{ $newUsersThisMonth }} Users</span>
                     </div>
                     <div class="flex justify-between items-center text-xs">
-                        <span class="text-slate-400">Total Registered Tenants:</span>
+                        <span class="text-slate-400">Total Registered Shops:</span>
                         <span class="text-white font-semibold font-mono">{{ $totalShops }} Shops</span>
                     </div>
                     <div class="flex justify-between items-center text-xs">
-                        <span class="text-slate-400">Active Node Users:</span>
+                        <span class="text-slate-400">Total Accounts:</span>
+                        <span class="text-white font-semibold font-mono">{{ $totalUsers }} Accounts</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Active Accounts:</span>
                         <span class="text-white font-semibold font-mono">{{ $activeUsers }} Active</span>
                     </div>
                 </div>
-                <div class="text-[10px] text-slate-500 border-t border-border-dark pt-3">Calculated via daily cron metrics.
+                <div class="text-[10px] text-slate-500 border-t border-border-dark pt-3">A shop's plan belongs to the account
+                    that owns it — one account can hold several shops.
                 </div>
             </div>
 
@@ -96,13 +101,13 @@
                     <div class="flex-1 space-y-3.5 w-full text-xs">
                         <div class="flex justify-between items-center">
                             <span class="text-slate-400 flex items-center"><span
-                                    class="w-2 h-2 rounded-full bg-warning mr-2"></span>Premium Shops:</span>
-                            <span class="text-white font-bold font-mono">{{ $premiumShopsCount }}</span>
+                                    class="w-2 h-2 rounded-full bg-warning mr-2"></span>Accounts on a Paid Plan:</span>
+                            <span class="text-white font-bold font-mono">{{ $premiumAccountsCount }}</span>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="text-slate-400 flex items-center"><span
-                                    class="w-2 h-2 rounded-full bg-slate-500 mr-2"></span>Free/Trial Shops:</span>
-                            <span class="text-white font-bold font-mono">{{ $freeShopsCount }}</span>
+                                    class="w-2 h-2 rounded-full bg-slate-500 mr-2"></span>Free/Trial Accounts:</span>
+                            <span class="text-white font-bold font-mono">{{ $freeAccountsCount }}</span>
                         </div>
                         <div class="w-full bg-secondary/40 h-2 rounded-full overflow-hidden mt-3">
                             <div class="bg-primary h-full rounded-full" style="width: {{ $conversionRate }}%"></div>
@@ -110,8 +115,8 @@
                     </div>
                 </div>
 
-                <div class="text-[10px] text-slate-500 border-t border-border-dark pt-3">Premium Conversion = (Premium Shops
-                    / Total Shops) * 100.</div>
+                <div class="text-[10px] text-slate-500 border-t border-border-dark pt-3">Premium Conversion = (Paid-plan Accounts
+                    / Total Accounts) × 100.</div>
             </div>
         </div>
 

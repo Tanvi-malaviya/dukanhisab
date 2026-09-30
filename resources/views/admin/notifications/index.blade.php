@@ -7,6 +7,11 @@
 @section('content')
     <div class="space-y-2">
 
+        <div class="p-4 rounded-2xl bg-info/10 border border-info/30 flex items-start gap-3">
+            <svg class="w-5 h-5 text-info shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <p class="text-sm text-info">Dispatching here now reaches the shop owner: the web panel shows a bell with an unread badge in the header, and the mobile app shows a bell on the dashboard plus a Notifications tile under More — both read and mark-as-read against the same broadcast.</p>
+        </div>
+
         <!-- Main Grid: Broadcaster & Segment Telemetry -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Left Side: Broadcaster Form -->
@@ -73,8 +78,7 @@
                                 <span class="text-white font-medium">All Users</span>
                                 <span class="font-mono text-slate-400 font-bold">{{ $userCounts['all'] }}</span>
                             </div>
-                            <p class="text-[10px] text-slate-500">Sends notification to every active device and browser
-                                session.</p>
+                            <p class="text-[10px] text-slate-500">Sends to every account's notification inbox — web and mobile.</p>
                         </div>
 
                         <div class="p-3 bg-secondary/20 border border-border-dark rounded-xl">

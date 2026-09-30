@@ -6,6 +6,8 @@
 @section('content')
 <div class="space-y-2">
 
+    <p class="text-xs text-slate-400">Showing <span class="text-white font-bold">{{ $logs->total() }}</span> logged action{{ $logs->total() === 1 ? '' : 's' }}{{ request()->hasAny(['search', 'actor_type']) ? ' matching this filter' : '' }}.</p>
+
     <x-search-filter :action="route('admin.logs.index')" placeholder="Search action, IP address..." :show-reset="false">
         <div class="w-full md:w-48">
             <select name="actor_type" class="block w-full px-3 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-700">
@@ -33,7 +35,7 @@
                     @forelse($logs as $log)
                     <tr class="hover:bg-secondary/10 transition-colors">
                         <td class="px-6 py-4 font-mono text-xs text-slate-500 whitespace-nowrap">
-                            {{ $log->created_at->format('Y-m-d') }}
+                            {{ $log->created_at->format('Y-m-d H:i:s') }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($log->admin)

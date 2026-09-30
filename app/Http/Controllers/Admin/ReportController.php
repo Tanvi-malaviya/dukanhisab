@@ -40,20 +40,24 @@ class ReportController extends Controller
             
         $activeUsers = User::where('status', 'active')->count();
 
-        // 3. Premium Conversion analytics
-        $totalShops = User::count();
-        $freeShopsCount = User::where(function($q) {
+        // 3. Premium Conversion analytics. A subscription plan belongs to a User account, not to
+        // an individual Shop (a user can own several shops on one plan) — so "conversion" here is
+        // accounts-on-a-paid-plan as a share of all accounts. $totalShops is the real Shop count,
+        // shown separately as its own "how many tenants" stat.
+        $totalShops = Shop::count();
+        $totalUsers = User::count();
+        $freeAccountsCount = User::where(function($q) {
             $q->whereNull('active_plan_id')
               ->orWhereIn('active_plan_id', function($sub) {
                   $sub->select('id')->from('subscription_plans')->where('price', 0);
               });
         })->count();
-        
-        $premiumShopsCount = User::whereHas('activePlan', function($q) {
+
+        $premiumAccountsCount = User::whereHas('activePlan', function($q) {
             $q->where('price', '>', 0);
         })->count();
-        
-        $conversionRate = $totalShops > 0 ? round(($premiumShopsCount / $totalShops) * 100, 2) : 0;
+
+        $conversionRate = $totalUsers > 0 ? round(($premiumAccountsCount / $totalUsers) * 100, 2) : 0;
 
         // 4. Plan performance table
         $plansPerformance = SubscriptionPlan::all()->map(function($plan) {
@@ -84,8 +88,9 @@ class ReportController extends Controller
             'newUsersThisMonth',
             'activeUsers',
             'totalShops',
-            'freeShopsCount',
-            'premiumShopsCount',
+            'totalUsers',
+            'freeAccountsCount',
+            'premiumAccountsCount',
             'conversionRate',
             'plansPerformance',
             'recentPayments'
