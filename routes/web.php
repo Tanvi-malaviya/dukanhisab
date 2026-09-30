@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\TranslationSettingController;
 
 // Main customer landing page placeholder
 Route::get('/', function () {
@@ -97,6 +98,12 @@ Route::group([
     Route::get('settings/payment', [PaymentSettingController::class, 'index'])->name('settings.payment');
     Route::post('settings/payment', [PaymentSettingController::class, 'update'])->name('settings.payment.update');
     Route::post('settings/payment/test', [PaymentSettingController::class, 'testConnection'])->name('settings.payment.test');
+
+    // Language & Translation Editor Settings
+    Route::get('settings/translations', [TranslationSettingController::class, 'index'])->name('settings.translations');
+    Route::post('settings/translations', [TranslationSettingController::class, 'update'])->name('settings.translations.update');
+    Route::post('settings/translations/single', [TranslationSettingController::class, 'updateSingle'])->name('settings.translations.single');
+    Route::post('settings/translations/store-key', [TranslationSettingController::class, 'storeKey'])->name('settings.translations.store_key');
 
     // Advertisement Management
     Route::get('ads', [AdvertisementController::class, 'index'])->name('ads.index');
