@@ -399,3 +399,82 @@ html.dark ::-webkit-calendar-picker-indicator,
     filter: invert(1) brightness(2) !important;
     opacity: 0.95 !important;
 }
+
+/* ==========================================================================
+   MOBILE-STYLE TOGGLE SWITCHES (.app-toggle)
+   ========================================================================== */
+.app-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.app-toggle input {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+}
+
+.app-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #CBD5E1;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 9999px;
+}
+
+.app-toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #FFFFFF;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.app-toggle input:checked + .app-toggle-slider {
+    background-color: #0F766E !important;
+}
+
+.app-toggle input:checked + .app-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.dark .app-toggle-slider {
+    background-color: #4B5563;
+}
+
+.dark .app-toggle input:checked + .app-toggle-slider {
+    background-color: #0F766E !important;
+}
+
+/* Small toggle variant */
+.app-toggle.app-toggle-sm {
+    width: 36px;
+    height: 20px;
+}
+
+.app-toggle.app-toggle-sm .app-toggle-slider::before {
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+}
+
+.app-toggle.app-toggle-sm input:checked + .app-toggle-slider::before {
+    transform: translateX(16px);
+}

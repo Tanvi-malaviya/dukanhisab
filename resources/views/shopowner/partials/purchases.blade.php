@@ -418,7 +418,7 @@
                                     x-text="parseFloat(pur.total_amount).toFixed(2)"></span></span>
                         </div>
                         <template
-                            x-if="pur.payment_type === 'Credit' || pur.status === 'Partially Paid' || pur.status === 'Unpaid'">
+                            x-if="pur.status !== 'Cancelled' && (pur.payment_type === 'Credit' || pur.status === 'Partially Paid' || pur.status === 'Unpaid')">
                             <div
                                 class="flex justify-between items-center text-xs pt-1.5 border-t border-dashed border-slate-200 dark:border-gray-700">
                                 <span class="text-emerald-600 dark:text-emerald-400 font-semibold"><span

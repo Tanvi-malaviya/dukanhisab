@@ -86,7 +86,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     // Bank accounts
     Route::apiResource('bank-accounts', \App\Http\Controllers\Api\BankAccountApiController::class);
 
-    // Expenses
+    // Expenses & Expense Categories
+    Route::apiResource('expense-categories', \App\Http\Controllers\Api\ExpenseCategoryApiController::class);
     Route::apiResource('expenses', \App\Http\Controllers\Api\ExpenseApiController::class);
 
     // Reports

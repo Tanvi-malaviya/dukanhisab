@@ -58,6 +58,10 @@
   "low_stock": "ઓછા સ્ટોકની ચેતવણી",
   "available_for_sale": "વેચાણ માટે ઉપલબ્ધ",
   "available_for_purchase": "ખરીદી માટે ઉપલબ્ધ",
+  "available_for_sale_desc": "સેલ્સ POS અને બિલિંગમાં દર્શાવો",
+  "available_for_purchase_desc": "પર્ચેસ બિલિંગ અને ઓર્ડરમાં દર્શાવો",
+  "not_for_sale": "વેચાણ માટે નથી",
+  "not_for_purchase": "ખરીદી માટે નથી",
   "inventory_subtitle": "ઉત્પાદન સ્ટોક અને એલર્ટ્સનું સંચાલન કરો",
   "your_shop": "તમારી દુકાન",
   "your_shop_subtitle": "દુકાન અને ઇન્વોઇસ સેટિંગ્સ અપડેટ કરો",
@@ -645,5 +649,9 @@
   "disable_auto_renewal_confirm": "આ એડ-ઓન વર્તમાન સમયગાળો પૂર્ણ થાય ત્યાં સુધી એક્ટિવ રહેશે, ત્યારબાદ તે રિન્યુ થશે નહીં.",
   "shop": "દુકાન",
   "total": "કુલ",
-  "disable_auto_renewal_title": "ઓટો-રિન્યુઅલ બંધ કરવું છે?"
+  "disable_auto_renewal_title": "ઓટો-રિન્યુઅલ બંધ કરવું છે?",
+  "paid_amount": "ચૂકવેલ રકમ",
+  "balance_due": "બાકી રકમ",
+  "share_report": "રિપોર્ટ શેર કરો",
+  "download_report": "રિપોર્ટ ડાઉનલોડ કરો"
 }
