@@ -279,6 +279,11 @@
             salesLoading: false,
             expenses: [],
             expensesLoading: false,
+            expenseCategories: [],
+            expenseCategoriesLoading: false,
+            selectedExpenseCategoryFilter: '',
+            manageExpenseCategoriesModalOpen: false,
+            expenseCategoryForm: { id: null, name: '', description: '' },
             purchases: [],
             purchasesTotal: 0,
             purchasesLoading: false,
@@ -373,7 +378,7 @@
             productsPage: 1, productsPerPage: 10,
             customersPage: 1, customersPerPage: 10,
             suppliersPage: 1, suppliersPerPage: 10,
-            expensesPage: 1, expensesPerPage: 10,
+            expensesPage: 1, expensesPerPage: 10, selectedExpenseMonth: '', selectedExpenseCategoryFilter: '',
             purchasesPage: 1, purchasesPerPage: 6, purchasesTotal: 0,
             returnedPurchasesPage: 1, returnedPurchasesTotal: 0,
             cashbookPage: 1, cashbookPerPage: 10,
@@ -646,7 +651,7 @@
                 else if (pageName === 'bank-accounts') return Promise.allSettled([this.loadBankAccounts(), this.loadCashBook('', 'all')]);
                 else if (pageName === 'transactions') return this.loadCashBook('', 'all');
                 else if (pageName === 'reports') return this.loadReports();
-                else if (pageName === 'reminders') return Promise.allSettled([this.loadCustomers(), this.loadSuppliers(), this.loadProducts()]);
+                else if (pageName === 'reminders') return Promise.allSettled([this.loadCustomers(), this.loadSuppliers(), this.loadProducts(), this.loadDashboard()]);
                 else if (pageName === 'settings') return this.loadInvoiceSettings();
                 else if (pageName === 'subscription') return this.loadSubscriptionPlans();
                 else if (pageName === 'addons') return this.loadAddOns();
@@ -704,6 +709,7 @@
                     this.loadSuppliers(),
                     this.loadPurchases(),
                     this.loadExpenses(),
+                    this.loadExpenseCategories(),
                     this.loadInvoiceSettings(),
                     this.loadSubscriptionPlans(),
                     this.loadAddOnStatus()
@@ -880,13 +886,135 @@
             loadExpenses() {
                 this.expensesPage = 1;
                 this.expensesLoading = true;
-                return fetch('/api/v1/expenses', { headers: this.getHeaders() })
+                let url = '/api/v1/expenses?';
+                if (this.selectedExpenseCategoryFilter) {
+                    url += 'expense_category_id=' + this.selectedExpenseCategoryFilter + '&';
+                }
+                if (this.selectedExpenseMonth) {
+                    url += 'month=' + this.selectedExpenseMonth + '&';
+                }
+                return fetch(url, { headers: this.getHeaders() })
                     .then(r => r.json())
                     .then(d => {
                         this.expensesLoading = false;
                         if (Array.isArray(d)) this.expenses = d;
+                        else if (d && Array.isArray(d.data)) this.expenses = d.data;
                     })
                     .catch(() => { this.expensesLoading = false; });
+            },
+
+            clearExpenseMonthFilter() {
+                this.selectedExpenseMonth = '';
+                this.loadExpenses();
+            },
+
+            setExpenseCurrentMonth() {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = String(now.getMonth() + 1).padStart(2, '0');
+                this.selectedExpenseMonth = `${y}-${m}`;
+                this.loadExpenses();
+            },
+
+            formatExpenseMonthDisplay(monthStr) {
+                if (!monthStr) return '';
+                try {
+                    const parts = monthStr.split('-');
+                    const y = parseInt(parts[0]);
+                    const m = parseInt(parts[1]);
+                    const date = new Date(y, m - 1, 1);
+                    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                } catch(e) {
+                    return monthStr;
+                }
+            },
+
+            loadExpenseCategories() {
+                this.expenseCategoriesLoading = true;
+                return fetch('/api/v1/expense-categories', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.expenseCategoriesLoading = false;
+                        if (Array.isArray(d)) this.expenseCategories = d;
+                        else if (d && Array.isArray(d.data)) this.expenseCategories = d.data;
+                    })
+                    .catch(() => { this.expenseCategoriesLoading = false; });
+            },
+
+            filterExpensesByCategory(catId) {
+                this.selectedExpenseCategoryFilter = catId;
+                this.loadExpenses();
+            },
+
+            openManageExpenseCategoriesModal() {
+                this.expenseCategoryForm = { id: null, name: '' };
+                this.manageExpenseCategoriesModalOpen = true;
+            },
+
+            editExpenseCategory(cat) {
+                this.expenseCategoryForm = { id: cat.id, name: cat.name };
+            },
+
+            resetExpenseCategoryForm() {
+                this.expenseCategoryForm = { id: null, name: '' };
+            },
+
+            saveExpenseCategory() {
+                if (!this.expenseCategoryForm.name || !this.expenseCategoryForm.name.trim()) {
+                    this.showToast('Please enter category name', 'error');
+                    return;
+                }
+                this.loading = true;
+                const isEdit = !!this.expenseCategoryForm.id;
+                const url = isEdit ? `/api/v1/expense-categories/${this.expenseCategoryForm.id}` : '/api/v1/expense-categories';
+                const method = isEdit ? 'PUT' : 'POST';
+
+                fetch(url, {
+                    method: method,
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({ name: this.expenseCategoryForm.name.trim() })
+                })
+                    .then(r => r.json().then(data => ({ status: r.status, data })))
+                    .then(({ status, data }) => {
+                        this.loading = false;
+                        if (status === 200 || status === 201) {
+                            this.showToast(isEdit ? 'Category updated!' : 'Category created!', 'success');
+                            this.expenseCategoryForm = { id: null, name: '' };
+                            this.loadExpenseCategories().then(() => {
+                                if (!isEdit && data && data.id) {
+                                    this.newExpense.expense_category_id = data.id;
+                                }
+                            });
+                            this.loadExpenses();
+                        } else {
+                            const msg = data.errors ? Object.values(data.errors).flat().join('\n') : (data.message || 'Error saving category');
+                            this.showToast(msg, 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error saving category', 'error');
+                    });
+            },
+
+            deleteExpenseCategory(cat) {
+                this.showConfirm('Delete Category', `Are you sure you want to delete "${cat.name}"? Expenses in this category will become unassigned.`, () => {
+                    this.loading = true;
+                    fetch(`/api/v1/expense-categories/${cat.id}`, { method: 'DELETE', headers: this.getHeaders() })
+                        .then(() => {
+                            this.loading = false;
+                            this.showToast('Category deleted', 'success');
+                            if (this.selectedExpenseCategoryFilter == cat.id) {
+                                this.selectedExpenseCategoryFilter = '';
+                            }
+                            this.loadExpenseCategories();
+                            this.loadExpenses();
+                        })
+                        .catch(() => {
+                            this.loading = false;
+                            this.showToast('Error deleting category', 'error');
+                        });
+                });
             },
 
             loadPurchases(paginate = false) {
@@ -1508,6 +1636,87 @@
 
             printReport() {
                 this.printHtmlBlock('report-print-area', 'Business Statement');
+            },
+
+            downloadReport(startDate = '', endDate = '') {
+                if (!this.user || !this.user.active_plan || this.user.active_plan.slug === 'free') {
+                    this.showConfirm('Upgrade Plan Required', 'Report downloading is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => {
+                        this.navigateTo('subscription');
+                    });
+                    return;
+                }
+                const shopName = this.shop ? this.shop.name : 'Dukan';
+                const period = (startDate || endDate) ? `${startDate || 'Start'} to ${endDate || 'Today'}` : 'All Time';
+                
+                let csv = `Shop Name,"${shopName.replace(/"/g, '""')}"\r\n`;
+                csv += `Report Period,"${period}"\r\n`;
+                csv += `Generated On,"${new Date().toLocaleString()}"\r\n\r\n`;
+                
+                csv += `Summary Metric,Amount (INR),Transaction Count\r\n`;
+                csv += `"Total Sales",${parseFloat(this.reportsData.total_sales || 0).toFixed(2)},${this.reportsData.sales_count || 0}\r\n`;
+                csv += `"Total Purchases",${parseFloat(this.reportsData.total_purchases || 0).toFixed(2)},${this.reportsData.purchases_count || 0}\r\n`;
+                csv += `"Total Expenses",${parseFloat(this.reportsData.total_expenses || 0).toFixed(2)},${this.reportsData.expenses_count || 0}\r\n`;
+                csv += `"Net Margin / Profit",${parseFloat(this.reportsData.net_profit || 0).toFixed(2)},-\r\n\r\n`;
+                
+                if (this.reportsData.sales_by_payment_type && this.reportsData.sales_by_payment_type.length > 0) {
+                    csv += `Payment Mode,Total Sales (INR)\r\n`;
+                    this.reportsData.sales_by_payment_type.forEach(item => {
+                        csv += `"${(item.payment_type || 'Unknown').replace(/"/g, '""')}",${parseFloat(item.total || 0).toFixed(2)}\r\n`;
+                    });
+                }
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const cleanPeriod = period.replace(/[^a-zA-Z0-9_-]/g, '_');
+                a.download = `${shopName.replace(/[^a-zA-Z0-9_-]/g, '_')}_Report_${cleanPeriod}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                this.showToast('Report CSV downloaded successfully!');
+            },
+
+            shareReport(startDate = '', endDate = '') {
+                if (!this.user || !this.user.active_plan || this.user.active_plan.slug === 'free') {
+                    this.showConfirm('Upgrade Plan Required', 'Report sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => {
+                        this.navigateTo('subscription');
+                    });
+                    return;
+                }
+                const shopName = this.shop ? this.shop.name : 'Dukan';
+                const period = (startDate || endDate) ? `${startDate || 'Start'} to ${endDate || 'Today'}` : 'All Time';
+                const sales = parseFloat(this.reportsData.total_sales || 0).toFixed(2);
+                const purchases = parseFloat(this.reportsData.total_purchases || 0).toFixed(2);
+                const expenses = parseFloat(this.reportsData.total_expenses || 0).toFixed(2);
+                const profit = parseFloat(this.reportsData.net_profit || 0).toFixed(2);
+
+                let text = `📊 *${shopName} - Business Statement*\n`;
+                text += `📅 *Period:* ${period}\n\n`;
+                text += `💰 *Total Sales:* ₹${sales} (${this.reportsData.sales_count || 0} txn)\n`;
+                text += `🛒 *Total Purchases:* ₹${purchases} (${this.reportsData.purchases_count || 0} txn)\n`;
+                text += `💸 *Total Expenses:* ₹${expenses} (${this.reportsData.expenses_count || 0} txn)\n`;
+                text += `📈 *Net Margin / Profit:* ₹${profit}\n`;
+                
+                if (this.reportsData.sales_by_payment_type && this.reportsData.sales_by_payment_type.length > 0) {
+                    text += `\n*Payment Breakdown:*\n`;
+                    this.reportsData.sales_by_payment_type.forEach(item => {
+                        text += `• ${item.payment_type || 'Unknown'}: ₹${parseFloat(item.total || 0).toFixed(2)}\n`;
+                    });
+                }
+                text += `\n_Generated via DukanHisab_`;
+
+                if (navigator.share) {
+                    navigator.share({
+                        title: `${shopName} Business Report`,
+                        text: text,
+                    }).catch(() => {
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                    });
+                } else {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                }
             },
 
             submitShopProfileUpdate(logoFile = null, signatureFile = null, shopImageFile = null) {
@@ -3449,8 +3658,8 @@
                     stock: product.stock,
                     low_stock_threshold: product.low_stock_threshold,
                     category_id: product.category_id || '',
-                    available_for_sale: product.available_for_sale !== false,
-                    available_for_purchase: product.available_for_purchase !== false
+                    available_for_sale: product.available_for_sale !== false && product.available_for_sale !== 0 && product.available_for_sale !== '0',
+                    available_for_purchase: product.available_for_purchase !== false && product.available_for_purchase !== 0 && product.available_for_purchase !== '0'
                 };
                 this.showProductModal = true;
             },
@@ -3518,9 +3727,13 @@
                             for (const key in err.errors) {
                                 if (Array.isArray(err.errors[key])) {
                                     messages.push(...err.errors[key]);
+                                } else if (typeof err.errors[key] === 'string') {
+                                    messages.push(err.errors[key]);
                                 }
                             }
                             this.showConfirm('Validation Error', messages.join('\n'), () => { });
+                        } else if (err && err.message) {
+                            this.showConfirm('Error', err.message, () => { });
                         } else {
                             this.showConfirm('Error', 'Error saving product. Please try again.', () => { });
                         }
@@ -3664,14 +3877,82 @@
                     });
             },
 
-            openNewExpenseModal() { this.newExpense = { description: '', amount: '', payment_method: 'cash' }; this.showExpenseModal = true; },
+            openNewExpenseModal() {
+                this.newExpense = {
+                    id: null,
+                    description: '',
+                    amount: '',
+                    payment_method: 'cash',
+                    expense_category_id: this.selectedExpenseCategoryFilter || '',
+                    transaction_date: new Date().toISOString().slice(0, 10)
+                };
+                this.showExpenseModal = true;
+            },
+            openEditExpenseModal(exp) {
+                this.newExpense = {
+                    id: exp.id,
+                    description: exp.description || '',
+                    amount: exp.amount,
+                    payment_method: exp.payment_method ? exp.payment_method.toLowerCase() : 'cash',
+                    expense_category_id: exp.expense_category_id || '',
+                    transaction_date: exp.transaction_date ? (typeof exp.transaction_date === 'string' ? exp.transaction_date.slice(0, 10) : '') : new Date().toISOString().slice(0, 10)
+                };
+                this.showExpenseModal = true;
+            },
             saveExpense() {
+                if (!this.newExpense.description || !this.newExpense.description.trim()) {
+                    this.showToast('Please enter expense description', 'error');
+                    return;
+                }
+                if (!this.newExpense.amount || parseFloat(this.newExpense.amount) <= 0) {
+                    this.showToast('Please enter a valid amount', 'error');
+                    return;
+                }
                 this.loading = true;
-                fetch('/api/v1/expenses', { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(this.newExpense) })
-                    .then(r => r.json()).then(d => {
+                const isEdit = !!this.newExpense.id;
+                const url = isEdit ? `/api/v1/expenses/${this.newExpense.id}` : '/api/v1/expenses';
+                const method = isEdit ? 'PUT' : 'POST';
+
+                fetch(url, { method: method, headers: this.getHeaders(), body: JSON.stringify(this.newExpense) })
+                    .then(r => r.json().then(data => ({ status: r.status, data })))
+                    .then(({ status, data }) => {
                         this.loading = false;
-                        if (d.id) { this.showToast('Expense recorded!'); this.loadExpenses(); this.loadDashboard(); this.showExpenseModal = false; }
+                        if (status === 200 || status === 201) {
+                            this.showToast(isEdit ? 'Expense updated!' : 'Expense recorded!', 'success');
+                            this.loadExpenses();
+                            this.loadExpenseCategories();
+                            this.loadDashboard();
+                            this.showExpenseModal = false;
+                        } else {
+                            const msg = data.errors ? Object.values(data.errors).flat().join('\n') : (data.message || 'Failed to save expense');
+                            this.showToast(msg, 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                        this.showToast('Error saving expense', 'error');
                     });
+            },
+            deleteExpense(exp) {
+                this.showConfirm('Delete Expense', `Are you sure you want to delete this expense "${exp.description}" (₹${parseFloat(exp.amount).toFixed(2)})?`, () => {
+                    this.loading = true;
+                    fetch(`/api/v1/expenses/${exp.id}`, { method: 'DELETE', headers: this.getHeaders() })
+                        .then(r => {
+                            this.loading = false;
+                            if (r.ok || r.status === 204) {
+                                this.showToast('Expense deleted successfully', 'success');
+                                this.loadExpenses();
+                                this.loadExpenseCategories();
+                                this.loadDashboard();
+                            } else {
+                                r.json().then(d => this.showToast(d.message || 'Error deleting expense', 'error'));
+                            }
+                        })
+                        .catch(() => {
+                            this.loading = false;
+                            this.showToast('Error deleting expense', 'error');
+                        });
+                });
             },
 
             openNewSupplierModal() { this.newSupplier = { name: '', mobile: '', email: '' }; this.showSupplierModal = true; },

@@ -254,18 +254,18 @@
 
 {{-- 3. ADD/EDIT PRODUCT MODAL --}}
 <div x-show="showProductModal" x-cloak
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showProductModal = false">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md my-auto overflow-hidden flex flex-col max-h-[92vh]" @click.outside="if (!confirmModal.show) showProductModal = false">
+        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center shrink-0">
             <h3 class="font-bold text-slate-800 dark:text-white"
                 x-text="newProduct.id ? t('edit') : t('add_product')"></h3>
-            <button @click="showProductModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
+            <button @click="showProductModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
                 </svg></button>
         </div>
-        <form @submit.prevent="saveProduct()" class="p-6 space-y-4">
+        <form @submit.prevent="saveProduct()" class="p-5 space-y-3 overflow-y-auto">
             <div>
                 <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('product_name')">Product Name</label>
                 <input type="text" required x-model="newProduct.name" :placeholder="t('enter_product_name') || 'Enter Product Name'"
@@ -304,18 +304,27 @@
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
             </div>
-            <div class="flex gap-4 pt-1">
-                <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
-                    <input type="checkbox" x-model="newProduct.available_for_sale" class="rounded border-slate-300 dark:border-gray-600 text-primary focus:ring-primary">
-                    <span x-text="t('available_for_sale') || 'Available for Sale'">Available for Sale</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-100 dark:border-gray-700/60">
+                <!-- Available for Sale Switch -->
+                <label class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-gray-700/40 hover:bg-slate-100/80 dark:hover:bg-gray-700/70 rounded-xl border border-slate-200 dark:border-gray-600/70 transition-all cursor-pointer select-none">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-white pr-2" x-text="t('available_for_sale') || 'Available for Sale'">Available for Sale</span>
+                    <span class="app-toggle app-toggle-sm shrink-0">
+                        <input type="checkbox" x-model="newProduct.available_for_sale">
+                        <span class="app-toggle-slider"></span>
+                    </span>
                 </label>
-                <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 cursor-pointer">
-                    <input type="checkbox" x-model="newProduct.available_for_purchase" class="rounded border-slate-300 dark:border-gray-600 text-primary focus:ring-primary">
-                    <span x-text="t('available_for_purchase') || 'Available for Purchase'">Available for Purchase</span>
+
+                <!-- Available for Purchase Switch -->
+                <label class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-gray-700/40 hover:bg-slate-100/80 dark:hover:bg-gray-700/70 rounded-xl border border-slate-200 dark:border-gray-600/70 transition-all cursor-pointer select-none">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-white pr-2" x-text="t('available_for_purchase') || 'Available for Purchase'">Available for Purchase</span>
+                    <span class="app-toggle app-toggle-sm shrink-0">
+                        <input type="checkbox" x-model="newProduct.available_for_purchase">
+                        <span class="app-toggle-slider"></span>
+                    </span>
                 </label>
             </div>
             <button type="submit"
-                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
+                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all mt-1"
                 x-text="newProduct.id ? t('save') : t('add_product')"></button>
         </form>
     </div>
@@ -324,9 +333,9 @@
 {{-- 4. ADD EXPENSE MODAL --}}
 <div x-show="showExpenseModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showExpenseModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show && !manageExpenseCategoriesModalOpen) showExpenseModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('add_expense')">Add Expense</h3>
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="newExpense.id ? 'Edit Expense' : t('add_expense')">Add Expense</h3>
             <button @click="showExpenseModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -340,23 +349,131 @@
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('amount_rs')">Amount (₹)</label>
-                <input type="number" step="0.01" required x-model.number="newExpense.amount"
+                <div class="flex justify-between items-center mb-1">
+                    <label class="block text-xs font-semibold text-slate-500">Category</label>
+                    <button type="button" @click="openManageExpenseCategoriesModal()" class="text-[11px] text-primary hover:underline font-semibold">+ Add / Manage</button>
+                </div>
+                <select x-model="newExpense.expense_category_id"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('payment_type')">Payment Method</label>
-                <select x-model="newExpense.payment_method"
-                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
-                    <option value="cash" x-text="t('cash')">Cash</option>
-                    <option value="upi" x-text="t('upi') + ' / ' + (t('wallet') || 'Wallet')">UPI / Wallet</option>
-                    <option value="bank" x-text="t('bank')">Bank Transfer</option>
+                    <option value="">General / Unassigned</option>
+                    <template x-for="cat in expenseCategories" :key="cat.id">
+                        <option :value="cat.id" x-text="cat.name"></option>
+                    </template>
                 </select>
             </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('amount_rs')">Amount (₹)</label>
+                    <input type="number" step="0.01" required x-model.number="newExpense.amount"
+                        class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('payment_type')">Payment Method</label>
+                    <select x-model="newExpense.payment_method"
+                        class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                        <option value="cash" x-text="t('cash')">Cash</option>
+                        <option value="upi" x-text="t('upi') + ' / ' + (t('wallet') || 'Wallet')">UPI / Wallet</option>
+                        <option value="bank" x-text="t('bank')">Bank Transfer</option>
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('date')">Date</label>
+                <input type="date" x-model="newExpense.transaction_date"
+                    class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+            </div>
             <button type="submit"
-                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all" x-text="t('save_expense')">Save
-                Expense</button>
+                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all" x-text="newExpense.id ? 'Update Expense' : t('save_expense')">Save Expense</button>
         </form>
+    </div>
+</div>
+
+{{-- 4.1 MANAGE EXPENSE CATEGORIES MODAL (Higher z-index so it overlays Add Expense modal cleanly) --}}
+<div x-show="manageExpenseCategoriesModalOpen" x-cloak style="z-index: 70;"
+    class="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 md:p-8 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col my-auto max-h-[82vh] border border-slate-200 dark:border-gray-700" @click.outside="manageExpenseCategoriesModalOpen = false">
+        {{-- Modal Header --}}
+        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
+            <div>
+                <h3 class="font-bold text-sm sm:text-base text-slate-800 dark:text-white">Manage Expense Categories</h3>
+                <p class="text-xs text-slate-400">Create, edit, or delete categories for your shop expenses</p>
+            </div>
+            <button @click="manageExpenseCategoriesModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        {{-- Pinned Create / Edit Form (DOES NOT SCROLL) --}}
+        <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-gray-700/60 bg-white dark:bg-gray-800 shrink-0">
+            <div class="p-3.5 bg-slate-50 dark:bg-gray-700/40 rounded-xl border border-slate-200 dark:border-gray-600 space-y-2.5">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-sans">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span x-text="expenseCategoryForm.id ? 'Edit Category' : 'Add New Category'"></span>
+                    </span>
+                    <template x-if="expenseCategoryForm.id">
+                        <button type="button" @click="resetExpenseCategoryForm()" class="text-[11px] text-rose-500 hover:underline font-semibold cursor-pointer">Cancel Edit</button>
+                    </template>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="text" placeholder="Category name (e.g. Rent, Electricity, Tea/Snacks...)" x-model="expenseCategoryForm.name"
+                        @keydown.enter.prevent="saveExpenseCategory()"
+                        class="block flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary">
+                    <button type="button" @click="saveExpenseCategory()" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="expenseCategoryForm.id ? 'Update Category' : 'Create Category'"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Existing Categories (ONLY THIS SECTION SCROLLS WITH CARD STYLE) --}}
+        <div class="flex-1 flex flex-col min-h-0 p-4 sm:p-5 overflow-hidden">
+            <div class="flex justify-between items-center mb-2.5 shrink-0">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-sans">Existing Categories (<span x-text="expenseCategories.length"></span>)</h4>
+                <span class="text-[10px] text-slate-400 font-medium">Scrollable Cards</span>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto pr-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <template x-for="cat in expenseCategories" :key="cat.id">
+                        <div class="p-3 bg-slate-50/80 hover:bg-white dark:bg-gray-700/30 dark:hover:bg-gray-700/60 rounded-xl border border-slate-200/90 dark:border-gray-600/70 hover:border-primary/40 dark:hover:border-primary/40 transition-all flex flex-col justify-between hover:shadow-xs group">
+                            <div class="flex justify-between items-center gap-1.5">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="w-2 h-2 rounded-full bg-primary shrink-0"></span>
+                                    <h5 class="text-xs font-bold text-slate-800 dark:text-white truncate font-sans" x-text="cat.name"></h5>
+                                </div>
+                                <div class="flex items-center gap-0.5 shrink-0">
+                                    <button type="button" @click="editExpenseCategory(cat)" title="Edit Category" class="p-1 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-all cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                    <button type="button" @click="deleteExpenseCategory(cat)" title="Delete Category" class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-all cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-gray-600/50 flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+                                <span>Used in:</span>
+                                <button type="button" @click="filterExpensesByCategory(cat.id); manageExpenseCategoriesModalOpen = false;" title="Click to filter transactions" class="font-bold text-primary hover:underline font-mono cursor-pointer flex items-center gap-1">
+                                    <span x-text="(cat.cash_books_count || 0) + ' expenses'"></span>
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <template x-if="expenseCategories.length === 0">
+                    <div class="p-8 text-center text-xs text-slate-400 bg-slate-50 dark:bg-gray-700/20 rounded-xl border border-dashed border-slate-200 dark:border-gray-700">
+                        No custom expense categories created yet. Use the form above to add your first category!
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        {{-- Modal Footer --}}
+        <div class="px-5 py-3 border-t border-slate-200 dark:border-gray-700 flex justify-end bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
+            <button type="button" @click="manageExpenseCategoriesModalOpen = false" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer transition-all">Close</button>
+        </div>
     </div>
 </div>
 

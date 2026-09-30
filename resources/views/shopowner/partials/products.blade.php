@@ -33,7 +33,19 @@
                 </template>
                 <template x-for="prod in (productsLoading ? [] : products)" :key="prod.id">
                     <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50">
-                        <td class="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white" x-text="prod.name"></td>
+                        <td class="px-6 py-4 text-sm font-bold text-slate-800 dark:text-white">
+                            <div class="flex flex-col">
+                                <span x-text="prod.name"></span>
+                                <div class="flex flex-wrap gap-1.5 mt-1" x-show="prod.available_for_sale === false || prod.available_for_sale === 0 || prod.available_for_purchase === false || prod.available_for_purchase === 0">
+                                    <template x-if="prod.available_for_sale === false || prod.available_for_sale === 0">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60" x-text="t('not_for_sale') || 'Not for Sale'"></span>
+                                    </template>
+                                    <template x-if="prod.available_for_purchase === false || prod.available_for_purchase === 0">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/60" x-text="t('not_for_purchase') || 'Not for Purchase'"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </td>
                         <td class="px-6 py-4 text-sm text-slate-500 font-mono" x-text="prod.barcode"></td>
                         <td class="px-6 py-4 text-sm text-slate-500">₹<span x-text="prod.purchase_price"></span></td>
                         <td class="px-6 py-4 text-sm font-bold text-primary">₹<span x-text="prod.selling_price"></span>

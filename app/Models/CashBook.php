@@ -18,6 +18,7 @@ class CashBook extends Model
         'description',
         'reference_id',
         'reference_type',
+        'expense_category_id',
         'transaction_date',
     ];
 
@@ -28,6 +29,11 @@ class CashBook extends Model
     public function shop()
     {
         return $this->belongsTo(Shop::class);
+    }
+
+    public function expenseCategory()
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
     }
 
     public function bankAccount()

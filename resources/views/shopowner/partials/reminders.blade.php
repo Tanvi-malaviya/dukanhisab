@@ -158,4 +158,54 @@
             </div>
         </div>
     </div>
+
+    {{-- INVENTORY ALERT (LOW STOCK) --}}
+    <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm space-y-4">
+        <div class="flex justify-between items-center mb-1">
+            <div class="flex items-center gap-2">
+                <h4 class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate" x-text="t('inventory_alert_low_stock')">Inventory Alert (Low Stock)</h4>
+                <span class="px-2 py-0.5 bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 rounded-full text-xs font-bold shrink-0" 
+                    x-text="products && products.length > 0 ? products.filter(p => parseFloat(p.stock) <= parseFloat(p.low_stock_threshold)).length : (dashboardStats.low_stock_count || 0)"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button @click="navigateTo('inventory')" 
+                    class="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                    <span x-text="t('inventory') || 'Inventory'">Inventory</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <template x-if="productsLoading && (!products || products.length === 0)">
+            <div class="text-center py-6">
+                <div class="inline-block animate-spin rounded-full h-7 w-7 border-3 border-primary border-t-transparent"></div>
+                <p class="text-xs text-slate-400 mt-2 font-medium" x-text="t('loading') || 'Loading...'">Loading...</p>
+            </div>
+        </template>
+
+        {{-- Low stock items list/cards grid --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <template x-for="prod in (products && products.length > 0 ? products.filter(p => parseFloat(p.stock) <= parseFloat(p.low_stock_threshold)) : (dashboardStats.low_stock_products || []))" :key="prod.id">
+                <div class="flex justify-between items-center p-3 bg-slate-50 dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700">
+                    <div class="min-w-0 pr-2">
+                        <p class="text-sm font-semibold text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
+                        <p class="text-xs text-slate-400 truncate"><span x-text="t('barcode')">Barcode</span>: <span x-text="prod.barcode || '-'"></span></p>
+                    </div>
+                    <div class="text-right shrink-0 flex flex-col items-end gap-1">
+                        <div>
+                            <p class="text-xs font-bold text-rose-600"><span x-text="t('stock')">Stock</span>: <span x-text="prod.stock"></span></p>
+                            <p class="text-[10px] text-slate-400"><span x-text="t('limit')">Limit</span>: <span x-text="prod.low_stock_threshold"></span></p>
+                        </div>
+                        <button @click="navigateTo('purchases')" class="px-2 py-0.5 bg-primary/10 hover:bg-primary text-primary hover:text-white rounded text-[10px] font-bold transition-all">
+                            + <span x-text="t('purchase') || 'Purchase'">Purchase</span>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <template x-if="!productsLoading && ((products && products.length > 0 ? products.filter(p => parseFloat(p.stock) <= parseFloat(p.low_stock_threshold)).length : (dashboardStats.low_stock_products || []).length) === 0)">
+            <p class="text-sm text-slate-400 text-center py-6" x-text="t('all_items_sufficiently_stocked')">All items are sufficiently stocked.</p>
+        </template>
+    </div>
 </div>

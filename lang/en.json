@@ -58,6 +58,10 @@
   "low_stock": "Low Stock Alert",
   "available_for_sale": "Available for Sale",
   "available_for_purchase": "Available for Purchase",
+  "available_for_sale_desc": "Visible in Sales POS & billing",
+  "available_for_purchase_desc": "Visible in Purchase entry & orders",
+  "not_for_sale": "Not for Sale",
+  "not_for_purchase": "Not for Purchase",
   "inventory_subtitle": "Manage product stocks & alerts",
   "your_shop": "Your Shop",
   "your_shop_subtitle": "Update shop & invoice settings",
@@ -646,5 +650,9 @@
   "disable_auto_renewal_confirm": "This add-on will stay active until its current period ends, then it will not renew.",
   "shop": "Shop",
   "total": "Total",
-  "disable_auto_renewal_title": "Disable Auto-Renewal?"
+  "disable_auto_renewal_title": "Disable Auto-Renewal?",
+  "paid_amount": "Paid Amount",
+  "balance_due": "Balance Due",
+  "share_report": "Share Report",
+  "download_report": "Download Report"
 }

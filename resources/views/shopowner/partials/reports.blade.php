@@ -35,12 +35,31 @@
             </div>
         </div>
 
-        <div class="flex gap-2 w-full md:w-auto justify-end">
-            <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printReport(); else showToast('Please upgrade your plan to print reports.', 'error')" 
+        <div class="flex flex-wrap gap-2 w-full md:w-auto justify-end items-center">
+            {{-- Share Report (Premium Only) --}}
+            <button x-show="user && user.active_plan && user.active_plan.slug !== 'free'" 
+                @click="shareReport(reportDates.start, reportDates.end)" 
+                class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md flex items-center gap-1.5"
+                :title="t('share_report') || 'Share Report'">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg>
+                <span x-text="t('share') || 'Share'">Share</span>
+            </button>
+
+            {{-- Download Report CSV (Premium Only) --}}
+            <button x-show="user && user.active_plan && user.active_plan.slug !== 'free'" 
+                @click="downloadReport(reportDates.start, reportDates.end)" 
+                class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all shadow-md flex items-center gap-1.5"
+                :title="t('download_report') || 'Download Report'">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span x-text="t('download') || 'Download'">Download</span>
+            </button>
+
+            {{-- Print Statement --}}
+            <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') printReport(); else showConfirm('Upgrade Plan Required', 'Please upgrade your plan to print reports.', () => { navigateTo('subscription'); })" 
                 class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold rounded-xl transition-all shadow-md flex items-center gap-2"
                 :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                Print Statement
+                <span>Print Statement</span>
                 <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                 </span>
