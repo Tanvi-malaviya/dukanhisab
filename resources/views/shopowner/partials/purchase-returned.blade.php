@@ -99,7 +99,7 @@
                         <div>
                             <span class="text-xs font-bold text-primary font-sans" x-text="pur.purchase_number"></span>
                         </div>
-                        <span :class="pur.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="t(pur.status ? pur.status.toLowerCase().replace(/ /g, '_') : 'returned') || pur.status"></span>
+                        <span :class="pur.status === 'Cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' : (pur.status === 'Returned' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400')" class="px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap inline-block font-sans" x-text="t(pur.status ? pur.status.toLowerCase().replace(/ /g, '_') : 'returned') || pur.status"></span>
                     </div>
 
                     {{-- Card Body --}}
@@ -118,12 +118,18 @@
                         </div>
                     </div>
 
+                    <template x-if="pur.status === 'Cancelled' && pur.cancellation_reason">
+                        <div class="text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded-lg border border-red-200 dark:border-red-800/40">
+                            <span class="font-bold">Cancellation Reason:</span> <span x-text="pur.cancellation_reason"></span>
+                        </div>
+                    </template>
+
                     {{-- Returned Items List & Returned Value --}}
                     <div class="flex flex-col space-y-1.5 bg-rose-50/50 dark:bg-rose-950/10 p-2.5 rounded-xl border border-rose-100 dark:border-rose-900/30">
                         <span class="text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wider font-sans" x-text="t('returned_items')">Returned Items</span>
                         <div class="space-y-1 max-h-24 overflow-y-auto pr-1">
                             <template x-for="item in pur.items" :key="item.id">
-                                <template x-if="item.returned_quantity > 0 || (!pur.items.some(i => i.returned_quantity > 0) && pur.status === 'Returned')">
+                                <template x-if="item.returned_quantity > 0 || (!pur.items.some(i => i.returned_quantity > 0) && (pur.status === 'Returned' || pur.status === 'Cancelled'))">
                                     <div class="flex justify-between items-center text-[11px] text-slate-700 dark:text-slate-300">
                                         <span class="truncate font-medium pr-2 font-sans" x-text="item.product ? item.product.name : 'Unknown Product'"></span>
                                         <span class="font-bold text-rose-600 dark:text-rose-400 shrink-0 font-mono" x-text="(item.returned_quantity > 0 ? item.returned_quantity : item.quantity) + ' ' + (t('qty') || 'Qty')"></span>
@@ -138,7 +144,7 @@
                                 ₹<span x-text="parseFloat(
                                     pur.items && pur.items.some(i => i.returned_quantity > 0)
                                         ? pur.items.reduce((sum, item) => sum + (parseFloat(item.returned_quantity) * parseFloat(item.purchase_price)), 0)
-                                        : (pur.status === 'Returned' && pur.items ? pur.items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.purchase_price)), 0) : 0)
+                                        : ((pur.status === 'Returned' || pur.status === 'Cancelled') && pur.items ? pur.items.reduce((sum, item) => sum + (parseFloat(item.quantity) * parseFloat(item.purchase_price)), 0) : 0)
                                 ).toFixed(2)"></span>
                             </span>
                         </div>
@@ -156,16 +162,18 @@
                         <!-- Return Button (Only for Partially Returned to allow further returns) -->
                         <button @click="returnPurchase(pur.id)"
                             :title="t('return_purchase_items')"
-                            :disabled="pur.status === 'Returned'"
-                            :class="pur.status === 'Returned' ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 cursor-pointer'"
+                            :disabled="pur.status === 'Returned' || pur.status === 'Cancelled'"
+                            :class="(pur.status === 'Returned' || pur.status === 'Cancelled') ? 'opacity-40 cursor-not-allowed' : 'hover:bg-amber-500 hover:text-white dark:hover:bg-amber-500 cursor-pointer'"
                             class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
                         </button>
 
-                        <!-- Delete Button -->
+                        <!-- Cancel/Delete Button -->
                         <button @click="deletePurchase(pur.id)"
                             :title="t('delete')"
-                            class="flex-1 flex justify-center items-center py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white rounded-lg transition-all cursor-pointer">
+                            :disabled="pur.status === 'Cancelled'"
+                            :class="pur.status === 'Cancelled' ? 'opacity-30 cursor-not-allowed' : 'hover:bg-rose-600 hover:text-white dark:hover:bg-rose-600 dark:hover:text-white cursor-pointer'"
+                            class="flex-1 flex justify-center items-center py-1.5 bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 rounded-lg transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>

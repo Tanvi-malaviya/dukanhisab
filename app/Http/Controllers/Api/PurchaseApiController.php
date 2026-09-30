@@ -48,9 +48,9 @@ class PurchaseApiController extends Controller
 
         if ($request->filled('status')) {
             if ($request->status === 'Completed') {
-                $query->whereIn('status', ['Completed', 'Unpaid', 'Partially Paid', 'Partially Returned']);
+                $query->whereIn('status', ['Completed', 'Unpaid', 'Partially Paid', 'Partially Returned', 'Cancelled']);
             } elseif ($request->status === 'Returned') {
-                $query->whereIn('status', ['Returned', 'Partially Returned']);
+                $query->whereIn('status', ['Returned', 'Partially Returned', 'Cancelled']);
             } else {
                 $query->where('status', $request->status);
             }

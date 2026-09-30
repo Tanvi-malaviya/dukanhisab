@@ -58,6 +58,10 @@
   "low_stock": "कम स्टॉक अलर्ट",
   "available_for_sale": "बिक्री के लिए उपलब्ध",
   "available_for_purchase": "खरीद के लिए उपलब्ध",
+  "available_for_sale_desc": "सेल्स POS और बिलिंग में दिखाएं",
+  "available_for_purchase_desc": "परचेज बिलिंग और ऑर्डर में दिखाएं",
+  "not_for_sale": "बिक्री के लिए नहीं",
+  "not_for_purchase": "खरीद के लिए नहीं",
   "inventory_subtitle": "उत्पाद स्टॉक और अलर्ट प्रबंधित करें",
   "your_shop": "आपकी दुकान",
   "your_shop_subtitle": "दुकान और इनवॉइस सेटिंग्स अपडेट करें",
@@ -645,5 +649,9 @@
   "disable_auto_renewal_confirm": "यह ऐड-ऑन अपनी वर्तमान अवधि समाप्त होने तक सक्रिय रहेगा, फिर यह नवीनीकृत नहीं होगा.",
   "shop": "दुकान",
   "total": "कुल",
-  "disable_auto_renewal_title": "ऑटो-नवीनीकरण अक्षम करें?"
+  "disable_auto_renewal_title": "ऑटो-नवीनीकरण अक्षम करें?",
+  "paid_amount": "भुगतान राशि",
+  "balance_due": "बकाया राशि",
+  "share_report": "रिपोर्ट शेयर करें",
+  "download_report": "रिपोर्ट डाउनलोड करें"
 }
