@@ -134,6 +134,13 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
         ->names('shopowner.support-tickets')
             ->except(['edit', 'create']);
+
+        // Notification inbox (own notifications only) — fed by the admin's Broadcast Center
+        Route::get('/notifications', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'index']);
+        Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markRead']);
+        Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markAllRead']);
+        Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'destroy']);
     });
 });
 
@@ -142,6 +149,13 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
     Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
     ->names('v1.support-tickets')
         ->except(['edit', 'create']);
+
+    // Notification inbox — same controller as the shopowner group, mirrored here for mobile clients
+    Route::get('/notifications', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'index']);
+    Route::get('/notifications/unread-count', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'unreadCount']);
+    Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markRead']);
+    Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markAllRead']);
+    Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'destroy']);
 });
 
 

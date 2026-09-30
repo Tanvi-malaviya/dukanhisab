@@ -16,6 +16,56 @@
             x-text="new Date().toLocaleDateString(currentLang === 'gu' ? 'gu-IN' : (currentLang === 'hi' ? 'hi-IN' : 'en-US'), { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })">
         </span>
 
+        {{-- Notification Bell --}}
+        <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open; if (open) loadNotifications();" @click.outside="open = false"
+                class="relative p-1.5 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600 transition-colors" title="Notifications">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span x-show="unreadNotificationsCount > 0" x-cloak
+                    class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center"
+                    x-text="unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount"></span>
+            </button>
+
+            <div x-show="open" x-cloak
+                class="absolute right-0 mt-1.5 w-80 max-w-[90vw] bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl shadow-xl z-[100] overflow-hidden transition-all">
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
+                    <p class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notifications</p>
+                    <button x-show="unreadNotificationsCount > 0" @click="markAllNotificationsRead()"
+                        class="text-[10px] font-semibold text-primary hover:underline">Mark all read</button>
+                </div>
+
+                <div class="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-gray-700">
+                    <template x-if="notificationsLoading">
+                        <p class="text-xs text-slate-400 text-center py-6">Loading…</p>
+                    </template>
+                    <template x-if="!notificationsLoading && notifications.length === 0">
+                        <p class="text-xs text-slate-400 text-center py-6">No notifications yet.</p>
+                    </template>
+                    <template x-for="n in notifications" :key="n.id">
+                        <div @click="markNotificationRead(n)"
+                            :class="!n.read ? 'bg-primary/5 dark:bg-primary/10' : ''"
+                            class="px-4 py-3 flex items-start gap-2.5 hover:bg-slate-50 dark:hover:bg-gray-700/40 cursor-pointer group">
+                            <span class="text-base leading-none mt-0.5" x-text="notificationIcon(n.type)"></span>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <p class="text-xs font-bold text-slate-800 dark:text-white truncate" x-text="n.title"></p>
+                                    <span x-show="!n.read" class="w-1.5 h-1.5 rounded-full bg-primary shrink-0"></span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 whitespace-normal" x-text="n.message"></p>
+                                <p class="text-[10px] text-slate-400 mt-1" x-text="timeAgo(n.created_at)"></p>
+                            </div>
+                            <button @click.stop="deleteNotification(n)"
+                                class="opacity-0 group-hover:opacity-100 p-1 rounded text-slate-300 hover:text-rose-500 transition-all shrink-0" title="Delete">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
         {{-- Language Selector Dropdown --}}
         <div class="relative" x-data="{ open: false }">
             <button @click="open = !open" @click.outside="open = false" class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300 flex items-center gap-1.5 transition-all hover:bg-slate-200 dark:hover:bg-gray-600" title="Select Language">

@@ -26,10 +26,10 @@
                 style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(209, 250, 229, 0.25) 100%); border-color: rgba(16, 185, 129, 0.2);">
                 <p class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Successful Invoices
+                    Successful Payments
                 </p>
-                <h3 class="text-2xl font-black text-emerald-950 mt-2">{{ number_format($successCount) }} Transactions</h3>
-                <div class="mt-2 text-xs text-emerald-800/80 font-medium">Processed by Stripe & Razorpay</div>
+                <h3 class="text-2xl font-black text-emerald-950 mt-2">{{ number_format($successCount) }}</h3>
+                <div class="mt-2 text-xs text-emerald-800/80 font-medium">All-time, via Razorpay or granted manually</div>
             </div>
 
             <!-- Failed Transactions count -->
@@ -37,10 +37,10 @@
                 style="background: linear-gradient(135deg, rgba(244, 63, 94, 0.1) 0%, rgba(254, 226, 226, 0.25) 100%); border-color: rgba(244, 63, 94, 0.2);">
                 <p class="text-[11px] font-bold text-rose-800 uppercase tracking-wider flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    Failed Checkouts
+                    Failed Payments
                 </p>
-                <h3 class="text-2xl font-black text-rose-950 mt-2">{{ number_format($failedCount) }} Drops</h3>
-                <div class="mt-2 text-xs text-rose-800/80 font-medium">Checkout abandonments / gateway errors</div>
+                <h3 class="text-2xl font-black text-rose-950 mt-2">{{ number_format($failedCount) }}</h3>
+                <div class="mt-2 text-xs text-rose-800/80 font-medium">All-time gateway errors</div>
             </div>
 
             <!-- Total Refunded Sum -->
@@ -48,10 +48,10 @@
                 style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(254, 243, 199, 0.25) 100%); border-color: rgba(245, 158, 11, 0.2);">
                 <p class="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
                     <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    Total Capital Refunded
+                    Total Refunded
                 </p>
                 <h3 class="text-2xl font-black text-amber-950 mt-2">₹{{ number_format($refundedSum, 2) }}</h3>
-                <div class="mt-2 text-xs text-amber-800/80 font-medium">Reversed payments in last 30 days</div>
+                <div class="mt-2 text-xs text-amber-800/80 font-medium">All-time successful refunds</div>
             </div>
         </div>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\BankAccount;
 use App\Models\CashBook;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -12,7 +13,8 @@ use Carbon\Carbon;
 class BankTransferApiController extends Controller
 {
     /**
-     * Record a Contra Bank Transfer (Cash Deposit or Bank Withdrawal).
+     * Record a Contra Bank Transfer (Cash Deposit or Bank Withdrawal) against a specific bank
+     * account — or the shop's default one, if none is given.
      */
     public function store(Request $request)
     {
@@ -21,6 +23,7 @@ class BankTransferApiController extends Controller
         $validator = Validator::make($request->all(), [
             'type' => 'required|string|in:deposit,withdraw',
             'amount' => 'required|numeric|min:0.01',
+            'bank_account_id' => 'nullable|integer|exists:bank_accounts,id',
             'description' => 'nullable|string|max:255',
         ]);
 
@@ -28,11 +31,19 @@ class BankTransferApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $account = $request->filled('bank_account_id')
+            ? BankAccount::where('shop_id', $shopId)->find($request->bank_account_id)
+            : null;
+        if ($request->filled('bank_account_id') && !$account) {
+            return response()->json(['message' => 'That bank account does not belong to this shop.'], 422);
+        }
+        $account ??= BankAccount::defaultForShop($shopId);
+
         $type = $request->type;
         $amount = (float) $request->amount;
         $desc = $request->input('description') ?: ($type === 'deposit' ? 'Bank Cash Deposit' : 'Bank Cash Withdrawal');
 
-        return DB::transaction(function () use ($shopId, $type, $amount, $desc) {
+        return DB::transaction(function () use ($shopId, $type, $amount, $desc, $account) {
             $now = Carbon::now();
 
             if ($type === 'deposit') {
@@ -54,6 +65,7 @@ class BankTransferApiController extends Controller
                     'type' => 'cash_in',
                     'amount' => $amount,
                     'payment_method' => 'bank',
+                    'bank_account_id' => $account->id,
                     'description' => $desc . ' (Deposited to Bank)',
                     'reference_type' => 'contra',
                     'transaction_date' => $now,
@@ -66,6 +78,7 @@ class BankTransferApiController extends Controller
                     'type' => 'cash_out',
                     'amount' => $amount,
                     'payment_method' => 'bank',
+                    'bank_account_id' => $account->id,
                     'description' => $desc . ' (Withdrawn from Bank)',
                     'reference_type' => 'contra',
                     'transaction_date' => $now,
@@ -88,6 +101,7 @@ class BankTransferApiController extends Controller
                 'message' => 'Bank transfer recorded successfully.',
                 'transfer_type' => $type,
                 'amount' => $amount,
+                'bank_account' => $account,
                 'data' => [
                     'type' => $type,
                     'amount' => $amount,

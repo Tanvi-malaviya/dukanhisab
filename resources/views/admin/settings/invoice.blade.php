@@ -7,6 +7,11 @@
 @section('content')
 <div class="space-y-2">
 
+    <div class="p-4 rounded-2xl bg-info/10 border border-info/30 flex items-start gap-3">
+        <svg class="w-5 h-5 text-info shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <p class="text-sm text-info">Logo, watermark and footer text below are now used as the fallback on every generated invoice/purchase PDF, for any shop that hasn't set its own logo or footer text. <span class="font-semibold">Invoice number prefix is the one exception</span> — it's saved here but intentionally not applied; each shop's own <span class="italic">INV-</span>/<span class="italic">PUR-</span> numbering stays as-is so existing issued invoice numbers are never affected.</p>
+    </div>
+
     <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 font-semibold text-white text-sm">
             Platform Global Billing Brand Settings

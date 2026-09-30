@@ -85,6 +85,7 @@
   "completed": "Paid",
   "unpaid": "Unpaid",
   "partially_paid": "Partially Paid",
+  "fully_paid": "Fully Paid",
   "partially_returned": "Partially Returned",
   "returned": "Returned",
   "customer_name": "Customer Name",

@@ -21,13 +21,27 @@ class BackupController extends Controller
         $files = collect($disk->files('backups'))->map(function ($path) use ($disk) {
             return [
                 'filename' => basename($path),
-                'size' => round($disk->size($path) / 1024, 2) . ' KB',
+                'size' => $this->formatBytes($disk->size($path)),
+                'bytes' => $disk->size($path),
                 'created_at' => Carbon::createFromTimestamp($disk->lastModified($path))->toDateTimeString(),
                 'path' => $path
             ];
         })->sortByDesc('created_at')->values();
 
-        return view('admin.backups.index', compact('files'));
+        $totalSize = $this->formatBytes($files->sum('bytes'));
+
+        return view('admin.backups.index', compact('files', 'totalSize'));
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes >= 1024 * 1024 * 1024) {
+            return round($bytes / (1024 * 1024 * 1024), 2) . ' GB';
+        }
+        if ($bytes >= 1024 * 1024) {
+            return round($bytes / (1024 * 1024), 2) . ' MB';
+        }
+        return round($bytes / 1024, 2) . ' KB';
     }
 
     public function create()

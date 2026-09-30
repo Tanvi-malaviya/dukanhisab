@@ -85,6 +85,7 @@
   "completed": "ચૂકવેલ",
   "unpaid": "અણચૂકવેલ",
   "partially_paid": "અંશતઃ ચૂકવેલ",
+  "fully_paid": "સંપૂર્ણ ચૂકવેલ",
   "partially_returned": "અંશતઃ પરત",
   "returned": "પરત કરેલ",
   "customer_name": "ગ્રાહક",

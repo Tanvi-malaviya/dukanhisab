@@ -306,6 +306,10 @@
             selectedTicket: null,
             ticketForm: { subject: '', message: '', screenshot: null, screenshotPreview: null },
             submittingTicket: false,
+            // Notification inbox (fed by the admin's Broadcast Center)
+            notifications: [],
+            notificationsLoading: false,
+            unreadNotificationsCount: 0,
             cashbook: [],
             cashbookLoading: false,
             cashbookTab: 'ledger',
@@ -335,6 +339,19 @@
             },
             bankAccounts: [],
             bankAccountsLoading: false,
+            showBankAccountModal: false,
+            bankAccountForm: { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' },
+            openAddBankAccountModal() {
+                this.bankAccountForm = { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' };
+                this.showBankAccountModal = true;
+            },
+            openEditBankAccountModal(acc) {
+                this.bankAccountForm = {
+                    id: acc.id, name: acc.name, account_number: acc.account_number || '',
+                    bank_name: acc.bank_name || '', ifsc_code: acc.ifsc_code || '', opening_balance: acc.opening_balance || ''
+                };
+                this.showBankAccountModal = true;
+            },
             reportsData: { total_sales: 0, sales_count: 0, sales_by_payment_type: [], total_purchases: 0, purchases_count: 0, total_expenses: 0, expenses_count: 0, net_profit: 0 },
             reportsLoading: false,
             subscriptionPlans: [],
@@ -547,6 +564,10 @@
 
                     // Check for Lifetime Offer Popup
                     this.checkLifetimeOffer();
+
+                    // Notification inbox: initial unread count + poll every 2 minutes for new broadcasts
+                    this.loadUnreadNotificationsCount();
+                    setInterval(() => this.loadUnreadNotificationsCount(), 120000);
                 }
 
                 this.$watch('customersPage', () => {
@@ -1225,6 +1246,63 @@
                         if (Array.isArray(d)) this.bankAccounts = d;
                     })
                     .catch(() => { this.bankAccountsLoading = false; });
+            },
+
+            saveBankAccount() {
+                this.loading = true;
+                const isEdit = !!this.bankAccountForm.id;
+                const url = isEdit ? '/api/v1/bank-accounts/' + this.bankAccountForm.id : '/api/v1/bank-accounts';
+                fetch(url, {
+                    method: isEdit ? 'PUT' : 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(this.bankAccountForm)
+                })
+                    .then(r => {
+                        if (!r.ok) return r.json().then(e => { throw e; });
+                        return r.json();
+                    })
+                    .then(() => {
+                        this.loading = false;
+                        this.showToast(isEdit ? 'Bank account updated.' : 'Bank account added.');
+                        this.showBankAccountModal = false;
+                        this.loadBankAccounts();
+                    })
+                    .catch((err) => {
+                        this.loading = false;
+                        this.showToast((err && err.errors) ? Object.values(err.errors)[0][0] : 'Failed to save bank account.', 'error');
+                    });
+            },
+
+            setDefaultBankAccount(id) {
+                this.loading = true;
+                fetch('/api/v1/bank-accounts/' + id, {
+                    method: 'PUT',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({ make_default: true })
+                })
+                    .then(r => r.json())
+                    .then(() => {
+                        this.loading = false;
+                        this.showToast('Default bank account updated.');
+                        this.loadBankAccounts();
+                    })
+                    .catch(() => { this.loading = false; });
+            },
+
+            deleteBankAccount(id, name) {
+                this.showConfirm('Delete Bank Account', `Are you sure you want to delete "${name}"?`, () => {
+                    this.loading = true;
+                    fetch('/api/v1/bank-accounts/' + id, { method: 'DELETE', headers: this.getHeaders() })
+                        .then(r => {
+                            this.loading = false;
+                            if (r.status === 204) {
+                                this.showToast('Bank account deleted.');
+                                this.loadBankAccounts();
+                            } else {
+                                return r.json().then(e => this.showToast(e.message || 'Failed to delete.', 'error'));
+                            }
+                        });
+                });
             },
 
             submitBankTransfer() {
@@ -2305,6 +2383,80 @@
                     .catch(() => {
                         this.showToast('Failed to delete support ticket.', 'error');
                     });
+            },
+
+            // ── NOTIFICATIONS (Broadcast Center inbox) ──────────────────
+            loadNotifications() {
+                this.notificationsLoading = true;
+                return fetch('/api/v1/shopowner/notifications', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.notificationsLoading = false;
+                        if (Array.isArray(d.notifications)) this.notifications = d.notifications;
+                        if (typeof d.unread_count === 'number') this.unreadNotificationsCount = d.unread_count;
+                    })
+                    .catch(() => {
+                        this.notificationsLoading = false;
+                    });
+            },
+
+            loadUnreadNotificationsCount() {
+                return fetch('/api/v1/shopowner/notifications/unread-count', { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (typeof d.unread_count === 'number') this.unreadNotificationsCount = d.unread_count;
+                    })
+                    .catch(() => {});
+            },
+
+            markNotificationRead(notification) {
+                if (notification.read) return;
+                fetch('/api/v1/shopowner/notifications/' + notification.id + '/read', { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(() => {
+                        notification.read = true;
+                        this.unreadNotificationsCount = Math.max(0, this.unreadNotificationsCount - 1);
+                    })
+                    .catch(() => {});
+            },
+
+            markAllNotificationsRead() {
+                if (this.unreadNotificationsCount === 0) return;
+                fetch('/api/v1/shopowner/notifications/mark-all-read', { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(() => {
+                        this.notifications.forEach(n => n.read = true);
+                        this.unreadNotificationsCount = 0;
+                    })
+                    .catch(() => {});
+            },
+
+            deleteNotification(notification) {
+                fetch('/api/v1/shopowner/notifications/' + notification.id, { method: 'DELETE', headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(() => {
+                        this.notifications = this.notifications.filter(n => n.id !== notification.id);
+                        if (!notification.read) this.unreadNotificationsCount = Math.max(0, this.unreadNotificationsCount - 1);
+                    })
+                    .catch(() => {});
+            },
+
+            notificationIcon(type) {
+                const map = { promo: '🎁', promotional: '🎁', maintenance: '🛠️', feature: '✨', new_feature: '✨' };
+                return map[type] || '🔔';
+            },
+
+            timeAgo(dateStr) {
+                if (!dateStr) return '';
+                const diffMs = Date.now() - new Date(dateStr).getTime();
+                const mins = Math.floor(diffMs / 60000);
+                if (mins < 1) return 'just now';
+                if (mins < 60) return mins + 'm ago';
+                const hrs = Math.floor(mins / 60);
+                if (hrs < 24) return hrs + 'h ago';
+                const days = Math.floor(hrs / 24);
+                if (days < 30) return days + 'd ago';
+                return new Date(dateStr).toLocaleDateString();
             },
 
             // ── AUTH ──────────────────────────────────────────────────

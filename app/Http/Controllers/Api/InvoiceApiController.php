@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\Purchase;
 use App\Models\Shop;
 use App\Models\InvoiceConfig;
+use App\Models\InvoiceSetting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Mail;
 
@@ -244,8 +245,11 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoBase64 = $this->getSquareLogoBase64($shop->logo);
+        $logoBase64 = $this->getSquareLogoBase64($shop->logo ?: InvoiceSetting::get('default_logo'));
         $signatureBase64 = $this->getBase64Image($shop->signature);
+        $watermarkHtml = InvoiceSetting::get('watermark') === 'yes'
+            ? '<div class="dh-watermark">DukanHisab</div>'
+            : '';
 
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
@@ -466,9 +470,23 @@ class InvoiceApiController extends Controller
                     color: ' . $themeColor . ';
                     font-weight: bold;
                 }
+                .dh-watermark {
+                    position: fixed;
+                    top: 40%;
+                    left: 0;
+                    width: 100%;
+                    text-align: center;
+                    transform: rotate(-35deg);
+                    font-size: 70px;
+                    font-weight: 800;
+                    color: #94a3b8;
+                    opacity: 0.15;
+                    letter-spacing: 4px;
+                }
             </style>
         </head>
         <body>
+            ' . $watermarkHtml . '
             <div class="container">
                 <table class="header-table">
                     <tr>
@@ -524,10 +542,10 @@ class InvoiceApiController extends Controller
                                         : ($sale->status === 'Partially Returned'
                                             ? '<span style="color:#f59e0b;">' . __('partially_returned') . '</span>'
                                             : ($sale->status === 'Unpaid'
-                                                ? '<span style="color:#f59e0b;font-weight:bold;">' . __('unpaid') . '</span>'
-                                                : ($sale->payment_type === 'Credit'
-                                                    ? '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>'
-                                                    : '<span style="color:#10b981;font-weight:bold;">' . __('paid') . '</span>')))
+                                                ? '<span style="color:#dc2626;font-weight:bold;">' . __('due') . '</span>'
+                                                : ($sale->status === 'Partially Paid'
+                                                    ? '<span style="color:#f59e0b;font-weight:bold;">' . __('partially_paid') . '</span>'
+                                                    : '<span style="color:#10b981;font-weight:bold;">' . __('fully_paid') . '</span>')))
                                 ) . '<br>
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower($sale->payment_type)) . '
                             </div>
@@ -664,7 +682,7 @@ class InvoiceApiController extends Controller
                     </tr>
                 </table>
 
-                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
+                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: InvoiceSetting::get('footer_text') ?: __('invoice_footer_default')) . '</div>';
 
                 if ($signatureBase64) {
                     $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
@@ -752,8 +770,11 @@ class InvoiceApiController extends Controller
             $badgeHtml = ' <span class="status-badge">' . __('partially_returned') . '</span>';
         }
 
-        $logoBase64 = $this->getSquareLogoBase64($shop->logo);
+        $logoBase64 = $this->getSquareLogoBase64($shop->logo ?: InvoiceSetting::get('default_logo'));
         $signatureBase64 = $this->getBase64Image($shop->signature);
+        $watermarkHtml = InvoiceSetting::get('watermark') === 'yes'
+            ? '<div class="dh-watermark">DukanHisab</div>'
+            : '';
 
         $qrBase64 = null;
         if ($invoiceConfig->show_upi_qr && $shop->upi_id) {
@@ -961,9 +982,23 @@ class InvoiceApiController extends Controller
                     color: ' . $themeColor . ';
                     font-weight: bold;
                 }
+                .dh-watermark {
+                    position: fixed;
+                    top: 40%;
+                    left: 0;
+                    width: 100%;
+                    text-align: center;
+                    transform: rotate(-35deg);
+                    font-size: 70px;
+                    font-weight: 800;
+                    color: #94a3b8;
+                    opacity: 0.15;
+                    letter-spacing: 4px;
+                }
             </style>
         </head>
         <body>
+            ' . $watermarkHtml . '
             <div class="container">
                 <table class="header-table">
                     <tr>
@@ -1019,13 +1054,10 @@ class InvoiceApiController extends Controller
                                         : ($purchase->status === 'Partially Returned'
                                             ? '<span class="badge badge-warning">' . strtoupper(__('partially_returned')) . '</span>'
                                             : ($purchase->status === 'Unpaid'
-                                                ? '<span class="badge badge-unpaid">' . strtoupper(__('unpaid')) . '</span>'
+                                                ? '<span class="badge badge-unpaid">' . strtoupper(__('due')) . '</span>'
                                                 : ($purchase->status === 'Partially Paid'
-                                                    ? '<span class="badge badge-warning">' . strtoupper(__('partially_paid', [], 'Partially Paid')) . '</span>'
-                                                    : ($purchase->payment_type === 'Credit'
-                                                        ? '<span class="badge badge-paid">' . strtoupper(__('paid')) . '</span>'
-                                                        : '<span class="badge badge-paid">' . strtoupper(__('completed')) . '</span>'
-                                                    )
+                                                    ? '<span class="badge badge-warning">' . strtoupper(__('partially_paid')) . '</span>'
+                                                    : '<span class="badge badge-paid">' . strtoupper(__('fully_paid')) . '</span>'
                                                 )
                                             )
                                         )
@@ -1132,7 +1164,7 @@ class InvoiceApiController extends Controller
                     </tr>
                 </table>
 
-                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: __('invoice_footer_default')) . '</div>';
+                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: InvoiceSetting::get('footer_text') ?: __('invoice_footer_default')) . '</div>';
 
                 if ($signatureBase64) {
                     $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
