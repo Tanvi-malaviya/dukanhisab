@@ -374,6 +374,10 @@
             showBankAccountModal: false,
             bankAccountForm: { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' },
             openAddBankAccountModal() {
+                if (this.bankAccounts && this.bankAccounts.length > 0) {
+                    this.openEditBankAccountModal(this.bankAccounts[0]);
+                    return;
+                }
                 this.bankAccountForm = { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' };
                 this.showBankAccountModal = true;
             },
