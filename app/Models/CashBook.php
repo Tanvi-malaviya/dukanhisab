@@ -41,6 +41,30 @@ class CashBook extends Model
         return $this->belongsTo(BankAccount::class);
     }
 
+    /**
+     * Scope for operational business expenses.
+     * Excludes system-generated cash_out transactions such as purchases,
+     * sales returns, cancellation reversals, customer/supplier payments, and bank contra transfers.
+     */
+    public function scopeExpenses($query)
+    {
+        return $query->where('type', 'cash_out')
+            ->where(function ($q) {
+                $q->where('reference_type', 'expense')
+                  ->orWhere(function ($sub) {
+                      $sub->whereNull('reference_type')
+                          ->where('description', 'not like', 'Purchase:%')
+                          ->where('description', 'not like', 'Return:%')
+                          ->where('description', 'not like', 'Partial Return:%')
+                          ->where('description', 'not like', 'Reversal%')
+                          ->where('description', 'not like', 'Supplier Payment:%')
+                          ->where('description', 'not like', 'Customer Payment:%')
+                          ->where('description', 'not like', 'Bank Transfer:%')
+                          ->where('description', 'not like', 'Contra:%');
+                  });
+            });
+    }
+
     protected static function booted(): void
     {
         // Every Sale/Purchase/due-payment/bank-transfer call site that creates a bank or UPI entry

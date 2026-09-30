@@ -60,11 +60,7 @@ class ReportApiController extends Controller
 
         // 3. Expenses Report (operational expenses only, excluding purchases and returns)
         $expensesQuery = CashBook::where('shop_id', $shopId)
-            ->where('type', 'cash_out')
-            ->where(function ($q) {
-                $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
-            })
+            ->expenses()
             ->whereBetween('transaction_date', [$startDate, $endDate]);
 
         $totalExpenses = $expensesQuery->sum('amount');
