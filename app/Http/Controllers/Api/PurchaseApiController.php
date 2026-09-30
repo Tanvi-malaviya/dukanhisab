@@ -535,6 +535,10 @@ class PurchaseApiController extends Controller
                     $newTotalAmount += max(0, $netItemTotal);
                 }
 
+                // Adjust bill-level discount if present
+                $newDiscount = min((float)($purchase->discount ?? 0), $newTotalAmount);
+                $newTotalAmount = max(0, $newTotalAmount - $newDiscount);
+
                 $actualRefund = max(0, $purchase->total_amount - $newTotalAmount);
 
                 // Adjust Supplier Due first if there was an unpaid balance on this purchase
@@ -581,6 +585,7 @@ class PurchaseApiController extends Controller
 
                 $purchase->paid_amount = max(0, ($purchase->paid_amount ?? 0) - $cashRefund);
                 $purchase->total_amount = $newTotalAmount;
+                $purchase->discount = $newDiscount;
                 if (!$hasRemaining) {
                     $purchase->status = 'Returned';
                 } else {
@@ -598,7 +603,7 @@ class PurchaseApiController extends Controller
         // Otherwise process full return
         return DB::transaction(function () use ($purchase, $shopId) {
             // 1. Decrement Product Stocks & Update returned_quantity of all items
-            $totalRefundAmount = 0;
+            $totalRefundAmount = (float)$purchase->total_amount;
             foreach ($purchase->items as $item) {
                 $unreturnedQty = $item->quantity - $item->returned_quantity;
                 if ($unreturnedQty > 0) {
@@ -608,10 +613,6 @@ class PurchaseApiController extends Controller
 
                     $item->returned_quantity = $item->quantity;
                     $item->save();
-
-                    $itemDiscount = (float)($item->discount ?? 0);
-                    $netItemTotal = ($unreturnedQty * $item->purchase_price) - ($item->quantity > 0 ? ($itemDiscount * $unreturnedQty / $item->quantity) : 0);
-                    $totalRefundAmount += max(0, $netItemTotal);
                 }
             }
 
@@ -651,6 +652,7 @@ class PurchaseApiController extends Controller
             $purchase->status = 'Returned';
             $purchase->total_amount = 0;
             $purchase->paid_amount = 0;
+            $purchase->discount = 0;
             $purchase->save();
 
             SupplierApiController::syncSupplierPurchaseStatuses($purchase->supplier_id, $shopId);

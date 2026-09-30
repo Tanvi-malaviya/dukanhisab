@@ -653,5 +653,6 @@
   "paid_amount": "भुगतान राशि",
   "balance_due": "बकाया राशि",
   "share_report": "रिपोर्ट शेयर करें",
-  "download_report": "रिपोर्ट डाउनलोड करें"
+  "download_report": "रिपोर्ट डाउनलोड करें",
+  "register_closure_notice": "दिन के अंत में गल्ले की नकद राशि और मिलान का इतिहास।"
 }

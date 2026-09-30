@@ -771,12 +771,24 @@
                         <tr class="border-b border-slate-50 dark:border-gray-700/50">
                             <td class="py-3 font-semibold text-slate-700 dark:text-white" x-text="item.name">
                             </td>
-                            <td class="py-3 text-slate-500 text-center">₹<span
-                                    x-text="parseFloat(item.selling_price).toFixed(2)"></span></td>
-                            <td class="py-3 text-slate-500 text-center" x-text="item.purchasedQty"></td>
+                            <td class="py-3 text-center">
+                                <template x-if="item.unit_discount && item.unit_discount > 0">
+                                    <div class="flex flex-col items-center">
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">₹<span x-text="item.effective_price.toFixed(2)"></span></span>
+                                        <div class="flex items-center gap-1 text-[10px]">
+                                            <span class="line-through text-slate-400 font-mono">₹<span x-text="item.selling_price.toFixed(2)"></span></span>
+                                            <span class="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-950/60 px-1 rounded text-[9px]">-₹<span x-text="item.unit_discount.toFixed(2)"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!item.unit_discount || item.unit_discount <= 0">
+                                    <span class="text-slate-600 dark:text-slate-300 font-semibold font-mono">₹<span x-text="parseFloat(item.selling_price).toFixed(2)"></span></span>
+                                </template>
+                            </td>
+                            <td class="py-3 text-slate-500 text-center font-mono" x-text="item.purchasedQty"></td>
                             <td class="py-3 text-right">
                                 <input type="number" min="0" :max="item.purchasedQty" x-model.number="item.returnedQty"
-                                    class="w-20 px-2 py-1 text-center border border-slate-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:border-primary">
+                                    class="w-20 px-2 py-1 text-center border border-slate-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:border-primary font-mono">
                             </td>
                         </tr>
                     </template>
@@ -806,14 +818,14 @@
                 </template>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
                     <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
-                    <span class="font-bold text-primary">₹<span x-text="
+                    <span class="font-bold text-primary font-mono">₹<span x-text="
                         (() => {
                             const newSubtotal = returnForm.items.reduce((sum, item) => {
                                 const rem = item.purchasedQty - (item.returnedQty || 0);
-                                return sum + (rem * item.selling_price);
+                                return sum + (rem * (item.effective_price !== undefined ? item.effective_price : item.selling_price));
                             }, 0);
-                            const oldSubtotal = returnForm.items.reduce((sum, item) => sum + (item.purchasedQty * item.selling_price), 0);
-                            const oldDiscount = returnForm.discount;
+                            const oldSubtotal = returnForm.items.reduce((sum, item) => sum + (item.purchasedQty * (item.effective_price !== undefined ? item.effective_price : item.selling_price)), 0);
+                            const oldDiscount = returnForm.discount || 0;
                             const oldGrandTotal = Math.max(0, oldSubtotal - oldDiscount);
                             const newDiscount = Math.min(oldDiscount, newSubtotal);
                             const newGrandTotal = Math.max(0, newSubtotal - newDiscount);
@@ -1216,12 +1228,24 @@
                         <tr class="border-b border-slate-50 dark:border-gray-700/50">
                             <td class="py-3 font-semibold text-slate-700 dark:text-white" x-text="item.name">
                             </td>
-                            <td class="py-3 text-slate-500 text-center">₹<span
-                                    x-text="item.purchase_price.toFixed(2)"></span></td>
-                            <td class="py-3 text-slate-500 text-center" x-text="item.purchasedQty"></td>
+                            <td class="py-3 text-center">
+                                <template x-if="item.unit_discount && item.unit_discount > 0">
+                                    <div class="flex flex-col items-center">
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">₹<span x-text="item.effective_price.toFixed(2)"></span></span>
+                                        <div class="flex items-center gap-1 text-[10px]">
+                                            <span class="line-through text-slate-400 font-mono">₹<span x-text="item.purchase_price.toFixed(2)"></span></span>
+                                            <span class="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-950/60 px-1 rounded text-[9px]">-₹<span x-text="item.unit_discount.toFixed(2)"></span></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!item.unit_discount || item.unit_discount <= 0">
+                                    <span class="text-slate-600 dark:text-slate-300 font-semibold font-mono">₹<span x-text="parseFloat(item.purchase_price).toFixed(2)"></span></span>
+                                </template>
+                            </td>
+                            <td class="py-3 text-slate-500 text-center font-mono" x-text="item.purchasedQty"></td>
                             <td class="py-3 text-right">
                                 <input type="number" min="0" :max="item.purchasedQty" x-model.number="item.returnedQty"
-                                    class="w-20 px-2 py-1 text-center border border-slate-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:border-primary">
+                                    class="w-20 px-2 py-1 text-center border border-slate-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:border-primary font-mono">
                             </td>
                         </tr>
                     </template>
@@ -1236,13 +1260,17 @@
                 </div>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
                     <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
-                    <span class="font-bold text-primary">₹<span x-text="
+                    <span class="font-bold text-primary font-mono">₹<span x-text="
                         (() => {
-                            const newTotal = purchaseReturnForm.items.reduce((sum, item) => {
+                            const newSubtotal = purchaseReturnForm.items.reduce((sum, item) => {
                                 const rem = item.purchasedQty - (item.returnedQty || 0);
-                                return sum + (rem * item.purchase_price);
+                                return sum + (rem * (item.effective_price !== undefined ? item.effective_price : item.purchase_price));
                             }, 0);
-                            const oldTotal = purchaseReturnForm.items.reduce((sum, item) => sum + (item.purchasedQty * item.purchase_price), 0);
+                            const oldSubtotal = purchaseReturnForm.items.reduce((sum, item) => sum + (item.purchasedQty * (item.effective_price !== undefined ? item.effective_price : item.purchase_price)), 0);
+                            const oldDiscount = purchaseReturnForm.discount || 0;
+                            const oldTotal = Math.max(0, oldSubtotal - oldDiscount);
+                            const newDiscount = Math.min(oldDiscount, newSubtotal);
+                            const newTotal = Math.max(0, newSubtotal - newDiscount);
                             return Math.max(0, oldTotal - newTotal).toFixed(2);
                         })()
                     "></span></span>

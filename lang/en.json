@@ -653,5 +653,6 @@
   "paid_amount": "Paid Amount",
   "balance_due": "Balance Due",
   "share_report": "Share Report",
-  "download_report": "Download Report"
+  "download_report": "Download Report",
+  "register_closure_notice": "Daily End-of-Day register drawer physical count & reconciliation history."
 }

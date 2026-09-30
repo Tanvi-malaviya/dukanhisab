@@ -1133,17 +1133,39 @@
                     .then(d => {
                         this.loading = false;
                         if (d.id) {
+                            const availableItems = (d.items || []).map(item => {
+                                const origQty = parseInt(item.quantity || 0);
+                                const itemDiscount = parseFloat(item.discount || 0);
+                                const purchasePrice = parseFloat(item.purchase_price || 0);
+                                const unitDiscount = origQty > 0 ? (itemDiscount / origQty) : 0;
+                                const effectivePrice = Math.max(0, purchasePrice - unitDiscount);
+
+                                return {
+                                    id: item.id,
+                                    product_id: item.product_id,
+                                    name: item.product ? item.product.name : 'Unknown Product',
+                                    originalQty: origQty,
+                                    purchasedQty: Math.max(0, origQty - (item.returned_quantity || 0)),
+                                    returnedQty: 0,
+                                    purchase_price: purchasePrice,
+                                    discount: itemDiscount,
+                                    unit_discount: unitDiscount,
+                                    effective_price: effectivePrice
+                                };
+                            }).filter(item => item.purchasedQty > 0);
+
+                            if (availableItems.length === 0) {
+                                this.showToast('All items in this purchase have already been returned.', 'info');
+                                return;
+                            }
+
                             this.purchaseReturnForm = {
                                 purchaseId: d.id,
                                 purchase_number: d.purchase_number,
                                 payment_type: d.payment_type,
-                                items: d.items.map(item => ({
-                                    product_id: item.product_id,
-                                    name: item.product ? item.product.name : 'Unknown Product',
-                                    purchasedQty: item.quantity - (item.returned_quantity || 0),
-                                    returnedQty: 0,
-                                    purchase_price: parseFloat(item.purchase_price)
-                                })).filter(item => item.purchasedQty > 0)
+                                discount: parseFloat(d.discount) || 0,
+                                total_amount: parseFloat(d.total_amount) || 0,
+                                items: availableItems
                             };
                             this.showPurchaseReturnModal = true;
                         }
@@ -3045,13 +3067,26 @@
                     .then(d => {
                         this.loading = false;
                         if (d.id) {
-                            const availableItems = (d.items || []).map(item => ({
-                                product_id: item.product_id,
-                                name: item.product ? item.product.name : 'Unknown Product',
-                                purchasedQty: Math.max(0, item.quantity - (item.returned_quantity || 0)),
-                                returnedQty: 0,
-                                selling_price: parseFloat(item.selling_price)
-                            })).filter(item => item.purchasedQty > 0);
+                            const availableItems = (d.items || []).map(item => {
+                                const origQty = parseInt(item.quantity || 0);
+                                const itemDiscount = parseFloat(item.discount || 0);
+                                const sellingPrice = parseFloat(item.selling_price || 0);
+                                const unitDiscount = origQty > 0 ? (itemDiscount / origQty) : 0;
+                                const effectivePrice = Math.max(0, sellingPrice - unitDiscount);
+
+                                return {
+                                    id: item.id,
+                                    product_id: item.product_id,
+                                    name: item.product ? item.product.name : 'Unknown Product',
+                                    originalQty: origQty,
+                                    purchasedQty: Math.max(0, origQty - (item.returned_quantity || 0)),
+                                    returnedQty: 0,
+                                    selling_price: sellingPrice,
+                                    discount: itemDiscount,
+                                    unit_discount: unitDiscount,
+                                    effective_price: effectivePrice
+                                };
+                            }).filter(item => item.purchasedQty > 0);
 
                             if (availableItems.length === 0) {
                                 this.showToast('All items in this sale have already been returned.', 'info');
