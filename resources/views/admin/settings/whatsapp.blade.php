@@ -91,6 +91,19 @@
             </div>
 
             <div>
+                <label class="{{ $labelClass }} flex items-center justify-between">
+                    <span>App Secret</span>
+                    @if($settings['has_app_secret'])
+                        <span class="text-[10px] text-emerald-400 font-mono normal-case">Saved — leave blank to keep</span>
+                    @endif
+                </label>
+                <input type="password" name="whatsapp_app_secret" autocomplete="off"
+                    placeholder="{{ $settings['has_app_secret'] ? 'Enter a new secret only to replace the saved one' : 'Meta App → App Settings → Basic → App Secret' }}"
+                    class="{{ $inputClass }} font-mono">
+                <span class="text-[11px] text-slate-500 mt-1 block">Used to verify that delivery updates really come from Meta. Required for the webhook. Stored encrypted.</span>
+            </div>
+
+            <div>
                 <label class="{{ $labelClass }}">Webhook Verify Token</label>
                 <input type="text" name="whatsapp_webhook_verify_token"
                     value="{{ old('whatsapp_webhook_verify_token', $settings['whatsapp_webhook_verify_token']) }}" placeholder="Any random string — you will enter the same value in Meta"
@@ -102,6 +115,20 @@
                 <x-button type="submit" variant="primary">Save WhatsApp Settings</x-button>
             </div>
         </form>
+    </div>
+
+    <!-- Webhook setup -->
+    <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm p-6 space-y-4">
+        <div>
+            <h3 class="font-bold text-white text-sm">Webhook Setup (delivery status)</h3>
+            <p class="text-xs text-slate-400">In your Meta App → WhatsApp → Configuration, set this Callback URL with the Verify Token above, then subscribe to the <code>messages</code> field.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <input type="text" readonly id="webhook-url-input" value="{{ $webhookUrl }}"
+                class="block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark rounded-xl text-xs text-emerald-400 font-mono select-all">
+            <button type="button" id="copy-webhook-btn" onclick="navigator.clipboard.writeText(document.getElementById('webhook-url-input').value).then(() => { this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy URL', 2000); })"
+                class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-secondary/50 hover:bg-secondary text-white border border-border-dark transition-all cursor-pointer shrink-0">Copy URL</button>
+        </div>
     </div>
 
     <!-- Card 2: Send a test message -->

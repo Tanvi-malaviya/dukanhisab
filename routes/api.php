@@ -95,6 +95,17 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     Route::apiResource('credit-notes', \App\Http\Controllers\Api\CreditNoteApiController::class)->only(['index', 'show']);
 });
 
+// WhatsApp Cloud API callbacks — called by Meta, so no user auth. The webhook checks Meta's
+// signature; invoice PDFs are only reachable through temporary signed links.
+Route::prefix('v1/whatsapp')->group(function () {
+    Route::get('/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'verify']);
+    Route::post('/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'handle']);
+    Route::get('/invoices/sale/{id}', [\App\Http\Controllers\Api\InvoiceApiController::class, 'signedSalePDF'])
+        ->middleware('signed:relative')->name('whatsapp.invoice.sale');
+    Route::get('/invoices/purchase/{id}', [\App\Http\Controllers\Api\InvoiceApiController::class, 'signedPurchasePDF'])
+        ->middleware('signed:relative')->name('whatsapp.invoice.purchase');
+});
+
 // ShopOwner Common API Authentication Module
 Route::prefix('v1/shopowner')->group(function () {
     Route::post('/register', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'register']);

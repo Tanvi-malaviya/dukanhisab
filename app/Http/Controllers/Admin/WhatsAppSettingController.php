@@ -34,6 +34,7 @@ class WhatsAppSettingController extends Controller
             'whatsapp_webhook_verify_token' => AppSetting::get('whatsapp_webhook_verify_token', ''),
             'has_access_token' => $token !== '',
             'access_token_hint' => $token !== '' ? '••••' . substr($token, -4) : '',
+            'has_app_secret' => (bool) AppSetting::get('whatsapp_app_secret'),
         ];
 
         $templates = WhatsAppTemplate::orderBy('key')->orderBy('language')->get();
@@ -58,6 +59,7 @@ class WhatsAppSettingController extends Controller
             'languages' => WhatsAppTemplate::LANGUAGES,
             'variables' => WhatsAppTemplate::VARIABLES,
             'sampleValues' => WhatsAppTemplate::sampleValues(),
+            'webhookUrl' => url('/api/v1/whatsapp/webhook'),
         ]);
     }
 
@@ -70,21 +72,25 @@ class WhatsAppSettingController extends Controller
             'whatsapp_waba_id' => 'nullable|digits_between:5,30',
             'whatsapp_access_token' => 'nullable|string|max:1000',
             'whatsapp_webhook_verify_token' => 'nullable|string|max:255',
+            'whatsapp_app_secret' => 'nullable|string|max:255',
         ]);
 
         foreach (['whatsapp_enabled', 'whatsapp_api_version', 'whatsapp_phone_number_id', 'whatsapp_waba_id', 'whatsapp_webhook_verify_token'] as $key) {
             AppSetting::set($key, (string) $request->input($key, ''));
         }
 
-        // A blank token field means "keep the saved one" — the page never echoes the token back.
-        if ($request->filled('whatsapp_access_token')) {
-            AppSetting::set('whatsapp_access_token', Crypt::encryptString(trim($request->input('whatsapp_access_token'))));
+        // Blank secret fields mean "keep the saved one" — the page never echoes them back.
+        foreach (['whatsapp_access_token', 'whatsapp_app_secret'] as $key) {
+            if ($request->filled($key)) {
+                AppSetting::set($key, Crypt::encryptString(trim($request->input($key))));
+            }
         }
 
         AuditLog::log('Updated WhatsApp Cloud API settings', [
             'enabled' => $request->input('whatsapp_enabled'),
             'phone_number_id' => $request->input('whatsapp_phone_number_id'),
             'token_changed' => $request->filled('whatsapp_access_token'),
+            'app_secret_changed' => $request->filled('whatsapp_app_secret'),
         ]);
 
         return back()->with('success', 'WhatsApp settings saved successfully.');
