@@ -742,5 +742,14 @@
   "wa_last_sent": "पिछली बार भेजा",
   "wa_sent_count": "भेजे",
   "wa_skipped_no_credits": "छूटे (क्रेडिट नहीं)",
-  "wa_confirm_claim_q": "इस भुगतान की पुष्टि करें? यह UPI भुगतान के रूप में दर्ज होगा और ग्राहक का बकाया घटेगा।"
+  "wa_confirm_claim_q": "इस भुगतान की पुष्टि करें? यह UPI भुगतान के रूप में दर्ज होगा और ग्राहक का बकाया घटेगा।",
+  "wa_message_history": "मैसेज इतिहास",
+  "wa_no_messages": "अभी तक कोई मैसेज नहीं भेजा गया।",
+  "wa_to": "किसे",
+  "wa_message": "मैसेज",
+  "wa_status_queued": "कतार में",
+  "wa_status_sent": "भेजा गया",
+  "wa_status_delivered": "पहुंचा",
+  "wa_status_read": "पढ़ा गया",
+  "wa_status_failed": "असफल"
 }

@@ -10,6 +10,7 @@ use App\Models\Sale;
 use App\Models\Shop;
 use App\Models\Supplier;
 use App\Models\WhatsAppCreditLedger;
+use App\Models\WhatsAppMessageLog;
 use App\Models\WhatsAppPack;
 use App\Models\WhatsAppPackPurchase;
 use App\Models\WhatsAppShopSetting;
@@ -137,6 +138,29 @@ class WhatsAppApiController extends Controller
         }
 
         return $this->settings($request, app(WhatsAppMessenger::class));
+    }
+
+    /** Sent messages with delivery status, newest first, with the customer / supplier name. */
+    public function messages(Request $request)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $request->validate(['status' => 'nullable|in:queued,sent,delivered,read,failed']);
+
+        $logs = WhatsAppMessageLog::where('shop_id', $shopId)
+            ->when($request->status, fn ($q, $status) => $q->where('status', $status))
+            ->latest('id')
+            ->paginate(20, ['id', 'event', 'recipient_type', 'recipient_id', 'phone', 'status', 'error', 'created_at', 'sent_at', 'delivered_at', 'read_at', 'failed_at']);
+
+        $names = [
+            'customer' => Customer::whereIn('id', $logs->where('recipient_type', 'customer')->pluck('recipient_id'))->pluck('name', 'id'),
+            'supplier' => Supplier::whereIn('id', $logs->where('recipient_type', 'supplier')->pluck('recipient_id'))->pluck('name', 'id'),
+        ];
+        $logs->getCollection()->each(function ($log) use ($names) {
+            $log->setAttribute('recipient_name', $names[$log->recipient_type][$log->recipient_id] ?? null);
+            $log->setAttribute('event_label', WhatsAppTemplate::EVENTS[$log->event]['label'] ?? $log->event);
+        });
+
+        return response()->json($logs);
     }
 
     /** "Send via WhatsApp" on a sale invoice — from the shop's credits, regardless of the auto toggle. */

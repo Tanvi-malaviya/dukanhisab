@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\TranslationSettingController;
 use App\Http\Controllers\Admin\WhatsAppSettingController;
+use App\Http\Controllers\Admin\WhatsAppUsageController;
 
 // Main customer landing page placeholder
 Route::get('/', function () {
@@ -111,6 +112,10 @@ Route::group([
     Route::post('settings/whatsapp/packs', [WhatsAppSettingController::class, 'storePack'])->name('settings.whatsapp.packs.store');
     Route::post('settings/whatsapp/packs/{id}', [WhatsAppSettingController::class, 'updatePack'])->name('settings.whatsapp.packs.update');
     Route::delete('settings/whatsapp/packs/{id}', [WhatsAppSettingController::class, 'destroyPack'])->name('settings.whatsapp.packs.destroy');
+
+    // WhatsApp usage, pack sales & credit adjustments
+    Route::get('whatsapp/usage', [WhatsAppUsageController::class, 'index'])->name('whatsapp.usage');
+    Route::post('whatsapp/usage/adjust', [WhatsAppUsageController::class, 'adjust'])->name('whatsapp.usage.adjust');
 
     // Language & Translation Editor Settings
     Route::get('settings/translations', [TranslationSettingController::class, 'index'])->name('settings.translations');

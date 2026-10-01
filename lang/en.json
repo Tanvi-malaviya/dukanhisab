@@ -742,5 +742,14 @@
   "wa_last_sent": "Last sent",
   "wa_sent_count": "sent",
   "wa_skipped_no_credits": "skipped (no credits)",
-  "wa_confirm_claim_q": "Confirm this payment? It will be recorded as a UPI payment and reduce the customer's due."
+  "wa_confirm_claim_q": "Confirm this payment? It will be recorded as a UPI payment and reduce the customer's due.",
+  "wa_message_history": "Message History",
+  "wa_no_messages": "No messages sent yet.",
+  "wa_to": "To",
+  "wa_message": "Message",
+  "wa_status_queued": "Queued",
+  "wa_status_sent": "Sent",
+  "wa_status_delivered": "Delivered",
+  "wa_status_read": "Read",
+  "wa_status_failed": "Failed"
 }

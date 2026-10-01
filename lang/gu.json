@@ -742,5 +742,14 @@
   "wa_last_sent": "છેલ્લે મોકલ્યું",
   "wa_sent_count": "મોકલ્યા",
   "wa_skipped_no_credits": "બાકી (ક્રેડિટ નથી)",
-  "wa_confirm_claim_q": "આ ચુકવણી કન્ફર્મ કરશો? તે UPI ચુકવણી તરીકે નોંધાશે અને ગ્રાહકની બાકી રકમ ઘટશે."
+  "wa_confirm_claim_q": "આ ચુકવણી કન્ફર્મ કરશો? તે UPI ચુકવણી તરીકે નોંધાશે અને ગ્રાહકની બાકી રકમ ઘટશે.",
+  "wa_message_history": "મેસેજ ઇતિહાસ",
+  "wa_no_messages": "હજી કોઈ મેસેજ મોકલ્યો નથી.",
+  "wa_to": "કોને",
+  "wa_message": "મેસેજ",
+  "wa_status_queued": "કતારમાં",
+  "wa_status_sent": "મોકલ્યો",
+  "wa_status_delivered": "પહોંચ્યો",
+  "wa_status_read": "વાંચ્યો",
+  "wa_status_failed": "નિષ્ફળ"
 }

@@ -160,6 +160,56 @@
                 </div>
             </div>
 
+            {{-- Message history with delivery status --}}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200" x-text="wt('wa_message_history', 'Message History')"></h4>
+                    <select x-model="wa.historyStatus" @change="loadMessages(1)"
+                        class="px-2 py-1 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:text-white">
+                        <option value="" x-text="wt('all', 'All')"></option>
+                        <template x-for="st in ['sent', 'delivered', 'read', 'failed', 'queued']" :key="st">
+                            <option :value="st" x-text="wt('wa_status_' + st, st)"></option>
+                        </template>
+                    </select>
+                </div>
+                <p x-show="!wa.messages.length" class="text-xs text-slate-400" x-text="wt('wa_no_messages', 'No messages sent yet.')"></p>
+                <div class="overflow-x-auto" x-show="wa.messages.length">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400">
+                                <th class="py-2" x-text="wt('date', 'Date')"></th>
+                                <th class="py-2 px-3" x-text="wt('wa_to', 'To')"></th>
+                                <th class="py-2 px-3" x-text="wt('wa_message', 'Message')"></th>
+                                <th class="py-2 text-right" x-text="wt('status', 'Status')"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
+                            <template x-for="m in wa.messages" :key="m.id">
+                                <tr>
+                                    <td class="py-2 text-slate-500 whitespace-nowrap" x-text="new Date(m.created_at).toLocaleString()"></td>
+                                    <td class="py-2 px-3 text-slate-700 dark:text-slate-300">
+                                        <span class="font-semibold" x-text="m.recipient_name || '—'"></span>
+                                        <span class="block text-slate-400 font-mono" x-text="'+' + m.phone"></span>
+                                    </td>
+                                    <td class="py-2 px-3 text-slate-700 dark:text-slate-300" x-text="wt('wa_event_' + m.event, m.event_label)"></td>
+                                    <td class="py-2 text-right">
+                                        <span class="px-2 py-0.5 rounded-full font-bold whitespace-nowrap"
+                                            :class="{ 'bg-rose-100 text-rose-700': m.status === 'failed', 'bg-sky-100 text-sky-700': m.status === 'read', 'bg-emerald-100 text-emerald-700': m.status === 'delivered', 'bg-slate-100 text-slate-600': m.status === 'sent' || m.status === 'queued' }"
+                                            x-text="wt('wa_status_' + m.status, m.status)"></span>
+                                        <span x-show="m.status === 'failed' && m.error" class="block mt-1 text-[10px] text-rose-600 max-w-[220px] ml-auto" x-text="m.error"></span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex justify-end gap-2" x-show="wa.historyLastPage > 1">
+                    <button type="button" @click="loadMessages(wa.historyPage - 1)" :disabled="wa.historyPage <= 1" class="px-3 py-1 rounded-lg border border-slate-300 dark:border-gray-600 text-xs disabled:opacity-40 cursor-pointer dark:text-slate-300">‹</button>
+                    <span class="text-xs text-slate-500 self-center" x-text="wa.historyPage + ' / ' + wa.historyLastPage"></span>
+                    <button type="button" @click="loadMessages(wa.historyPage + 1)" :disabled="wa.historyPage >= wa.historyLastPage" class="px-3 py-1 rounded-lg border border-slate-300 dark:border-gray-600 text-xs disabled:opacity-40 cursor-pointer dark:text-slate-300">›</button>
+                </div>
+            </div>
+
             {{-- Credit history --}}
             <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4 space-y-3" x-show="wa.ledger.length">
                 <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200" x-text="wt('wa_credit_history', 'Credit History')"></h4>
@@ -186,7 +236,7 @@
     function whatsappPage() {
         return {
             days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-            wa: { loading: false, loaded: false, saving: false, buyingId: null, resolvingId: null, available: true, balance: 0, lowBalance: false, upiId: null, maxDays: 2, events: [], packs: [], ledger: [], claims: [] },
+            wa: { loading: false, loaded: false, saving: false, buyingId: null, resolvingId: null, available: true, balance: 0, lowBalance: false, upiId: null, maxDays: 2, events: [], packs: [], ledger: [], claims: [], messages: [], historyStatus: '', historyPage: 1, historyLastPage: 1 },
 
             init() {
                 if (this.page === 'whatsapp') this.load();
@@ -218,6 +268,7 @@
                     ]);
                     this.applySettings(settings);
                     this.wa.claims = claims.pending || [];
+                    this.loadMessages(1);
                     this.wa.packs = wallet.packs || [];
                     this.wa.ledger = wallet.ledger || [];
                     this.wa.loaded = true;
@@ -226,6 +277,17 @@
                 } finally {
                     this.wa.loading = false;
                 }
+            },
+
+            async loadMessages(page) {
+                try {
+                    const params = new URLSearchParams({ page });
+                    if (this.wa.historyStatus) params.set('status', this.wa.historyStatus);
+                    const d = await fetch('/api/v1/whatsapp/messages?' + params, { headers: this.getHeaders() }).then(r => r.json());
+                    this.wa.messages = d.data || [];
+                    this.wa.historyPage = d.current_page || 1;
+                    this.wa.historyLastPage = d.last_page || 1;
+                } catch (e) { /* history is secondary; keep the rest of the page usable */ }
             },
 
             toggleDay(ev, day) {

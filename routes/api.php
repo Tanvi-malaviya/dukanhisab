@@ -77,6 +77,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     Route::get('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'settings']);
     Route::post('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'updateSettings']);
     Route::post('/whatsapp/reminders/{type}/{id}', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendReminder'])->whereIn('type', ['customer', 'supplier']);
+    Route::get('/whatsapp/messages', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'messages']);
     Route::get('/whatsapp/payment-claims', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'paymentClaims']);
     Route::post('/whatsapp/payment-claims/{id}/confirm', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'confirmPaymentClaim']);
     Route::post('/whatsapp/payment-claims/{id}/reject', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'rejectPaymentClaim']);
