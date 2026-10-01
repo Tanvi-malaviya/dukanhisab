@@ -662,5 +662,14 @@
   "balance_due": "Balance Due",
   "share_report": "Share Report",
   "download_report": "Download Report",
-  "register_closure_notice": "Daily End-of-Day register drawer physical count & reconciliation history."
+  "register_closure_notice": "Daily End-of-Day register drawer physical count & reconciliation history.",
+  "lifetime_member": "Lifetime Member",
+  "you_own_plan": "You own",
+  "lifetime_plan_desc": "One-time purchase. No renewals, no expiry. Every feature of your plan stays unlocked for as long as you use DukanHisab.",
+  "lifetime_no_renewal": "No renewal charges",
+  "lifetime_free_updates": "Free updates",
+  "lifetime_never_expires": "Never expires",
+  "whats_included": "What's Included",
+  "lifetime_addons_hint": "Need more shops or a website? Add-ons work with your lifetime plan.",
+  "browse_addons": "Browse Add-ons"
 }

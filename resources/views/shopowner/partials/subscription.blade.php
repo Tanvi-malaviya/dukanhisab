@@ -1,6 +1,70 @@
 <div x-show="page === 'subscription'" class="space-y-6" x-cloak>
+    <!-- Lifetime owner view: nothing to upgrade, downgrade or cancel -->
+    <template x-if="isLifetimePlan()">
+        <div class="space-y-6">
+            <div class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-900 p-6 md:p-8 rounded-2xl text-white shadow-md relative overflow-hidden">
+                <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-8 translate-y-8">
+                    <svg class="w-56 h-56" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+
+                <div class="relative z-10 space-y-3">
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 text-xs font-bold uppercase tracking-wider backdrop-blur-sm">
+                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                        <span x-text="t('lifetime_member') || 'Lifetime Member'">Lifetime Member</span>
+                    </div>
+                    <h3 class="text-2xl md:text-3xl font-black" x-text="(t('you_own_plan') || 'You own') + ' ' + user.active_plan.name"></h3>
+                    <p class="text-sm opacity-90 max-w-xl" x-text="t('lifetime_plan_desc') || 'One-time purchase. No renewals, no expiry. Every feature of your plan stays unlocked for as long as you use DukanHisab.'"></p>
+
+                    <div class="flex flex-wrap gap-2 pt-2">
+                        <span class="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold" x-text="t('lifetime_no_renewal') || 'No renewal charges'"></span>
+                        <span class="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold" x-text="t('lifetime_free_updates') || 'Free updates'"></span>
+                        <span class="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold" x-text="t('lifetime_never_expires') || 'Never expires'"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- What's included -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-6">
+                <h4 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4" x-text="t('whats_included') || 'What\'s Included'">What's Included</h4>
+                <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-700 dark:text-slate-200">
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="((user.active_plan.features && user.active_plan.features.max_devices) || 1) + ' Login Device' + (((user.active_plan.features && user.active_plan.features.max_devices) || 1) > 1 ? 's' : '')"></span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="t('plan_feature_unlimited_sales_purchases')">Unlimited Sales & Purchases</span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="t('cloud_backup_restore')">Cloud Backup & Restore</span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="t('plan_feature_advanced_reports') || 'Advanced Reports'"></span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="t('ad_free_experience') || 'Ad-Free Experience'"></span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span x-text="t('plan_feature_remove_branding')">Remove DukanHisab Branding</span>
+                    </li>
+                </ul>
+
+                <div class="mt-6 pt-5 border-t border-slate-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <p class="text-xs text-slate-500 dark:text-slate-400" x-text="t('lifetime_addons_hint') || 'Need more shops or a website? Add-ons work with your lifetime plan.'"></p>
+                    <button type="button" @click="navigateTo('addons')"
+                        class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold transition-all shrink-0"
+                        x-text="t('browse_addons') || 'Browse Add-ons'">Browse Add-ons</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Subscription Status Header Card -->
-    <div class="bg-gradient-to-r from-teal-700 to-teal-900 p-6 rounded-2xl text-white shadow-md relative overflow-hidden">
+    <div x-show="!isLifetimePlan()" class="bg-gradient-to-r from-teal-700 to-teal-900 p-6 rounded-2xl text-white shadow-md relative overflow-hidden">
         <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-6 translate-y-6">
             <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
@@ -35,7 +99,7 @@
     </div>
 
     <!-- Available Plans Grid (Dynamic from API) -->
-    <div>
+    <div x-show="!isLifetimePlan()">
         <h4 class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4" x-text="t('choose_subscription_plan')">Choose a Subscription Plan</h4>
 
         <!-- Loading state -->
