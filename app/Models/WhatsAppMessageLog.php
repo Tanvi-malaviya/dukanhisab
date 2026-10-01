@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\WhatsApp\WhatsAppWallet;
 use Illuminate\Database\Eloquent\Model;
 
 class WhatsAppMessageLog extends Model
@@ -60,6 +61,7 @@ class WhatsAppMessageLog extends Model
         ]);
     }
 
+    /** Marks the message failed and returns its credit to the shop. */
     public function markFailed(string $error): void
     {
         if ($this->status === 'failed') {
@@ -67,6 +69,7 @@ class WhatsAppMessageLog extends Model
         }
 
         $this->update(['status' => 'failed', 'error' => $error, 'failed_at' => now()]);
+        app(WhatsAppWallet::class)->refundMessage($this);
     }
 
     /** Applies a Meta status callback (sent / delivered / read). Out-of-order callbacks are ignored. */

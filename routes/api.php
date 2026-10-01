@@ -71,6 +71,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     Route::post('/purchases/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailPurchaseInvoice']);
     Route::post('/purchases/{id}/return', [\App\Http\Controllers\Api\PurchaseApiController::class, 'returnPurchase']);
 
+    // WhatsApp messaging: credits wallet & pack purchase
+    Route::get('/whatsapp/wallet', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'wallet']);
+    Route::post('/whatsapp/packs/{id}/purchase', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'purchasePack']);
+    Route::post('/whatsapp/packs/verify-payment', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'verifyPackPayment']);
+
     // CashBook
     Route::apiResource('cashbooks', \App\Http\Controllers\Api\CashBookApiController::class)->except(['update']);
 

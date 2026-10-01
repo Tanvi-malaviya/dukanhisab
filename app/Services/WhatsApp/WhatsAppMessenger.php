@@ -10,6 +10,7 @@ use App\Models\Shop;
 use App\Models\Supplier;
 use App\Models\WhatsAppMessageLog;
 use App\Models\WhatsAppTemplate;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -21,10 +22,15 @@ class WhatsAppMessenger
     /** How long Meta has to fetch an invoice PDF from the signed link (covers job retries). */
     private const DOCUMENT_LINK_TTL_HOURS = 48;
 
+    public function __construct(private WhatsAppWallet $wallet)
+    {
+    }
+
     /**
      * @param  array{sale?: Sale, purchase?: Purchase, amount?: float, button_suffix?: string}  $context
      *
-     * @throws WhatsAppException when the message can't be sent (reason is safe to show the shop owner)
+     * @throws WhatsAppException when the message can't be sent (reason is safe to show the shop owner);
+     *                            InsufficientCreditsException when the shop has no credits left
      */
     public function send(Shop $shop, string $event, Customer|Supplier $recipient, array $context = []): WhatsAppMessageLog
     {
@@ -61,20 +67,26 @@ class WhatsAppMessenger
             $payload['button_suffix'] = $context['button_suffix'];
         }
 
-        $log = WhatsAppMessageLog::create([
-            'shop_id' => $shop->id,
-            'event' => $event,
-            'recipient_type' => $recipientType,
-            'recipient_id' => $recipient->id,
-            'phone' => $phone,
-            'whatsapp_template_id' => $template->id,
-            'template_name' => $template->meta_template_name,
-            'language' => $template->language,
-            'sale_id' => $sale?->id,
-            'purchase_id' => $purchase?->id,
-            'payload' => $payload,
-            'status' => 'queued',
-        ]);
+        // The log row and its one-credit debit commit together; no credits → nothing is queued.
+        $log = DB::transaction(function () use ($shop, $event, $recipientType, $recipient, $phone, $template, $sale, $purchase, $payload) {
+            $log = WhatsAppMessageLog::create([
+                'shop_id' => $shop->id,
+                'event' => $event,
+                'recipient_type' => $recipientType,
+                'recipient_id' => $recipient->id,
+                'phone' => $phone,
+                'whatsapp_template_id' => $template->id,
+                'template_name' => $template->meta_template_name,
+                'language' => $template->language,
+                'sale_id' => $sale?->id,
+                'purchase_id' => $purchase?->id,
+                'payload' => $payload,
+                'status' => 'queued',
+            ]);
+            $this->wallet->debitForMessage($log);
+
+            return $log;
+        });
 
         SendWhatsAppMessage::dispatch($log->id)->afterCommit();
 

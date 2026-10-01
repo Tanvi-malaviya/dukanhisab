@@ -539,6 +539,16 @@ class SubscriptionApiController extends Controller
         $event = $request->input('event');
         $payload = $request->input('payload');
 
+        // WhatsApp message packs are one-time orders. Crediting here as well as in the app's
+        // verify call means credits still arrive if the app closes right after paying.
+        if ($event === 'order.paid' && ($payload['order']['entity']['notes']['type'] ?? null) === 'whatsapp_pack') {
+            $purchase = \App\Models\WhatsAppPackPurchase::where('razorpay_order_id', $payload['order']['entity']['id'] ?? null)->first();
+            if ($purchase) {
+                app(\App\Services\WhatsApp\WhatsAppWallet::class)->completePurchase($purchase, $payload['payment']['entity']['id'] ?? null);
+            }
+            return response()->json(['status' => 'success']);
+        }
+
         // Auto-renewal is over (user cancelled, renewal payment kept failing,
         // all cycles done, or paused). Access is NOT revoked here: the user keeps
         // what they already paid for until ends_at, and it just won't renew.

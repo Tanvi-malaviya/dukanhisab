@@ -13,6 +13,7 @@ use App\Models\WhatsAppMessageLog;
 use App\Models\WhatsAppTemplate;
 use App\Services\WhatsApp\WhatsAppException;
 use App\Services\WhatsApp\WhatsAppMessenger;
+use App\Services\WhatsApp\WhatsAppWallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Crypt;
@@ -46,6 +47,7 @@ class WhatsAppSendingTest extends TestCase
         $owner = User::factory()->create(['language' => 'gu']);
         $this->shop = Shop::create(['owner_id' => $owner->id, 'name' => 'Shree Traders', 'mobile' => '9999999999', 'currency' => 'INR']);
         $this->customer = Customer::create(['shop_id' => $this->shop->id, 'name' => 'Ramesh', 'mobile' => '98765 43210', 'due_amount' => 1200]);
+        app(WhatsAppWallet::class)->adjust($this->shop, 10, 'test credits', null);
 
         $this->invoiceTemplate = WhatsAppTemplate::create([
             'key' => 'sale_invoice', 'language' => 'en', 'meta_template_name' => 'sale_invoice_en', 'meta_language_code' => 'en',
