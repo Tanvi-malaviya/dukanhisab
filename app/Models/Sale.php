@@ -62,4 +62,12 @@ class Sale extends Model
     {
         return $this->hasMany(CreditNote::class);
     }
+
+    /** Container lots given with this sale (returnable containers module), excluding reversed ones. */
+    public function containerLots()
+    {
+        return $this->hasMany(ContainerMovement::class)
+            ->where('kind', 'issue')
+            ->whereHas('entry', fn ($q) => $q->whereNull('reversed_at'));
+    }
 }

@@ -403,6 +403,26 @@
                                     </p>
                                 @endif
                             </div>
+
+                            <!-- Optional modules (free, admin-enabled per shop) -->
+                            <div class="pt-2 border-t border-teal-200/80 space-y-1.5">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">Extra Modules</span>
+                                @foreach(\App\Models\Shop::FEATURES as $featureKey => $featureLabel)
+                                    @php $featureOn = $shop->hasFeature($featureKey); @endphp
+                                    <form action="{{ route('admin.shops.features', $shop->id) }}" method="POST"
+                                        class="flex items-center justify-between gap-2">
+                                        @csrf
+                                        <input type="hidden" name="feature" value="{{ $featureKey }}">
+                                        <input type="hidden" name="enabled" value="{{ $featureOn ? 0 : 1 }}">
+                                        <span class="text-[11px] text-slate-700 font-semibold">{{ $featureLabel }}</span>
+                                        <button type="submit"
+                                            title="{{ $featureOn ? 'Disable' : 'Enable' }} {{ $featureLabel }} for this shop"
+                                            class="relative inline-flex h-4 w-8 shrink-0 items-center rounded-full transition-colors cursor-pointer {{ $featureOn ? 'bg-emerald-500' : 'bg-slate-300' }}">
+                                            <span class="inline-block h-3 w-3 rounded-full bg-white shadow transition-transform {{ $featureOn ? 'translate-x-4' : 'translate-x-0.5' }}"></span>
+                                        </button>
+                                    </form>
+                                @endforeach
+                            </div>
                         </div>
                     @endforeach
                 </div>

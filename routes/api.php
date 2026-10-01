@@ -93,6 +93,19 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
 
     // Credit Notes
     Route::apiResource('credit-notes', \App\Http\Controllers\Api\CreditNoteApiController::class)->only(['index', 'show']);
+
+    // Returnable containers & deposits — optional module, switched on per shop by the admin
+    Route::middleware('shop.feature:containers')->group(function () {
+        Route::get('/containers/summary', [\App\Http\Controllers\Api\ContainerApiController::class, 'summary']);
+        Route::get('/containers/customers', [\App\Http\Controllers\Api\ContainerApiController::class, 'customers']);
+        Route::get('/containers/customers/{customerId}', [\App\Http\Controllers\Api\ContainerApiController::class, 'customer']);
+        Route::get('/containers/entries', [\App\Http\Controllers\Api\ContainerApiController::class, 'index']);
+        Route::post('/containers/entries', [\App\Http\Controllers\Api\ContainerApiController::class, 'store']);
+        Route::get('/containers/entries/{id}', [\App\Http\Controllers\Api\ContainerApiController::class, 'show']);
+        Route::post('/containers/entries/{id}/reverse', [\App\Http\Controllers\Api\ContainerApiController::class, 'reverse']);
+        Route::apiResource('container-types', \App\Http\Controllers\Api\ContainerTypeApiController::class);
+        Route::post('/container-types/{id}/adjust-stock', [\App\Http\Controllers\Api\ContainerTypeApiController::class, 'adjustStock']);
+    });
 });
 
 // ShopOwner Common API Authentication Module

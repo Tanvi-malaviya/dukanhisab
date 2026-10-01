@@ -67,6 +67,8 @@ class ProductApiController extends Controller
             'category_id' => ['nullable', Rule::exists('categories', 'id')->where('shop_id', $shopId)],
             'available_for_sale' => 'sometimes|boolean',
             'available_for_purchase' => 'sometimes|boolean',
+            'container_type_id' => ['nullable', Rule::exists('container_types', 'id')->where('shop_id', $shopId)->whereNull('deleted_at')],
+            'containers_per_unit' => 'nullable|integer|min:1|max:1000',
         ], [
             'barcode.unique' => 'This barcode is already assigned to another product in this shop.',
         ]);
@@ -125,6 +127,8 @@ class ProductApiController extends Controller
             'category_id' => ['nullable', Rule::exists('categories', 'id')->where('shop_id', $shopId)],
             'available_for_sale' => 'sometimes|boolean',
             'available_for_purchase' => 'sometimes|boolean',
+            'container_type_id' => ['nullable', Rule::exists('container_types', 'id')->where('shop_id', $shopId)->whereNull('deleted_at')],
+            'containers_per_unit' => 'nullable|integer|min:1|max:1000',
         ], [
             'barcode.unique' => 'This barcode is already assigned to another product in this shop.',
         ]);
