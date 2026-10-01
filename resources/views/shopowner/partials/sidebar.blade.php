@@ -181,7 +181,7 @@
                             :class="page === 'bank-accounts' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
                             class="flex items-center px-3 py-2 text-xs rounded-lg transition-all gap-2">
                             <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            <span x-text="t('bank-accounts')">Bank Accounts</span>
+                            <span x-text="t('bank_account') || t('bank-accounts') || 'Bank Account'">Bank Account</span>
                         </a>
                     </div>
                 </div>
@@ -495,7 +495,7 @@
                                    :class="page === 'bank-accounts' ? 'text-primary font-bold' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'"
                                    class="flex items-center px-3 py-2 text-xs rounded-lg transition-all gap-2">
                                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                   <span x-text="t('bank-accounts')">Bank Accounts</span>
+                                   <span x-text="t('bank_account') || t('bank-accounts') || 'Bank Account'">Bank Account</span>
                                </a>
                            </div>
                        </div>

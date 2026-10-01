@@ -133,6 +133,7 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::post('/add-ons/{id}/cancel', [\App\Http\Controllers\Api\ShopOwner\AddOnApiController::class, 'cancel']);
 
         // Support tickets (own tickets only)
+        Route::post('support-tickets/{id}/reply', [\App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class, 'reply']);
         Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
         ->names('shopowner.support-tickets')
             ->except(['edit', 'create']);
@@ -148,6 +149,7 @@ Route::prefix('v1/shopowner')->group(function () {
 
 // Direct v1 Support Tickets endpoint for mobile app clients
 Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+    Route::post('support-tickets/{id}/reply', [\App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class, 'reply']);
     Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
     ->names('v1.support-tickets')
         ->except(['edit', 'create']);

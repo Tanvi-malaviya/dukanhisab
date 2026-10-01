@@ -205,6 +205,31 @@
                 return timePart ? `${datePart} ${timePart}` : datePart;
             },
 
+            formatChatTime(dateVal) {
+                if (!dateVal) return '';
+                try {
+                    const d = (dateVal instanceof Date) ? dateVal : new Date(typeof dateVal === 'string' && !dateVal.includes('T') ? dateVal.replace(' ', 'T') : dateVal);
+                    if (isNaN(d.getTime())) return '';
+                    const now = new Date();
+                    const isToday = d.toDateString() === now.toDateString();
+                    
+                    let hours = d.getHours();
+                    const minutes = String(d.getMinutes()).padStart(2, '0');
+                    const ampm = hours >= 12 ? 'PM' : 'AM';
+                    hours = hours % 12 || 12;
+                    const timeStr = `${hours}:${minutes} ${ampm}`;
+
+                    if (isToday) {
+                        return timeStr;
+                    }
+                    const day = d.getDate();
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    return `${day} ${months[d.getMonth()]}, ${timeStr}`;
+                } catch(e) {
+                    return '';
+                }
+            },
+
             // Auth States
             token: localStorage.getItem('shopowner_token') || localStorage.getItem('token'),
             user: JSON.parse(localStorage.getItem('shopowner_user') || 'null'),
@@ -311,6 +336,8 @@
             selectedTicket: null,
             ticketForm: { subject: '', message: '', screenshot: null, screenshotPreview: null },
             submittingTicket: false,
+            ticketReplyForm: { message: '', attachment: null, attachmentPreview: null },
+            sendingTicketReply: false,
             // Notification inbox (fed by the admin's Broadcast Center)
             notifications: [],
             notificationsLoading: false,
@@ -347,6 +374,10 @@
             showBankAccountModal: false,
             bankAccountForm: { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' },
             openAddBankAccountModal() {
+                if (this.bankAccounts && this.bankAccounts.length > 0) {
+                    this.openEditBankAccountModal(this.bankAccounts[0]);
+                    return;
+                }
                 this.bankAccountForm = { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' };
                 this.showBankAccountModal = true;
             },
@@ -980,6 +1011,7 @@
                         if (status === 200 || status === 201) {
                             this.showToast(isEdit ? 'Category updated!' : 'Category created!', 'success');
                             this.expenseCategoryForm = { id: null, name: '' };
+                            this.manageExpenseCategoriesModalOpen = false;
                             this.loadExpenseCategories().then(() => {
                                 if (!isEdit && data && data.id) {
                                     this.newExpense.expense_category_id = data.id;
@@ -1153,17 +1185,39 @@
                     .then(d => {
                         this.loading = false;
                         if (d.id) {
+                            const availableItems = (d.items || []).map(item => {
+                                const origQty = parseInt(item.quantity || 0);
+                                const itemDiscount = parseFloat(item.discount || 0);
+                                const purchasePrice = parseFloat(item.purchase_price || 0);
+                                const unitDiscount = origQty > 0 ? (itemDiscount / origQty) : 0;
+                                const effectivePrice = Math.max(0, purchasePrice - unitDiscount);
+
+                                return {
+                                    id: item.id,
+                                    product_id: item.product_id,
+                                    name: item.product ? item.product.name : 'Unknown Product',
+                                    originalQty: origQty,
+                                    purchasedQty: Math.max(0, origQty - (item.returned_quantity || 0)),
+                                    returnedQty: 0,
+                                    purchase_price: purchasePrice,
+                                    discount: itemDiscount,
+                                    unit_discount: unitDiscount,
+                                    effective_price: effectivePrice
+                                };
+                            }).filter(item => item.purchasedQty > 0);
+
+                            if (availableItems.length === 0) {
+                                this.showToast('All items in this purchase have already been returned.', 'info');
+                                return;
+                            }
+
                             this.purchaseReturnForm = {
                                 purchaseId: d.id,
                                 purchase_number: d.purchase_number,
                                 payment_type: d.payment_type,
-                                items: d.items.map(item => ({
-                                    product_id: item.product_id,
-                                    name: item.product ? item.product.name : 'Unknown Product',
-                                    purchasedQty: item.quantity - (item.returned_quantity || 0),
-                                    returnedQty: 0,
-                                    purchase_price: parseFloat(item.purchase_price)
-                                })).filter(item => item.purchasedQty > 0)
+                                discount: parseFloat(d.discount) || 0,
+                                total_amount: parseFloat(d.total_amount) || 0,
+                                items: availableItems
                             };
                             this.showPurchaseReturnModal = true;
                         }
@@ -2575,7 +2629,77 @@
 
             openTicketDetails(ticket) {
                 this.selectedTicket = ticket;
+                this.ticketReplyForm = { message: '', attachment: null, attachmentPreview: null };
+                const input = document.getElementById('ticketReplyFileInput');
+                if (input) input.value = '';
                 this.viewTicketModal = true;
+            },
+
+            handleTicketReplyFile(event) {
+                const file = event.target.files[0];
+                if (!file) {
+                    this.ticketReplyForm.attachment = null;
+                    this.ticketReplyForm.attachmentPreview = null;
+                    return;
+                }
+                this.ticketReplyForm.attachment = file;
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.ticketReplyForm.attachmentPreview = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    this.ticketReplyForm.attachmentPreview = null;
+                }
+            },
+
+            sendTicketReply(ticketId) {
+                if (!this.ticketReplyForm.message || !this.ticketReplyForm.message.trim()) {
+                    this.showToast('Please type your reply message.', 'error');
+                    return;
+                }
+
+                this.sendingTicketReply = true;
+                const fd = new FormData();
+                fd.append('message', this.ticketReplyForm.message.trim());
+                if (this.ticketReplyForm.attachment) {
+                    fd.append('attachment', this.ticketReplyForm.attachment);
+                }
+
+                fetch('/api/v1/shopowner/support-tickets/' + ticketId + '/reply', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer ' + this.token,
+                        'X-Shop-ID': this.shop ? this.shop.id : '',
+                        'X-Locale': this.currentLang || 'en'
+                    },
+                    body: fd
+                })
+                    .then(async r => {
+                        const data = await r.json();
+                        return { ok: r.ok, status: r.status, data };
+                    })
+                    .then(res => {
+                        this.sendingTicketReply = false;
+                        if (res.ok) {
+                            this.showToast('Reply sent successfully!');
+                            this.ticketReplyForm = { message: '', attachment: null, attachmentPreview: null };
+                            const input = document.getElementById('ticketReplyFileInput');
+                            if (input) input.value = '';
+                            if (res.data.ticket) {
+                                this.selectedTicket = res.data.ticket;
+                            }
+                            this.loadSupportTickets();
+                        } else {
+                            this.showToast(res.data.message || 'Failed to send reply.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        this.sendingTicketReply = false;
+                        this.showToast('Error sending reply.', 'error');
+                    });
             },
 
             deleteTicket(id) {
@@ -3196,13 +3320,26 @@
                     .then(d => {
                         this.loading = false;
                         if (d.id) {
-                            const availableItems = (d.items || []).map(item => ({
-                                product_id: item.product_id,
-                                name: item.product ? item.product.name : 'Unknown Product',
-                                purchasedQty: Math.max(0, item.quantity - (item.returned_quantity || 0)),
-                                returnedQty: 0,
-                                selling_price: parseFloat(item.selling_price)
-                            })).filter(item => item.purchasedQty > 0);
+                            const availableItems = (d.items || []).map(item => {
+                                const origQty = parseInt(item.quantity || 0);
+                                const itemDiscount = parseFloat(item.discount || 0);
+                                const sellingPrice = parseFloat(item.selling_price || 0);
+                                const unitDiscount = origQty > 0 ? (itemDiscount / origQty) : 0;
+                                const effectivePrice = Math.max(0, sellingPrice - unitDiscount);
+
+                                return {
+                                    id: item.id,
+                                    product_id: item.product_id,
+                                    name: item.product ? item.product.name : 'Unknown Product',
+                                    originalQty: origQty,
+                                    purchasedQty: Math.max(0, origQty - (item.returned_quantity || 0)),
+                                    returnedQty: 0,
+                                    selling_price: sellingPrice,
+                                    discount: itemDiscount,
+                                    unit_discount: unitDiscount,
+                                    effective_price: effectivePrice
+                                };
+                            }).filter(item => item.purchasedQty > 0);
 
                             if (availableItems.length === 0) {
                                 this.showToast('All items in this sale have already been returned.', 'info');

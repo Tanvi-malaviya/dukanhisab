@@ -21,7 +21,7 @@ class SupportTicketApiController extends Controller
             return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $tickets = $user->supportTickets()->latest()->get()->map(function ($ticket) {
+        $tickets = $user->supportTickets()->with(['messages.senderAdmin', 'messages.senderUser'])->latest()->get()->map(function ($ticket) {
             $ticket->screenshot_url = $ticket->screenshot ? asset('storage/' . $ticket->screenshot) : null;
             return $ticket;
         });
@@ -35,7 +35,7 @@ class SupportTicketApiController extends Controller
     }
 
     /**
-     * View a single support ticket, including any admin reply.
+     * View a single support ticket, including any admin reply and conversation messages.
      */
     public function show(Request $request, $id)
     {
@@ -44,7 +44,7 @@ class SupportTicketApiController extends Controller
             return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
         }
 
-        $ticket = $user->supportTickets()->find($id);
+        $ticket = $user->supportTickets()->with(['messages.senderAdmin', 'messages.senderUser'])->find($id);
 
         if (!$ticket) {
             return response()->json(['status' => false, 'message' => 'Support ticket not found.'], 404);
@@ -219,4 +219,90 @@ class SupportTicketApiController extends Controller
             'message' => 'Support ticket deleted.'
         ]);
     }
+
+    /**
+     * User sends a reply / follow-up message to an existing ticket.
+     */
+    public function reply(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['status' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $ticket = $user->supportTickets()->find($id);
+
+        if (!$ticket) {
+            return response()->json(['status' => false, 'message' => 'Support ticket not found.'], 404);
+        }
+
+        if ($ticket->status === 'closed') {
+            return response()->json([
+                'status' => false,
+                'message' => 'This ticket has been closed. Please create a new ticket for new issues.'
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'message' => 'required|string|max:5000',
+            'attachment' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:5120',
+            'screenshot' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('support-tickets', 'public');
+        } elseif ($request->hasFile('screenshot')) {
+            $attachmentPath = $request->file('screenshot')->store('support-tickets', 'public');
+        }
+
+        $message = $ticket->messages()->create([
+            'sender_type' => 'user',
+            'sender_id' => $user->id,
+            'message' => $request->input('message'),
+            'attachment' => $attachmentPath,
+        ]);
+
+        // If ticket was marked resolved, re-open it to inProgress
+        if (in_array($ticket->status, ['resolved'])) {
+            $ticket->status = 'inProgress';
+        }
+        $ticket->touch();
+        $ticket->save();
+
+        // Notify admins if possible
+        try {
+            $adminEmails = Admin::where('status', 'active')->pluck('email');
+            if ($adminEmails->isNotEmpty()) {
+                Mail::send('shopowner.emails.support-ticket-created', [
+                    'user' => $user,
+                    'ticket' => $ticket,
+                ], function ($mail) use ($adminEmails, $ticket) {
+                    $mail->to($adminEmails->all())
+                         ->subject('New Reply on Support Ticket #' . $ticket->id . ': ' . $ticket->subject);
+                });
+            }
+        } catch (\Throwable $e) {
+            \Log::error('Support ticket user reply email failed: ' . $e->getMessage());
+        }
+
+        $ticket->load(['messages.senderAdmin', 'messages.senderUser']);
+        $ticket->screenshot_url = $ticket->screenshot ? asset('storage/' . $ticket->screenshot) : null;
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Reply sent successfully.',
+            'ticket' => $ticket,
+            'data' => $ticket
+        ]);
+    }
 }
+

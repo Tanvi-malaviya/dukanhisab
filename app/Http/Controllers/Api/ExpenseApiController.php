@@ -15,17 +15,7 @@ class ExpenseApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $query = CashBook::where('shop_id', $shopId)
-            ->where('type', 'cash_out')
-            ->where(function ($q) {
-                // Operational expenses (reference_type null/'expense') and purchase payments
-                // (reference_type 'purchase') both belong here. Sales-return refunds
-                // (reference_type 'sale') and cancellation reversals ('sale_cancel') don't —
-                // those are reversed revenue, not a business expense.
-                $q->whereNull('reference_type')
-                  ->orWhereIn('reference_type', ['expense', 'purchase']);
-            })
-            ->where('description', 'not like', 'Return:%')
-            ->where('description', 'not like', 'Reversal:%')
+            ->expenses()
             ->with('expenseCategory');
 
         if ($request->filled('expense_category_id')) {
@@ -119,11 +109,7 @@ class ExpenseApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $expense = CashBook::where('shop_id', $shopId)
-            ->where('type', 'cash_out')
-            ->where(function ($q) {
-                $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
-            })
+            ->expenses()
             ->with('expenseCategory')
             ->findOrFail($id);
         return response()->json($expense);
@@ -133,11 +119,7 @@ class ExpenseApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $expense = CashBook::where('shop_id', $shopId)
-            ->where('type', 'cash_out')
-            ->where(function ($q) {
-                $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
-            })
+            ->expenses()
             ->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -185,11 +167,7 @@ class ExpenseApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $expense = CashBook::where('shop_id', $shopId)
-            ->where('type', 'cash_out')
-            ->where(function ($q) {
-                $q->whereNull('reference_type')
-                  ->orWhere('reference_type', 'expense');
-            })
+            ->expenses()
             ->findOrFail($id);
 
         if ($expense->reference_type !== null && $expense->reference_type !== 'expense') {
