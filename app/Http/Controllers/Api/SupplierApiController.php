@@ -84,6 +84,7 @@ class SupplierApiController extends Controller
             'mobile' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'due_amount' => 'nullable|numeric',
+            'whatsapp_opt_out' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {

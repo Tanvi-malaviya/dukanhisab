@@ -3,17 +3,23 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Shop;
 use App\Models\WhatsAppCreditLedger;
 use App\Models\WhatsAppPack;
 use App\Models\WhatsAppPackPurchase;
+use App\Models\WhatsAppShopSetting;
+use App\Models\WhatsAppTemplate;
 use App\Services\WhatsApp\WhatsAppClient;
+use App\Services\WhatsApp\WhatsAppMessenger;
 use App\Services\WhatsApp\WhatsAppWallet;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
- * Shop-owner WhatsApp API (web panel + mobile app): message-credit wallet and pack purchases.
+ * Shop-owner WhatsApp API (web panel + mobile app): message settings, credit wallet and packs.
  * Every route runs under shop.scope, so `shop_id` is always one of the user's own shops.
  */
 class WhatsAppApiController extends Controller
@@ -36,6 +42,89 @@ class WhatsAppApiController extends Controller
             'ledger' => WhatsAppCreditLedger::where('shop_id', $shopId)->latest('id')->limit(50)
                 ->get(['id', 'type', 'credits', 'balance_after', 'note', 'created_at']),
         ]);
+    }
+
+    /**
+     * Every message type with the shop's on/off choice and schedule, plus a read-only preview of
+     * the admin's template filled with this shop's name and sample customer data.
+     */
+    public function settings(Request $request, WhatsAppMessenger $messenger)
+    {
+        $shop = Shop::findOrFail($request->attributes->get('shop_id'));
+        $saved = WhatsAppShopSetting::where('shop_id', $shop->id)->get()->keyBy('event');
+        $sample = array_merge(WhatsAppTemplate::sampleValues(), ['shop_name' => $shop->name, 'shop_mobile' => (string) $shop->mobile]);
+
+        $events = [];
+        foreach (WhatsAppTemplate::EVENTS as $key => $meta) {
+            $setting = $saved->get($key);
+            $template = $messenger->templateFor($shop, $key);
+            $scheduled = WhatsAppShopSetting::isScheduled($key);
+
+            $events[] = [
+                'key' => $key,
+                'label' => $meta['label'],
+                'recipient' => $meta['recipient'],
+                'scheduled' => $scheduled,
+                'enabled' => (bool) ($setting?->enabled ?? WhatsAppShopSetting::DEFAULTS['enabled']),
+                'schedule_days' => $scheduled ? ($setting?->schedule_days ?? WhatsAppShopSetting::DEFAULTS['schedule_days']) : null,
+                'schedule_time' => $scheduled ? ($setting?->schedule_time ?? WhatsAppShopSetting::DEFAULTS['schedule_time']) : null,
+                'min_due_amount' => $scheduled ? (float) ($setting?->min_due_amount ?? WhatsAppShopSetting::DEFAULTS['min_due_amount']) : null,
+                'template_available' => (bool) $template,
+                'has_document' => (bool) $template?->has_document,
+                'has_pay_button' => (bool) $template?->has_pay_button && !empty($shop->upi_id),
+                'preview' => $template?->renderBody($sample),
+            ];
+        }
+
+        $balance = $this->wallet->balance($shop->id);
+
+        return response()->json([
+            'available' => WhatsAppClient::isEnabled(),
+            'balance' => $balance,
+            'low_balance' => $balance < WhatsAppWallet::LOW_BALANCE_THRESHOLD,
+            'upi_id' => $shop->upi_id,
+            'max_schedule_days' => WhatsAppShopSetting::MAX_SCHEDULE_DAYS,
+            'events' => $events,
+        ]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $data = $request->validate([
+            'events' => 'required|array',
+            'events.*.key' => ['required', 'distinct', Rule::in(array_keys(WhatsAppTemplate::EVENTS))],
+            'events.*.enabled' => 'required|boolean',
+            'events.*.schedule_days' => 'nullable|array|max:' . WhatsAppShopSetting::MAX_SCHEDULE_DAYS,
+            'events.*.schedule_days.*' => ['distinct', Rule::in(WhatsAppShopSetting::DAYS)],
+            'events.*.schedule_time' => ['nullable', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
+            'events.*.min_due_amount' => 'nullable|numeric|min:0|max:100000000',
+        ], [
+            'events.*.schedule_days.max' => 'Choose at most ' . WhatsAppShopSetting::MAX_SCHEDULE_DAYS . ' days a week.',
+            'events.*.schedule_time.regex' => 'Choose a valid time.',
+        ]);
+
+        $shopId = $request->attributes->get('shop_id');
+
+        foreach ($data['events'] as $i => $event) {
+            $values = ['enabled' => $event['enabled']];
+
+            if (WhatsAppShopSetting::isScheduled($event['key'])) {
+                if ($event['enabled'] && (empty($event['schedule_days']) || empty($event['schedule_time']))) {
+                    throw ValidationException::withMessages([
+                        "events.{$i}.schedule_days" => 'Choose the day(s) and time to send ' . strtolower(WhatsAppTemplate::EVENTS[$event['key']]['label']) . 's.',
+                    ]);
+                }
+                $values += [
+                    'schedule_days' => array_values(array_intersect(WhatsAppShopSetting::DAYS, $event['schedule_days'] ?? [])),
+                    'schedule_time' => $event['schedule_time'] ?? WhatsAppShopSetting::DEFAULTS['schedule_time'],
+                    'min_due_amount' => $event['min_due_amount'] ?? WhatsAppShopSetting::DEFAULTS['min_due_amount'],
+                ];
+            }
+
+            WhatsAppShopSetting::updateOrCreate(['shop_id' => $shopId, 'event' => $event['key']], $values);
+        }
+
+        return $this->settings($request, app(WhatsAppMessenger::class));
     }
 
     /** Creates a Razorpay order for a pack; the app/web opens Razorpay Checkout with it. */

@@ -116,6 +116,7 @@
                 'transactions': 'transactions',
                 'reports': 'reports',
                 'reminders': 'reminders',
+                'whatsapp': 'whatsapp',
                 'settings': 'settings',
                 'subscription': 'subscription',
                 'addons': 'addons',
@@ -693,6 +694,7 @@
                 else if (pageName === 'subscription') return this.loadSubscriptionPlans();
                 else if (pageName === 'addons') return this.loadAddOns();
                 else if (pageName === 'support') return this.loadSupportTickets();
+                else if (pageName === 'whatsapp') { window.dispatchEvent(new CustomEvent('whatsapp-open')); return Promise.resolve(); }
                 return Promise.resolve();
             },
 

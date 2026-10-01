@@ -46,6 +46,10 @@ class WhatsAppMessenger
             throw new WhatsAppException('WhatsApp messaging is currently unavailable.');
         }
 
+        if ($recipient->whatsapp_opt_out) {
+            throw new WhatsAppException("{$recipient->name} has turned off WhatsApp messages.");
+        }
+
         $phone = WhatsAppClient::normalizePhone($recipient->mobile);
         if (!$phone) {
             throw new WhatsAppException("{$recipient->name} does not have a valid mobile number.");

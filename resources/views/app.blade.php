@@ -249,6 +249,7 @@
                     @include('shopowner.partials.transactions')
                     @include('shopowner.partials.reports')
                     @include('shopowner.partials.reminders')
+                    @include('shopowner.partials.whatsapp')
                     @include('shopowner.partials.settings')
                     @include('shopowner.partials.subscription')
                     @include('shopowner.partials.addons')
