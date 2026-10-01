@@ -84,6 +84,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     Route::apiResource('register-closures', \App\Http\Controllers\Api\RegisterClosureApiController::class)->only(['index', 'store']);
 
     // Bank accounts
+    Route::post('bank-accounts/bulk-delete', [\App\Http\Controllers\Api\BankAccountApiController::class, 'bulkDestroy']);
     Route::apiResource('bank-accounts', \App\Http\Controllers\Api\BankAccountApiController::class);
 
     // Expenses & Expense Categories
