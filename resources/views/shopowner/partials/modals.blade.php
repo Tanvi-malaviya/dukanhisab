@@ -201,6 +201,12 @@
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
                 </button>
+                {{-- Sent from the DukanHisab number using the shop's WhatsApp message credits --}}
+                <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)" :disabled="sendingWhatsApp"
+                    class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
+                    <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
+                </button>
                 <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })" :disabled="sendingSaleEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
@@ -703,6 +709,12 @@
                     <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
                         <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
                     </span>
+                </button>
+                {{-- Sent from the DukanHisab number using the shop's WhatsApp message credits --}}
+                <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)" :disabled="sendingWhatsApp"
+                    class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                    <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
+                    <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
                 </button>
                 <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })" :disabled="sendingPurchaseEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"

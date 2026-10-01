@@ -711,5 +711,7 @@
   "wa_ledger_refund": "રિફંડ",
   "wa_ledger_adjustment": "ફેરફાર",
   "wa_load_failed": "WhatsApp સેટિંગ્સ લોડ થઈ શકી નહીં.",
-  "wa_max_days_msg": "તમે અઠવાડિયામાં વધુમાં વધુ 2 દિવસ પસંદ કરી શકો."
+  "wa_max_days_msg": "તમે અઠવાડિયામાં વધુમાં વધુ 2 દિવસ પસંદ કરી શકો.",
+  "wa_send_via_whatsapp": "WhatsApp પર મોકલો",
+  "sending": "મોકલી રહ્યા છીએ..."
 }

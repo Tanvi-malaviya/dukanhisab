@@ -164,6 +164,8 @@ class CustomerApiController extends Controller
         // 3. Sync Sale Statuses based on Customer Due Balance
         static::syncCustomerSaleStatuses($customer->id, $shopId);
 
+        app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->customerPaid($customer, $amount);
+
         return response()->json([
             'message' => 'Udhar repayment recorded successfully.',
             'customer' => $customer,

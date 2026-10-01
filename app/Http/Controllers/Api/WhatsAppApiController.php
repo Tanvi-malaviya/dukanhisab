@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\Purchase;
+use App\Models\Sale;
 use App\Models\Shop;
+use App\Models\Supplier;
 use App\Models\WhatsAppCreditLedger;
 use App\Models\WhatsAppPack;
 use App\Models\WhatsAppPackPurchase;
 use App\Models\WhatsAppShopSetting;
 use App\Models\WhatsAppTemplate;
+use App\Services\WhatsApp\InsufficientCreditsException;
 use App\Services\WhatsApp\WhatsAppClient;
+use App\Services\WhatsApp\WhatsAppException;
 use App\Services\WhatsApp\WhatsAppMessenger;
 use App\Services\WhatsApp\WhatsAppWallet;
 use Illuminate\Http\Request;
@@ -125,6 +131,47 @@ class WhatsAppApiController extends Controller
         }
 
         return $this->settings($request, app(WhatsAppMessenger::class));
+    }
+
+    /** "Send via WhatsApp" on a sale invoice — from the shop's credits, regardless of the auto toggle. */
+    public function sendSaleInvoice(Request $request, WhatsAppMessenger $messenger, $id)
+    {
+        $shop = Shop::findOrFail($request->attributes->get('shop_id'));
+        $sale = Sale::where('shop_id', $shop->id)->findOrFail($id);
+        if (!$sale->customer_id || !($customer = Customer::find($sale->customer_id))) {
+            return response()->json(['message' => 'This sale has no customer to send it to.'], 422);
+        }
+
+        return $this->sendNow(fn () => $messenger->send($shop, 'sale_invoice', $customer, ['sale' => $sale]), $shop);
+    }
+
+    public function sendPurchaseInvoice(Request $request, WhatsAppMessenger $messenger, $id)
+    {
+        $shop = Shop::findOrFail($request->attributes->get('shop_id'));
+        $purchase = Purchase::where('shop_id', $shop->id)->findOrFail($id);
+        if (!$purchase->supplier_id || !($supplier = Supplier::find($purchase->supplier_id))) {
+            return response()->json(['message' => 'This purchase has no supplier to send it to.'], 422);
+        }
+
+        return $this->sendNow(fn () => $messenger->send($shop, 'purchase_record', $supplier, ['purchase' => $purchase]), $shop);
+    }
+
+    /** Runs a manual send and maps the outcome: 202 queued, 402 out of credits, 422 can't send. */
+    private function sendNow(callable $send, Shop $shop)
+    {
+        try {
+            $log = $send();
+        } catch (InsufficientCreditsException $e) {
+            return response()->json(['message' => $e->getMessage(), 'code' => 'no_credits'], 402);
+        } catch (WhatsAppException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => 'Message is being sent on WhatsApp to +' . $log->phone . '.',
+            'log_id' => $log->id,
+            'balance' => $this->wallet->balance($shop->id),
+        ], 202);
     }
 
     /** Creates a Razorpay order for a pack; the app/web opens Razorpay Checkout with it. */

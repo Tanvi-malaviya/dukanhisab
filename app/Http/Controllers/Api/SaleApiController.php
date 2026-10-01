@@ -237,6 +237,8 @@ class SaleApiController extends Controller
             $this->syncCreditStatuses((int) $shopId, $sale->customer_id);
 
             $sale->refresh();
+            app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->saleCreated($sale);
+
             return response()->json($sale->load('items.product', 'customer'), 201);
         });
     }

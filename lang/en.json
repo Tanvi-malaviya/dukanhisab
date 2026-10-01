@@ -711,5 +711,7 @@
   "wa_ledger_refund": "Refund",
   "wa_ledger_adjustment": "Adjustment",
   "wa_load_failed": "Could not load WhatsApp settings.",
-  "wa_max_days_msg": "You can choose at most 2 days a week."
+  "wa_max_days_msg": "You can choose at most 2 days a week.",
+  "wa_send_via_whatsapp": "Send via WhatsApp",
+  "sending": "Sending..."
 }

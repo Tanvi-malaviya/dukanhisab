@@ -711,5 +711,7 @@
   "wa_ledger_refund": "रिफंड",
   "wa_ledger_adjustment": "समायोजन",
   "wa_load_failed": "व्हाट्सएप सेटिंग्स लोड नहीं हो सकीं।",
-  "wa_max_days_msg": "आप हफ्ते में अधिकतम 2 दिन चुन सकते हैं।"
+  "wa_max_days_msg": "आप हफ्ते में अधिकतम 2 दिन चुन सकते हैं।",
+  "wa_send_via_whatsapp": "व्हाट्सएप से भेजें",
+  "sending": "भेज रहे हैं..."
 }

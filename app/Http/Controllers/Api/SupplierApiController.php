@@ -153,6 +153,8 @@ class SupplierApiController extends Controller
         // 3. Sync Purchase Statuses based on Supplier Due Balance
         static::syncSupplierPurchaseStatuses($supplier->id, $shopId);
 
+        app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->supplierPaid($supplier, $amount);
+
         return response()->json([
             'message' => 'Supplier due payment recorded successfully.',
             'supplier' => $supplier,

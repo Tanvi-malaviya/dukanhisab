@@ -439,6 +439,7 @@
             selectedSale: null,
             showInvoiceModal: false,
             sendingSaleEmail: false,
+            sendingWhatsApp: false,
             sendingPurchaseEmail: false,
             showReturnModal: false,
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
@@ -3642,6 +3643,28 @@
                 }
                 const msg = `Hello ${custName}, thank you! Invoice: ${this.selectedSale.sale_number}, ${paymentInfo}. - DukanHisab`;
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
+            },
+
+            // Sends the invoice from the DukanHisab WhatsApp number using the shop's message credits.
+            sendViaWhatsApp(kind, id) {
+                if (!id || this.sendingWhatsApp) return;
+                this.sendingWhatsApp = true;
+                fetch(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`, { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json().then(d => ({ status: r.status, body: d })))
+                    .then(({ status, body }) => {
+                        this.sendingWhatsApp = false;
+                        if (status === 202) {
+                            this.showToast(body.message || 'Sent on WhatsApp.');
+                        } else if (status === 402) {
+                            this.showConfirm(this.t('wa_buy_messages'), body.message, () => {
+                                this.showInvoiceModal = false;
+                                this.showPurchaseDetailsModal = false;
+                                this.navigateTo('whatsapp');
+                            });
+                        } else {
+                            this.showToast(body.message || 'Could not send on WhatsApp.', 'error');
+                        }
+                    }).catch(() => { this.sendingWhatsApp = false; this.showToast('Could not send on WhatsApp.', 'error'); });
             },
 
             sendSaleInvoiceEmail() {

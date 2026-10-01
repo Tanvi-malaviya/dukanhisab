@@ -63,12 +63,14 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     Route::post('/sales/{id}/return', [\App\Http\Controllers\Api\SaleApiController::class, 'returnSale']);
     Route::get('/sales/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePDF']);
     Route::post('/sales/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailSaleInvoice']);
+    Route::post('/sales/{id}/whatsapp', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendSaleInvoice']);
 
     // Purchase CRUD
     Route::apiResource('purchases', \App\Http\Controllers\Api\PurchaseApiController::class);
     Route::post('/purchases/{id}/cancel', [\App\Http\Controllers\Api\PurchaseApiController::class, 'cancel']);
     Route::get('/purchases/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePurchasePDF']);
     Route::post('/purchases/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailPurchaseInvoice']);
+    Route::post('/purchases/{id}/whatsapp', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendPurchaseInvoice']);
     Route::post('/purchases/{id}/return', [\App\Http\Controllers\Api\PurchaseApiController::class, 'returnPurchase']);
 
     // WhatsApp messaging: settings, credits wallet & pack purchase
