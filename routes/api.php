@@ -90,6 +90,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
 
     // Reports
     Route::get('/reports', [\App\Http\Controllers\Api\ReportApiController::class, 'index']);
+
+    // Credit Notes
+    Route::apiResource('credit-notes', \App\Http\Controllers\Api\CreditNoteApiController::class)->only(['index', 'show']);
 });
 
 // ShopOwner Common API Authentication Module

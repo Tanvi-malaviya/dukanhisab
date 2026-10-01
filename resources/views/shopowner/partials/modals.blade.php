@@ -805,6 +805,9 @@
                         <option value="cash">Cash Refund</option>
                         <option value="bank">Bank Refund</option>
                         <option value="upi">UPI Refund</option>
+                        <template x-if="returnForm.customer_id">
+                            <option value="credit_note">Credit Note (Store Credit)</option>
+                        </template>
                         <template x-if="returnForm.payment_type === 'Credit' && returnForm.customer_id">
                             <option value="due_adjustment">Reduce Customer Khata Due</option>
                         </template>
@@ -2066,5 +2069,98 @@
                 </div>
             </div>
         </template>
+    </div>
+</div>
+
+{{-- Customer Credit Notes Modal --}}
+<div x-show="showCustomerCreditNotesModal" style="display: none;"
+    class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+    x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 dark:border-gray-700 relative max-h-[90vh] flex flex-col"
+        @click.away="showCustomerCreditNotesModal = false">
+        
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-gray-700">
+            <div>
+                <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
+                    </svg>
+                    <span>Store Credit & Credit Notes</span>
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5" x-text="customerCreditNotesTarget ? customerCreditNotesTarget.name : ''"></p>
+            </div>
+            <button @click="showCustomerCreditNotesModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <div class="py-4 overflow-y-auto flex-1 space-y-4">
+            <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Available Store Credit</span>
+                    <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        ₹<span x-text="parseFloat(customerCreditNotesTarget ? (customerCreditNotesTarget.credit_balance || 0) : 0).toFixed(2)"></span>
+                    </div>
+                </div>
+                <div class="text-right text-xs text-emerald-600/80 dark:text-emerald-400/80">
+                    Auto-redeemable on next sale
+                </div>
+            </div>
+
+            <template x-if="loadingCustomerCreditNotes">
+                <div class="text-center py-8 text-slate-400">Loading credit notes...</div>
+            </template>
+
+            <template x-if="!loadingCustomerCreditNotes && customerCreditNotesList.length === 0">
+                <div class="text-center py-8 text-slate-400 text-sm">
+                    No credit notes found for this customer.
+                </div>
+            </template>
+
+            <template x-if="!loadingCustomerCreditNotes && customerCreditNotesList.length > 0">
+                <div class="space-y-2.5">
+                    <template x-for="cn in customerCreditNotesList" :key="cn.id">
+                        <div class="border border-slate-200 dark:border-gray-700 rounded-xl p-3.5 bg-slate-50/50 dark:bg-gray-800/60">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-xs text-slate-800 dark:text-white font-mono" x-text="cn.credit_note_number"></span>
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                    :class="{
+                                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300': cn.status === 'Active',
+                                        'bg-slate-200 text-slate-700 dark:bg-gray-700 dark:text-slate-300': cn.status === 'Redeemed',
+                                        'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300': cn.status === 'Cancelled'
+                                    }"
+                                    x-text="cn.status"></span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-slate-500 mt-1">
+                                <span x-text="cn.sale ? ('From Return: ' + cn.sale.sale_number) : (cn.reason || 'Sales Return')"></span>
+                                <span x-text="new Date(cn.created_at).toLocaleDateString()"></span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-gray-700/60 text-xs">
+                                <div>
+                                    <div class="text-[10px] text-slate-400">Total</div>
+                                    <div class="font-bold text-slate-700 dark:text-slate-300">₹<span x-text="parseFloat(cn.total_amount).toFixed(2)"></span></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-slate-400">Used</div>
+                                    <div class="font-bold text-slate-700 dark:text-slate-300">₹<span x-text="parseFloat(cn.used_amount).toFixed(2)"></span></div>
+                                </div>
+                                <div>
+                                    <div class="text-[10px] text-slate-400">Remaining</div>
+                                    <div class="font-bold" :class="cn.status === 'Active' ? 'text-emerald-600' : 'text-slate-500'">₹<span x-text="parseFloat(cn.remaining_balance).toFixed(2)"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 dark:border-gray-700 flex justify-end">
+            <button @click="showCustomerCreditNotesModal = false" class="px-4 py-2 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200">
+                Close
+            </button>
+        </div>
     </div>
 </div>

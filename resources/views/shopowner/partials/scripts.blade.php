@@ -464,6 +464,12 @@
             customerPricingSaving: false,
             posCustomerPrices: {},
 
+            // Customer Credit Notes Modal
+            showCustomerCreditNotesModal: false,
+            customerCreditNotesTarget: null,
+            customerCreditNotesList: [],
+            loadingCustomerCreditNotes: false,
+
             // Supplier Custom Pricing Modal & Purchase Prices
             showSupplierPricingModal: false,
             supplierPricingTarget: null,
@@ -3136,6 +3142,11 @@
                 return cust ? `${cust.name} (${cust.mobile || 'No Mobile'})` : this.t('walk_in_customer');
             },
 
+            getSelectedPosCustomer() {
+                if (!this.pos.selectedCustomer) return null;
+                return this.customers.find(c => c.id == this.pos.selectedCustomer) || null;
+            },
+
             searchSalesCustomers() {
                 const q = this.salesCustomerSearchQuery;
                 fetch('/api/v1/customers?search=' + encodeURIComponent(q), { headers: this.getHeaders() })
@@ -3253,6 +3264,18 @@
                 if (this.pos.paymentType === 'Credit' && !this.pos.selectedCustomer) {
                     this.showConfirm('Validation Error', 'Customer selection is required for Credit (udhaar) transactions.', () => { });
                     return;
+                }
+
+                if (this.pos.paymentType === 'Store Credit') {
+                    const cust = this.getSelectedPosCustomer();
+                    if (!cust) {
+                        this.showConfirm('Validation Error', 'Customer selection is required to use Store Credit.', () => { });
+                        return;
+                    }
+                    if (parseFloat(cust.credit_balance || 0) < grandTotal) {
+                        this.showConfirm('Validation Error', 'Insufficient store credit balance (Available: ₹' + parseFloat(cust.credit_balance || 0).toFixed(2) + ').', () => { });
+                        return;
+                    }
                 }
 
                 this.loading = true;
@@ -3915,6 +3938,25 @@
                     fetch('/api/v1/customers/' + custId, { method: 'DELETE', headers: this.getHeaders() })
                         .then(r => { this.loading = false; if (r.status === 204) { this.showToast('Customer deleted.'); this.loadCustomers(); } });
                 });
+            },
+
+            openCustomerCreditNotesModal(cust) {
+                this.customerCreditNotesTarget = cust;
+                this.customerCreditNotesList = [];
+                this.loadingCustomerCreditNotes = true;
+                this.showCustomerCreditNotesModal = true;
+                fetch('/api/v1/credit-notes?customer_id=' + cust.id + '&per_page=50', {
+                    headers: this.getHeaders()
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        this.loadingCustomerCreditNotes = false;
+                        this.customerCreditNotesList = d.data || (Array.isArray(d) ? d : []);
+                    })
+                    .catch(() => {
+                        this.loadingCustomerCreditNotes = false;
+                        this.showToast('Failed to load credit notes', 'error');
+                    });
             },
 
             openCollectCustomerPaymentModal(cust) {

@@ -134,23 +134,24 @@ class ScenarioCoverageTest extends TestCase
         $this->assertEquals(0, CashBook::count());
     }
 
-    public function test_store_credit_payment_type_is_rejected(): void
+    public function test_store_credit_payment_type_is_accepted_when_customer_has_credit(): void
     {
         $p = $this->product();
         $c = $this->customer(['credit_balance' => 150]);
-        $this->sale($p, 1, 'Store Credit', $c)->assertStatus(422);
-        $this->assertEquals(20, $p->fresh()->stock);
-        $this->assertEquals(150, (float) $c->fresh()->credit_balance);
+        $r = $this->sale($p, 1, 'Store Credit', $c)->assertStatus(201);
+        $this->assertEquals(19, $p->fresh()->stock);
+        $this->assertEquals(50, (float) $c->fresh()->credit_balance);
+        $this->assertEquals('Completed', $r->json('status'));
     }
 
-    public function test_used_credit_balance_is_ignored_on_new_sales(): void
+    public function test_used_credit_balance_is_applied_on_new_sales(): void
     {
         $p = $this->product();
         $c = $this->customer(['credit_balance' => 50]);
         $r = $this->sale($p, 1, 'Cash', $c, ['used_credit_balance' => 50])->assertStatus(201);
-        $this->assertEquals(0, (float) $r->json('store_credit'));
-        $this->assertEquals(100, (float) $r->json('paid_amount'));
-        $this->assertEquals(50, (float) $c->fresh()->credit_balance);
+        $this->assertEquals(50, (float) $r->json('store_credit'));
+        $this->assertEquals(50, (float) $r->json('paid_amount'));
+        $this->assertEquals(0, (float) $c->fresh()->credit_balance);
     }
 
     public function test_sale_idempotency_key_prevents_double_posting(): void
@@ -292,16 +293,16 @@ class ScenarioCoverageTest extends TestCase
         $this->assertEquals(0, CashBook::count());
     }
 
-    public function test_return_as_credit_note_is_rejected(): void
+    public function test_return_as_credit_note_creates_credit_note(): void
     {
         $p = $this->product();
         $c = $this->customer();
         $id = $this->sale($p, 1, 'Cash', $c)->json('id');
-        $this->withHeaders($this->h())->postJson("/api/v1/sales/{$id}/return", ['refund_method' => 'credit_note'])->assertStatus(422);
-        $this->assertEquals(19, $p->fresh()->stock);
-        $this->assertEquals(0, (float) $c->fresh()->credit_balance);
-        $this->assertEquals(0, CreditNote::count());
-        $this->withHeaders($this->h())->getJson('/api/v1/credit-notes')->assertStatus(404);
+        $this->withHeaders($this->h())->postJson("/api/v1/sales/{$id}/return", ['refund_method' => 'credit_note'])->assertStatus(200);
+        $this->assertEquals(20, $p->fresh()->stock);
+        $this->assertEquals(100, (float) $c->fresh()->credit_balance);
+        $this->assertEquals(1, CreditNote::count());
+        $this->withHeaders($this->h())->getJson('/api/v1/credit-notes')->assertStatus(200);
     }
 
     public function test_customer_crud_and_search(): void

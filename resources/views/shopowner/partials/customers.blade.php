@@ -65,7 +65,7 @@
                                 </span>
                             </template>
                             <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) < 0">
-                                <span class="text-emerald-600 font-bold">
+                                <span @click="openCustomerCreditNotesModal(cust)" class="text-emerald-600 font-bold cursor-pointer hover:underline" title="Click to view Credit Notes">
                                     ₹<span x-text="Math.abs(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))).toFixed(2)"></span>
                                     <span class="text-[11px] font-medium text-emerald-500 ml-1" x-text="'(' + (t('advance') || 'Advance') + ')'">(Advance)</span>
                                 </span>
@@ -83,6 +83,16 @@
                                 </svg>
                                 <span>Pricing</span>
                             </button>
+                            <template x-if="parseFloat(cust.credit_balance || 0) > 0 || (parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) < 0">
+                                <button @click="openCustomerCreditNotesModal(cust)"
+                                    class="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white dark:bg-emerald-900/30 dark:hover:bg-emerald-600 dark:text-emerald-300 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1"
+                                    title="View Store Credit & Credit Notes">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                                    </svg>
+                                    <span>Credit Notes</span>
+                                </button>
+                            </template>
                             <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) > 0">
                                 <button @click="openCollectCustomerPaymentModal(cust)"
                                     class="px-2 py-1 bg-emerald-100 hover:bg-emerald-600 text-emerald-900 hover:text-white rounded-lg text-xs font-semibold transition-all shadow-2xs mr-1"

@@ -98,14 +98,14 @@ class SalesReturnRefundMethodTest extends TestCase
         $this->assertEquals(97, $this->product->fresh()->stock);
     }
 
-    public function test_credit_note_refund_is_rejected_and_changes_nothing(): void
+    public function test_credit_note_refund_creates_credit_note_and_restores_stock(): void
     {
         $saleId = $this->sell(5);
 
-        $this->returnItems($saleId, 'credit_note', 2)->assertStatus(422);
+        $this->returnItems($saleId, 'credit_note', 2)->assertStatus(200);
 
-        $this->assertEquals(95, $this->product->fresh()->stock);
-        $this->assertEquals(0, (float) $this->customer->fresh()->credit_balance);
-        $this->assertEquals(0, CreditNote::count());
+        $this->assertEquals(97, $this->product->fresh()->stock);
+        $this->assertEquals(100.00, (float) $this->customer->fresh()->credit_balance);
+        $this->assertEquals(1, CreditNote::count());
     }
 }
