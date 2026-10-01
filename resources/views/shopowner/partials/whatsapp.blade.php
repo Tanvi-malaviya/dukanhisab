@@ -35,6 +35,35 @@
                 <button type="button" @click="navigateTo('settings')" class="font-bold underline shrink-0" x-text="t('settings')"></button>
             </div>
 
+            {{-- "I have paid" reports from the Pay Now page, waiting for the owner --}}
+            <div class="bg-white dark:bg-gray-800 rounded-2xl border shadow-sm"
+                :class="wa.claims.length ? 'border-sky-300 dark:border-sky-700' : 'border-slate-200 dark:border-gray-700'">
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between gap-3">
+                    <div>
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-200" x-text="wt('wa_payment_claims', 'Payments reported by customers')"></h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400" x-text="wt('wa_payment_claims_desc', 'Customers who paid through the Pay Now link. Check your bank / UPI app, then confirm to record the payment.')"></p>
+                    </div>
+                    <span x-show="wa.claims.length" class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-xs font-bold" x-text="wa.claims.length"></span>
+                </div>
+                <p x-show="!wa.claims.length" class="px-4 py-3 text-xs text-slate-400" x-text="wt('wa_no_claims', 'No payments waiting for confirmation.')"></p>
+                <div class="divide-y divide-slate-100 dark:divide-gray-700">
+                    <template x-for="claim in wa.claims" :key="claim.id">
+                        <div class="px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="text-xs">
+                                <p class="text-sm font-bold text-slate-800 dark:text-white" x-text="(claim.customer ? claim.customer.name : '') + ' — ₹' + Number(claim.claimed_amount).toFixed(2)"></p>
+                                <p class="text-slate-500 font-mono" x-text="'UTR ' + claim.claimed_utr + ' · ' + new Date(claim.claimed_at).toLocaleString()"></p>
+                            </div>
+                            <div class="flex gap-2 shrink-0">
+                                <button type="button" @click="resolveClaim(claim, 'confirm')" :disabled="wa.resolvingId === claim.id"
+                                    class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold disabled:opacity-60 cursor-pointer" x-text="wt('wa_confirm', 'Confirm')"></button>
+                                <button type="button" @click="resolveClaim(claim, 'reject')" :disabled="wa.resolvingId === claim.id"
+                                    class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 text-xs font-bold disabled:opacity-60 cursor-pointer" x-text="wt('wa_reject', 'Reject')"></button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             {{-- Message types, grouped by recipient --}}
             <template x-for="group in [{ key: 'customer', title: wt('wa_to_customers', 'Messages to Customers') }, { key: 'supplier', title: wt('wa_to_suppliers', 'Messages to Suppliers') }]" :key="group.key">
                 <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
@@ -84,6 +113,9 @@
                                         <input type="number" min="0" step="1" x-model.number="ev.min_due_amount" class="block w-full px-3 py-1.5 bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:text-white">
                                     </div>
                                 </div>
+
+                                <p x-show="ev.scheduled && ev.last_run_result" class="text-[11px] text-slate-500 dark:text-slate-400"
+                                    x-text="ev.last_run_result ? (wt('wa_last_sent', 'Last sent') + ': ' + new Date(ev.last_run_at).toLocaleString() + ' — ' + ev.last_run_result.sent + ' ' + wt('wa_sent_count', 'sent') + (ev.last_run_result.skipped_no_credits ? ', ' + ev.last_run_result.skipped_no_credits + ' ' + wt('wa_skipped_no_credits', 'skipped (no credits)') : '')) : ''"></p>
 
                                 {{-- Read-only preview of the fixed template --}}
                                 <div x-show="ev.preview" x-data="{ open: false }">
@@ -154,7 +186,7 @@
     function whatsappPage() {
         return {
             days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
-            wa: { loading: false, loaded: false, saving: false, buyingId: null, available: true, balance: 0, lowBalance: false, upiId: null, maxDays: 2, events: [], packs: [], ledger: [] },
+            wa: { loading: false, loaded: false, saving: false, buyingId: null, resolvingId: null, available: true, balance: 0, lowBalance: false, upiId: null, maxDays: 2, events: [], packs: [], ledger: [], claims: [] },
 
             init() {
                 if (this.page === 'whatsapp') this.load();
@@ -179,11 +211,13 @@
                 if (this.wa.loading || !this.shop) return;
                 this.wa.loading = true;
                 try {
-                    const [settings, wallet] = await Promise.all([
+                    const [settings, wallet, claims] = await Promise.all([
                         fetch('/api/v1/whatsapp/settings', { headers: this.getHeaders() }).then(r => r.json()),
                         fetch('/api/v1/whatsapp/wallet', { headers: this.getHeaders() }).then(r => r.json()),
+                        fetch('/api/v1/whatsapp/payment-claims', { headers: this.getHeaders() }).then(r => r.json()),
                     ]);
                     this.applySettings(settings);
+                    this.wa.claims = claims.pending || [];
                     this.wa.packs = wallet.packs || [];
                     this.wa.ledger = wallet.ledger || [];
                     this.wa.loaded = true;
@@ -232,6 +266,28 @@
                     this.showToast('Could not save settings.', 'error');
                 } finally {
                     this.wa.saving = false;
+                }
+            },
+
+            resolveClaim(claim, action) {
+                const run = async () => {
+                    this.wa.resolvingId = claim.id;
+                    try {
+                        const response = await fetch(`/api/v1/whatsapp/payment-claims/${claim.id}/${action}`, { method: 'POST', headers: this.getHeaders() });
+                        const d = await response.json();
+                        const first = d.errors ? Object.values(d.errors).flat()[0] : null;
+                        this.showToast(first || d.message || (response.ok ? 'Done.' : 'Could not update.'), response.ok ? 'success' : 'error');
+                        if (response.ok) this.wa.claims = this.wa.claims.filter(c => c.id !== claim.id);
+                    } catch (e) {
+                        this.showToast('Could not update.', 'error');
+                    } finally {
+                        this.wa.resolvingId = null;
+                    }
+                };
+                if (action === 'confirm') {
+                    this.showConfirm(this.wt('wa_confirm', 'Confirm'), this.wt('wa_confirm_claim_q', 'Confirm this payment? It will be recorded as a UPI payment and reduce the customer\'s due.'), run);
+                } else {
+                    run();
                 }
             },
 

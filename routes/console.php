@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('sync:cleanup-idempotency-keys')->daily();
+Schedule::command('whatsapp:send-scheduled')->everyFifteenMinutes()->withoutOverlapping();

@@ -3647,9 +3647,20 @@
 
             // Sends the invoice from the DukanHisab WhatsApp number using the shop's message credits.
             sendViaWhatsApp(kind, id) {
-                if (!id || this.sendingWhatsApp) return;
+                if (!id) return;
+                this._postWhatsApp(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`);
+            },
+
+            // Due reminder (with Pay Now) to a customer, or due statement to a supplier.
+            sendWhatsAppReminder(type, id) {
+                if (!id) return;
+                this._postWhatsApp(`/api/v1/whatsapp/reminders/${type}/${id}`);
+            },
+
+            _postWhatsApp(url) {
+                if (this.sendingWhatsApp) return;
                 this.sendingWhatsApp = true;
-                fetch(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`, { method: 'POST', headers: this.getHeaders() })
+                fetch(url, { method: 'POST', headers: this.getHeaders() })
                     .then(r => r.json().then(d => ({ status: r.status, body: d })))
                     .then(({ status, body }) => {
                         this.sendingWhatsApp = false;

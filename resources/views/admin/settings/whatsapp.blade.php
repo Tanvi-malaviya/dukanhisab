@@ -170,6 +170,7 @@
             <div>
                 <h3 class="font-bold text-white text-sm">Message Templates</h3>
                 <p class="text-xs text-slate-400">Add each template only after Meta approves it, with exactly the same name, language and body. Shop owners see these read-only.</p>
+                <p class="text-xs text-slate-400 mt-1">Due reminder Pay Now button: create it in Meta as a <strong>URL button with a dynamic suffix</strong> pointing to <code class="text-emerald-400">{{ $payUrlBase }}@{{1}}</code>.</p>
             </div>
             <x-button type="button" onclick="openTemplateModal()" variant="primary" class="whitespace-nowrap">+ Add Template</x-button>
         </div>

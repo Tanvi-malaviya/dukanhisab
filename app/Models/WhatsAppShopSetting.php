@@ -16,6 +16,7 @@ class WhatsAppShopSetting extends Model
         'schedule_time',
         'min_due_amount',
         'last_run_at',
+        'last_run_result',
     ];
 
     protected $casts = [
@@ -23,6 +24,7 @@ class WhatsAppShopSetting extends Model
         'schedule_days' => 'array',
         'min_due_amount' => 'decimal:2',
         'last_run_at' => 'datetime',
+        'last_run_result' => 'array',
     ];
 
     /** Events sent on the shop's weekly schedule; every other event is sent right after the action. */
@@ -38,6 +40,11 @@ class WhatsAppShopSetting extends Model
         'schedule_time' => '10:00',
         'min_due_amount' => 100,
     ];
+
+    public function shop()
+    {
+        return $this->belongsTo(Shop::class);
+    }
 
     public static function isScheduled(string $event): bool
     {

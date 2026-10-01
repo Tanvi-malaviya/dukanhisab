@@ -76,6 +76,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     // WhatsApp messaging: settings, credits wallet & pack purchase
     Route::get('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'settings']);
     Route::post('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'updateSettings']);
+    Route::post('/whatsapp/reminders/{type}/{id}', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendReminder'])->whereIn('type', ['customer', 'supplier']);
+    Route::get('/whatsapp/payment-claims', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'paymentClaims']);
+    Route::post('/whatsapp/payment-claims/{id}/confirm', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'confirmPaymentClaim']);
+    Route::post('/whatsapp/payment-claims/{id}/reject', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'rejectPaymentClaim']);
     Route::get('/whatsapp/wallet', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'wallet']);
     Route::post('/whatsapp/packs/{id}/purchase', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'purchasePack']);
     Route::post('/whatsapp/packs/verify-payment', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'verifyPackPayment']);

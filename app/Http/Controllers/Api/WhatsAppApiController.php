@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\PaymentLink;
 use App\Models\Purchase;
 use App\Models\Sale;
 use App\Models\Shop;
@@ -17,8 +18,10 @@ use App\Services\WhatsApp\InsufficientCreditsException;
 use App\Services\WhatsApp\WhatsAppClient;
 use App\Services\WhatsApp\WhatsAppException;
 use App\Services\WhatsApp\WhatsAppMessenger;
+use App\Services\WhatsApp\WhatsAppReminderSender;
 use App\Services\WhatsApp\WhatsAppWallet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -79,6 +82,8 @@ class WhatsAppApiController extends Controller
                 'has_document' => (bool) $template?->has_document,
                 'has_pay_button' => (bool) $template?->has_pay_button && !empty($shop->upi_id),
                 'preview' => $template?->renderBody($sample),
+                'last_run_at' => $scheduled ? $setting?->last_run_at : null,
+                'last_run_result' => $scheduled ? $setting?->last_run_result : null,
             ];
         }
 
@@ -90,6 +95,7 @@ class WhatsAppApiController extends Controller
             'low_balance' => $balance < WhatsAppWallet::LOW_BALANCE_THRESHOLD,
             'upi_id' => $shop->upi_id,
             'max_schedule_days' => WhatsAppShopSetting::MAX_SCHEDULE_DAYS,
+            'pending_payment_claims' => PaymentLink::where('shop_id', $shop->id)->where('status', 'claimed')->count(),
             'events' => $events,
         ]);
     }
@@ -154,6 +160,73 @@ class WhatsAppApiController extends Controller
         }
 
         return $this->sendNow(fn () => $messenger->send($shop, 'purchase_record', $supplier, ['purchase' => $purchase]), $shop);
+    }
+
+    /** "Send reminder" from the Reminders screen: a due reminder (with Pay Now) or supplier due statement. */
+    public function sendReminder(Request $request, WhatsAppReminderSender $reminders, string $type, $id)
+    {
+        $shop = Shop::findOrFail($request->attributes->get('shop_id'));
+
+        if ($type === 'customer') {
+            $customer = Customer::where('shop_id', $shop->id)->findOrFail($id);
+            return $this->sendNow(fn () => $reminders->remindCustomer($shop, $customer), $shop);
+        }
+
+        $supplier = Supplier::where('shop_id', $shop->id)->findOrFail($id);
+        return $this->sendNow(fn () => $reminders->remindSupplier($shop, $supplier), $shop);
+    }
+
+    /** Customers' "I have paid" reports from the Pay Now page: pending first, then recent ones. */
+    public function paymentClaims(Request $request)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $fields = ['id', 'customer_id', 'amount', 'status', 'claimed_utr', 'claimed_amount', 'claimed_at', 'resolved_at'];
+
+        return response()->json([
+            'pending' => PaymentLink::with('customer:id,name,mobile')->where('shop_id', $shopId)->where('status', 'claimed')
+                ->orderBy('claimed_at')->get($fields),
+            'recent' => PaymentLink::with('customer:id,name,mobile')->where('shop_id', $shopId)->whereIn('status', ['confirmed', 'rejected'])
+                ->latest('resolved_at')->limit(20)->get($fields),
+        ]);
+    }
+
+    /** The shop owner saw the money arrive: record it as the customer's UPI payment. */
+    public function confirmPaymentClaim(Request $request, $id)
+    {
+        $shopId = $request->attributes->get('shop_id');
+        $link = PaymentLink::where('shop_id', $shopId)->where('status', 'claimed')->findOrFail($id);
+
+        // Same path as "Collect payment", so the due, cash book, sale statuses and the
+        // "payment received" WhatsApp all behave exactly as for a manual collection.
+        $subRequest = Request::create('/', 'POST', [
+            'amount' => (float) $link->claimed_amount,
+            'payment_method' => 'UPI',
+            'note' => 'UPI UTR ' . $link->claimed_utr,
+        ]);
+        $subRequest->attributes->set('shop_id', $shopId);
+
+        $response = DB::transaction(function () use ($subRequest, $link) {
+            $response = app(CustomerApiController::class)->recordPayment($subRequest, $link->customer_id);
+            if ($response->getStatusCode() === 200) {
+                $link->update(['status' => 'confirmed', 'resolved_at' => now()]);
+            }
+
+            return $response;
+        });
+
+        if ($response->getStatusCode() !== 200) {
+            return $response;
+        }
+
+        return response()->json(['message' => 'Payment of ₹' . number_format($link->claimed_amount, 2) . ' recorded.', 'claim' => $link->fresh()]);
+    }
+
+    public function rejectPaymentClaim(Request $request, $id)
+    {
+        $link = PaymentLink::where('shop_id', $request->attributes->get('shop_id'))->where('status', 'claimed')->findOrFail($id);
+        $link->update(['status' => 'rejected', 'resolved_at' => now()]);
+
+        return response()->json(['message' => 'Payment report rejected. The customer can submit it again.', 'claim' => $link]);
     }
 
     /** Runs a manual send and maps the outcome: 202 queued, 402 out of credits, 422 can't send. */

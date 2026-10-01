@@ -60,6 +60,7 @@ class WhatsAppSettingController extends Controller
             'variables' => WhatsAppTemplate::VARIABLES,
             'sampleValues' => WhatsAppTemplate::sampleValues(),
             'webhookUrl' => url('/api/v1/whatsapp/webhook'),
+            'payUrlBase' => url('/pay') . '/',
         ]);
     }
 
