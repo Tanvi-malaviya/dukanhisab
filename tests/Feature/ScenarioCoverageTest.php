@@ -134,19 +134,24 @@ class ScenarioCoverageTest extends TestCase
         $this->assertEquals(0, CashBook::count());
     }
 
-    public function test_sale_with_store_credit_uses_credit_balance_and_notes(): void
+    public function test_store_credit_payment_type_is_accepted_when_customer_has_credit(): void
     {
         $p = $this->product();
         $c = $this->customer(['credit_balance' => 150]);
-        CreditNote::create([
-            'shop_id' => $this->shop->id, 'customer_id' => $c->id, 'credit_note_number' => 'CN-T-1',
-            'total_amount' => 150, 'used_amount' => 0, 'remaining_balance' => 150, 'status' => 'Active', 'reason' => 't',
-        ]);
-        $this->sale($p, 1, 'Store Credit', $c)->assertStatus(201);
+        $r = $this->sale($p, 1, 'Store Credit', $c)->assertStatus(201);
+        $this->assertEquals(19, $p->fresh()->stock);
         $this->assertEquals(50, (float) $c->fresh()->credit_balance);
-        $cn = CreditNote::first();
-        $this->assertEquals(100, (float) $cn->used_amount);
-        $this->assertEquals(50, (float) $cn->remaining_balance);
+        $this->assertEquals('Completed', $r->json('status'));
+    }
+
+    public function test_used_credit_balance_is_applied_on_new_sales(): void
+    {
+        $p = $this->product();
+        $c = $this->customer(['credit_balance' => 50]);
+        $r = $this->sale($p, 1, 'Cash', $c, ['used_credit_balance' => 50])->assertStatus(201);
+        $this->assertEquals(50, (float) $r->json('store_credit'));
+        $this->assertEquals(50, (float) $r->json('paid_amount'));
+        $this->assertEquals(0, (float) $c->fresh()->credit_balance);
     }
 
     public function test_sale_idempotency_key_prevents_double_posting(): void
@@ -211,16 +216,17 @@ class ScenarioCoverageTest extends TestCase
         $this->assertEquals(20, $p->fresh()->stock);
     }
 
-    public function test_cancel_sale_with_store_credit_restores_credit(): void
+    public function test_cancelling_a_legacy_store_credit_sale_still_restores_credit(): void
     {
+        // Sales made before credit notes were removed can still carry store_credit.
         $p = $this->product();
-        $c = $this->customer(['credit_balance' => 100]);
+        $c = $this->customer(['credit_balance' => 0]);
         CreditNote::create([
             'shop_id' => $this->shop->id, 'customer_id' => $c->id, 'credit_note_number' => 'CN-T-2',
-            'total_amount' => 100, 'used_amount' => 0, 'remaining_balance' => 100, 'status' => 'Active', 'reason' => 't',
+            'total_amount' => 100, 'used_amount' => 100, 'remaining_balance' => 0, 'status' => 'Redeemed', 'reason' => 't',
         ]);
-        $id = $this->sale($p, 1, 'Store Credit', $c)->json('id');
-        $this->assertEquals(0, (float) $c->fresh()->credit_balance);
+        $id = $this->sale($p, 1, 'Cash', $c)->json('id');
+        Sale::where('id', $id)->update(['payment_type' => 'Store Credit', 'store_credit' => 100, 'paid_amount' => 0]);
         $this->withHeaders($this->h())->postJson("/api/v1/sales/{$id}/cancel", ['cancellation_reason' => 'undo'])->assertStatus(200);
         $this->assertEquals(100, (float) $c->fresh()->credit_balance);
         $this->assertEquals('Active', CreditNote::first()->status);
@@ -287,18 +293,17 @@ class ScenarioCoverageTest extends TestCase
         $this->assertEquals(0, CashBook::count());
     }
 
-    public function test_return_as_credit_note_adds_store_credit(): void
+    public function test_return_as_credit_note_creates_credit_note(): void
     {
         $p = $this->product();
         $c = $this->customer();
         $id = $this->sale($p, 1, 'Cash', $c)->json('id');
         $this->withHeaders($this->h())->postJson("/api/v1/sales/{$id}/return", ['refund_method' => 'credit_note'])->assertStatus(200);
+        $this->assertEquals(20, $p->fresh()->stock);
         $this->assertEquals(100, (float) $c->fresh()->credit_balance);
         $this->assertEquals(1, CreditNote::count());
-        $this->withHeaders($this->h())->getJson('/api/v1/credit-notes')->assertStatus(200)->assertJsonPath('total', 1);
+        $this->withHeaders($this->h())->getJson('/api/v1/credit-notes')->assertStatus(200);
     }
-
-    // ------------------------------------------------------------ Customers
 
     public function test_customer_crud_and_search(): void
     {
@@ -480,7 +485,7 @@ class ScenarioCoverageTest extends TestCase
         // Real, shop-owned bank accounts (see BankAccountTest.php for the full behaviour) — this
         // just confirms the endpoint is wired into this shop's normal scoping.
         $this->withHeaders($this->h())->getJson('/api/v1/bank-accounts')->assertStatus(200);
-        $this->withHeaders($this->h())->postJson('/api/v1/bank-accounts', ['name' => 'x'])->assertStatus(201);
+        $this->withHeaders($this->h())->postJson('/api/v1/bank-accounts', ['name' => 'x'])->assertStatus(405);
     }
 
     // ----------------------------------------------- Reports and dashboard

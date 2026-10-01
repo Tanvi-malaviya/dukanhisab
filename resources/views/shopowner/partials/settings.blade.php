@@ -486,7 +486,7 @@
                     <div class="md:col-span-2">
                         <label
                             class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('pincode')">Pincode</label>
-                        <input type="text" maxlength="10" x-model="shopUpdateForm.pincode"
+                        <input type="text" inputmode="numeric" maxlength="6" x-model="shopUpdateForm.pincode" x-on:input.debounce.400ms="lookupShopPincode(shopUpdateForm)"
                             class="block w-full px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                     </div>
                 </div>
@@ -1547,7 +1547,7 @@
                             encrypted backup file containing all products, sales history, customer dues, supplier
                             records, expenses, and settings.</p>
                     </div>
-                    <button type="button" @click="if (user && user.active_plan && user.active_plan.slug === 'business') downloadShopBackup(); else showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); })"
+                    <button type="button" @click="if (canUseBackup()) downloadShopBackup(); else showConfirm('Upgrade Plan Required', 'Backup & Restore is not included in your current plan. Please upgrade your plan to unlock it.', () => { navigateTo('subscription'); })"
                         class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1576,7 +1576,7 @@
                     <div class="space-y-2">
                         <input type="file" id="shop-restore-file-input" accept=".dhbak"
                             class="block w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400">
-                        <button type="button" @click="if (user && user.active_plan && user.active_plan.slug === 'business') restoreShopBackup(document.getElementById('shop-restore-file-input')); else showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); })"
+                        <button type="button" @click="if (canUseBackup()) restoreShopBackup(document.getElementById('shop-restore-file-input')); else showConfirm('Upgrade Plan Required', 'Backup & Restore is not included in your current plan. Please upgrade your plan to unlock it.', () => { navigateTo('subscription'); })"
                             class="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center justify-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

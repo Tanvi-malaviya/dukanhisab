@@ -23,7 +23,6 @@ class BankTransferApiController extends Controller
         $validator = Validator::make($request->all(), [
             'type' => 'required|string|in:deposit,withdraw',
             'amount' => 'required|numeric|min:0.01',
-            'bank_account_id' => 'nullable|integer|exists:bank_accounts,id',
             'description' => 'nullable|string|max:255',
         ]);
 
@@ -31,13 +30,8 @@ class BankTransferApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $account = $request->filled('bank_account_id')
-            ? BankAccount::where('shop_id', $shopId)->find($request->bank_account_id)
-            : null;
-        if ($request->filled('bank_account_id') && !$account) {
-            return response()->json(['message' => 'That bank account does not belong to this shop.'], 422);
-        }
-        $account ??= BankAccount::defaultForShop($shopId);
+        // The shop's one bank account; any bank_account_id an older client still sends is ignored.
+        $account = BankAccount::defaultForShop($shopId);
 
         $type = $request->type;
         $amount = (float) $request->amount;

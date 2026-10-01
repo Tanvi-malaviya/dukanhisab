@@ -57,8 +57,13 @@ class StockMovementApiController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate(['product_id' => 'required|integer']);
-        return $this->adjust($request, $validated['product_id']);
+        // Validator, not $request->validate(): inside /sync/batch a thrown ValidationException
+        // would surface as a 500 instead of a 422 the app can act on.
+        $validator = Validator::make($request->all(), ['product_id' => 'required|integer']);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+        return $this->adjust($request, (int) $request->product_id);
     }
 
     public function adjust(Request $request, $productId)

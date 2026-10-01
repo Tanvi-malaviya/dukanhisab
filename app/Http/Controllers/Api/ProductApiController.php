@@ -133,7 +133,16 @@ class ProductApiController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $oldStock = (int) $product->stock;
         $product->update($request->all());
+
+        // A stock number typed into the product form is a manual correction too — log it so the
+        // web and app history (both read stock_movements) always explain the current stock.
+        $change = (int) $product->stock - $oldStock;
+        if ($request->has('stock') && $change !== 0) {
+            $this->logStockMovement($shopId, $product->id, $change, (int) $product->stock, 'adjustment', null, null, 'Stock edited');
+        }
+
         return response()->json($product);
     }
 

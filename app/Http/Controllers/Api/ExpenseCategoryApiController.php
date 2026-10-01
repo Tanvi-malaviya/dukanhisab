@@ -103,6 +103,9 @@ class ExpenseCategoryApiController extends Controller
             'description' => $request->has('description') ? $request->description : $category->description,
         ]);
 
+        // Clients that sync expenses by updated_at (the app) must re-fetch these to see the new name.
+        $category->cashBooks()->update(['updated_at' => now()]);
+
         return response()->json($category);
     }
 
@@ -110,7 +113,11 @@ class ExpenseCategoryApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $category = ExpenseCategory::where('shop_id', $shopId)->findOrFail($id);
+
+        // Its expenses stay, uncategorised ("General"); touching them lets syncing clients notice.
+        $category->cashBooks()->update(['expense_category_id' => null, 'updated_at' => now()]);
         $category->delete();
+
         return response()->json(null, 204);
     }
 }

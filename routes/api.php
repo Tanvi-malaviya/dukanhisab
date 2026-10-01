@@ -12,13 +12,11 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-// API version 1 routes with authentication and shop scope
-// Auth routes (no auth middleware)
-Route::post('/v1/auth/login', [App\Http\Controllers\Api\AuthApiController::class, 'login']);
-Route::post('/v1/auth/register', [App\Http\Controllers\Api\AuthApiController::class, 'register']);
+// Shop-owner login/registration lives only under /v1/shopowner (OTP verification, suspension
+// check, device limit). The old unchecked /v1/auth/login and /v1/auth/register were removed.
 
 // API version 1 routes with authentication and shop scope
-Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope', 'idempotency'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardApiController::class, 'index']);
 
@@ -83,9 +81,8 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'shop.scope', 'idempotency'])->
     Route::get('/register-closures/current-status', [\App\Http\Controllers\Api\RegisterClosureApiController::class, 'currentStatus']);
     Route::apiResource('register-closures', \App\Http\Controllers\Api\RegisterClosureApiController::class)->only(['index', 'store']);
 
-    // Bank accounts
-    Route::post('bank-accounts/bulk-delete', [\App\Http\Controllers\Api\BankAccountApiController::class, 'bulkDestroy']);
-    Route::apiResource('bank-accounts', \App\Http\Controllers\Api\BankAccountApiController::class);
+    // Bank account: one default account per shop — view and edit its details only
+    Route::apiResource('bank-accounts', \App\Http\Controllers\Api\BankAccountApiController::class)->only(['index', 'show', 'update']);
 
     // Expenses & Expense Categories
     Route::apiResource('expense-categories', \App\Http\Controllers\Api\ExpenseCategoryApiController::class);
@@ -108,7 +105,7 @@ Route::prefix('v1/shopowner')->group(function () {
     Route::post('/reset-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'resetPassword']);
     Route::post('/razorpay/webhook', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'handleWebhook']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/shop-setup', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'shopSetup']);
         Route::post('/change-password', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'changePassword']);
         Route::post('/logout', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'logout']);
@@ -148,7 +145,7 @@ Route::prefix('v1/shopowner')->group(function () {
 });
 
 // Direct v1 Support Tickets endpoint for mobile app clients
-Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+Route::prefix('v1')->middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('support-tickets/{id}/reply', [\App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class, 'reply']);
     Route::apiResource('support-tickets', \App\Http\Controllers\Api\ShopOwner\SupportTicketApiController::class)
     ->names('v1.support-tickets')

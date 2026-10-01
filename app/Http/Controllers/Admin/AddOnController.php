@@ -96,13 +96,16 @@ class AddOnController extends Controller
             'title' => 'required|string|max:255',
             'type' => 'required|in:shop,website',
             'price' => 'required|numeric|min:0',
+            'billing_period' => 'nullable|in:yearly,lifetime',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
         $validated['slug'] = $validated['type'];
-        // Website is a one-time purchase (never expires); Shop is a yearly auto-renewal.
-        $validated['billing_period'] = $validated['type'] === 'website' ? 'lifetime' : 'yearly';
+        // The admin decides: 'yearly' = auto-renewing subscription, 'lifetime' = one-time purchase that
+        // never expires. The web panel and app both read it from the API. Defaults keep the old
+        // behaviour (Website one-time, Shop yearly) when the field isn't sent.
+        $validated['billing_period'] ??= $validated['type'] === 'website' ? 'lifetime' : 'yearly';
         $validated['status'] = 'active';
 
         if ($request->hasFile('image')) {
@@ -123,6 +126,7 @@ class AddOnController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'price' => 'required|numeric|min:0',
+            'billing_period' => 'sometimes|required|in:yearly,lifetime',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status' => 'required|in:active,inactive',

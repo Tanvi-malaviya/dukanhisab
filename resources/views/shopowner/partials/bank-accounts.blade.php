@@ -54,17 +54,15 @@
                         <div class="flex items-center gap-1.5">
                             <h4 class="text-base font-bold tracking-wide truncate" style="color: #FFFFFF !important;"
                                 x-text="acc.name"></h4>
-                            <span x-show="acc.is_default && bankAccounts.length > 1" class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-white/20" style="color: #FFFFFF !important;" x-text="t('default') || 'Default'"></span>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-white/20" style="color: #FFFFFF !important;" x-text="t('default') || 'Default'"></span>
                         </div>
                         <p x-show="acc.bank_name || acc.account_number" class="text-[11px] mt-0.5 truncate" style="color: rgba(255,255,255,0.8) !important;"
                             x-text="[acc.bank_name, acc.account_number].filter(Boolean).join(' — ')"></p>
                     </div>
-                    <div x-show="bankAccounts.length > 1" class="flex items-center gap-1 shrink-0">
-                        <button x-show="!acc.is_default" @click="deleteBankAccount(acc.id, acc.name)" title="Delete"
-                            class="p-1 rounded-lg hover:bg-white/15 transition-colors cursor-pointer">
-                            <svg class="w-3.5 h-3.5" style="color: #FFFFFF !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
+                    <button @click="openEditBankAccountModal(acc)" :title="t('edit') || 'Edit'"
+                        class="p-1 rounded-lg hover:bg-white/15 transition-colors cursor-pointer shrink-0">
+                        <svg class="w-3.5 h-3.5" style="color: #FFFFFF !important;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </button>
                 </div>
 
                 {{-- Card Chip & Wave graphic --}}
@@ -240,16 +238,6 @@
                     </button>
                 </div>
                 <form @submit.prevent="submitBankTransfer(); showTransferModal = false" class="p-6 space-y-4">
-                    <div x-show="bankAccounts.length > 1">
-                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1" x-text="t('bank_account') || 'Bank Account'">Bank Account</label>
-                        <select x-model="transferForm.bank_account_id"
-                            class="block w-full px-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary">
-                            <option value="">Default / First Account</option>
-                            <template x-for="acc in bankAccounts" :key="acc.id">
-                                <option :value="acc.id" x-text="acc.name + (acc.account_number ? ' (' + acc.account_number + ')' : '')"></option>
-                            </template>
-                        </select>
-                    </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1" x-text="t('transfer_amount_rs')">Transfer Amount (₹)</label>
                         <input type="number" step="0.01" required placeholder="0.00" x-model.number="transferForm.amount"
@@ -277,7 +265,7 @@
                 <div
                     class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-700/20">
                     <h3 class="font-bold text-slate-800 dark:text-white"
-                        x-text="bankAccountForm.id ? (t('edit_bank_account') || 'Edit Bank Account') : (t('add_bank_account') || 'Add Bank Account')"></h3>
+                        x-text="t('edit_bank_account') || 'Edit Bank Account'"></h3>
                     <button @click="showBankAccountModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -308,13 +296,13 @@
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1" x-text="t('opening_balance') || 'Opening Balance (₹)'">Opening Balance (₹)</label>
-                            <input type="number" step="0.01" :disabled="!!bankAccountForm.id" x-model.number="bankAccountForm.opening_balance"
+                            <input type="number" step="0.01" x-model.number="bankAccountForm.opening_balance"
                                 class="block w-full px-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white disabled:opacity-50">
                         </div>
                     </div>
                     <button type="submit"
                         class="w-full py-3 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
-                        x-text="bankAccountForm.id ? (t('save') || 'Save') : (t('add_bank_account') || 'Add Bank Account')"></button>
+                        x-text="t('save') || 'Save'"></button>
                 </form>
             </div>
         </div>
