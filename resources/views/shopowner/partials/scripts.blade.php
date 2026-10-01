@@ -1,6 +1,7 @@
 <script>
     function appState() {
         return {
+            ...containersModule(),
             dark: localStorage.getItem('darkMode') === 'true',
             getAvatarUrl(avatar, name = 'User') {
                 if (!avatar || !String(avatar).trim()) {
@@ -122,6 +123,7 @@
                 'sales-returned': 'sales-returned',
                 'purchase-returned': 'purchase-returned',
                 'support': 'support',
+                'containers': 'containers',
             },
 
             // Theme State
@@ -655,6 +657,7 @@
                 else if (pageName === 'cashbook' || pageName === 'bank-accounts' || pageName === 'transactions') this.cashbookLoading = state;
                 else if (pageName === 'dashboard') this.dashboardLoading = state;
                 else if (pageName === 'support') this.supportTicketsLoading = state;
+                else if (pageName === 'containers') this.containersLoading = state;
             },
 
             // Navigate to a page - updates both state and browser URL
@@ -675,11 +678,11 @@
                 if (!this.token || !this.hasShop) return Promise.resolve();
                 if (pageName === 'dashboard') return this.loadDashboard();
                 else if (pageName === 'sales-history' || pageName === 'sales-returned') return this.loadSales();
-                else if (pageName === 'products') return this.loadProducts('', true);
+                else if (pageName === 'products') return Promise.allSettled([this.loadProducts('', true), this.loadContainerTypes()]);
                 else if (pageName === 'customers') { this.customerSearchQuery = ''; return this.loadCustomers(); }
                 else if (pageName === 'suppliers') return this.loadSuppliers();
                 else if (pageName === 'expenses') return this.loadExpenses();
-                else if (pageName === 'sales') { this.resetPOS(); return Promise.allSettled([this.loadProducts(), this.loadCustomers()]); }
+                else if (pageName === 'sales') { this.resetPOS(); return Promise.allSettled([this.loadProducts(), this.loadCustomers(), this.loadContainerTypes()]); }
                 else if (pageName === 'purchases') { this.resetNewPurchase(); return Promise.allSettled([this.loadProducts(), this.loadSuppliers()]); }
                 else if (pageName === 'purchase-history') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
                 else if (pageName === 'purchase-returned') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
@@ -693,6 +696,7 @@
                 else if (pageName === 'subscription') return this.loadSubscriptionPlans();
                 else if (pageName === 'addons') return this.loadAddOns();
                 else if (pageName === 'support') return this.loadSupportTickets();
+                else if (pageName === 'containers') return this.loadContainersPage();
                 return Promise.resolve();
             },
 
@@ -740,6 +744,7 @@
             loadAllData() {
                 return Promise.allSettled([
                     this.loadProfile(),
+                    this.loadContainerTypes(),
                     this.loadDashboard(),
                     this.loadProducts(),
                     this.loadCustomers(),
@@ -3062,6 +3067,7 @@
             // ── POS ───────────────────────────────────────────────────
             resetPOS() {
                 this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', items: [] };
+                this.resetPosContainers();
                 this.posCustomerSearchQuery = '';
                 this.posFilteredCustomers = this.customers;
                 this.posCustomerPrices = {};
@@ -3083,7 +3089,9 @@
                 if (customer) {
                     this.pos.selectedCustomer = customer.id;
                     this.loadPosCustomerPrices(customer.id);
+                    this.loadPosContainerHoldings(customer.id);
                 } else {
+                    this.posContainerDetail = null;
                     this.pos.selectedCustomer = ''; // Walk-In Customer
                     this.posCustomerPrices = {};
                     this.refreshPosCartItemPrices();
@@ -3266,6 +3274,12 @@
                     return;
                 }
 
+                const containers = this.posContainerPayload();
+                if (containers && !this.pos.selectedCustomer) {
+                    this.showConfirm('Validation Error', this.t('select_customer_for_containers') || 'Select a customer to give or receive containers.', () => { });
+                    return;
+                }
+
                 if (this.pos.paymentType === 'Store Credit') {
                     const cust = this.getSelectedPosCustomer();
                     if (!cust) {
@@ -3285,6 +3299,7 @@
                     payment_type: this.pos.paymentType,
                     items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
+                if (containers) body.containers = containers;
                 fetch('/api/v1/sales', { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) })
                     .then(r => {
                         if (!r.ok) {
@@ -3377,7 +3392,8 @@
                                 payment_type: d.payment_type,
                                 refund_method: d.payment_type === 'Credit' ? 'due_adjustment' : (['cash', 'bank', 'upi'].includes((d.payment_type || '').toLowerCase()) ? d.payment_type.toLowerCase() : 'cash'),
                                 discount: parseFloat(d.discount) || 0,
-                                items: availableItems
+                                items: availableItems,
+                                container_pending: this.hasContainers() ? this.salePendingContainers(d) : 0
                             };
                             this.showReturnModal = true;
                         }
@@ -3424,6 +3440,15 @@
                             this.showReturnModal = false;
                             this.loadSales();
                             this.loadAllData();
+                            // Product came back — ask whether its containers did too (deposit refunded in the same step).
+                            if (this.returnForm.container_pending > 0 && this.returnForm.customer_id) {
+                                const { customer_id, saleId } = this.returnForm;
+                                this.showConfirm(
+                                    this.t('containers_also_returned') || 'Containers also returned?',
+                                    (this.t('containers_also_returned_msg') || 'This invoice still has containers with the customer. Receive them back now?') + ' (' + this.returnForm.container_pending + ')',
+                                    () => this.openContainerEntryModal('return', customer_id, saleId)
+                                );
+                            }
                         } else {
                             this.showToast(d.message || 'Failed to process return.', 'error');
                         }
@@ -3807,7 +3832,7 @@
                     });
             },
 
-            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true }; this.showProductModal = true; },
+            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true, container_type_id: '', containers_per_unit: 1 }; this.showProductModal = true; },
             openEditProductModal(product) {
                 this.newProduct = {
                     id: product.id,
@@ -3820,7 +3845,9 @@
                     initial_stock: parseInt(product.stock) || 0,
                     low_stock_threshold: product.low_stock_threshold,
                     available_for_sale: product.available_for_sale !== false && product.available_for_sale !== 0 && product.available_for_sale !== '0',
-                    available_for_purchase: product.available_for_purchase !== false && product.available_for_purchase !== 0 && product.available_for_purchase !== '0'
+                    available_for_purchase: product.available_for_purchase !== false && product.available_for_purchase !== 0 && product.available_for_purchase !== '0',
+                    container_type_id: product.container_type_id ? String(product.container_type_id) : '',
+                    containers_per_unit: product.containers_per_unit || 1
                 };
                 this.showProductModal = true;
             },
