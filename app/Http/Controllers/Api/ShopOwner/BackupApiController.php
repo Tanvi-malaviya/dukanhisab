@@ -23,8 +23,12 @@ class BackupApiController extends Controller
     public function export(Request $request)
     {
         $user = $request->user();
-        if (!$user || !$user->activePlan || !in_array($user->activePlan->slug, ['premium', 'business'])) {
-            return response()->json(['message' => 'Please upgrade to Premium or Business Plan to use Backup & Restore.'], 403);
+        // Same rule as the web panel and the app: the plan's "Backup" feature, set in the admin panel.
+        if (!$user || !$user->hasPlanFeature('backup')) {
+            return response()->json([
+                'error' => 'plan_feature_required',
+                'message' => 'Backup & Restore is not included in your plan. Please upgrade to use it.',
+            ], 403);
         }
 
         $shopId = $request->attributes->get('shop_id');
@@ -82,8 +86,12 @@ class BackupApiController extends Controller
     public function restore(Request $request)
     {
         $user = $request->user();
-        if (!$user || !$user->activePlan || !in_array($user->activePlan->slug, ['premium', 'business'])) {
-            return response()->json(['message' => 'Please upgrade to Premium or Business Plan to use Backup & Restore.'], 403);
+        // Same rule as the web panel and the app: the plan's "Backup" feature, set in the admin panel.
+        if (!$user || !$user->hasPlanFeature('backup')) {
+            return response()->json([
+                'error' => 'plan_feature_required',
+                'message' => 'Backup & Restore is not included in your plan. Please upgrade to use it.',
+            ], 403);
         }
 
         $shopId = $request->attributes->get('shop_id');

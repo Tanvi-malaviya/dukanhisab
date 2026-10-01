@@ -251,7 +251,7 @@
 
             setupForm: { name: '', owner_name: '', mobile: '', gst_number: '', logo: null },
             logoPreview: null,
-            addShopModal: { show: false, name: '', owner_name: '', mobile: '', gst_number: '', logo: null, logoPreview: null },
+            addShopModal: { show: false, name: '', owner_name: '', mobile: '', gst_number: '', logo: null, logoPreview: null, email: '', address: '', pincode: '', city: '', state: '', area: '', areas: [], pincodeLoading: false },
 
             toast: { show: false, message: '', type: 'success' },
             loading: false,
@@ -334,7 +334,7 @@
             newTicketModal: false,
             viewTicketModal: false,
             selectedTicket: null,
-            ticketForm: { subject: '', message: '', screenshot: null, screenshotPreview: null },
+            ticketForm: { id: null, subject: '', message: '', screenshot: null, screenshotPreview: null },
             submittingTicket: false,
             ticketReplyForm: { message: '', attachment: null, attachmentPreview: null },
             sendingTicketReply: false,
@@ -373,14 +373,6 @@
             bankAccountsLoading: false,
             showBankAccountModal: false,
             bankAccountForm: { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' },
-            openAddBankAccountModal() {
-                if (this.bankAccounts && this.bankAccounts.length > 0) {
-                    this.openEditBankAccountModal(this.bankAccounts[0]);
-                    return;
-                }
-                this.bankAccountForm = { id: null, name: '', account_number: '', bank_name: '', ifsc_code: '', opening_balance: '' };
-                this.showBankAccountModal = true;
-            },
             openEditBankAccountModal(acc) {
                 this.bankAccountForm = {
                     id: acc.id, name: acc.name, account_number: acc.account_number || '',
@@ -436,7 +428,7 @@
             showCustomerModal: false,
             newCustomer: { name: '', mobile: '', email: '' },
             showProductModal: false,
-            newProduct: { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true },
+            newProduct: { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true },
             showExpenseModal: false,
             newExpense: { description: '', amount: '', payment_method: 'cash' },
             showSupplierModal: false,
@@ -542,14 +534,22 @@
                 window.fetch = async (...args) => {
                     try {
                         const response = await originalFetch(...args);
-                        if (response.status === 401) {
+                        // Signed out by the server: token revoked (another login took this slot under the
+                        // plan's device limit) or account suspended. Same handling and message as the app.
+                        let suspended = false;
+                        if (response.status === 403) {
+                            try { suspended = (await response.clone().json()).error === 'account_suspended'; } catch (e) { }
+                        }
+                        if ((response.status === 401 || suspended) && this.token) {
                             ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop'].forEach(k => localStorage.removeItem(k));
                             this.token = null;
                             this.user = null;
                             this.shop = null;
                             this.hasShop = false;
                             this.authPage = 'login';
-                            this.showToast('Session expired. Please log in again.', 'error');
+                            this.showToast(suspended
+                                ? 'Your account has been suspended. Please contact support.'
+                                : 'Your session has ended — you may have signed in on another device. Please log in again.', 'error');
                             setTimeout(() => {
                                 window.location.href = '/shop/login';
                             }, 1500);
@@ -1430,12 +1430,11 @@
                     .catch(() => { this.bankAccountsLoading = false; });
             },
 
+            // The shop has one bank account (its default); only its details can be edited.
             saveBankAccount() {
                 this.loading = true;
-                const isEdit = !!this.bankAccountForm.id;
-                const url = isEdit ? '/api/v1/bank-accounts/' + this.bankAccountForm.id : '/api/v1/bank-accounts';
-                fetch(url, {
-                    method: isEdit ? 'PUT' : 'POST',
+                fetch('/api/v1/bank-accounts/' + this.bankAccountForm.id, {
+                    method: 'PUT',
                     headers: this.getHeaders(),
                     body: JSON.stringify(this.bankAccountForm)
                 })
@@ -1445,7 +1444,7 @@
                     })
                     .then(() => {
                         this.loading = false;
-                        this.showToast(isEdit ? 'Bank account updated.' : 'Bank account added.');
+                        this.showToast('Bank account updated.');
                         this.showBankAccountModal = false;
                         this.loadBankAccounts();
                     })
@@ -1453,38 +1452,6 @@
                         this.loading = false;
                         this.showToast((err && err.errors) ? Object.values(err.errors)[0][0] : 'Failed to save bank account.', 'error');
                     });
-            },
-
-            setDefaultBankAccount(id) {
-                this.loading = true;
-                fetch('/api/v1/bank-accounts/' + id, {
-                    method: 'PUT',
-                    headers: this.getHeaders(),
-                    body: JSON.stringify({ make_default: true })
-                })
-                    .then(r => r.json())
-                    .then(() => {
-                        this.loading = false;
-                        this.showToast('Default bank account updated.');
-                        this.loadBankAccounts();
-                    })
-                    .catch(() => { this.loading = false; });
-            },
-
-            deleteBankAccount(id, name) {
-                this.showConfirm('Delete Bank Account', `Are you sure you want to delete "${name}"?`, () => {
-                    this.loading = true;
-                    fetch('/api/v1/bank-accounts/' + id, { method: 'DELETE', headers: this.getHeaders() })
-                        .then(r => {
-                            this.loading = false;
-                            if (r.status === 204) {
-                                this.showToast('Bank account deleted.');
-                                this.loadBankAccounts();
-                            } else {
-                                return r.json().then(e => this.showToast(e.message || 'Failed to delete.', 'error'));
-                            }
-                        });
-                });
             },
 
             submitBankTransfer() {
@@ -1495,7 +1462,6 @@
                     body: JSON.stringify({
                         type: this.transferForm.type,
                         amount: parseFloat(this.transferForm.amount),
-                        bank_account_id: this.transferForm.bank_account_id || null,
                         description: this.transferForm.description
                     })
                 })
@@ -2261,6 +2227,24 @@
 
             isShopLocked(s) { return this.lockedShopIds.includes(s.id); },
 
+            // Billing type is set by the admin per add-on: 'lifetime' = one-time purchase, anything
+            // else = yearly auto-renewing subscription. Never hard-code it per add-on type.
+            addOnIsOneTime(type) {
+                return ((this.addOns || []).find(a => a.type === type) || {}).billing_period === 'lifetime';
+            },
+
+            addOnPeriodLabel(type) {
+                return this.addOnIsOneTime(type)
+                    ? (this.t('one_time_lifetime_access') || 'One-Time Payment (Lifetime Access)')
+                    : (this.t('year_auto_renewal') || '/ Year (Auto-Renewal)');
+            },
+
+            // The purchase that currently grants the website add-on (decides lifetime vs renewing),
+            // since a purchase keeps the terms it was bought under even if the admin changes them later.
+            websiteAddOnHolding() {
+                return (this.userAddOns || []).find(ua => ua.add_on && ua.add_on.type === 'website' && ua.status === 'active') || null;
+            },
+
             loadAddOns() {
                 this.addOnLoading = true;
                 return Promise.all([
@@ -2566,7 +2550,17 @@
             },
 
             openNewTicketModal() {
-                this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                this.ticketForm = { id: null, subject: '', message: '', screenshot: null, screenshotPreview: null };
+                this.newTicketModal = true;
+            },
+
+            // Same rule as the app and the API: only a ticket support hasn't picked up yet can be edited.
+            canEditTicket(ticket) {
+                return ticket.status === 'open' && !ticket.admin_reply && !(ticket.messages || []).some(m => m.sender_type === 'admin');
+            },
+
+            openEditTicketModal(ticket) {
+                this.ticketForm = { id: ticket.id, subject: ticket.subject || '', message: ticket.message || '', screenshot: null, screenshotPreview: ticket.screenshot_url || null };
                 this.newTicketModal = true;
             },
 
@@ -2590,13 +2584,16 @@
 
                 this.submittingTicket = true;
                 const fd = new FormData();
+                const isEdit = !!this.ticketForm.id;
                 fd.append('subject', this.ticketForm.subject);
                 fd.append('message', this.ticketForm.message);
                 if (this.ticketForm.screenshot) {
                     fd.append('screenshot', this.ticketForm.screenshot);
                 }
+                // PHP only parses multipart bodies on POST, so an edit is a POST spoofed as PUT.
+                if (isEdit) fd.append('_method', 'PUT');
 
-                fetch('/api/v1/shopowner/support-tickets', {
+                fetch('/api/v1/shopowner/support-tickets' + (isEdit ? '/' + this.ticketForm.id : ''), {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
@@ -2613,9 +2610,9 @@
                     .then(res => {
                         this.submittingTicket = false;
                         if (res.ok) {
-                            this.showToast(this.t('ticket_created_success') || 'Support ticket submitted successfully!');
+                            this.showToast(isEdit ? (this.t('ticket_updated_success') || 'Support ticket updated.') : (this.t('ticket_created_success') || 'Support ticket submitted successfully!'));
                             this.newTicketModal = false;
-                            this.ticketForm = { subject: '', message: '', screenshot: null, screenshotPreview: null };
+                            this.ticketForm = { id: null, subject: '', message: '', screenshot: null, screenshotPreview: null };
                             this.loadSupportTickets();
                         } else {
                             this.showToast(res.data.message || 'Failed to submit support ticket.', 'error');
@@ -2960,6 +2957,36 @@
                 }
             },
 
+            // Pincode → state, city and area list, the same lookup the app's shop setup uses.
+            lookupShopPincode(form) {
+                const pin = String(form.pincode || '').replace(/\D/g, '').slice(0, 6);
+                form.pincode = pin;
+                if (pin.length !== 6) { form.areas = []; form.area = ''; return; }
+                form.pincodeLoading = true;
+                fetch('/api/v1/shopowner/pincode/' + pin, { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.success && d.data) {
+                            form.city = d.data.city || form.city;
+                            form.state = d.data.state || form.state;
+                            form.areas = (d.data.post_offices || []).map(o => o.name);
+                            form.area = form.areas[0] || '';
+                        } else {
+                            form.areas = []; form.area = '';
+                        }
+                    })
+                    .catch(() => { form.areas = []; })
+                    .finally(() => { form.pincodeLoading = false; });
+            },
+
+            // Same as the app: the chosen area is appended to the address.
+            appendShopAddress(form, fd) {
+                let address = (form.address || '').trim();
+                if (form.area && !address.includes(form.area)) address = address ? address + ', ' + form.area : form.area;
+                if (address) fd.append('address', address);
+                ['email', 'pincode', 'city', 'state'].forEach(k => { if (form[k]) fd.append(k, String(form[k]).trim()); });
+            },
+
             openAddShopModal() {
                 const max = this.maxShops || 1;
                 const currentCount = this.user && this.user.shops ? this.user.shops.length : 0;
@@ -2973,6 +3000,7 @@
                 this.addShopModal.owner_name = this.user ? this.user.name : '';
                 this.addShopModal.mobile = '';
                 this.addShopModal.gst_number = '';
+                Object.assign(this.addShopModal, { email: '', address: '', pincode: '', city: '', state: '', area: '', areas: [], pincodeLoading: false });
                 this.addShopModal.logo = null;
                 this.addShopModal.logoPreview = null;
                 this.addShopModal.show = true;
@@ -2993,6 +3021,7 @@
                 fd.append('owner_name', this.addShopModal.owner_name);
                 fd.append('mobile', this.addShopModal.mobile);
                 if (this.addShopModal.gst_number) fd.append('gst_number', this.addShopModal.gst_number);
+                this.appendShopAddress(this.addShopModal, fd);
                 if (this.addShopModal.logo) fd.append('logo', this.addShopModal.logo);
 
                 fetch('/api/v1/shopowner/shop-setup', {
@@ -3026,7 +3055,7 @@
 
             // ── POS ───────────────────────────────────────────────────
             resetPOS() {
-                this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', applyStoreCredit: false, items: [] };
+                this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', items: [] };
                 this.posCustomerSearchQuery = '';
                 this.posFilteredCustomers = this.customers;
                 this.posCustomerPrices = {};
@@ -3047,12 +3076,9 @@
             selectPosCustomer(customer) {
                 if (customer) {
                     this.pos.selectedCustomer = customer.id;
-                    const availCredit = customer.credit_balance ? parseFloat(customer.credit_balance) : 0;
-                    this.pos.applyStoreCredit = availCredit > 0;
                     this.loadPosCustomerPrices(customer.id);
                 } else {
                     this.pos.selectedCustomer = ''; // Walk-In Customer
-                    this.pos.applyStoreCredit = false;
                     this.posCustomerPrices = {};
                     this.refreshPosCartItemPrices();
                 }
@@ -3214,52 +3240,26 @@
                 const product = this.products.find(p => p.barcode === code);
                 if (product) { this.addToBill(product); this.pos.barcodeInput = ''; }
                 else {
-                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true };
+                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true };
                     this.showProductModal = true; this.pos.barcodeInput = '';
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
             },
 
-            getSelectedCustomerCreditBalance() {
-                if (!this.pos.selectedCustomer) return 0;
-                const c = (this.customers || []).find(cust => cust.id == this.pos.selectedCustomer);
-                return c && c.credit_balance ? parseFloat(c.credit_balance) : 0;
-            },
-
             saveSale() {
                 if (this.pos.items.length === 0) return;
                 const grandTotal = this.calculateGrandTotal();
-                let usedCredit = 0;
-                if (this.pos.selectedCustomer) {
-                    const availCredit = this.getSelectedCustomerCreditBalance();
-                    usedCredit = Math.min(availCredit, grandTotal);
-                }
-
-                if (this.pos.paymentType === 'Store Credit') {
-                    if (!this.pos.selectedCustomer) {
-                        this.showConfirm('Validation Error', 'Customer selection is required to use Store Credit.', () => { });
-                        return;
-                    }
-                    const availCredit = this.getSelectedCustomerCreditBalance();
-                    usedCredit = Math.min(availCredit, grandTotal);
-                }
 
                 if (this.pos.paymentType === 'Credit' && !this.pos.selectedCustomer) {
                     this.showConfirm('Validation Error', 'Customer selection is required for Credit (udhaar) transactions.', () => { });
                     return;
                 }
 
-                let finalPaymentType = this.pos.paymentType;
-                if (usedCredit >= grandTotal) {
-                    finalPaymentType = 'Store Credit';
-                }
-
                 this.loading = true;
                 const body = {
                     customer_id: this.pos.selectedCustomer || null,
                     subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: grandTotal,
-                    payment_type: finalPaymentType,
-                    used_credit_balance: usedCredit,
+                    payment_type: this.pos.paymentType,
                     items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
                 fetch('/api/v1/sales', { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) })
@@ -3352,7 +3352,7 @@
                                 customer_id: d.customer_id || null,
                                 customer_name: d.customer ? d.customer.name : null,
                                 payment_type: d.payment_type,
-                                refund_method: d.payment_type === 'Credit' ? 'due_adjustment' : (d.payment_type ? d.payment_type.toLowerCase() : 'cash'),
+                                refund_method: d.payment_type === 'Credit' ? 'due_adjustment' : (['cash', 'bank', 'upi'].includes((d.payment_type || '').toLowerCase()) ? d.payment_type.toLowerCase() : 'cash'),
                                 discount: parseFloat(d.discount) || 0,
                                 items: availableItems
                             };
@@ -3784,7 +3784,7 @@
                     });
             },
 
-            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true }; this.showProductModal = true; },
+            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true }; this.showProductModal = true; },
             openEditProductModal(product) {
                 this.newProduct = {
                     id: product.id,
@@ -3793,8 +3793,9 @@
                     purchase_price: parseFloat(product.purchase_price) || '',
                     barcode: product.barcode || '',
                     stock: product.stock,
+                    // Stock shown when the form opened; an edit sends only the difference from this.
+                    initial_stock: parseInt(product.stock) || 0,
                     low_stock_threshold: product.low_stock_threshold,
-                    category_id: product.category_id || '',
                     available_for_sale: product.available_for_sale !== false && product.available_for_sale !== 0 && product.available_for_sale !== '0',
                     available_for_purchase: product.available_for_purchase !== false && product.available_for_purchase !== 0 && product.available_for_purchase !== '0'
                 };
@@ -3832,7 +3833,12 @@
                 const isEdit = !!this.newProduct.id;
                 const url = isEdit ? '/api/v1/products/' + this.newProduct.id : '/api/v1/products';
                 const method = isEdit ? 'PUT' : 'POST';
-                fetch(url, { method: method, headers: this.getHeaders(), body: JSON.stringify(this.newProduct) })
+                // An edit never sends an absolute stock figure (it could overwrite sales made on another
+                // device since this page loaded). A changed stock becomes a logged adjustment of the difference.
+                const { initial_stock, ...payload } = this.newProduct;
+                const stockChange = isEdit ? (parseInt(this.newProduct.stock) || 0) - (initial_stock || 0) : 0;
+                if (isEdit) delete payload.stock;
+                fetch(url, { method: method, headers: this.getHeaders(), body: JSON.stringify(payload) })
                     .then(r => {
                         if (!r.ok) {
                             return r.json().then(errData => {
@@ -3840,6 +3846,15 @@
                             });
                         }
                         return r.json();
+                    })
+                    .then(d => {
+                        if (!stockChange || !d.id) return d;
+                        return fetch('/api/v1/products/' + d.id + '/adjust-stock', {
+                            method: 'POST',
+                            headers: this.getHeaders(),
+                            body: JSON.stringify({ quantity_change: stockChange, note: 'Stock edited' })
+                        }).then(r => r.ok ? r.json() : r.json().then(e => { throw e; }))
+                            .then(adjusted => { this.loadStockHistory(); return adjusted; });
                     })
                     .then(d => {
                         this.loading = false;
@@ -3903,12 +3918,12 @@
             },
 
             openCollectCustomerPaymentModal(cust) {
-                const due = parseFloat(cust.due_amount) || 0;
+                const netDue = Math.max(0, parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0)) || 0);
                 this.collectCustomerForm = {
                     customer_id: cust.id,
                     customer_name: cust.name,
-                    current_due: due,
-                    amount: due,
+                    current_due: netDue,
+                    amount: netDue,
                     payment_method: 'Cash',
                     note: ''
                 };
@@ -4388,7 +4403,7 @@
                     this.addPurchaseItemById(product.id);
                     this.pos.barcodeInput = '';
                 } else {
-                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, category_id: '', available_for_sale: true, available_for_purchase: true };
+                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true };
                     this.showProductModal = true;
                     this.pos.barcodeInput = '';
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
@@ -4478,9 +4493,15 @@
                     });
             },
 
+            // Backup & Restore follows the plan's "Backup" feature set in the admin panel — the same
+            // check the app and the API make. Never tie it to a plan's name.
+            canUseBackup() {
+                return !!(this.user && this.user.active_plan && this.user.active_plan.features && this.user.active_plan.features.backup);
+            },
+
             downloadShopBackup() {
-                if (!this.user || !this.user.active_plan || this.user.active_plan.slug !== 'business') {
-                    this.showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => {
+                if (!this.canUseBackup()) {
+                    this.showConfirm('Upgrade Plan Required', 'Backup & Restore is not included in your current plan. Please upgrade your plan to unlock it.', () => {
                         this.navigateTo('subscription');
                     });
                     return;
@@ -4524,8 +4545,8 @@
             },
 
             restoreShopBackup(fileInput) {
-                if (!this.user || !this.user.active_plan || this.user.active_plan.slug !== 'business') {
-                    this.showConfirm('Upgrade Plan Required', 'Cloud Backup & Restore features are only available on the Business (Lifetime) plan. Please upgrade your plan to unlock.', () => {
+                if (!this.canUseBackup()) {
+                    this.showConfirm('Upgrade Plan Required', 'Backup & Restore is not included in your current plan. Please upgrade your plan to unlock it.', () => {
                         this.navigateTo('subscription');
                     });
                     return;

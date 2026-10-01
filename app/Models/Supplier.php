@@ -17,6 +17,19 @@ class Supplier extends Model
         'due_amount',
     ];
 
+    protected $appends = ['net_balance'];
+
+    /**
+     * Net supplier position:
+     * > 0: shop owes the supplier (Due)
+     * < 0: shop has paid advance to supplier
+     * = 0: settled
+     */
+    public function getNetBalanceAttribute(): float
+    {
+        return round((float) ($this->due_amount ?? 0), 2);
+    }
+
     public function shop()
     {
         return $this->belongsTo(Shop::class);

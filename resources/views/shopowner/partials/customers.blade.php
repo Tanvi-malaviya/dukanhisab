@@ -58,25 +58,19 @@
                         <td class="px-3 py-3 text-sm text-slate-500 whitespace-nowrap" x-text="cust.mobile || 'N/A'"></td>
                         <td class="px-3 py-3 text-sm text-slate-500 max-w-[200px] truncate" :title="cust.email" x-text="cust.email || 'N/A'"></td>
                         <td class="px-3 py-3 text-sm whitespace-nowrap">
-                            <template x-if="parseFloat(cust.due_amount || 0) > 0 && parseFloat(cust.credit_balance || 0) > 0">
-                                <div class="flex flex-col gap-0.5">
-                                    <span class="text-rose-600 font-bold text-xs">₹<span x-text="parseFloat(cust.due_amount).toFixed(2)"></span> <span class="text-[10px] font-medium text-rose-500">(Due)</span></span>
-                                    <span class="text-emerald-600 font-bold text-xs">₹<span x-text="parseFloat(cust.credit_balance).toFixed(2)"></span> <span class="text-[10px] font-medium text-emerald-500">(Credit)</span></span>
-                                </div>
-                            </template>
-                            <template x-if="parseFloat(cust.due_amount || 0) > 0 && !(parseFloat(cust.credit_balance || 0) > 0)">
+                            <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) > 0">
                                 <span class="text-rose-600 font-bold">
-                                    ₹<span x-text="parseFloat(cust.due_amount).toFixed(2)"></span>
+                                    ₹<span x-text="parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0)).toFixed(2)"></span>
                                     <span class="text-[11px] font-medium text-rose-500 ml-1">(Due)</span>
                                 </span>
                             </template>
-                            <template x-if="parseFloat(cust.credit_balance || 0) > 0 && !(parseFloat(cust.due_amount || 0) > 0)">
+                            <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) < 0">
                                 <span class="text-emerald-600 font-bold">
-                                    ₹<span x-text="parseFloat(cust.credit_balance).toFixed(2)"></span>
-                                    <span class="text-[11px] font-medium text-emerald-500 ml-1">(Credit)</span>
+                                    ₹<span x-text="Math.abs(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))).toFixed(2)"></span>
+                                    <span class="text-[11px] font-medium text-emerald-500 ml-1" x-text="'(' + (t('advance') || 'Advance') + ')'">(Advance)</span>
                                 </span>
                             </template>
-                            <template x-if="!(parseFloat(cust.due_amount || 0) > 0) && !(parseFloat(cust.credit_balance || 0) > 0)">
+                            <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) === 0">
                                 <span class="text-slate-400 font-medium">₹0.00</span>
                             </template>
                         </td>
@@ -89,7 +83,7 @@
                                 </svg>
                                 <span>Pricing</span>
                             </button>
-                            <template x-if="parseFloat(cust.due_amount) > 0">
+                            <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) > 0">
                                 <button @click="openCollectCustomerPaymentModal(cust)"
                                     class="px-2 py-1 bg-emerald-100 hover:bg-emerald-600 text-emerald-900 hover:text-white rounded-lg text-xs font-semibold transition-all shadow-2xs mr-1"
                                     x-text="t('collect_payment')">

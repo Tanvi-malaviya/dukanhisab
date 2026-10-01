@@ -170,23 +170,6 @@
                     <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
                     <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit')">Credit</button>
                 </div>
-                <template x-if="getSelectedCustomerCreditBalance() > 0">
-                    <div class="mt-2.5 p-2.5 bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl space-y-2">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="text-emerald-800 dark:text-emerald-300 font-medium">Available Store Credit:</span>
-                            <span class="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">₹<span x-text="getSelectedCustomerCreditBalance().toFixed(2)"></span></span>
-                        </div>
-                        <div class="text-[11px] text-emerald-800 dark:text-emerald-300 border-t border-emerald-200 dark:border-emerald-800 pt-1.5 flex justify-between font-semibold">
-                            <span>Auto Credit Applied: <strong class="text-emerald-700 dark:text-emerald-300">₹<span x-text="Math.min(calculateGrandTotal(), getSelectedCustomerCreditBalance()).toFixed(2)"></span></strong></span>
-                            <span>Remaining to Pay: <strong class="text-slate-900 dark:text-white font-extrabold">₹<span x-text="Math.max(0, calculateGrandTotal() - getSelectedCustomerCreditBalance()).toFixed(2)"></span></strong></span>
-                        </div>
-                        <template x-if="calculateGrandTotal() > getSelectedCustomerCreditBalance()">
-                            <div class="text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-1 rounded border border-amber-200 dark:border-amber-800">
-                                💡 Remaining ₹<span x-text="(calculateGrandTotal() - getSelectedCustomerCreditBalance()).toFixed(2)"></span> will be paid via selected <strong>Payment Type</strong> below.
-                            </div>
-                        </template>
-                    </div>
-                </template>
             </div>
 
             <button @click="saveSale()" :disabled="pos.items.length === 0"

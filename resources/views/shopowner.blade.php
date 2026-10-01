@@ -557,11 +557,13 @@
 
                                 <!-- Mobile Number -->
                                 <div>
-                                    <label for="setup-mobile" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Mobile Number</label>
-                                    <input id="setup-mobile" type="text" required placeholder="e.g. 98765 43210" x-model="shopSetupForm.mobile"
+                                    <label for="setup-mobile" class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Mobile Number (Optional)</label>
+                                    <input id="setup-mobile" type="text" placeholder="e.g. 98765 43210" x-model="shopSetupForm.mobile"
                                         class="block w-full px-3 py-1.5 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-xs placeholder-slate-400 focus:outline-none transition-all">
                                 </div>
                             </div>
+
+                            @include('shopowner.partials.shop-address-fields', ['form' => 'shopSetupForm', 'inputClass' => 'block w-full px-3 py-1.5 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-xs placeholder-slate-400 focus:outline-none transition-all', 'labelClass' => 'block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1'])
 
                             <!-- GST Number -->
                             <div>
@@ -691,7 +693,7 @@
                 forgotForm: { email: '' },
                 resetForm: { email: '', otp_code: '', password: '', password_confirmation: '' },
                 changePasswordForm: { current_password: '', new_password: '', new_password_confirmation: '' },
-                shopSetupForm: { name: '', owner_name: '', mobile: '', gst_number: '' },
+                shopSetupForm: { name: '', owner_name: '', mobile: '', gst_number: '', email: '', address: '', pincode: '', city: '', state: '', area: '', areas: [], pincodeLoading: false },
                 logoFile: null,
                 logoPreviewUrl: null,
 
@@ -708,12 +710,12 @@
                         this.fetchProfile();
                     }
                     
-                    // Pre-fill email and password from Remember Me
+                    // Remember Me keeps only the email (same as the app). Passwords used to be saved
+                    // here in plain text — remove any copy left by an older version.
+                    localStorage.removeItem('shopowner_remember_password');
                     const rememberedEmail = localStorage.getItem('shopowner_remember_email');
-                    const rememberedPassword = localStorage.getItem('shopowner_remember_password');
                     if (rememberedEmail) {
                         this.loginForm.email = rememberedEmail;
-                        this.loginForm.password = rememberedPassword || '';
                         this.loginForm.remember = true;
                     }
                     
@@ -885,10 +887,8 @@
                             // Save or remove remembered email and password
                             if (this.loginForm.remember) {
                                 localStorage.setItem('shopowner_remember_email', this.loginForm.email);
-                                localStorage.setItem('shopowner_remember_password', this.loginForm.password);
                             } else {
                                 localStorage.removeItem('shopowner_remember_email');
-                                localStorage.removeItem('shopowner_remember_password');
                             }
 
                             this.token = data.token;
@@ -916,12 +916,7 @@
                             }
                             
                             const rememberedEmail = localStorage.getItem('shopowner_remember_email');
-                            const rememberedPassword = localStorage.getItem('shopowner_remember_password');
-                            this.loginForm = { 
-                                email: rememberedEmail || '', 
-                                password: rememberedPassword || '', 
-                                remember: !!rememberedEmail 
-                            };
+                            this.loginForm = { email: rememberedEmail || '', password: '', remember: !!rememberedEmail };
                         } else {
                             if (data.email_unverified) {
                                 this.addToast(data.message, 'warning');
@@ -1062,14 +1057,9 @@
                     this.shop = null;
                     this.hasShop = false;
                     
-                    // Reset loginForm and restore remembered email & password
+                    // Reset loginForm and restore the remembered email
                     const rememberedEmail = localStorage.getItem('shopowner_remember_email');
-                    const rememberedPassword = localStorage.getItem('shopowner_remember_password');
-                    this.loginForm = { 
-                        email: rememberedEmail || '', 
-                        password: rememberedPassword || '', 
-                        remember: !!rememberedEmail 
-                    };
+                    this.loginForm = { email: rememberedEmail || '', password: '', remember: !!rememberedEmail };
                     
                     this.setView('login');
                 },
@@ -1133,6 +1123,36 @@
                     }
                 },
 
+                // Pincode → state, city and area list, the same lookup the app's shop setup uses.
+                lookupShopPincode(form) {
+                    const pin = String(form.pincode || '').replace(/\D/g, '').slice(0, 6);
+                    form.pincode = pin;
+                    if (pin.length !== 6) { form.areas = []; form.area = ''; return; }
+                    form.pincodeLoading = true;
+                    fetch('/api/v1/shopowner/pincode/' + pin, { headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${this.token}` } })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success && d.data) {
+                                form.city = d.data.city || form.city;
+                                form.state = d.data.state || form.state;
+                                form.areas = (d.data.post_offices || []).map(o => o.name);
+                                form.area = form.areas[0] || '';
+                            } else {
+                                form.areas = []; form.area = '';
+                            }
+                        })
+                        .catch(() => { form.areas = []; })
+                        .finally(() => { form.pincodeLoading = false; });
+                },
+
+                // Same as the app: the chosen area is appended to the address.
+                appendShopAddress(form, fd) {
+                    let address = (form.address || '').trim();
+                    if (form.area && !address.includes(form.area)) address = address ? address + ', ' + form.area : form.area;
+                    if (address) fd.append('address', address);
+                    ['email', 'pincode', 'city', 'state'].forEach(k => { if (form[k]) fd.append(k, String(form[k]).trim()); });
+                },
+
                 async handleShopSetup() {
                     this.loading = true;
                     try {
@@ -1141,6 +1161,7 @@
                         formData.append('owner_name', this.shopSetupForm.owner_name);
                         formData.append('mobile', this.shopSetupForm.mobile);
                         formData.append('gst_number', this.shopSetupForm.gst_number || '');
+                        this.appendShopAddress(this.shopSetupForm, formData);
                         if (this.logoFile) {
                             formData.append('logo', this.logoFile);
                         }

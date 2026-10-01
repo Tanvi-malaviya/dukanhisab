@@ -18,6 +18,19 @@ class Customer extends Model
         'credit_balance',
     ];
 
+    protected $appends = ['net_balance'];
+
+    /**
+     * Net customer position:
+     * > 0: customer owes the shop (Due)
+     * < 0: customer has advance / store credit
+     * = 0: settled
+     */
+    public function getNetBalanceAttribute(): float
+    {
+        return round((float) ($this->due_amount ?? 0) - (float) ($this->credit_balance ?? 0), 2);
+    }
+
     public function shop()
     {
         return $this->belongsTo(Shop::class);

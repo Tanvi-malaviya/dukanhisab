@@ -73,16 +73,16 @@ class EditUnpaidSaleTest extends TestCase
     public function test_editing_items_of_a_partially_paid_sale_reverts_and_reapplies_due_net_of_store_credit(): void
     {
         $p = $this->product();
-        $c = Customer::create(['shop_id' => $this->shop->id, 'name' => 'Cust2', 'mobile' => '9' . rand(1e8, 9.9e8), 'due_amount' => 0, 'credit_balance' => 50]);
+        $c = Customer::create(['shop_id' => $this->shop->id, 'name' => 'Cust2', 'mobile' => '9' . rand(1e8, 9.9e8), 'due_amount' => 0]);
 
         $saleId = $this->withHeaders($this->h())->postJson('/api/v1/sales', [
             'customer_id' => $c->id, 'subtotal' => 200, 'grand_total' => 200, 'payment_type' => 'Credit',
-            'used_credit_balance' => 50,
             'items' => [['product_id' => $p->id, 'quantity' => 2, 'selling_price' => 100]],
         ])->json();
-        $this->assertEquals('Partially Paid', $saleId['status']);
+        // New sales can't use store credit any more; recreate a legacy sale that used ₹50 of it:
         // 200 grand total - 50 store credit = 150 due.
-        $this->assertEquals(150, (float) $c->fresh()->due_amount);
+        \App\Models\Sale::where('id', $saleId['id'])->update(['store_credit' => 50, 'status' => 'Partially Paid']);
+        $c->update(['due_amount' => 150]);
 
         $r = $this->withHeaders($this->h())->putJson("/api/v1/sales/{$saleId['id']}", [
             'subtotal' => 200, 'grand_total' => 200,

@@ -38,7 +38,13 @@
                                     <span class="text-[11px] font-medium text-rose-500 ml-1">(Due)</span>
                                 </span>
                             </template>
-                            <template x-if="!(parseFloat(sup.due_amount || 0) > 0)">
+                            <template x-if="parseFloat(sup.due_amount || 0) < 0">
+                                <span class="text-emerald-600 font-bold">
+                                    ₹<span x-text="Math.abs(parseFloat(sup.due_amount)).toFixed(2)"></span>
+                                    <span class="text-[11px] font-medium text-emerald-500 ml-1" x-text="'(' + (t('advance') || 'Advance') + ')'">(Advance)</span>
+                                </span>
+                            </template>
+                            <template x-if="parseFloat(sup.due_amount || 0) === 0">
                                 <span class="text-slate-400 font-medium">₹0.00</span>
                             </template>
                         </td>

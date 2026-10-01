@@ -125,16 +125,26 @@ class CustomerApiController extends Controller
         }
 
         $amount = (float) $request->amount;
-        $currentDue = (float) $customer->due_amount;
+        $netDue = max(0, (float) $customer->due_amount - (float) $customer->credit_balance);
 
-        if ($amount > $currentDue) {
+        // Nothing (net) due means nothing to collect — otherwise a "payment" would post cash-in
+        // against no due at all.
+        if ($amount > $netDue) {
             return response()->json([
-                'message' => 'Payment amount (₹' . number_format($amount, 2) . ') cannot exceed current due balance (₹' . number_format($currentDue, 2) . ').'
+                'message' => 'Payment amount (₹' . number_format($amount, 2) . ') cannot exceed current due balance (₹' . number_format($netDue, 2) . ').'
             ], 422);
         }
 
-        // 1. Decrement Customer Due Balance
-        $customer->decrement('due_amount', $amount);
+        // Reconcile credit balance against due_amount if any exists
+        $creditToOffset = (float) $customer->credit_balance;
+        if ($creditToOffset > 0) {
+            $offset = min((float) $customer->due_amount, $creditToOffset);
+            $customer->decrement('due_amount', $offset);
+            $customer->decrement('credit_balance', $offset);
+        }
+
+        // 1. Decrement Customer Due Balance by the cash/bank/upi received
+        $customer->decrement('due_amount', min((float) $customer->due_amount, $amount));
         $customer->refresh();
 
         // 2. Add CashBook Entry (Cash In)
@@ -157,7 +167,7 @@ class CustomerApiController extends Controller
             'message' => 'Udhar repayment recorded successfully.',
             'customer' => $customer,
             'paid_amount' => $amount,
-            'remaining_due' => $customer->due_amount
+            'remaining_due' => $customer->net_balance
         ], 200);
     }
 

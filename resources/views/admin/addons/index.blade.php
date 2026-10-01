@@ -199,7 +199,15 @@
                 <textarea name="description" rows="2" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white"></textarea>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Price (INR / Yearly)</label>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Billing Type</label>
+                <select name="billing_period" required class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
+                    <option value="yearly" selected>Subscription — renews every year</option>
+                    <option value="lifetime">One-time — pay once, never expires</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">Shop owners see this on web and app. Changing it applies to new purchases only.</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Price (INR)</label>
                 <input type="number" step="0.01" name="price" value="200" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
             </div>
             <div>
@@ -235,7 +243,15 @@
                 <textarea name="description" id="edit_addon_desc" rows="2" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white"></textarea>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Price (INR / Yearly)</label>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Billing Type</label>
+                <select name="billing_period" id="edit_addon_billing" required class="block w-full px-3 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
+                    <option value="yearly">Subscription — renews every year</option>
+                    <option value="lifetime">One-time — pay once, never expires</option>
+                </select>
+                <p class="text-[11px] text-slate-500 mt-1">Shop owners see this on web and app. Changing it applies to new purchases only.</p>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Price (INR)</label>
                 <input type="number" step="0.01" name="price" id="edit_addon_price" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">
             </div>
             <div>
@@ -395,6 +411,7 @@
         document.getElementById('edit_addon_title').value = addOn.title;
         document.getElementById('edit_addon_desc').value = addOn.description || '';
         document.getElementById('edit_addon_price').value = addOn.price;
+        document.getElementById('edit_addon_billing').value = addOn.billing_period === 'lifetime' ? 'lifetime' : 'yearly';
         document.getElementById('edit_addon_status').value = addOn.status;
         document.getElementById('editAddOnModal').classList.remove('hidden');
     }

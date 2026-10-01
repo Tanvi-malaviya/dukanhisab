@@ -192,7 +192,8 @@
                 </button>
             </div>
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })"
+                {{-- Same rule as the app: only when "WhatsApp share" is on in invoice settings --}}
+                <button x-show="!!(invoiceSettings && invoiceSettings.whatsapp_share)" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Share WhatsApp
@@ -694,7 +695,8 @@
                 </button>
             </div>
             <div class="flex gap-2">
-                <button @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappPurchaseLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
+                {{-- Same rule as the app: only when "WhatsApp share" is on in invoice settings --}}
+                <button x-show="!!(invoiceSettings && invoiceSettings.whatsapp_share)" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappPurchaseLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     Share WhatsApp
@@ -803,19 +805,11 @@
                         <option value="cash">Cash Refund</option>
                         <option value="bank">Bank Refund</option>
                         <option value="upi">UPI Refund</option>
-                        <template x-if="returnForm.customer_id">
-                            <option value="credit_note">Issue Credit Note (Store Credit)</option>
-                        </template>
                         <template x-if="returnForm.payment_type === 'Credit' && returnForm.customer_id">
                             <option value="due_adjustment">Reduce Customer Khata Due</option>
                         </template>
                     </select>
                 </div>
-                <template x-if="returnForm.refund_method === 'credit_note'">
-                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                        A Credit Note voucher will be generated and refund balance will be added to the customer's store credit wallet.
-                    </p>
-                </template>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
                     <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
                     <span class="font-bold text-primary font-mono">₹<span x-text="
@@ -1449,11 +1443,13 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mobile Number</label>
-                <input type="text" required placeholder="Mobile" x-model="addShopModal.mobile" maxlength="10" 
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mobile Number (Optional)</label>
+                <input type="text" placeholder="Mobile" x-model="addShopModal.mobile" maxlength="10" 
                     x-on:input="addShopModal.mobile = addShopModal.mobile.replace(/\D/g, '').slice(0, 10)"
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
             </div>
+
+            @include('shopowner.partials.shop-address-fields', ['form' => 'addShopModal', 'inputClass' => 'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary', 'labelClass' => 'block text-xs font-bold text-slate-500 uppercase mb-1'])
 
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase mb-1">GST Number (Optional)</label>
@@ -1791,7 +1787,7 @@
                 <div class="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 </div>
-                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="t('new_support_ticket') || 'Create New Support Ticket'">Create New Support Ticket</h4>
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="ticketForm.id ? (t('edit_support_ticket') || 'Edit Support Ticket') : (t('new_support_ticket') || 'Create New Support Ticket')">Create New Support Ticket</h4>
             </div>
             <button type="button" @click="newTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -1851,7 +1847,7 @@
                     <template x-if="submittingTicket">
                         <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
                     </template>
-                    <span x-text="submittingTicket ? 'Submitting...' : (t('create_ticket') || 'Submit Ticket')">Submit Ticket</span>
+                    <span x-text="submittingTicket ? 'Submitting...' : (ticketForm.id ? (t('save_changes') || 'Save Changes') : (t('create_ticket') || 'Submit Ticket'))">Submit Ticket</span>
                 </button>
             </div>
         </form>

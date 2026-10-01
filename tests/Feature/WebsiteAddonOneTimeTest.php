@@ -113,4 +113,49 @@ class WebsiteAddonOneTimeTest extends TestCase
         ])->assertSessionHasNoErrors();
         $this->assertSame('yearly', AddOn::where('type', 'shop')->first()->billing_period);
     }
+
+    public function test_admin_chosen_billing_type_drives_purchase_on_web_and_app(): void
+    {
+        $admin = \App\Models\Admin::create(['name' => 'R', 'email' => 'r3@test.com', 'password' => 'secret123', 'role' => 'superadmin', 'status' => 'active']);
+        $shopAddOn = AddOn::where('slug', 'shop')->first();
+
+        // Admin switches the Shop add-on to a one-time purchase.
+        $this->actingAs($admin, 'admin')->post(route('admin.addons.update', $shopAddOn->id), [
+            'title' => 'Extra Shop', 'price' => 200, 'status' => 'active', 'billing_period' => 'lifetime',
+        ])->assertSessionHasNoErrors();
+        $this->assertSame('lifetime', $shopAddOn->fresh()->billing_period);
+
+        // The plans list both clients render carries it…
+        Sanctum::actingAs($this->user);
+        $plans = collect($this->getJson('/api/v1/shopowner/add-ons')->assertStatus(200)->json('add_ons'))->keyBy('slug');
+        $this->assertSame('lifetime', $plans['shop']['billing_period']);
+
+        // …and purchase + verify follow it: a one-time order that never expires.
+        $order = $this->postJson('/api/v1/shopowner/add-ons/purchase', ['slug' => 'shop', 'quantity' => 2])->assertStatus(200)->json();
+        $this->assertTrue($order['is_one_time']);
+        $this->postJson('/api/v1/shopowner/add-ons/verify-payment', [
+            'slug' => 'shop', 'quantity' => 2,
+            'razorpay_order_id' => $order['order_id'],
+            'razorpay_payment_id' => 'pay_mock_' . uniqid(),
+            'razorpay_signature' => 'sig_mock',
+        ])->assertStatus(200);
+        $grant = UserAddOn::where('user_id', $this->user->id)->first();
+        $this->assertNull($grant->ends_at);
+        $this->assertSame(2, $grant->quantity);
+
+        // Switching back makes new purchases recurring again.
+        $this->actingAs($admin, 'admin')->post(route('admin.addons.update', $shopAddOn->id), [
+            'title' => 'Extra Shop', 'price' => 200, 'status' => 'active', 'billing_period' => 'yearly',
+        ])->assertSessionHasNoErrors();
+        Sanctum::actingAs($this->user);
+        $this->assertArrayHasKey('subscription_id', $this->postJson('/api/v1/shopowner/add-ons/purchase', ['slug' => 'shop'])->json());
+    }
+
+    public function test_admin_billing_type_rejects_unknown_values(): void
+    {
+        $admin = \App\Models\Admin::create(['name' => 'R', 'email' => 'r4@test.com', 'password' => 'secret123', 'role' => 'superadmin', 'status' => 'active']);
+        $this->actingAs($admin, 'admin')->post(route('admin.addons.store'), [
+            'title' => 'X', 'type' => 'shop', 'price' => 150, 'billing_period' => 'monthly',
+        ])->assertSessionHasErrors('billing_period');
+    }
 }

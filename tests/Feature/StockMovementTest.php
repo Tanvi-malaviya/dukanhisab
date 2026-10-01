@@ -170,6 +170,29 @@ class StockMovementTest extends TestCase
         $this->assertCount(0, $this->movements($p));
     }
 
+    public function test_editing_product_stock_logs_the_difference(): void
+    {
+        $p = $this->product(['stock' => 10]);
+        $this->withHeaders($this->h())->putJson("/api/v1/products/{$p->id}", ['stock' => 7])->assertStatus(200);
+        $m = $this->movements($p)->first();
+        $this->assertSame('adjustment', $m->type);
+        $this->assertSame(-3, (int) $m->quantity_change);
+        $this->assertSame(7, (int) $m->resulting_stock);
+        $this->assertSame('Stock edited', $m->note);
+
+        // Editing other fields leaves the stock history alone.
+        $this->withHeaders($this->h())->putJson("/api/v1/products/{$p->id}", ['name' => 'Renamed', 'stock' => 7])->assertStatus(200);
+        $this->assertCount(1, $this->movements($p));
+    }
+
+    public function test_batch_stock_adjustment_without_product_id_is_a_422_not_a_500(): void
+    {
+        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', ['operations' => [
+            ['resource' => 'stock_adjustments', 'action' => 'create', 'op_id' => '1', 'data' => ['quantity_change' => 4]],
+        ]])->assertStatus(200);
+        $this->assertSame(422, $r->json('results.0.status'));
+    }
+
     public function test_offline_adjustment_can_be_queued_through_the_batch_endpoint(): void
     {
         $p = $this->product(['stock' => 10]);

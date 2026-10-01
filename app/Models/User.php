@@ -59,6 +59,17 @@ class User extends Authenticatable
         'avatar_url',
     ];
 
+    protected static function booted(): void
+    {
+        // Suspending an account (from any admin screen) signs it out of the web panel and every
+        // app device at once — otherwise tokens issued before the suspension kept working.
+        static::updated(function (User $user) {
+            if ($user->wasChanged('status') && $user->status === 'suspended') {
+                $user->tokens()->delete();
+            }
+        });
+    }
+
     public function getAvatarUrlAttribute(): ?string
     {
         if (!$this->avatar) return null;
@@ -207,6 +218,15 @@ class User extends Authenticatable
         $max = $this->maxShops();
         if ($max === -1) return true;
         return $this->shops()->count() < $max;
+    }
+
+    /**
+     * Whether the active plan includes a feature ticked in the admin panel (e.g. 'backup').
+     * Web, app and API all gate on this, never on a plan's name.
+     */
+    public function hasPlanFeature(string $feature): bool
+    {
+        return (bool) ($this->activePlan?->features[$feature] ?? false);
     }
 
     public function maxDevices(): int

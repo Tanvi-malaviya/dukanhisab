@@ -10,8 +10,8 @@
         <div class="relative z-10 space-y-2">
             <h3 class="text-2xl font-black" x-text="t('add_ons') || 'Add Ons'">Add Ons</h3>
             <p class="text-sm opacity-90 max-w-2xl"
-                x-text="t('add_ons_desc') || 'Extend your account beyond your subscription plan — buy extra shop slots or get lifetime access to your public shop website.'">
-                Extend your account beyond your subscription plan &mdash; buy extra shop slots or get lifetime access to your public shop website.
+                x-text="t('add_ons_desc') || 'Extend your account beyond your subscription plan — buy extra shop slots or a public website for your shop.'">
+                Extend your account beyond your subscription plan &mdash; buy extra shop slots or a public website for your shop.
             </p>
         </div>
     </div>
@@ -90,8 +90,8 @@
                         <h4 class="text-base font-bold text-slate-800 dark:text-white"
                             x-text="t('extra_shop') || ((addOns.find(a => a.type === 'shop') || {}).title || 'Extra Shop')">Extra Shop</h4>
                         <p class="text-xs text-slate-400 mt-1"
-                            x-text="t('extra_shop_desc') || ((addOns.find(a => a.type === 'shop') || {}).description || 'Add one more shop to your account. Each purchase grants 1 additional shop for a full year.')">
-                            Add one more shop to your account. Each purchase grants 1 additional shop for a full year.
+                            x-text="((addOns.find(a => a.type === 'shop') || {}).description) || t('extra_shop_desc') || 'Add one more shop to your account.'">
+                            Add one more shop to your account.
                         </p>
                     </div>
                 </div>
@@ -99,7 +99,7 @@
                 <div class="flex items-baseline gap-1">
                     <span class="text-3xl font-black text-slate-800 dark:text-white"
                         x-text="'₹' + parseFloat((addOns.find(a => a.type === 'shop') || {}).price || 200).toLocaleString('en-IN', { maximumFractionDigits: 0 })">₹200</span>
-                    <span class="text-xs text-slate-400" x-text="t('year_auto_renewal') || '/ Year (Auto-Renewal)'">/ Year (Auto-Renewal)</span>
+                    <span class="text-xs" :class="addOnIsOneTime('shop') ? 'font-semibold text-emerald-600 dark:text-emerald-400' : 'text-slate-400'" x-text="addOnPeriodLabel('shop')"></span>
                 </div>
 
                 <!-- Shop add-on quantity stepper -->
@@ -146,12 +146,12 @@
                         <div class="flex items-center gap-2">
                             <h4 class="text-base font-bold text-slate-800 dark:text-white"
                                 x-text="t('shop_website') || ((addOns.find(a => a.type === 'website') || {}).title || 'Shop Website')">Shop Website</h4>
-                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400"
+                            <span x-show="addOnIsOneTime('website')" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400"
                                 x-text="t('lifetime') || 'Lifetime'">Lifetime</span>
                         </div>
                         <p class="text-xs text-slate-400 mt-1"
-                            x-text="((addOns.find(a => a.type === 'website') || {}).description) || t('shop_website_desc') || 'Publish a public website to showcase your products online, with a shareable link for your customers. One-time purchase — pay once, keep it forever.'">
-                            Publish a public website to showcase your products online, with a shareable link for your customers. One-time purchase — pay once, keep it forever.
+                            x-text="((addOns.find(a => a.type === 'website') || {}).description) || t('shop_website_desc') || 'Publish a public website to showcase your products online, with a shareable link for your customers.'">
+                            Publish a public website to showcase your products online, with a shareable link for your customers.
                         </p>
                     </div>
                 </div>
@@ -159,7 +159,7 @@
                 <div class="flex items-baseline gap-2">
                     <span class="text-3xl font-black text-slate-800 dark:text-white"
                         x-text="'₹' + parseFloat((addOns.find(a => a.type === 'website') || {}).price || 200).toLocaleString('en-IN', { maximumFractionDigits: 0 })">₹200</span>
-                    <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400" x-text="t('one_time_lifetime_access') || 'One-Time Payment (Lifetime Access)'">One-Time Payment (Lifetime Access)</span>
+                    <span class="text-xs" :class="addOnIsOneTime('website') ? 'font-semibold text-emerald-600 dark:text-emerald-400' : 'text-slate-400'" x-text="addOnPeriodLabel('website')"></span>
                 </div>
             </div>
 
@@ -167,7 +167,7 @@
                 <!-- If already active -->
                 <div x-show="hasWebsiteAddon">
                     <button type="button" disabled
-                        x-text="t('active_lifetime_access') || 'Active — Lifetime Access'"
+                        x-text="websiteAddOnHolding() && !websiteAddOnHolding().ends_at ? (t('active_lifetime_access') || 'Active — Lifetime Access') : (t('active_auto_renews_yearly') || 'Active — Auto-Renews Yearly')"
                         class="w-full py-2.5 rounded-xl text-xs font-bold border border-emerald-200 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 cursor-not-allowed">
                         Active &mdash; Lifetime Access
                     </button>
@@ -184,7 +184,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                         </svg>
-                        <span x-text="addOnPurchasingSlug === 'website' ? (t('activating') || 'Activating...') : (t('buy_lifetime_website') || 'Activate Website (Lifetime)')">Activate Website (Lifetime)</span>
+                        <span x-text="addOnPurchasingSlug === 'website' ? (t('activating') || 'Activating...') : (addOnIsOneTime('website') ? (t('buy_lifetime_website') || 'Activate Website (Lifetime)') : (t('activate_website') || 'Activate Website'))">Activate Website</span>
                     </button>
                 </div>
             </div>
@@ -224,10 +224,10 @@
                             <span x-text="(t('started') || 'Started') + ': ' + (ua.starts_at ? ua.starts_at.substring(0, 10) : 'N/A')"></span>
                             
                             <!-- Lifetime Add-On vs Recurring Add-On Expiry / Renewal -->
-                            <template x-if="(ua.add_on && (ua.add_on.billing_period === 'lifetime' || ua.add_on.type === 'website')) || !ua.ends_at">
+                            <template x-if="!ua.ends_at">
                                 <span class="inline-flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400" x-text="t('lifetime_access') || 'Lifetime Access (Never Expires)'">Lifetime Access (Never Expires)</span>
                             </template>
-                            <template x-if="!((ua.add_on && (ua.add_on.billing_period === 'lifetime' || ua.add_on.type === 'website')) || !ua.ends_at)">
+                            <template x-if="ua.ends_at">
                                 <div class="inline-flex items-center gap-x-4">
                                     <span x-text="(ua.status === 'active' ? (t('renews') || 'Renews') : (t('expired') || 'Expired')) + ': ' + (ua.ends_at ? ua.ends_at.substring(0, 10) : 'N/A')"></span>
                                     <span x-show="ua.status === 'active'" x-text="ua.auto_renew ? (t('auto_renew_on') || '(Auto-Renew On)') : (t('auto_renew_off') || '(Auto-Renew Off)')"></span>
@@ -244,7 +244,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                             <span x-text="t('add_new_shop') || 'Add New Shop'">Add New Shop</span>
                         </button>
-                        <button x-show="ua.status === 'active' && ua.auto_renew && !(ua.add_on && (ua.add_on.billing_period === 'lifetime' || ua.add_on.type === 'website'))" type="button"
+                        <button x-show="ua.status === 'active' && ua.auto_renew && ua.ends_at" type="button"
                             @click="showConfirm(t('disable_auto_renewal_title') || 'Disable Auto-Renewal?', t('disable_auto_renewal_confirm') || 'This add-on will stay active until its current period ends, then it will not renew.', () => cancelAddOn(ua.id))"
                             x-text="t('cancel_auto_renew') || 'Cancel Auto-Renew'"
                             class="px-3 py-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-lg transition-colors cursor-pointer">
