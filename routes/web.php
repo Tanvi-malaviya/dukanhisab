@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\TranslationSettingController;
+use App\Http\Controllers\Admin\WhatsAppSettingController;
 
 // Main customer landing page placeholder
 Route::get('/', function () {
@@ -98,6 +99,18 @@ Route::group([
     Route::get('settings/payment', [PaymentSettingController::class, 'index'])->name('settings.payment');
     Route::post('settings/payment', [PaymentSettingController::class, 'update'])->name('settings.payment.update');
     Route::post('settings/payment/test', [PaymentSettingController::class, 'testConnection'])->name('settings.payment.test');
+
+    // WhatsApp Cloud API Settings, Templates & Message Packs
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])->name('settings.whatsapp');
+    Route::post('settings/whatsapp', [WhatsAppSettingController::class, 'update'])->name('settings.whatsapp.update');
+    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'testConnection'])->name('settings.whatsapp.test');
+    Route::post('settings/whatsapp/test-send', [WhatsAppSettingController::class, 'sendTest'])->name('settings.whatsapp.test_send');
+    Route::post('settings/whatsapp/templates', [WhatsAppSettingController::class, 'storeTemplate'])->name('settings.whatsapp.templates.store');
+    Route::post('settings/whatsapp/templates/{id}', [WhatsAppSettingController::class, 'updateTemplate'])->name('settings.whatsapp.templates.update');
+    Route::delete('settings/whatsapp/templates/{id}', [WhatsAppSettingController::class, 'destroyTemplate'])->name('settings.whatsapp.templates.destroy');
+    Route::post('settings/whatsapp/packs', [WhatsAppSettingController::class, 'storePack'])->name('settings.whatsapp.packs.store');
+    Route::post('settings/whatsapp/packs/{id}', [WhatsAppSettingController::class, 'updatePack'])->name('settings.whatsapp.packs.update');
+    Route::delete('settings/whatsapp/packs/{id}', [WhatsAppSettingController::class, 'destroyPack'])->name('settings.whatsapp.packs.destroy');
 
     // Language & Translation Editor Settings
     Route::get('settings/translations', [TranslationSettingController::class, 'index'])->name('settings.translations');
