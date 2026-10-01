@@ -122,4 +122,41 @@ class BankAccountApiController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $shopId = $request->attributes->get("shop_id");
+        $ids = $request->input("ids", []);
+        if (!is_array($ids) || empty($ids)) {
+            return response()->json(["message" => "No accounts selected."], 422);
+        }
+
+        $deleted = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($ids as $id) {
+            $account = BankAccount::where("shop_id", $shopId)->find($id);
+            if (!$account) continue;
+            if ($account->is_default) {
+                $skipped++;
+                $errors[] = "Account '" . $account->name . "' is the default account and cannot be deleted.";
+                continue;
+            }
+            if ($account->cashBookEntries()->exists()) {
+                $skipped++;
+                $errors[] = "Account '" . $account->name . "' has transactions and cannot be deleted.";
+                continue;
+            }
+            $account->delete();
+            $deleted++;
+        }
+
+        return response()->json([
+            "status" => "success",
+            "deleted_count" => $deleted,
+            "skipped_count" => $skipped,
+            "errors" => $errors,
+        ]);
+    }
 }

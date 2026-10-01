@@ -58,12 +58,35 @@ class SubscriptionApiController extends Controller
     public function current(Request $request)
     {
         $user = $request->user();
-        $user->load(['activePlan', 'currentSubscription']);
+        $user->load(['activePlan', 'currentSubscription.plan']);
 
         $subscription = $user->currentSubscription;
         if ($subscription && $subscription->status === 'active' && $subscription->isExpired()) {
             $this->downgradeToFree($user, $subscription, 'expired');
-            $user->load(['activePlan', 'currentSubscription']);
+            $user->load(['activePlan', 'currentSubscription.plan']);
+            $subscription = $user->currentSubscription;
+        }
+
+        // Auto-reconcile Lifetime Plan purchased on website or admin
+        if ($subscription && $subscription->status === 'active' && $subscription->plan && $subscription->plan->billing_period === 'lifetime') {
+            if ($user->active_plan_id !== $subscription->plan_id) {
+                $user->active_plan_id = $subscription->plan_id;
+                $user->save();
+                $user->load(['activePlan']);
+            }
+        } elseif ($user->activePlan && $user->activePlan->billing_period === 'lifetime') {
+            if (!$subscription || $subscription->status !== 'active') {
+                $shop = $user->shops()->first();
+                $subscription = $user->subscriptions()->updateOrCreate(
+                    ['plan_id' => $user->activePlan->id, 'status' => 'active'],
+                    [
+                        'shop_id' => $shop ? $shop->id : null,
+                        'starts_at' => now(),
+                        'ends_at' => null,
+                    ]
+                );
+                $user->load(['currentSubscription.plan']);
+            }
         }
 
         return response()->json([
@@ -113,11 +136,14 @@ class SubscriptionApiController extends Controller
     public function createOrder(Request $request)
     {
         $request->validate([
-            'plan_slug' => 'required|string|in:premium,business',
+            'plan_slug' => 'required|string|in:premium,business,lifetime',
         ]);
 
         $user = $request->user();
         $plan = SubscriptionPlan::where('slug', $request->plan_slug)->first();
+        if (!$plan && ($request->plan_slug === 'lifetime' || $request->plan_slug === 'business')) {
+            $plan = SubscriptionPlan::where('billing_period', 'lifetime')->first();
+        }
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
@@ -202,11 +228,14 @@ class SubscriptionApiController extends Controller
     public function upgrade(Request $request)
     {
         $request->validate([
-            'plan_slug' => 'required|string|in:free,premium,business',
+            'plan_slug' => 'required|string|in:free,premium,business,lifetime',
         ]);
 
         $user = $request->user();
         $plan = SubscriptionPlan::where('slug', $request->plan_slug)->first();
+        if (!$plan && ($request->plan_slug === 'lifetime' || $request->plan_slug === 'business')) {
+            $plan = SubscriptionPlan::where('billing_period', 'lifetime')->first();
+        }
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
@@ -383,7 +412,7 @@ class SubscriptionApiController extends Controller
     public function verifyPayment(Request $request)
     {
         $request->validate([
-            'plan_slug' => 'required|string|in:premium,business',
+            'plan_slug' => 'required|string|in:premium,business,lifetime',
             'razorpay_payment_id' => 'required|string',
             'razorpay_signature' => 'required|string',
             'razorpay_subscription_id' => 'nullable|string',
@@ -392,6 +421,9 @@ class SubscriptionApiController extends Controller
 
         $user = $request->user();
         $plan = SubscriptionPlan::where('slug', $request->plan_slug)->first();
+        if (!$plan && ($request->plan_slug === 'lifetime' || $request->plan_slug === 'business')) {
+            $plan = SubscriptionPlan::where('billing_period', 'lifetime')->first();
+        }
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
