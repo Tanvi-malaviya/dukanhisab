@@ -490,6 +490,12 @@
                 this.showLifetimeOfferPopup = false;
             },
 
+            // Lifetime owners have nothing to switch to, so the subscription page shows a
+            // "you own it" card instead of the plan grid.
+            isLifetimePlan() {
+                return !!(this.user && this.user.active_plan && this.user.active_plan.billing_period === 'lifetime');
+            },
+
             checkLifetimeOffer() {
                 if (this.user && localStorage.getItem('lifetime_offer_dismissed') !== 'true') {
                     const hasLifetime = this.user.active_plan && this.user.active_plan.slug === 'business';
