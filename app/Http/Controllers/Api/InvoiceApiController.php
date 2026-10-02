@@ -682,6 +682,8 @@ class InvoiceApiController extends Controller
                     </tr>
                 </table>
 
+                ' . $this->buildContainerDepositHtml($sale, $shop) . '
+
                 <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: InvoiceSetting::get('footer_text') ?: __('invoice_footer_default')) . '</div>';
 
                 if ($signatureBase64) {
@@ -698,6 +700,66 @@ class InvoiceApiController extends Controller
         ';
 
         return $html;
+    }
+
+    /**
+     * Returnable containers still with the customer from this sale, with the refundable deposit held.
+     * Shown outside the bill totals (a deposit is not part of the sale); shrinks on partial returns
+     * and disappears once every container from this sale is back.
+     */
+    private function buildContainerDepositHtml(Sale $sale, Shop $shop): string
+    {
+        if (!$shop->hasFeature('containers')) {
+            return '';
+        }
+
+        $lots = $sale->containerLots()->with('containerType')->get()->filter(fn ($lot) => $lot->pending_quantity > 0);
+        if ($lots->isEmpty()) {
+            return '';
+        }
+
+        $rows = '';
+        $totalQty = 0;
+        $totalDeposit = 0.0;
+        $grouped = $lots->groupBy(fn ($lot) => $lot->container_type_id . '|' . number_format($lot->deposit_per_unit, 2, '.', ''));
+        foreach ($grouped as $group) {
+            $first = $group->first();
+            $qty = $group->sum('pending_quantity');
+            $deposit = round($qty * (float) $first->deposit_per_unit, 2);
+            $totalQty += $qty;
+            $totalDeposit += $deposit;
+            $rows .= '
+                            <tr>
+                                <td>' . htmlspecialchars($first->containerType->name ?? 'Container') . '</td>
+                                <td style="text-align: center;">' . $qty . '</td>
+                                <td style="text-align: right;">' . ((float) $first->deposit_per_unit > 0 ? '&#8377; ' . number_format($first->deposit_per_unit, 2) : __('deposit_not_collected')) . '</td>
+                                <td style="text-align: right;">&#8377; ' . number_format($deposit, 2) . '</td>
+                            </tr>';
+        }
+
+        return '
+                <div style="margin-top: 14px; border: 1px dashed #94a3b8; border-radius: 6px; padding: 8px 10px;">
+                    <div style="font-size: 12px; font-weight: bold; color: #334155; margin-bottom: 6px;">' . __('containers_with_customer') . '</div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr style="color: #64748b;">
+                                <th style="text-align: left; padding: 2px 0;">' . __('container') . '</th>
+                                <th style="text-align: center; padding: 2px 0;">' . __('pending_qty') . '</th>
+                                <th style="text-align: right; padding: 2px 0;">' . __('deposit_per_unit') . '</th>
+                                <th style="text-align: right; padding: 2px 0;">' . __('deposit_held') . '</th>
+                            </tr>
+                        </thead>
+                        <tbody>' . $rows . '
+                            <tr style="font-weight: bold;">
+                                <td style="border-top: 1px solid #cbd5e1;">' . __('total') . '</td>
+                                <td style="text-align: center; border-top: 1px solid #cbd5e1;">' . $totalQty . '</td>
+                                <td style="border-top: 1px solid #cbd5e1;"></td>
+                                <td style="text-align: right; border-top: 1px solid #cbd5e1;">&#8377; ' . number_format($totalDeposit, 2) . '</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 4px;">' . __('container_deposit_invoice_note') . '</div>
+                </div>';
     }
 
     private function buildPurchaseInvoiceHtml(Purchase $purchase): string

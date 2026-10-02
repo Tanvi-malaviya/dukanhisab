@@ -172,6 +172,31 @@
                             </template>
                         </div>
                     </div>
+                    <!-- Containers still with the customer from this sale (deposit is outside the bill total) -->
+                    <template x-if="hasContainers() && saleContainerRows(selectedSale).length > 0">
+                        <div class="mt-3 p-2.5 border border-dashed border-slate-300 dark:border-gray-600 rounded-lg text-xs">
+                            <p class="font-bold text-slate-700 dark:text-slate-200 mb-1" x-text="t('containers_with_customer')">Containers with Customer (Refundable Deposit)</p>
+                            <table class="w-full">
+                                <thead><tr class="text-slate-500">
+                                    <th class="text-left font-semibold" x-text="t('container')">Container</th>
+                                    <th class="text-center font-semibold" x-text="t('pending_qty')">Pending Qty</th>
+                                    <th class="text-right font-semibold" x-text="t('deposit_per_unit')">Deposit / Unit</th>
+                                    <th class="text-right font-semibold" x-text="t('deposit_held')">Deposit Held</th>
+                                </tr></thead>
+                                <tbody>
+                                    <template x-for="row in saleContainerRows(selectedSale)" :key="row.name + row.rate">
+                                        <tr>
+                                            <td x-text="row.name"></td>
+                                            <td class="text-center" x-text="row.qty"></td>
+                                            <td class="text-right" x-text="row.rate > 0 ? money(row.rate) : t('deposit_not_collected')"></td>
+                                            <td class="text-right font-semibold" x-text="money(row.deposit)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <p class="text-[10px] text-slate-400 mt-1" x-text="t('container_deposit_invoice_note')"></p>
+                        </div>
+                    </template>
                     <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
                     <template x-if="shop && shop.signature">
                         <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
@@ -324,6 +349,26 @@
                     </span>
                 </label>
             </div>
+            <!-- Returnable container sent with each unit (containers module) -->
+            <template x-if="hasContainers()">
+                <div class="grid grid-cols-3 gap-3 pt-1 border-t border-slate-100 dark:border-gray-700/60">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('returnable_container')">Returnable Container</label>
+                        <select x-model="newProduct.container_type_id"
+                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
+                            <option value="" x-text="t('none')">None</option>
+                            <template x-for="type in containerTypes" :key="type.id">
+                                <option :value="String(type.id)" :selected="String(newProduct.container_type_id) === String(type.id)" x-text="type.name + ' (' + money(type.deposit_amount) + ')'"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('per_unit')">Per Unit</label>
+                        <input type="number" min="1" x-model.number="newProduct.containers_per_unit" :disabled="!newProduct.container_type_id"
+                            class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white disabled:opacity-50">
+                    </div>
+                </div>
+            </template>
             <button type="submit"
                 class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all mt-1"
                 x-text="newProduct.id ? t('save') : t('add_product')"></button>

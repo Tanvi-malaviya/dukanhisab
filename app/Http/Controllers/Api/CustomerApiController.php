@@ -102,6 +102,18 @@ class CustomerApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $customer = Customer::where('shop_id', $shopId)->findOrFail($id);
+
+        // Deleting would hide the deposit the shop still owes this customer.
+        $pendingContainers = \App\Models\ContainerMovement::where('shop_id', $shopId)
+            ->where('customer_id', $customer->id)
+            ->openLots()
+            ->sum(\Illuminate\Support\Facades\DB::raw('quantity - closed_quantity'));
+        if ($pendingContainers > 0) {
+            return response()->json([
+                'message' => "{$customer->name} still has {$pendingContainers} returnable containers. Receive them back before deleting this customer.",
+            ], 422);
+        }
+
         $customer->delete();
         return response()->json(null, 204);
     }
