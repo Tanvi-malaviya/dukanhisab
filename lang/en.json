@@ -373,7 +373,6 @@
   "no_stock_history_found": "No inventory movement history found.",
   "total_cash_in": "Total Cash In",
   "total_cash_out": "Total Cash Out",
-  "net_balance": "Net Balance",
   "transaction_type": "Transaction Type",
   "all_types": "All Types",
   "all_methods": "All Methods",
@@ -623,7 +622,6 @@
   "needs_renewal": "Needs renewal",
   "all_active": "All active",
   "shop_website": "Shop Website",
-  "active": "Active",
   "not_active": "Not Active",
   "online_store_live": "Online store live",
   "publish_store_online": "Publish store online",
@@ -653,7 +651,6 @@
   "renew_shop": "Renew Shop",
   "disable_auto_renewal_confirm": "This add-on will stay active until its current period ends, then it will not renew.",
   "shop": "Shop",
-  "total": "Total",
   "disable_auto_renewal_title": "Disable Auto-Renewal?",
   "paid_amount": "Paid Amount",
   "balance_due": "Balance Due",
@@ -782,3 +779,4 @@
   "lifetime_addons_hint": "Need more shops or a website? Add-ons work with your lifetime plan.",
   "browse_addons": "Browse Add-ons"
 }
+
