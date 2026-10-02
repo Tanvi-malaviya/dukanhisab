@@ -774,5 +774,14 @@
   "total_owned_optional": "કુલ માલિકીના (વૈકલ્પિક)",
   "validation_error": "ચકાસણી ભૂલ",
   "view": "જુઓ",
-  "with_customers": "ગ્રાહકો પાસે"
+  "with_customers": "ગ્રાહકો પાસે",
+  "lifetime_member": "લાઇફટાઇમ મેમ્બર",
+  "you_own_plan": "તમારી પાસે છે",
+  "lifetime_plan_desc": "એક જ વારની ખરીદી. કોઈ રિન્યુઅલ નહીં, કોઈ એક્સપાયરી નહીં. જ્યાં સુધી તમે DukanHisab વાપરો ત્યાં સુધી તમારા પ્લાનની દરેક સુવિધા અનલૉક રહેશે.",
+  "lifetime_no_renewal": "કોઈ રિન્યુઅલ ચાર્જ નહીં",
+  "lifetime_free_updates": "મફત અપડેટ્સ",
+  "lifetime_never_expires": "ક્યારેય એક્સપાયર નહીં થાય",
+  "whats_included": "શું સામેલ છે",
+  "lifetime_addons_hint": "વધુ દુકાનો કે વેબસાઇટ જોઈએ છે? ઍડ-ઓન તમારા લાઇફટાઇમ પ્લાન સાથે કામ કરે છે.",
+  "browse_addons": "ઍડ-ઓન જુઓ"
 }

@@ -774,5 +774,14 @@
   "total_owned_optional": "कुल अपने (वैकल्पिक)",
   "validation_error": "सत्यापन त्रुटि",
   "view": "देखें",
-  "with_customers": "ग्राहकों के पास"
+  "with_customers": "ग्राहकों के पास",
+  "lifetime_member": "लाइफटाइम मेंबर",
+  "you_own_plan": "आपके पास है",
+  "lifetime_plan_desc": "एक बार की खरीदारी। कोई रिन्यूअल नहीं, कोई एक्सपायरी नहीं। जब तक आप DukanHisab उपयोग करते हैं, आपके प्लान की हर सुविधा अनलॉक रहेगी।",
+  "lifetime_no_renewal": "कोई रिन्यूअल शुल्क नहीं",
+  "lifetime_free_updates": "मुफ्त अपडेट",
+  "lifetime_never_expires": "कभी एक्सपायर नहीं होगा",
+  "whats_included": "क्या शामिल है",
+  "lifetime_addons_hint": "और दुकानें या वेबसाइट चाहिए? ऐड-ऑन आपके लाइफटाइम प्लान के साथ काम करते हैं।",
+  "browse_addons": "ऐड-ऑन देखें"
 }
