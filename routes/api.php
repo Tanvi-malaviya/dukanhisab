@@ -1,5 +1,10 @@
 <?php
 
+// -- Public routes (no authentication required) ------------------------------
+Route::prefix('public')->group(function () {
+    Route::get('/plans', [\App\Http\Controllers\Api\PublicApiController::class, 'plans']);
+});
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AppSettingController;
@@ -171,5 +176,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active'])->group(funct
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markAllRead']);
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'destroy']);
 });
+
 
 
