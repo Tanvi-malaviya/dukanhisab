@@ -25,6 +25,12 @@ class Supplier extends Model
      * < 0: shop has paid advance to supplier
      * = 0: settled
      */
+    /** A blank amount from a form means 0; the column is NOT NULL, so null used to fail the save with a 500. */
+    public function setDueAmountAttribute($value): void
+    {
+        $this->attributes['due_amount'] = $value ?? 0;
+    }
+
     public function getNetBalanceAttribute(): float
     {
         return round((float) ($this->due_amount ?? 0), 2);

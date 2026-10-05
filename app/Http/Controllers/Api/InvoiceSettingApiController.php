@@ -55,7 +55,9 @@ class InvoiceSettingApiController extends Controller
         }
 
         $user = $request->user();
-        $validatedData = $validator->validated();
+        // Every column is NOT NULL, so a blank field keeps the saved value (or the default) instead of
+        // failing the save with a 500.
+        $validatedData = array_filter($validator->validated(), fn ($value) => $value !== null);
         if ($user && $user->activePlan && $user->activePlan->slug === 'free') {
             $validatedData['whatsapp_share'] = false;
             $validatedData['pdf_download'] = false;

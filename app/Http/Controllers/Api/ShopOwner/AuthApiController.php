@@ -413,6 +413,14 @@ class AuthApiController extends Controller
 
         $data = $validator->validated();
 
+        // These preferences are NOT NULL columns: a blank keeps the current value instead of failing
+        // the save with a 500. Other fields (mobile, date of birth...) can still be cleared.
+        foreach (['language', 'currency', 'date_format', 'time_format', 'theme'] as $key) {
+            if (array_key_exists($key, $data) && $data[$key] === null) {
+                unset($data[$key]);
+            }
+        }
+
         if ($request->hasFile('avatar')) {
             if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);

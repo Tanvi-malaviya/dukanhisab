@@ -22,6 +22,12 @@ class BankAccount extends Model
         'is_default' => 'boolean',
     ];
 
+    /** A blank amount from a form means 0; the column is NOT NULL, so null used to fail the save with a 500. */
+    public function setOpeningBalanceAttribute($value): void
+    {
+        $this->attributes['opening_balance'] = $value ?? 0;
+    }
+
     public function shop()
     {
         return $this->belongsTo(Shop::class);

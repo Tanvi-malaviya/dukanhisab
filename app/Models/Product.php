@@ -31,6 +31,25 @@ class Product extends Model
         'containers_per_unit' => 'integer',
     ];
 
+    /**
+     * The API accepts these blank (the web form shows a 0 purchase price as an empty box), but the
+     * columns are NOT NULL, so a blank used to fail the save with a 500. Blank means the column default.
+     */
+    public function setPurchasePriceAttribute($value): void
+    {
+        $this->attributes['purchase_price'] = $value ?? 0;
+    }
+
+    public function setStockAttribute($value): void
+    {
+        $this->attributes['stock'] = $value ?? 0;
+    }
+
+    public function setLowStockThresholdAttribute($value): void
+    {
+        $this->attributes['low_stock_threshold'] = $value ?? 5;
+    }
+
     /** Forms send null when no container is linked; the column is NOT NULL with a default of 1. */
     public function setContainersPerUnitAttribute($value): void
     {
