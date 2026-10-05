@@ -134,8 +134,13 @@
                 <div class="mt-6 pt-5 border-t border-slate-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <p class="text-xs text-slate-500 dark:text-slate-400" x-text="t('lifetime_addons_hint') || 'Need more shops or a website? Add-ons work with your lifetime plan.'"></p>
                     <button type="button" @click="navigateTo('addons')"
-                        class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-teal-600/20 shrink-0 cursor-pointer"
-                        x-text="t('browse_addons') || 'Browse Add-ons'">Browse Add-ons</button>
+                        class="px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all shadow-md hover:shadow-lg shrink-0 cursor-pointer inline-flex items-center justify-center gap-2 hover:opacity-95 active:scale-95"
+                        style="background: linear-gradient(135deg, #0F766E 0%, #115E59 100%) !important; color: #FFFFFF !important; border: 1px solid #0D9488 !important; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.25) !important;">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: #FFFFFF !important;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span style="color: #FFFFFF !important;" x-text="t('browse_addons') || 'Browse Add-ons'">Browse Add-ons</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -360,8 +365,8 @@
                             :disabled="(user && user.active_plan && user.active_plan.id == plan.id) || subscriptionLoading || plan.is_expired"
                             :class="{
                                 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 cursor-default shadow-none': (user && user.active_plan && user.active_plan.id == plan.id),
-                                'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-md shadow-teal-600/25': plan.slug === 'premium' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
-                                'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black shadow-md shadow-amber-500/25': plan.slug === 'business' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
+                                'bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-600/25': plan.slug === 'premium' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
+                                'bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-md shadow-amber-500/25': plan.slug === 'business' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
                                 'border-2 border-slate-200 dark:border-gray-700 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-gray-700': plan.slug === 'free' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
                                 'bg-teal-600 hover:bg-teal-700 text-white shadow-sm': plan.slug !== 'free' && plan.slug !== 'premium' && plan.slug !== 'business' && !(user && user.active_plan && user.active_plan.id == plan.id) && !plan.is_expired,
                                 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800 text-slate-400 border border-slate-200 dark:border-gray-700': plan.is_expired && !(user && user.active_plan && user.active_plan.id == plan.id)
