@@ -53,6 +53,8 @@ Route::group([
     Route::post('users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset_password');
     Route::get('users/{id}/login-as', [UserController::class, 'loginAs'])->name('users.login_as');
     Route::delete('users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('users/{id}/recover', [UserController::class, 'recover'])->name('users.recover');
+    Route::delete('users/{id}/force-delete', [UserController::class, 'forceDelete'])->name('users.force_delete');
     Route::delete('users/devices/{id}', [UserController::class, 'revokeDevice'])->name('users.device.revoke');
 
     // Shop Management
@@ -206,6 +208,10 @@ Route::post('/pay/{token}/claim', [\App\Http\Controllers\PaymentLinkController::
 // Public Storefront routes
 Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::class, 'show'])->name('store.public');
 
+// Public Account Deletion page (Google Play Store compliance & self-service web deletion)
+Route::get('/delete-account', [\App\Http\Controllers\AccountDeletionController::class, 'show'])->name('account.delete_page');
+Route::post('/delete-account', [\App\Http\Controllers\AccountDeletionController::class, 'processDeletion'])->name('account.delete_process');
+
 // Storage files streaming route (direct fallback if public/storage symlink is not served by webserver)
 Route::get('/storage/{path}', function ($path) {
     $cleanPath = ltrim($path, '/');
@@ -240,4 +246,4 @@ Route::get('/storage/{path}', function ($path) {
 // Fallback/wildcard route for subdirectory installations where prefix is stripped (e.g. /sales, /products)
 Route::get('/{any}', function () {
     return view('app');
-})->where('any', '^(?!admin|api|shopowner|shop|store|storage).*$');
+})->where('any', '^(?!admin|api|shopowner|shop|store|storage|delete-account).*$');

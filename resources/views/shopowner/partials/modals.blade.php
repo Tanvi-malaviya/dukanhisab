@@ -2221,3 +2221,74 @@
         </div>
     </div>
 </div>
+
+{{-- Delete Account Confirmation Modal --}}
+<div x-show="deleteAccountModal.show" style="display: none;"
+    class="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
+    x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+    x-cloak>
+    <div @click.away="closeDeleteAccountModal()" 
+        class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden"
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
+        x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+        
+        <div class="px-6 py-4 border-b border-rose-100 dark:border-rose-900/40 bg-rose-50/70 dark:bg-rose-950/40 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <h3 class="text-sm font-bold" x-text="t('confirm_delete_account') || 'Delete Account Permanently'">Delete Account Permanently</h3>
+            </div>
+            <button type="button" @click="closeDeleteAccountModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form @submit.prevent="submitDeleteAccount()" class="p-6 space-y-4">
+            <div class="p-3.5 rounded-xl bg-rose-100/60 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 space-y-1.5">
+                <p class="font-bold flex items-center gap-1.5">
+                    <span>⚠️ Irreversible Action</span>
+                </p>
+                <p class="text-[11px] leading-relaxed">
+                    This will permanently delete your account (<strong x-text="user ? (user.email || user.mobile) : ''"></strong>) and all your shops, invoices, customers, inventory, products, and WhatsApp message credits.
+                </p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1" x-text="t('enter_password_to_delete') || 'Enter your password to confirm'">
+                    Enter your password to confirm
+                </label>
+                <input type="password" required x-model="deleteAccountModal.password"
+                    placeholder="Enter current password"
+                    class="block w-full px-3.5 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-rose-500 focus:border-rose-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                    To confirm, please type <span class="font-mono font-bold text-rose-600 dark:text-rose-400">DELETE</span> below:
+                </label>
+                <input type="text" required x-model="deleteAccountModal.confirmText"
+                    placeholder="Type DELETE"
+                    class="block w-full px-3.5 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-mono uppercase dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-rose-500 focus:border-rose-500">
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 dark:border-gray-700 flex items-center justify-end gap-3">
+                <button type="button" @click="closeDeleteAccountModal()"
+                    class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all cursor-pointer">
+                    Cancel
+                </button>
+                <button type="submit" 
+                    :disabled="deleteAccountModal.loading || !deleteAccountModal.password || deleteAccountModal.confirmText.trim().toUpperCase() !== 'DELETE'"
+                    class="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed">
+                    <template x-if="deleteAccountModal.loading">
+                        <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                    </template>
+                    <span x-text="deleteAccountModal.loading ? 'Deleting...' : 'Permanently Delete'">Permanently Delete</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

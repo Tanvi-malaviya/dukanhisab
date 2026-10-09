@@ -707,7 +707,7 @@
         </form>
 
         {{-- Security & Password Card in User Settings --}}
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <!-- <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/50 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
@@ -720,6 +720,25 @@
             <button type="button" @click="settingsTab = 'security'" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2">
                 <span x-text="t('change_password') || 'Change Password'">Change Password</span>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div> -->
+
+        {{-- Danger Zone in User Profile --}}
+        <div class="bg-rose-50/70 dark:bg-rose-950/20 p-5 rounded-2xl border border-rose-200 dark:border-rose-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-bold text-rose-700 dark:text-rose-400" x-text="t('delete_account') || 'Delete Account'">Delete Account</h4>
+                        <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-rose-200/80 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300" x-text="t('danger_zone') || 'Danger Zone'">Danger Zone</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" x-text="t('delete_account_desc') || 'Permanently delete your account and all associated shop data.'">Permanently delete your account and all associated shop data.</p>
+                </div>
+            </div>
+            <button type="button" @click="openDeleteAccountModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0">
+                <span x-text="t('delete_account') || 'Delete Account'">Delete Account</span>
             </button>
         </div>
     </div>
@@ -873,6 +892,37 @@
                         <li x-text="t('tip_combination') || 'Combine uppercase, lowercase, numbers, and symbols.'">Combine uppercase, lowercase, numbers, and symbols.</li>
                         <li x-text="t('tip_unique') || 'Do not reuse passwords from other websites.'">Do not reuse passwords from other websites.</li>
                     </ul>
+                </div>
+            </div>
+
+            {{-- Danger Zone: Delete Account --}}
+            <div class="col-span-1 lg:col-span-3 pt-6 border-t border-rose-200 dark:border-rose-900/40">
+                <div class="bg-rose-50/70 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 rounded-2xl p-6 transition-all">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-sm font-bold text-rose-700 dark:text-rose-400" x-text="t('delete_account') || 'Delete Account'">Delete Account</h4>
+                                    <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase rounded-full bg-rose-200/80 dark:bg-rose-900/60 text-rose-800 dark:text-rose-300" x-text="t('danger_zone') || 'Danger Zone'">Danger Zone</span>
+                                </div>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-xl" x-text="t('delete_account_warning') || 'Permanently delete your account and all associated shop data. Once deleted, this action cannot be undone.'">
+                                    Permanently delete your account and all associated shop data. Once deleted, this action cannot be undone.
+                                </p>
+                            </div>
+                        </div>
+                        <button type="button" @click="openDeleteAccountModal()"
+                            class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span x-text="t('delete_account') || 'Delete Account'">Delete Account</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

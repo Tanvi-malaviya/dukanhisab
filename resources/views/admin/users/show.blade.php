@@ -19,6 +19,27 @@
             <span class="text-slate-700 font-semibold">{{ $user->name }}</span>
         </div>
 
+        @if($user->status === 'deleted')
+            <div class="p-4 rounded-2xl bg-rose-50 border border-rose-300 flex flex-col sm:flex-row items-center justify-between gap-3 text-rose-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-200 text-rose-700 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm">Account Is Deleted</h4>
+                        <p class="text-xs text-rose-600">This user account is currently marked as deleted. Login and API access are suspended. You can recover this account at any time.</p>
+                    </div>
+                </div>
+                <form action="{{ route('admin.users.recover', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to restore and recover this user account?');">
+                    @csrf
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Recover Account</span>
+                    </button>
+                </form>
+            </div>
+        @endif
+
         <!-- Page Header / Profile info -->
         <div
             class="bg-card-dark border border-border-dark p-4 sm:p-5 rounded-2xl shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -27,17 +48,17 @@
                 <div class="relative shrink-0 flex-shrink-0" style="width: 56px; height: 56px; min-width: 56px; min-height: 56px; max-width: 56px; max-height: 56px;">
                     @if($user->avatar)
                         <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->name }}"
-                            class="w-14 h-14 rounded-full object-cover border-2 border-primary/20 shadow-xs shrink-0 flex-shrink-0"
+                            class="w-14 h-14 rounded-full object-cover border-2 {{ $user->status === 'deleted' ? 'border-rose-400' : 'border-primary/20' }} shadow-xs shrink-0 flex-shrink-0"
                             style="width: 56px; height: 56px; min-width: 56px; min-height: 56px; border-radius: 50%; object-fit: cover;">
                     @else
                         <span
-                            class="w-14 h-14 rounded-full bg-primary/10 text-primary border-2 border-primary/20 flex items-center justify-center font-extrabold text-lg uppercase shadow-xs shrink-0 flex-shrink-0"
+                            class="w-14 h-14 rounded-full {{ $user->status === 'deleted' ? 'bg-rose-100 text-rose-700 border-rose-300' : 'bg-primary/10 text-primary border-primary/20' }} border-2 flex items-center justify-center font-extrabold text-lg uppercase shadow-xs shrink-0 flex-shrink-0"
                             style="width: 56px; height: 56px; min-width: 56px; min-height: 56px; border-radius: 50%;">
                             {{ substr($user->name, 0, 2) }}
                         </span>
                     @endif
                     <span
-                        class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white {{ $user->status === 'active' ? 'bg-emerald-500' : 'bg-rose-500' }}"
+                        class="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white {{ $user->status === 'active' ? 'bg-emerald-500' : ($user->status === 'deleted' ? 'bg-rose-500' : 'bg-amber-500') }}"
                         style="width: 14px; height: 14px; border-radius: 50%;"
                         title="Status: {{ ucfirst($user->status) }}"></span>
                 </div>
@@ -47,7 +68,7 @@
                         <h1 class="text-xl font-bold tracking-tight text-slate-800 truncate" title="{{ $user->name }}">
                             {{ $user->name }}</h1>
                         <span
-                            class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
+                            class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($user->status === 'deleted' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-50 text-amber-700 border border-amber-200') }}">
                             {{ ucfirst($user->status) }}
                         </span>
                         @if($user->activePlan)
@@ -163,18 +184,39 @@
                     <span>Password</span>
                 </button>
 
-                <!-- Delete -->
-                <button type="button"
-                    onclick="confirmDelete('{{ route('admin.users.destroy', $user->id) }}', '{{ $user->name }}')"
-                    class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
-                    title="Delete User">
-                    <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                        </path>
-                    </svg>
-                    <span>Delete</span>
-                </button>
+                @if($user->status === 'deleted')
+                    <!-- Recover -->
+                    <form action="{{ route('admin.users.recover', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to recover and restore this account?');">
+                        @csrf
+                        <button type="submit"
+                            class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                            title="Recover User">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span>Recover</span>
+                        </button>
+                    </form>
+
+                    <!-- Force Delete / Purge -->
+                    <button type="button"
+                        onclick="confirmDelete('{{ route('admin.users.force_delete', $user->id) }}', '{{ $user->name }}')"
+                        class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Purge Forever From Database">
+                        <span>Purge Forever</span>
+                    </button>
+                @else
+                    <!-- Delete -->
+                    <button type="button"
+                        onclick="confirmDelete('{{ route('admin.users.destroy', $user->id) }}', '{{ $user->name }}')"
+                        class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Delete User">
+                        <svg class="w-3.5 h-3.5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
+                        </svg>
+                        <span>Delete</span>
+                    </button>
+                @endif
             </div>
         </div>
 

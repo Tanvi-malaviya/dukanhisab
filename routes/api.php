@@ -157,6 +157,10 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::post('/profile', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'updateProfile']);
         Route::get('/pincode/{pincode}', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'getPincodeDetails']);
 
+        // Account Deletion (Google Play / App Store & Web Panel compliance)
+        Route::post('/delete-account', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
+        Route::delete('/delete-account', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
+
         // Subscription plans & current plan status
         Route::get('/subscription-plans', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'plans']);
         Route::get('/subscription', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'current']);
@@ -201,6 +205,10 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active'])->group(funct
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markRead']);
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markAllRead']);
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'destroy']);
+
+    // Direct account deletion for mobile clients
+    Route::delete('/account', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
+    Route::post('/account/delete', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
 });
 
 
