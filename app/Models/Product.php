@@ -31,6 +31,12 @@ class Product extends Model
         'containers_per_unit' => 'integer',
     ];
 
+    /** Convert empty string to null for foreign key constraint */
+    public function setContainerTypeIdAttribute($value): void
+    {
+        $this->attributes['container_type_id'] = !empty($value) ? (int) $value : null;
+    }
+
     /** Forms send null when no container is linked; the column is NOT NULL with a default of 1. */
     public function setContainersPerUnitAttribute($value): void
     {
