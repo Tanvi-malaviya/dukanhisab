@@ -15,7 +15,13 @@ class Customer extends Model
         'mobile',
         'email',
         'due_amount',
+        'whatsapp_opt_out',
         'credit_balance',
+    ];
+
+    protected $casts = [
+        'whatsapp_opt_out' => 'boolean',
+        'last_whatsapp_reminder_at' => 'datetime',
     ];
 
     protected $appends = ['net_balance'];

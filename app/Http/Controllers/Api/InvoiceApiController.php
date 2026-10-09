@@ -82,6 +82,22 @@ class InvoiceApiController extends Controller
         return response()->json(['message' => 'Invoice emailed to ' . $purchase->supplier->email . ' successfully.']);
     }
 
+    /**
+     * Login-free PDF for WhatsApp document headers: Meta fetches the file from this URL. Access is
+     * granted only by the temporary signature (the `signed` middleware), never by the id alone.
+     */
+    public function signedSalePDF($id)
+    {
+        $sale = Sale::with('items.product', 'customer')->findOrFail($id);
+        return $this->renderPdf($this->buildSaleInvoiceHtml($sale), 'Invoice-' . $sale->sale_number . '.pdf', true);
+    }
+
+    public function signedPurchasePDF($id)
+    {
+        $purchase = Purchase::with('items.product', 'supplier')->findOrFail($id);
+        return $this->renderPdf($this->buildPurchaseInvoiceHtml($purchase), 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', true);
+    }
+
     private function renderPdf(string $html, string $filename, bool $stream = true)
     {
         // DomPDF cannot shape Indic scripts (conjuncts/matras come out broken),

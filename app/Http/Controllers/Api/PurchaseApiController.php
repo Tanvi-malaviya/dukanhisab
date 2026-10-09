@@ -200,6 +200,8 @@ class PurchaseApiController extends Controller
             SupplierApiController::syncSupplierPurchaseStatuses($purchase->supplier_id, $shopId);
 
             $purchase->refresh();
+            app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->purchaseCreated($purchase);
+
             return response()->json($purchase->load('items.product', 'supplier'), 201);
         });
     }

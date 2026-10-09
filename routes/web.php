@@ -18,6 +18,8 @@ use App\Http\Controllers\Admin\SupportTicketController;
 use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\TranslationSettingController;
+use App\Http\Controllers\Admin\WhatsAppSettingController;
+use App\Http\Controllers\Admin\WhatsAppUsageController;
 
 // Main customer landing page placeholder
 Route::get('/', function () {
@@ -100,6 +102,22 @@ Route::group([
     Route::post('settings/payment', [PaymentSettingController::class, 'update'])->name('settings.payment.update');
     Route::post('settings/payment/test', [PaymentSettingController::class, 'testConnection'])->name('settings.payment.test');
 
+    // WhatsApp Cloud API Settings, Templates & Message Packs
+    Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])->name('settings.whatsapp');
+    Route::post('settings/whatsapp', [WhatsAppSettingController::class, 'update'])->name('settings.whatsapp.update');
+    Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'testConnection'])->name('settings.whatsapp.test');
+    Route::post('settings/whatsapp/test-send', [WhatsAppSettingController::class, 'sendTest'])->name('settings.whatsapp.test_send');
+    Route::post('settings/whatsapp/templates', [WhatsAppSettingController::class, 'storeTemplate'])->name('settings.whatsapp.templates.store');
+    Route::post('settings/whatsapp/templates/{id}', [WhatsAppSettingController::class, 'updateTemplate'])->name('settings.whatsapp.templates.update');
+    Route::delete('settings/whatsapp/templates/{id}', [WhatsAppSettingController::class, 'destroyTemplate'])->name('settings.whatsapp.templates.destroy');
+    Route::post('settings/whatsapp/packs', [WhatsAppSettingController::class, 'storePack'])->name('settings.whatsapp.packs.store');
+    Route::post('settings/whatsapp/packs/{id}', [WhatsAppSettingController::class, 'updatePack'])->name('settings.whatsapp.packs.update');
+    Route::delete('settings/whatsapp/packs/{id}', [WhatsAppSettingController::class, 'destroyPack'])->name('settings.whatsapp.packs.destroy');
+
+    // WhatsApp usage, pack sales & credit adjustments
+    Route::get('whatsapp/usage', [WhatsAppUsageController::class, 'index'])->name('whatsapp.usage');
+    Route::post('whatsapp/usage/adjust', [WhatsAppUsageController::class, 'adjust'])->name('whatsapp.usage.adjust');
+
     // Language & Translation Editor Settings
     Route::get('settings/translations', [TranslationSettingController::class, 'index'])->name('settings.translations');
     Route::post('settings/translations', [TranslationSettingController::class, 'update'])->name('settings.translations.update');
@@ -179,6 +197,11 @@ Route::get('/shopowner/{any?}', function () {
     $any = request()->route('any');
     return redirect('/shop' . ($any ? '/' . $any : ''));
 })->where('any', '.*');
+
+// WhatsApp "Pay Now" page for due reminders (public; the random token is the key)
+Route::get('/pay/{token}', [\App\Http\Controllers\PaymentLinkController::class, 'show'])->name('pay.show');
+Route::post('/pay/{token}/claim', [\App\Http\Controllers\PaymentLinkController::class, 'claim'])
+    ->middleware('throttle:10,1')->name('pay.claim');
 
 // Public Storefront routes
 Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::class, 'show'])->name('store.public');

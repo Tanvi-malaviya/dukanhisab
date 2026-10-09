@@ -117,6 +117,7 @@
                 'transactions': 'transactions',
                 'reports': 'reports',
                 'reminders': 'reminders',
+                'whatsapp': 'whatsapp',
                 'settings': 'settings',
                 'subscription': 'subscription',
                 'addons': 'addons',
@@ -440,6 +441,7 @@
             selectedSale: null,
             showInvoiceModal: false,
             sendingSaleEmail: false,
+            sendingWhatsApp: false,
             sendingPurchaseEmail: false,
             showReturnModal: false,
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
@@ -703,6 +705,7 @@
                 else if (pageName === 'addons') return this.loadAddOns();
                 else if (pageName === 'support') return this.loadSupportTickets();
                 else if (pageName === 'containers') return this.loadContainersPage();
+                else if (pageName === 'whatsapp') { window.dispatchEvent(new CustomEvent('whatsapp-open')); return Promise.resolve(); }
                 return Promise.resolve();
             },
 
@@ -3671,6 +3674,39 @@
                 }
                 const msg = `Hello ${custName}, thank you! Invoice: ${this.selectedSale.sale_number}, ${paymentInfo}. - DukanHisab`;
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
+            },
+
+            // Sends the invoice from the DukanHisab WhatsApp number using the shop's message credits.
+            sendViaWhatsApp(kind, id) {
+                if (!id) return;
+                this._postWhatsApp(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`);
+            },
+
+            // Due reminder (with Pay Now) to a customer, or due statement to a supplier.
+            sendWhatsAppReminder(type, id) {
+                if (!id) return;
+                this._postWhatsApp(`/api/v1/whatsapp/reminders/${type}/${id}`);
+            },
+
+            _postWhatsApp(url) {
+                if (this.sendingWhatsApp) return;
+                this.sendingWhatsApp = true;
+                fetch(url, { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json().then(d => ({ status: r.status, body: d })))
+                    .then(({ status, body }) => {
+                        this.sendingWhatsApp = false;
+                        if (status === 202) {
+                            this.showToast(body.message || 'Sent on WhatsApp.');
+                        } else if (status === 402) {
+                            this.showConfirm(this.t('wa_buy_messages'), body.message, () => {
+                                this.showInvoiceModal = false;
+                                this.showPurchaseDetailsModal = false;
+                                this.navigateTo('whatsapp');
+                            });
+                        } else {
+                            this.showToast(body.message || 'Could not send on WhatsApp.', 'error');
+                        }
+                    }).catch(() => { this.sendingWhatsApp = false; this.showToast('Could not send on WhatsApp.', 'error'); });
             },
 
             sendSaleInvoiceEmail() {

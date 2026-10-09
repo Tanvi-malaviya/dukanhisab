@@ -84,6 +84,7 @@ class SupplierApiController extends Controller
             'mobile' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'due_amount' => 'nullable|numeric',
+            'whatsapp_opt_out' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -151,6 +152,8 @@ class SupplierApiController extends Controller
 
         // 3. Sync Purchase Statuses based on Supplier Due Balance
         static::syncSupplierPurchaseStatuses($supplier->id, $shopId);
+
+        app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->supplierPaid($supplier, $amount);
 
         return response()->json([
             'message' => 'Supplier due payment recorded successfully.',

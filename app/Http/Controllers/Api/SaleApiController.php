@@ -275,6 +275,7 @@ class SaleApiController extends Controller
             if ($containerData) {
                 $sale->load('containerLots.containerType:id,name');
             }
+            app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->saleCreated($sale);
             return response()->json($sale, 201);
         });
     }
