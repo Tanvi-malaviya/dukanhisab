@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SubscriptionPlan;
+use App\Models\AddOn;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,6 +22,22 @@ class PublicApiController extends Controller
 
         return response()->json([
             'plans' => $plans,
+        ])->header('Access-Control-Allow-Origin', '*')
+          ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+          ->header('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    }
+
+    /**
+     * Return all active add-ons for public display on the website.
+     */
+    public function addons(Request $request): JsonResponse
+    {
+        $addons = AddOn::where('status', 'active')
+            ->orderBy('id')
+            ->get(['id', 'title', 'slug', 'type', 'description', 'price', 'billing_period', 'image']);
+
+        return response()->json([
+            'addons' => $addons,
         ])->header('Access-Control-Allow-Origin', '*')
           ->header('Access-Control-Allow-Methods', 'GET, OPTIONS')
           ->header('Access-Control-Allow-Headers', 'Content-Type, Accept');

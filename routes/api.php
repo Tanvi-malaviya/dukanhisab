@@ -3,6 +3,7 @@
 // -- Public routes (no authentication required) ------------------------------
 Route::prefix('public')->group(function () {
     Route::get('/plans', [\App\Http\Controllers\Api\PublicApiController::class, 'plans']);
+    Route::get('/addons', [\App\Http\Controllers\Api\PublicApiController::class, 'addons']);
 });
 
 use Illuminate\Http\Request;
