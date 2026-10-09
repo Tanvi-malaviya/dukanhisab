@@ -221,6 +221,15 @@
                     </div>
                 </div>
 
+                {{-- Returnable Containers (only for shops where the admin enabled it) --}}
+                <a href="/dukanhisab/containers" x-show="hasContainers()" x-cloak
+                    @click.prevent="navigateTo('containers')"
+                    :class="page === 'containers' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    <span x-text="t('containers')">Containers</span>
+                </a>
+
                 {{-- Reminders --}}
                 <a href="/dukanhisab/reminders"
                     @click.prevent="navigateTo('reminders')"
@@ -545,6 +554,13 @@
                        </div>
 
                        <!-- Reminders -->
+                       <a href="/dukanhisab/containers" x-show="hasContainers()" x-cloak
+                           @click.prevent="navigateTo('containers'); mobileSidebarOpen = false"
+                           :class="page === 'containers' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                           class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                           <span x-text="t('containers')">Containers</span>
+                       </a>
                        <a href="/dukanhisab/reminders"
                            @click.prevent="navigateTo('reminders'); mobileSidebarOpen = false"
                            :class="page === 'reminders' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"

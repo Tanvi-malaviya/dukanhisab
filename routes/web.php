@@ -62,6 +62,7 @@ Route::group([
     Route::put('shops/{id}', [ShopController::class, 'update'])->name('shops.update');
     Route::post('shops/{id}/toggle', [ShopController::class, 'toggleStatus'])->name('shops.toggle');
     Route::post('shops/{id}/subscription', [ShopController::class, 'updateSubscription'])->name('shops.subscription');
+    Route::post('shops/{id}/features', [ShopController::class, 'updateFeature'])->name('shops.features');
 
     // Subscription Management
     Route::get('subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');

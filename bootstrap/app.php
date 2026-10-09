@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'shop.scope' => \App\Http\Middleware\ShopScopeMiddleware::class,
             'account.active' => \App\Http\Middleware\EnsureAccountActive::class,
             'idempotency' => \App\Http\Middleware\EnsureIdempotency::class,
+            'shop.feature' => \App\Http\Middleware\EnsureShopFeature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

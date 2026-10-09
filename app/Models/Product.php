@@ -21,12 +21,32 @@ class Product extends Model
         'low_stock_threshold',
         'available_for_sale',
         'available_for_purchase',
+        'container_type_id',
+        'containers_per_unit',
     ];
 
     protected $casts = [
         'available_for_sale' => 'boolean',
         'available_for_purchase' => 'boolean',
+        'containers_per_unit' => 'integer',
     ];
+
+    /** Convert empty string to null for foreign key constraint */
+    public function setContainerTypeIdAttribute($value): void
+    {
+        $this->attributes['container_type_id'] = !empty($value) ? (int) $value : null;
+    }
+
+    /** Forms send null when no container is linked; the column is NOT NULL with a default of 1. */
+    public function setContainersPerUnitAttribute($value): void
+    {
+        $this->attributes['containers_per_unit'] = max(1, (int) ($value ?? 1));
+    }
+
+    public function containerType()
+    {
+        return $this->belongsTo(ContainerType::class);
+    }
 
     public function shop()
     {

@@ -56,4 +56,9 @@ class Customer extends Model
     {
         return $this->hasMany(CustomerProductPrice::class);
     }
+
+    public function containerMovements()
+    {
+        return $this->hasMany(ContainerMovement::class);
+    }
 }

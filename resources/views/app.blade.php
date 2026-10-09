@@ -249,6 +249,7 @@
                     @include('shopowner.partials.transactions')
                     @include('shopowner.partials.reports')
                     @include('shopowner.partials.reminders')
+                    @include('shopowner.partials.containers')
                     @include('shopowner.partials.whatsapp')
                     @include('shopowner.partials.settings')
                     @include('shopowner.partials.subscription')
@@ -307,8 +308,10 @@
 
     {{-- ===== ALL MODALS (outside x-if — always in DOM, Alpine reactivity works correctly) ===== --}}
     @include('shopowner.partials.modals')
+    @include('shopowner.partials.container-modals')
 
     {{-- Alpine JS Controller --}}
+    @include('shopowner.partials.containers-scripts')
     @include('shopowner.partials.scripts')
 
 </body>

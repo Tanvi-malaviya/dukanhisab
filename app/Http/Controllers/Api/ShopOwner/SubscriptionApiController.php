@@ -105,6 +105,10 @@ class SubscriptionApiController extends Controller
         $user = $request->user();
         $user->load(['activePlan', 'currentSubscription']);
 
+        if ($locked = $this->lifetimeLockedResponse($user)) {
+            return $locked;
+        }
+
         $subscription = $user->currentSubscription;
         if (!$subscription || $subscription->status !== 'active' || !$user->activePlan || $user->activePlan->slug === 'free') {
             return response()->json(['message' => 'You do not have an active paid subscription to cancel.'], 400);
@@ -147,6 +151,10 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        if ($locked = $this->lifetimeLockedResponse($user)) {
+            return $locked;
         }
 
         // The admin's "Gateway Enable/Disable" toggle (Admin > Settings > Payment Gateway) only
@@ -239,6 +247,10 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        if ($locked = $this->lifetimeLockedResponse($user)) {
+            return $locked;
         }
 
         // Free is always allowed — it downgrades locally and never touches the gateway. The
@@ -703,6 +715,22 @@ class SubscriptionApiController extends Controller
             Log::error("Razorpay subscription cancel failed ({$razorpaySubscriptionId}): " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Lifetime plans are bought once and never expire, so an owner has nothing to
+     * upgrade to, downgrade to or cancel. Admins can still change it from Admin > Users.
+     */
+    private function lifetimeLockedResponse(\App\Models\User $user): ?\Illuminate\Http\JsonResponse
+    {
+        $user->loadMissing('activePlan');
+        if ($user->activePlan && $user->activePlan->billing_period === 'lifetime') {
+            return response()->json([
+                'message' => 'You already own the Lifetime plan. It never expires, so there is nothing to change or cancel.',
+            ], 400);
+        }
+
+        return null;
     }
 
     private function downgradeToFree(\App\Models\User $user, \App\Models\Subscription $subscription, string $reason): void

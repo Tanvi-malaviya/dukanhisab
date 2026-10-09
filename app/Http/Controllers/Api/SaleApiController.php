@@ -11,6 +11,8 @@ use App\Models\Customer;
 use App\Models\CashBook;
 use App\Models\CreditNote;
 use App\Models\InvoiceCounter;
+use App\Models\Shop;
+use App\Support\ContainerLedger;
 use App\Support\StockMovementLogger;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -26,6 +28,9 @@ class SaleApiController extends Controller
         $shopId = $request->attributes->get('shop_id');
 
         $query = Sale::where('shop_id', $shopId)->with(['customer', 'items.product']);
+        if ($this->containersEnabled($shopId)) {
+            $query->with('containerLots.containerType:id,name');
+        }
 
         if ($request->filled('updated_since')) {
             $validator = Validator::make($request->only('updated_since'), [
@@ -97,13 +102,33 @@ class SaleApiController extends Controller
             'items.*.selling_price' => 'required|numeric|min:0',
             'items.*.discount' => 'nullable|numeric|min:0',
             'sale_date' => 'nullable|date',
+            // Returnable containers sent with this sale / empties brought back (containers module)
+            'containers' => 'nullable|array',
+            'containers.given' => 'nullable|array',
+            'containers.given.*.container_type_id' => ['required', Rule::exists('container_types', 'id')->where('shop_id', $shopId)->whereNull('deleted_at')],
+            'containers.given.*.quantity' => 'required|integer|min:0|max:100000',
+            'containers.returned' => 'nullable|array',
+            'containers.returned.*.container_type_id' => ['required', Rule::exists('container_types', 'id')->where('shop_id', $shopId)],
+            'containers.returned.*.quantity' => 'required|integer|min:0|max:100000',
+            'containers.collect_deposit' => 'nullable|boolean',
+            'containers.settlement_method' => 'nullable|string|in:cash,upi,bank,due_adjustment',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        return DB::transaction(function () use ($request, $shopId) {
+        $containerData = $this->saleContainerData($request);
+        if ($containerData) {
+            if (!$this->containersEnabled($shopId)) {
+                return response()->json(['errors' => ['containers' => ['Returnable containers are not enabled for this shop.']]], 422);
+            }
+            if (!$request->customer_id) {
+                return response()->json(['errors' => ['containers' => ['Select a customer to give or receive containers.']]], 422);
+            }
+        }
+
+        return DB::transaction(function () use ($request, $shopId, $containerData) {
             $today = Carbon::now();
             $todayStr = $today->format('Ymd');
             do {
@@ -234,12 +259,24 @@ class SaleApiController extends Controller
                 ]);
             }
 
+            // Container deposit is posted as its own entry (a liability), never part of the sale total.
+            // Posted after the sale's own due/cashbook so "adjust against dues" sees this bill's due.
+            if ($containerData) {
+                ContainerLedger::post((int) $shopId, $containerData + [
+                    'customer_id' => (int) $request->customer_id,
+                    'sale_id' => $sale->id,
+                ]);
+            }
+
             $this->syncCreditStatuses((int) $shopId, $sale->customer_id);
 
             $sale->refresh();
+            $sale->load('items.product', 'customer');
+            if ($containerData) {
+                $sale->load('containerLots.containerType:id,name');
+            }
             app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->saleCreated($sale);
-
-            return response()->json($sale->load('items.product', 'customer'), 201);
+            return response()->json($sale, 201);
         });
     }
 
@@ -247,6 +284,9 @@ class SaleApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $sale = Sale::where('shop_id', $shopId)->with('items.product', 'customer')->findOrFail($id);
+        if ($this->containersEnabled($shopId)) {
+            $sale->load('containerLots.containerType:id,name');
+        }
         return response()->json($sale);
     }
 
@@ -773,6 +813,30 @@ class SaleApiController extends Controller
                 'transaction_date' => Carbon::now(),
             ]);
         }
+    }
+
+    private function containersEnabled(int $shopId): bool
+    {
+        return (bool) Shop::find($shopId)?->hasFeature('containers');
+    }
+
+    /** Containers given / empties returned with a new sale, shaped for ContainerLedger::post, or null when none. */
+    private function saleContainerData(Request $request): ?array
+    {
+        $given = array_values(array_filter((array) $request->input('containers.given', []), fn ($l) => (int) ($l['quantity'] ?? 0) > 0));
+        $returned = array_values(array_filter((array) $request->input('containers.returned', []), fn ($l) => (int) ($l['quantity'] ?? 0) > 0));
+        if (empty($given) && empty($returned)) {
+            return null;
+        }
+
+        $defaultMethod = ['Cash' => 'cash', 'UPI' => 'upi', 'Bank' => 'bank'][$request->payment_type] ?? 'cash';
+
+        return [
+            'issues' => array_map(fn ($l) => ['container_type_id' => (int) $l['container_type_id'], 'quantity' => (int) $l['quantity']], $given),
+            'returns' => array_map(fn ($l) => ['container_type_id' => (int) $l['container_type_id'], 'returned' => (int) $l['quantity']], $returned),
+            'collect_deposit' => $request->boolean('containers.collect_deposit', true),
+            'settlement_method' => $request->input('containers.settlement_method') ?: $defaultMethod,
+        ];
     }
 
     /** Keep credit-sale statuses (Unpaid / Partially Paid / Completed) in step with the customers' dues at write time. */

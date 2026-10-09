@@ -1,5 +1,11 @@
 <?php
 
+// -- Public routes (no authentication required) ------------------------------
+Route::prefix('public')->group(function () {
+    Route::get('/plans', [\App\Http\Controllers\Api\PublicApiController::class, 'plans']);
+    Route::get('/addons', [\App\Http\Controllers\Api\PublicApiController::class, 'addons']);
+});
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AppSettingController;
@@ -107,6 +113,19 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
 
     // Credit Notes
     Route::apiResource('credit-notes', \App\Http\Controllers\Api\CreditNoteApiController::class)->only(['index', 'show']);
+
+    // Returnable containers & deposits — optional module, switched on per shop by the admin
+    Route::middleware('shop.feature:containers')->group(function () {
+        Route::get('/containers/summary', [\App\Http\Controllers\Api\ContainerApiController::class, 'summary']);
+        Route::get('/containers/customers', [\App\Http\Controllers\Api\ContainerApiController::class, 'customers']);
+        Route::get('/containers/customers/{customerId}', [\App\Http\Controllers\Api\ContainerApiController::class, 'customer']);
+        Route::get('/containers/entries', [\App\Http\Controllers\Api\ContainerApiController::class, 'index']);
+        Route::post('/containers/entries', [\App\Http\Controllers\Api\ContainerApiController::class, 'store']);
+        Route::get('/containers/entries/{id}', [\App\Http\Controllers\Api\ContainerApiController::class, 'show']);
+        Route::post('/containers/entries/{id}/reverse', [\App\Http\Controllers\Api\ContainerApiController::class, 'reverse']);
+        Route::apiResource('container-types', \App\Http\Controllers\Api\ContainerTypeApiController::class);
+        Route::post('/container-types/{id}/adjust-stock', [\App\Http\Controllers\Api\ContainerTypeApiController::class, 'adjustStock']);
+    });
 });
 
 // WhatsApp Cloud API callbacks — called by Meta, so no user auth. The webhook checks Meta's
@@ -183,5 +202,6 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active'])->group(funct
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markAllRead']);
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'destroy']);
 });
+
 
 

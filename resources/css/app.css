@@ -69,7 +69,16 @@ html:not(.dark) div.text-white {
     color: #0F172A !important;
 }
 
-/* Preserve white text for primary solid buttons, badges, and segmented tabs in light mode */
+/* Preserve white text for primary solid buttons, banners, badges, and segmented tabs in light mode */
+html:not(.dark) .text-white-force,
+html:not(.dark) .text-white-force *,
+html:not(.dark) .subscription-banner,
+html:not(.dark) .subscription-banner h1,
+html:not(.dark) .subscription-banner h2,
+html:not(.dark) .subscription-banner h3,
+html:not(.dark) .subscription-banner h4,
+html:not(.dark) .subscription-banner p,
+html:not(.dark) .subscription-banner span:not([class*="bg-amber"]),
 html:not(.dark) button.bg-primary:not([class*="/"]),
 html:not(.dark) button.bg-primary:not([class*="/"]) *,
 html:not(.dark) a.bg-primary:not([class*="/"]),
