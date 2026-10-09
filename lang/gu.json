@@ -869,6 +869,14 @@
   "wa_status_sent": "મોકલ્યો",
   "wa_status_delivered": "પહોંચ્યો",
   "wa_status_read": "વાંચ્યો",
-  "wa_status_failed": "નિષ્ફળ"
+  "wa_status_failed": "નિષ્ફળ",
+  "delete_account": "એકાઉન્ટ ડિલીટ કરો",
+  "delete_account_desc": "તમારું એકાઉન્ટ અને બધી દુકાનનો ડેટા કાયમ માટે ડિલીટ કરો.",
+  "delete_account_warning": "તમારું એકાઉન્ટ અને તમામ સંકળાયેલ દુકાન ડેટા કાયમ માટે ડિલીટ કરો. એકવાર ડિલીટ કર્યા પછી, આ ક્રિયા પૂર્વવત્ કરી શકાતી નથી.",
+  "confirm_delete_account": "એકાઉન્ટ કાયમ માટે ડિલીટ કરો",
+  "enter_password_to_delete": "એકાઉન્ટ ડિલીટ કરવાની પુષ્ટિ કરવા માટે તમારો વર્તમાન પાસવર્ડ દાખલ કરો",
+  "account_deleted_success": "તમારું એકાઉન્ટ અને તમામ સંકળાયેલ ડેટા કાયમ માટે ડિલીટ થઈ ગયો છે.",
+  "type_delete_to_confirm": "પુષ્ટિ કરવા માટે DELETE લખો",
+  "danger_zone": "ડેન્જર ઝોન"
 }
 

@@ -866,5 +866,13 @@
   "wa_status_sent": "Sent",
   "wa_status_delivered": "Delivered",
   "wa_status_read": "Read",
-  "wa_status_failed": "Failed"
+  "wa_status_failed": "Failed",
+  "delete_account": "Delete Account",
+  "delete_account_desc": "Permanently delete your account and all associated shop data.",
+  "delete_account_warning": "Permanently delete your account and all associated shop data. Once deleted, this action cannot be undone.",
+  "confirm_delete_account": "Delete Account Permanently",
+  "enter_password_to_delete": "Enter your current password to confirm account deletion",
+  "account_deleted_success": "Your account and all associated data have been permanently deleted.",
+  "type_delete_to_confirm": "Type DELETE to confirm",
+  "danger_zone": "Danger Zone"
 }

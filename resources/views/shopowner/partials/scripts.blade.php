@@ -251,6 +251,7 @@
             showCurrentPass: false,
             showNewPass: false,
             showConfirmPass: false,
+            deleteAccountModal: { show: false, password: '', confirmText: '', loading: false },
 
             setupForm: { name: '', owner_name: '', mobile: '', gst_number: '', logo: null },
             logoPreview: null,
@@ -2527,6 +2528,65 @@
                         this.passChanging = false;
                         this.showToast('Error changing password.', 'error');
                     });
+            },
+
+            openDeleteAccountModal() {
+                this.deleteAccountModal.password = '';
+                this.deleteAccountModal.confirmText = '';
+                this.deleteAccountModal.loading = false;
+                this.deleteAccountModal.show = true;
+            },
+
+            closeDeleteAccountModal() {
+                this.deleteAccountModal.show = false;
+                this.deleteAccountModal.password = '';
+                this.deleteAccountModal.confirmText = '';
+                this.deleteAccountModal.loading = false;
+            },
+
+            submitDeleteAccount() {
+                if (!this.deleteAccountModal.password) {
+                    this.showToast(this.t('enter_password_to_delete') || 'Please enter your password.', 'error');
+                    return;
+                }
+                if (this.deleteAccountModal.confirmText.trim().toUpperCase() !== 'DELETE') {
+                    this.showToast(this.t('type_delete_to_confirm') || 'Please type DELETE to confirm.', 'error');
+                    return;
+                }
+
+                this.deleteAccountModal.loading = true;
+                fetch('/api/v1/shopowner/delete-account', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        password: this.deleteAccountModal.password
+                    })
+                })
+                .then(async r => {
+                    const d = await r.json();
+                    return { ok: r.ok, status: r.status, data: d };
+                })
+                .then(res => {
+                    this.deleteAccountModal.loading = false;
+                    if (res.ok) {
+                        this.deleteAccountModal.show = false;
+                        alert(res.data.message || this.t('account_deleted_success') || 'Your account and all associated data have been permanently deleted.');
+                        ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon', 'shopowner_user_addons', 'shopowner_locked_shop_ids'].forEach(k => localStorage.removeItem(k));
+                        this.token = null;
+                        this.user = null;
+                        this.shop = null;
+                        this.hasShop = false;
+                        window.location.href = '/shop/login?deleted=1';
+                    } else if (res.data.errors && res.data.errors.password) {
+                        this.showToast(res.data.errors.password[0], 'error');
+                    } else {
+                        this.showToast(res.data.message || 'Failed to delete account.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.deleteAccountModal.loading = false;
+                    this.showToast('Error processing account deletion.', 'error');
+                });
             },
 
             triggerCloudBackup() {

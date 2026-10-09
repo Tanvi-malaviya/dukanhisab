@@ -869,6 +869,14 @@
   "wa_status_sent": "भेजा गया",
   "wa_status_delivered": "पहुंचा",
   "wa_status_read": "पढ़ा गया",
-  "wa_status_failed": "असफल"
+  "wa_status_failed": "असफल",
+  "delete_account": "अकाउंट डिलीट करें",
+  "delete_account_desc": "अपना अकाउंट और दुकान का पूरा डेटा हमेशा के लिए डिलीट करें।",
+  "delete_account_warning": "अपना खाता और सभी संबंधित दुकान का डेटा स्थायी रूप से हटाएं। एक बार हटाने के बाद, यह क्रिया पूर्ववत नहीं की जा सकती।",
+  "confirm_delete_account": "खाता स्थायी रूप से हटाएं",
+  "enter_password_to_delete": "खाता हटाने की पुष्टि के लिए अपना वर्तमान पासवर्ड दर्ज करें",
+  "account_deleted_success": "आपका खाता और सभी संबंधित डेटा स्थायी रूप से हटा दिया गया है।",
+  "type_delete_to_confirm": "पुष्टि के लिए DELETE टाइप करें",
+  "danger_zone": "डेंजर ज़ोन"
 }
 

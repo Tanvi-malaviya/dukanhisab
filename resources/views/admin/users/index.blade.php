@@ -2,7 +2,7 @@
 
 @section('title', 'Users & Shops Management')
 @section('page_title', 'Users & Shops Management')
-@section('page_subtitle')
+@section('page_subtitle', '')
 
 @section('content')
     <div class="space-y-3">
@@ -85,6 +85,27 @@
             </div>
         </div>
 
+        <!-- Quick Status Filter Tabs -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+            <a href="{{ route('admin.users.index') }}" 
+               class="px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap {{ !request('status') ? 'bg-primary text-white border-primary shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50' }}">
+                All Users ({{ $stats['total'] }})
+            </a>
+            <a href="{{ route('admin.users.index', ['status' => 'active']) }}" 
+               class="px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap {{ request('status') === 'active' ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'bg-white text-emerald-700 border-slate-200 hover:bg-emerald-50' }}">
+                Active ({{ $stats['active'] }})
+            </a>
+            <a href="{{ route('admin.users.index', ['status' => 'suspended']) }}" 
+               class="px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap {{ request('status') === 'suspended' ? 'bg-amber-600 text-white border-amber-600 shadow-xs' : 'bg-white text-amber-700 border-slate-200 hover:bg-amber-50' }}">
+                Suspended ({{ $stats['suspended'] }})
+            </a>
+            <a href="{{ route('admin.users.index', ['status' => 'deleted']) }}" 
+               class="px-3 py-1.5 rounded-xl border transition-all whitespace-nowrap flex items-center gap-1.5 {{ request('status') === 'deleted' ? 'bg-rose-600 text-white border-rose-600 shadow-xs' : 'bg-white text-rose-700 border-rose-200 hover:bg-rose-50' }}">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span>Deleted ({{ $stats['deleted'] }})</span>
+            </a>
+        </div>
+
         <!-- Search & Filter Controls -->
         <x-search-filter :action="route('admin.users.index')" placeholder="Search by name, email, mobile, or shop name...">
             <div class="w-full md:w-48">
@@ -93,6 +114,7 @@
                     <option value="">All Statuses</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                     <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                    <option value="deleted" {{ request('status') === 'deleted' ? 'selected' : '' }}>Deleted ({{ $stats['deleted'] }})</option>
                 </select>
             </div>
 
@@ -114,7 +136,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 @foreach($users as $user)
                     <div onclick="window.location.href='{{ route('admin.users.show', $user->id) }}'"
-                        class="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs hover:shadow-md hover:border-primary/50 transition-all flex flex-col justify-between space-y-3 cursor-pointer group">
+                        class="{{ $user->status === 'deleted' ? 'bg-rose-50/20 border-rose-200 hover:border-rose-400' : 'bg-white border-slate-200 hover:border-primary/50' }} border p-4 rounded-2xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 cursor-pointer group">
 
                         <!-- Top User Profile Header with Action Icons & Status -->
                         <div class="flex items-start justify-between gap-2.5">
@@ -122,10 +144,10 @@
                                 <!-- PERFECT ROUND AVATAR -->
                                 @if($user->avatar)
                                     <img src="{{ asset('storage/' . $user->avatar) }}" alt="{{ $user->name ?: 'User' }}"
-                                        class="w-10 h-10 rounded-full object-cover border border-primary/30 shrink-0 aspect-square shadow-2xs">
+                                        class="w-10 h-10 rounded-full object-cover border {{ $user->status === 'deleted' ? 'border-rose-300' : 'border-primary/30' }} shrink-0 aspect-square shadow-2xs">
                                 @else
                                     <span
-                                        class="w-10 h-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-extrabold text-sm uppercase shrink-0 aspect-square shadow-2xs">
+                                        class="w-10 h-10 rounded-full {{ $user->status === 'deleted' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-primary/10 text-primary border-primary/20' }} border flex items-center justify-center font-extrabold text-sm uppercase shrink-0 aspect-square shadow-2xs">
                                         {{ substr($user->name ?: 'US', 0, 2) }}
                                     </span>
                                 @endif
@@ -146,7 +168,7 @@
                             <!-- Top Right: Status & Impersonate Icon -->
                             <div class="flex items-center gap-1 shrink-0">
                                 <span
-                                    class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mr-0.5 {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
+                                    class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider mr-0.5 {{ $user->status === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($user->status === 'deleted' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-50 text-amber-700 border border-amber-200') }}">
                                     {{ $user->status }}
                                 </span>
 
@@ -171,18 +193,36 @@
                                 {{ $user->shops->count() }} {{ Str::plural('Shop', $user->shops->count()) }}
                             </span>
 
-                            <div class="flex items-center gap-3">
-                                <button type="button"
-                                    onclick="event.stopPropagation(); openEditModal({{ json_encode($user->only(['id', 'name', 'email', 'mobile', 'status', 'avatar'])) }})"
-                                    class="text-xs text-primary font-medium hover:underline cursor-pointer">
-                                    Edit User
-                                </button>
-                                <button type="button"
-                                    onclick="event.stopPropagation(); confirmDelete('{{ route('admin.users.destroy', $user->id) }}', '{{ $user->name ?: 'User' }}')"
-                                    class="text-xs text-rose-600 font-medium hover:underline cursor-pointer">
-                                    Delete
-                                </button>
-                            </div>
+                            @if($user->status === 'deleted')
+                                <div class="flex items-center gap-2">
+                                    <button type="button"
+                                        onclick="event.stopPropagation(); confirmRecover('{{ route('admin.users.recover', $user->id) }}', '{{ $user->name ?: 'User' }}')"
+                                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-2xs flex items-center gap-1 cursor-pointer"
+                                        title="Recover & Restore Account">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                        <span>Recover</span>
+                                    </button>
+                                    <button type="button"
+                                        onclick="event.stopPropagation(); confirmPermanentDelete('{{ route('admin.users.force_delete', $user->id) }}', '{{ $user->name ?: 'User' }}')"
+                                        class="px-2 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                                        title="Purge Forever">
+                                        <span>Purge</span>
+                                    </button>
+                                </div>
+                            @else
+                                <div class="flex items-center gap-3">
+                                    <button type="button"
+                                        onclick="event.stopPropagation(); openEditModal({{ json_encode($user->only(['id', 'name', 'email', 'mobile', 'status', 'avatar'])) }})"
+                                        class="text-xs text-primary font-medium hover:underline cursor-pointer">
+                                        Edit User
+                                    </button>
+                                    <button type="button"
+                                        onclick="event.stopPropagation(); confirmDelete('{{ route('admin.users.destroy', $user->id) }}', '{{ $user->name ?: 'User' }}')"
+                                        class="text-xs text-rose-600 font-medium hover:underline cursor-pointer">
+                                        Delete
+                                    </button>
+                                </div>
+                            @endif
                         </div>
 
                     </div>
@@ -1085,6 +1125,28 @@
                 };
                 reader.readAsDataURL(input.files[0]);
             }
+        }
+
+        function confirmRecover(actionUrl, name) {
+            confirmAction({
+                actionUrl: actionUrl,
+                title: 'Recover User Account',
+                message: `Are you sure you want to restore and recover "${name}"? The user will be reactivated and will be able to log in again with all their shops.`,
+                buttonText: 'Recover Account',
+                variant: 'info',
+                method: 'POST'
+            });
+        }
+
+        function confirmPermanentDelete(actionUrl, name) {
+            confirmAction({
+                actionUrl: actionUrl,
+                title: 'Permanently Purge Account',
+                message: `Warning: This will permanently delete "${name}" and all associated shop data from the database forever. This action cannot be undone!`,
+                buttonText: 'Purge Forever',
+                variant: 'danger',
+                method: 'DELETE'
+            });
         }
 
         document.addEventListener('DOMContentLoaded', function () {
