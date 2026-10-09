@@ -777,8 +777,8 @@
   "lifetime_never_expires": "Never expires",
   "whats_included": "What's Included",
   "lifetime_addons_hint": "Need more shops or a website? Add-ons work with your lifetime plan.",
-  "browse_addons": "Browse Add-ons"
-    "whatsapp_messages": "WhatsApp Messages",
+  "browse_addons": "Browse Add-ons",
+  "whatsapp_messages": "WhatsApp Messages",
   "whatsapp_messages_desc": "Automatically send invoices, payment receipts and due reminders to your customers and suppliers on WhatsApp.",
   "wa_credits_left": "Messages left",
   "wa_buy_more": "Buy more",
@@ -868,4 +868,3 @@
   "wa_status_read": "Read",
   "wa_status_failed": "Failed"
 }
-
