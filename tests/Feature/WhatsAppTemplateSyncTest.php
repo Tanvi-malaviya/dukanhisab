@@ -261,4 +261,100 @@ class WhatsAppTemplateSyncTest extends TestCase
         $this->template(['language' => 'gu', 'meta_template_name' => 'due_reminder_gu', 'meta_language_code' => 'gu']);
         $this->assertSame(1, WhatsAppTemplate::sendable()->count());
     }
+
+    // ------------------------------------------------------------ test send with real Meta templates
+
+    private function metaList(): array
+    {
+        return ['data' => [
+            ['id' => '1', 'name' => 'due_reminder_en', 'language' => 'en', 'status' => 'APPROVED', 'category' => 'UTILITY',
+                'components' => [['type' => 'BODY', 'text' => 'Hello {{1}}, your pending balance at {{2}} is {{3}}.'],
+                    ['type' => 'BUTTONS', 'buttons' => [['type' => 'URL', 'text' => 'Pay Now', 'url' => 'https://x.test/pay/{{1}}']]]]],
+            ['id' => '2', 'name' => 'order_update', 'language' => 'en_US', 'status' => 'APPROVED', 'category' => 'UTILITY',
+                'components' => [['type' => 'HEADER', 'format' => 'TEXT', 'text' => 'Order {{1}}'],
+                    ['type' => 'BODY', 'text' => 'Hi {{party_name}}, your order from {{shop_name}} is ready.'],
+                    ['type' => 'BUTTONS', 'buttons' => [['type' => 'QUICK_REPLY', 'text' => 'OK'], ['type' => 'URL', 'text' => 'Track', 'url' => 'https://x.test/t/{{1}}']]]]],
+            ['id' => '3', 'name' => 'invoice_pdf', 'language' => 'hi', 'status' => 'APPROVED', 'category' => 'UTILITY',
+                'components' => [['type' => 'HEADER', 'format' => 'DOCUMENT'], ['type' => 'BODY', 'text' => 'Invoice {{1}}']]],
+            ['id' => '4', 'name' => 'promo', 'language' => 'en', 'status' => 'REJECTED', 'category' => 'MARKETING',
+                'components' => [['type' => 'BODY', 'text' => 'Sale!']]],
+        ]];
+    }
+
+    public function test_meta_templates_lists_real_templates_with_links(): void
+    {
+        $t = $this->template();
+        Http::fake(['graph.facebook.com/*' => Http::response($this->metaList())]);
+
+        $res = $this->getJson(route('admin.settings.whatsapp.meta_templates'))->assertOk()->json('templates');
+
+        $this->assertSame('due_reminder_en', $res[0]['name']);           // approved + linked first
+        $this->assertSame($t->id, $res[0]['linked_id']);
+        $this->assertSame('Due reminder', $res[0]['linked_event']);
+        $this->assertSame('promo', end($res)['name']);                     // not approved last
+        $this->assertSame('DOCUMENT', collect($res)->firstWhere('name', 'invoice_pdf')['header_format']);
+    }
+
+    public function test_meta_templates_needs_the_waba_id(): void
+    {
+        AppSetting::set('whatsapp_waba_id', '');
+        $this->getJson(route('admin.settings.whatsapp.meta_templates'))->assertStatus(422)->assertJsonPath('success', false);
+    }
+
+    public function test_test_send_of_a_linked_template_uses_its_variable_samples(): void
+    {
+        AppSetting::set('whatsapp_phone_number_id', '106540352242922');
+        $this->template();
+        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.T']]])]);
+
+        $this->postJson(route('admin.settings.whatsapp.test_send'), ['phone' => '9876543210', 'template_name' => 'due_reminder_en', 'language_code' => 'en'])
+            ->assertOk()->assertJsonPath('success', true);
+
+        Http::assertSent(fn (HttpRequest $r) => str_ends_with($r->url(), '/messages')
+            && array_column(collect($r['template']['components'])->firstWhere('type', 'body')['parameters'], 'text') === ['Ramesh', 'Shree Traders', '₹1,200.00']);
+    }
+
+    public function test_test_send_of_an_unlinked_template_fills_named_params_header_and_url_button(): void
+    {
+        AppSetting::set('whatsapp_phone_number_id', '106540352242922');
+        Http::fake([
+            'graph.facebook.com/v23.0/102290129340398/message_templates*' => Http::response($this->metaList()),
+            'graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.T']]]),
+        ]);
+
+        $this->postJson(route('admin.settings.whatsapp.test_send'), ['phone' => '9876543210', 'template_name' => 'order_update', 'language_code' => 'en_US'])
+            ->assertOk()->assertJsonPath('success', true);
+
+        Http::assertSent(function (HttpRequest $r) {
+            if (!str_ends_with($r->url(), '/messages')) {
+                return false;
+            }
+            $c = collect($r['template']['components']);
+
+            return $r['template']['name'] === 'order_update' && $r['template']['language']['code'] === 'en_US'
+                && $c->firstWhere('type', 'header')['parameters'] === [['type' => 'text', 'text' => 'Sample 1']]
+                && $c->firstWhere('type', 'body')['parameters'] === [
+                    ['type' => 'text', 'parameter_name' => 'party_name', 'text' => 'Ramesh'],
+                    ['type' => 'text', 'parameter_name' => 'shop_name', 'text' => 'Shree Traders'],
+                ]
+                && $c->firstWhere('type', 'button')['index'] === '1';
+        });
+    }
+
+    public function test_test_send_requires_media_url_and_approval(): void
+    {
+        AppSetting::set('whatsapp_phone_number_id', '106540352242922');
+        Http::fake(['graph.facebook.com/*' => Http::response($this->metaList())]);
+
+        $this->postJson(route('admin.settings.whatsapp.test_send'), ['phone' => '9876543210', 'template_name' => 'invoice_pdf', 'language_code' => 'hi'])
+            ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'document header'));
+
+        $this->postJson(route('admin.settings.whatsapp.test_send'), ['phone' => '9876543210', 'template_name' => 'promo', 'language_code' => 'en'])
+            ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'only approved'));
+
+        $this->postJson(route('admin.settings.whatsapp.test_send'), ['phone' => '9876543210', 'template_name' => 'nope', 'language_code' => 'en'])
+            ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'not found in Meta'));
+
+        Http::assertNotSent(fn (HttpRequest $r) => str_ends_with($r->url(), '/messages'));
+    }
 }

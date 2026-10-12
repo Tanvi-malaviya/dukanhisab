@@ -11,9 +11,9 @@
     // Badge colours for Meta's template review states.
     $metaStatusClass = fn ($status) => match ($status) {
         'APPROVED' => 'bg-success/15 text-success',
-        'PENDING', 'IN_APPEAL', 'PENDING_DELETION' => 'bg-warning/15 text-warning',
+        'PENDING', 'IN_APPEAL', 'PENDING_DELETION' => 'bg-info/15 text-info',
         'REJECTED', 'DISABLED', 'NOT_IN_META', 'DELETED' => 'bg-danger/15 text-danger',
-        'PAUSED', 'FLAGGED' => 'bg-orange-500/15 text-orange-400',
+        'PAUSED', 'FLAGGED' => 'bg-warning/15 text-warning',
         default => 'bg-secondary/20 text-slate-400',
     };
     $metaStatusLabel = fn ($status) => match ($status) {
@@ -63,7 +63,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
             <span>4. Webhook</span>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Meta API</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/30">Meta API</span>
         </button>
     </div>
 
@@ -75,7 +75,7 @@
         <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                     </div>
                     <div>
@@ -142,7 +142,7 @@
                     <label class="{{ $labelClass }} flex items-center justify-between">
                         <span>Permanent Access Token</span>
                         @if($settings['has_access_token'])
-                            <span class="text-[10px] text-emerald-400 font-mono normal-case">Saved ({{ $settings['access_token_hint'] }}) — leave blank to keep</span>
+                            <span class="text-[10px] text-success font-mono normal-case">Saved ({{ $settings['access_token_hint'] }}) — leave blank to keep</span>
                         @endif
                     </label>
                     <input type="password" name="whatsapp_access_token" id="whatsapp_access_token" autocomplete="off"
@@ -162,30 +162,38 @@
 
         <!-- Card 2: Send a test message -->
         <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm p-6 space-y-4">
-            <div>
-                <h3 class="font-bold text-white text-sm">Send a Test Message</h3>
-                <p class="text-xs text-slate-400">Uses the saved settings. Meta's <code>hello_world</code> template works on every new number before your own templates are approved.</p>
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-white text-sm">Send a Test Message</h3>
+                    <p class="text-xs text-slate-400">Pick any template that exists in your Meta account — variables are filled with sample values. Only <strong>approved</strong> templates can be sent.</p>
+                </div>
+                <button type="button" id="btn-refresh-meta-templates" onclick="loadMetaTemplates()"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-all flex items-center gap-2 cursor-pointer shrink-0">
+                    <svg id="meta-templates-spinner" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>Refresh from Meta</span>
+                </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="{{ $labelClass }}">Mobile Number</label>
                     <input type="text" id="test_phone" placeholder="9876543210" class="{{ $inputClass }} font-mono">
                 </div>
-                <div>
-                    <label class="{{ $labelClass }}">Template</label>
-                    <select id="test_template" class="{{ $inputClass }}">
-                        <option value="hello_world">hello_world (Meta sample)</option>
-                        @foreach($templates as $t)
-                            <option value="{{ $t->id }}" data-document="{{ $t->has_document ? 1 : 0 }}">
-                                {{ $events[$t->key]['label'] ?? $t->key }} — {{ $languages[$t->language] ?? $t->language }}
-                            </option>
-                        @endforeach
+                <div class="md:col-span-2">
+                    <label class="{{ $labelClass }}">Template in Meta</label>
+                    <select id="test_template" class="{{ $inputClass }}" onchange="onTestTemplateChange()">
+                        <option value="">Loading templates from Meta...</option>
                     </select>
+                    <span id="meta-templates-note" class="text-[11px] text-slate-500 mt-1 block"></span>
                 </div>
-                <div>
-                    <label class="{{ $labelClass }}">Sample PDF URL <span class="normal-case font-normal">(PDF templates)</span></label>
-                    <input type="url" id="test_document_url" placeholder="https://..." class="{{ $inputClass }}">
-                </div>
+            </div>
+            <div id="test_media_wrap" class="hidden">
+                <label class="{{ $labelClass }}" id="test_media_label">Sample PDF URL</label>
+                <input type="url" id="test_document_url" placeholder="https://..." class="{{ $inputClass }}">
+            </div>
+            <div id="test_preview_wrap" class="hidden">
+                <label class="{{ $labelClass }}">Preview — how the customer sees it</label>
+                <div id="test_preview_bubble" class="max-w-md"></div>
+                <span id="test_preview_meta" class="block mt-2 text-[11px] text-slate-500"></span>
             </div>
             <div class="flex items-center justify-between gap-4">
                 <span id="test-send-result" class="text-xs"></span>
@@ -216,13 +224,13 @@
                         <span class="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-mono">{{ count($templates) }} Registered</span>
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">Create a template here and <strong>Submit to Meta</strong> for review — its status updates live when Meta approves or rejects it. Only approved templates are sent. Shop owners see these read-only.</p>
-                    <p class="text-xs text-slate-400 mt-1">Due reminder Pay Now button: create it in Meta as a <strong>URL button with a dynamic suffix</strong> pointing to <code class="text-emerald-400 font-mono">{{ $payUrlBase }}@{{1}}</code>.</p>
+                    <p class="text-xs text-slate-400 mt-1">Due reminder Pay Now button: create it in Meta as a <strong>URL button with a dynamic suffix</strong> pointing to <code class="text-primary font-mono">{{ $payUrlBase }}@{{1}}</code>.</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <form action="{{ route('admin.settings.whatsapp.templates.sync') }}" method="POST" onsubmit="this.querySelector('button').disabled = true; this.querySelector('span').innerText = 'Syncing...';">
                         @csrf
                         <button type="submit" title="Pull every template's review status from Meta"
-                            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             <span>Sync from Meta</span>
                         </button>
@@ -264,9 +272,9 @@
                                     <span class="block text-slate-500">{{ $t->meta_language_code }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-xs max-w-xs">
-                                    @if($t->has_document)<span class="block text-teal-400 mb-1">📄 INV-1024.pdf</span>@endif
+                                    @if($t->has_document)<span class="block text-primary mb-1">📄 INV-1024.pdf</span>@endif
                                     <span class="whitespace-pre-line">{{ $t->renderBody($sampleValues) }}</span>
-                                    @if($t->has_pay_button)<span class="block mt-1 text-emerald-400 font-semibold">[ 💳 Pay Now ]</span>@endif
+                                    @if($t->has_pay_button)<span class="block mt-1 text-success font-semibold">[ 💳 Pay Now ]</span>@endif
                                 </td>
                                 <td class="px-6 py-4 text-xs" data-meta-row="{{ $t->id }}">
                                     <span data-meta-badge class="inline-flex px-2 py-0.5 rounded-full font-semibold whitespace-nowrap {{ $metaStatusClass($t->meta_status) }}">{{ $metaStatusLabel($t->meta_status) }}</span>
@@ -282,8 +290,9 @@
                                 </td>
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
                                     @if(!$t->meta_template_id || $t->canEditInMeta())
-                                        <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.submit', $t->id) }}', title: '{{ $t->meta_template_id ? 'Resubmit to Meta' : 'Submit to Meta' }}', message: 'Send “{{ $t->meta_template_name }}” ({{ $t->meta_language_code }}) to Meta for review? It can take from a few minutes up to 24 hours; shops can\'t send it until Meta approves.', buttonText: 'Submit', variant: 'info', method: 'POST' })" class="p-1 text-xs text-emerald-400 hover:underline cursor-pointer">{{ $t->meta_template_id ? 'Resubmit' : 'Submit to Meta' }}</button>
+                                        <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.submit', $t->id) }}', title: '{{ $t->meta_template_id ? 'Resubmit to Meta' : 'Submit to Meta' }}', message: 'Send “{{ $t->meta_template_name }}” ({{ $t->meta_language_code }}) to Meta for review? It can take from a few minutes up to 24 hours; shops can\'t send it until Meta approves.', buttonText: 'Submit', method: 'POST' })" class="p-1 text-xs font-semibold text-primary hover:underline cursor-pointer">{{ $t->meta_template_id ? 'Resubmit' : 'Submit to Meta' }}</button>
                                     @endif
+                                    <button type="button" onclick='openPreviewModal(localPreviewModel(@json($t)), @json($t->meta_template_name . " · " . $t->meta_language_code))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Preview</button>
                                     <button type="button" onclick='openTemplateModal(@json($t))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Edit</button>
                                     <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.destroy', $t->id) }}', title: 'Delete Template', message: 'Delete this template? Shops will stop sending this message in this language.', buttonText: 'Delete', variant: 'danger', method: 'DELETE' })" class="p-1 text-xs text-danger hover:underline cursor-pointer">Delete</button>
                                 </td>
@@ -314,6 +323,7 @@
                                         <span class="block text-slate-500 mt-1">{{ $u['category'] }}</span>
                                     </td>
                                     <td class="px-6 py-3 text-right whitespace-nowrap">
+                                        <button type="button" onclick='openPreviewModal(remotePreviewModel(@json($u)), @json($u["name"] . " · " . $u["language"]))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Preview</button>
                                         <button type="button" onclick='importMetaTemplate(@json($u))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Import</button>
                                     </td>
                                 </tr>
@@ -338,7 +348,7 @@
             </div>
             <div class="bg-card-dark border border-border-dark p-4 rounded-2xl shadow-xs">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Packs</p>
-                <h3 class="text-2xl font-black text-emerald-400 mt-1">{{ $packs->where('status', 'active')->count() }}</h3>
+                <h3 class="text-2xl font-black text-success mt-1">{{ $packs->where('status', 'active')->count() }}</h3>
                 <p class="text-[11px] text-slate-400 mt-1">Visible to shop owners</p>
             </div>
             <div class="bg-card-dark border border-border-dark p-4 rounded-2xl shadow-xs">
@@ -401,7 +411,7 @@
         <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
@@ -420,7 +430,7 @@
                     <div class="flex items-center gap-2">
                         <div class="relative flex-1">
                             <input type="text" readonly id="tab-webhook-url-input" value="{{ $webhookUrl }}"
-                                class="block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark rounded-xl text-xs text-emerald-400 font-mono select-all">
+                                class="block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark rounded-xl text-xs text-primary font-mono select-all">
                         </div>
                         <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('tab-webhook-url-input').value).then(() => { this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy URL', 2000); })"
                             class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 transition-all cursor-pointer shrink-0">
@@ -458,7 +468,7 @@
                             <div class="flex items-center justify-between mb-2">
                                 <label class="text-xs font-semibold text-slate-400 uppercase">Meta App Secret</label>
                                 @if($settings['has_app_secret'])
-                                    <span class="text-[10px] text-emerald-400 font-mono">Saved &bull; Leave blank to keep</span>
+                                    <span class="text-[10px] text-success font-mono">Saved &bull; Leave blank to keep</span>
                                 @endif
                             </div>
                             <input type="password" name="whatsapp_app_secret" autocomplete="off"
@@ -518,7 +528,7 @@
                         <span class="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">4</span>
                         <h4 class="text-xs font-bold text-white">Subscribe</h4>
                     </div>
-                    <p class="text-xs text-slate-400">Under Webhook fields, click <strong>Manage</strong> and subscribe to <code class="text-teal-400 font-mono text-[11px]">messages</code>, <code class="text-teal-400 font-mono text-[11px]">message_template_status_update</code> and <code class="text-teal-400 font-mono text-[11px]">template_category_update</code>.</p>
+                    <p class="text-xs text-slate-400">Under Webhook fields, click <strong>Manage</strong> and subscribe to <code class="text-primary font-mono text-[11px]">messages</code>, <code class="text-primary font-mono text-[11px]">message_template_status_update</code> and <code class="text-primary font-mono text-[11px]">template_category_update</code>.</p>
                 </div>
             </div>
         </div>
@@ -582,12 +592,8 @@
                 </label>
             </div>
             <div>
-                <label class="{{ $labelClass }}">Preview with sample data</label>
-                <div class="rounded-xl bg-secondary/20 border border-border-dark p-4 text-sm text-slate-200 max-w-sm">
-                    <span id="tpl_preview_doc" class="hidden block text-teal-400 text-xs mb-1">📄 INV-1024.pdf</span>
-                    <span id="tpl_preview" class="whitespace-pre-line"></span>
-                    <span id="tpl_preview_pay" class="hidden block mt-2 text-center text-emerald-400 font-semibold text-xs border-t border-border-dark pt-2">💳 Pay Now</span>
-                </div>
+                <label class="{{ $labelClass }}">Preview — how the customer sees it (sample data)</label>
+                <div id="tpl_preview_bubble" class="max-w-md"></div>
             </div>
             <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
                 <x-button type="button" onclick="closeModal('templateModal')" variant="secondary">Cancel</x-button>
@@ -597,6 +603,59 @@
         </form>
     </div>
 </div>
+
+<!-- Modal: Template preview -->
+<div id="previewModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('previewModal')"></div>
+    <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden">
+        <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
+            <div>
+                <h3 class="text-sm font-semibold text-white">Template Preview</h3>
+                <p id="previewModalName" class="text-[11px] text-slate-400 font-mono"></p>
+            </div>
+            <button type="button" onclick="closeModal('previewModal')" class="text-slate-400 hover:text-white cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="p-5">
+            <div id="previewModalBubble"></div>
+            <p class="text-[11px] text-slate-500 mt-3">Shown with sample values. The real message uses each customer's details.</p>
+        </div>
+    </div>
+</div>
+
+<!-- WhatsApp chat look for template previews (WhatsApp's own light / dark colours) -->
+<style>
+    .wa-chat { background: #efeae2; border-radius: 14px; overflow: hidden; border: 1px solid #e2ddd5; }
+    .wa-chat-top { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #008069; color: #fff; }
+    .wa-chat-avatar { width: 30px; height: 30px; border-radius: 9999px; background: #dfe5e7; color: #008069; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+    .wa-chat-name { font-size: 13px; font-weight: 600; line-height: 1.1; color: #fff; }
+    .wa-chat-sub { font-size: 10px; opacity: .85; color: #fff; }
+    .wa-chat-body { padding: 14px 12px 16px; }
+    .wa-bubble { position: relative; max-width: 300px; background: #fff; color: #111b21; border-radius: 0 8px 8px 8px; box-shadow: 0 1px .5px rgba(11, 20, 26, .13); font-size: 13.5px; line-height: 19px; }
+    .wa-bubble::before { content: ""; position: absolute; top: 0; left: -7px; border-top: 0 solid transparent; border-right: 8px solid #fff; border-bottom: 10px solid transparent; }
+    .wa-media { margin: 3px 3px 0; border-radius: 6px; overflow: hidden; }
+    .wa-doc { display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f6f6; }
+    .wa-doc-icon { width: 30px; height: 36px; border-radius: 4px; background: #e53935; color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; flex-shrink: 0; }
+    .wa-doc-name { font-size: 13px; color: #111b21; font-weight: 500; }
+    .wa-doc-meta { font-size: 11px; color: #667781; }
+    .wa-img { height: 140px; background: #d1d7db; color: #8696a0; display: flex; align-items: center; justify-content: center; }
+    .wa-head-text { padding: 6px 9px 0; font-weight: 700; font-size: 14.5px; }
+    .wa-text { padding: 6px 9px 8px; white-space: pre-wrap; word-wrap: break-word; }
+    .wa-text code { font-family: ui-monospace, monospace; font-size: 12.5px; }
+    .wa-foot { padding: 0 9px 6px; font-size: 12px; color: #667781; }
+    .wa-time { float: right; margin: 4px 0 -4px 10px; font-size: 10.5px; color: #667781; }
+    .wa-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-top: 1px solid #e9edef; color: #027eb5; font-size: 13.5px; font-weight: 500; }
+    .wa-empty { color: #8696a0; font-style: italic; }
+    .dark .wa-chat { background: #0b141a; border-color: #222d34; }
+    .dark .wa-chat-top { background: #202c33; }
+    .dark .wa-chat-avatar { background: #6a7175; color: #e9edef; }
+    .dark .wa-bubble { background: #202c33; color: #e9edef; box-shadow: none; }
+    .dark .wa-bubble::before { border-right-color: #202c33; }
+    .dark .wa-doc { background: #1d282f; }
+    .dark .wa-doc-name { color: #e9edef; }
+    .dark .wa-doc-meta, .dark .wa-foot, .dark .wa-time { color: #8696a0; }
+    .dark .wa-img { background: #2a3942; }
+    .dark .wa-btn { border-top-color: #2a3942; color: #53bdeb; }
+</style>
 
 <!-- Modal: Add / Edit Pack -->
 <div id="packModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
@@ -694,6 +753,7 @@ window.addEventListener('DOMContentLoaded', () => {
     } else {
         switchTab('setup');
     }
+    loadMetaTemplates();
 });
 
 window.addEventListener('hashchange', () => {
@@ -764,14 +824,16 @@ function refreshTemplateForm() {
     }
     document.querySelectorAll('#tpl_variables select').forEach((sel, i) => templateVariables[i] = sel.value);
 
-    const preview = body.replace(/\{\{(\d+)\}\}/g, (m, n) => WA_SAMPLES[templateVariables[n - 1]] ?? m);
-    document.getElementById('tpl_preview').innerText = preview || '—';
-
     const isDueReminder = document.getElementById('tpl_key').value === 'due_reminder';
     document.getElementById('tpl_pay_wrap').classList.toggle('hidden', !isDueReminder);
     if (!isDueReminder) document.getElementById('tpl_pay').checked = false;
-    document.getElementById('tpl_preview_doc').classList.toggle('hidden', !document.getElementById('tpl_doc').checked);
-    document.getElementById('tpl_preview_pay').classList.toggle('hidden', !document.getElementById('tpl_pay').checked);
+
+    document.getElementById('tpl_preview_bubble').innerHTML = renderWaPreview(localPreviewModel({
+        body,
+        variables: templateVariables.slice(0, count),
+        has_document: document.getElementById('tpl_doc').checked,
+        has_pay_button: document.getElementById('tpl_pay').checked,
+    }));
 }
 
 function openPackModal(p = null) {
@@ -788,7 +850,7 @@ function openPackModal(p = null) {
 function showBanner(ok, text) {
     const banner = document.getElementById('connection-test-result');
     banner.className = 'px-6 py-3 border-b text-xs flex items-center justify-between ' +
-        (ok ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/15 border-rose-500/30 text-rose-400');
+        (ok ? 'bg-success/15 border-success/30 text-success' : 'bg-danger/15 border-danger/30 text-danger');
     document.getElementById('connection-test-message').innerText = (ok ? '✓ ' : '✕ ') + text;
 }
 
@@ -827,6 +889,149 @@ async function runConnectionTest() {
     }
 }
 
+// ------------------------------------------------------------ WhatsApp-style preview
+
+const WA_BUTTON_ICONS = {
+    URL: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>',
+    PHONE_NUMBER: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>',
+    QUICK_REPLY: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>',
+    COPY_CODE: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>',
+};
+
+// WhatsApp's own formatting: *bold*, _italic_, ~strike~, ```mono```.
+function waFormat(text) {
+    return escapeHtml(text)
+        .replace(/```([\s\S]+?)```/g, '<code>$1</code>')
+        .replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>')
+        .replace(/(^|[\s(])_([^_\n]+)_/g, '$1<em>$2</em>')
+        .replace(/~([^~\n]+)~/g, '<s>$1</s>');
+}
+
+/**
+ * Draws a template as a WhatsApp chat bubble. model = { headerFormat, headerText, body, footer,
+ * buttons: [{type, text}], fill(name) } — fill() returns the sample for a numbered or named placeholder.
+ */
+function renderWaPreview(model) {
+    const fill = (text) => (text || '').replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (m, name) => model.fill(name) ?? m);
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let media = '';
+    if (model.headerFormat === 'DOCUMENT') {
+        media = `<div class="wa-media"><div class="wa-doc"><span class="wa-doc-icon">PDF</span><span><span class="wa-doc-name block">INV-1024.pdf</span><span class="wa-doc-meta block">1 page · PDF</span></span></div></div>`;
+    } else if (model.headerFormat === 'IMAGE' || model.headerFormat === 'VIDEO') {
+        const icon = model.headerFormat === 'VIDEO'
+            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>'
+            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>';
+        media = `<div class="wa-media"><div class="wa-img"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg></div></div>`;
+    }
+    const headText = model.headerFormat === 'TEXT' && model.headerText ? `<div class="wa-head-text">${waFormat(fill(model.headerText))}</div>` : '';
+    const body = (model.body || '').trim() ? waFormat(fill(model.body)) : '<span class="wa-empty">Type the message body…</span>';
+    const footer = model.footer ? `<div class="wa-foot">${escapeHtml(model.footer)}</div>` : '';
+
+    // WhatsApp shows up to 3 buttons, then folds the rest into "See all options".
+    let buttons = model.buttons || [];
+    if (buttons.length > 3) buttons = [...buttons.slice(0, 2), { type: 'LIST', text: 'See all options' }];
+    const buttonHtml = buttons.map(b => `<div class="wa-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${WA_BUTTON_ICONS[b.type] || '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>'}</svg><span>${escapeHtml(b.text)}</span></div>`).join('');
+
+    return `<div class="wa-chat">
+        <div class="wa-chat-top"><span class="wa-chat-avatar">DH</span><span><span class="wa-chat-name block">DukanHisab</span><span class="wa-chat-sub block">Business account</span></span></div>
+        <div class="wa-chat-body"><div class="wa-bubble">${media}${headText}<div class="wa-text">${body}<span class="wa-time">${now}</span></div>${footer}${buttonHtml}</div></div>
+    </div>`;
+}
+
+// One of our rows (or the form): numbered placeholders filled from its chosen variables.
+function localPreviewModel(t) {
+    const vars = t.variables || [];
+    return {
+        headerFormat: t.has_document ? 'DOCUMENT' : null,
+        body: t.body,
+        buttons: t.has_pay_button ? [{ type: 'URL', text: 'Pay Now' }] : [],
+        fill: (name) => /^\d+$/.test(name) ? WA_SAMPLES[vars[name - 1]] : undefined,
+    };
+}
+
+// A template as Meta holds it: linked ones use their variables' samples, others generic ones.
+function remotePreviewModel(t) {
+    const vars = t.linked_variables || [];
+    return {
+        headerFormat: t.header_format,
+        headerText: t.header_text,
+        body: t.body,
+        footer: t.footer,
+        buttons: t.buttons || [],
+        fill: (name) => /^\d+$/.test(name)
+            ? (WA_SAMPLES[vars[name - 1]] ?? 'Sample ' + name)
+            : (WA_SAMPLES[name] ?? 'Sample ' + name.replace(/_/g, ' ')),
+    };
+}
+
+function openPreviewModal(model, name) {
+    document.getElementById('previewModalName').innerText = name || '';
+    document.getElementById('previewModalBubble').innerHTML = renderWaPreview(model);
+    document.getElementById('previewModal').classList.remove('hidden');
+}
+
+// ------------------------------------------------------------ test send: real Meta templates
+const META_TEMPLATES_URL = "{{ route('admin.settings.whatsapp.meta_templates') }}";
+let metaTemplates = [];
+
+async function loadMetaTemplates() {
+    const select = document.getElementById('test_template');
+    const note = document.getElementById('meta-templates-note');
+    const spinner = document.getElementById('meta-templates-spinner');
+    spinner.classList.add('animate-spin');
+    select.innerHTML = '<option value="">Loading templates from Meta...</option>';
+    note.className = 'text-[11px] text-slate-500 mt-1 block';
+    note.innerText = '';
+    try {
+        const res = await fetch(META_TEMPLATES_URL, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) throw new Error(data.message || 'Could not load templates from Meta.');
+        metaTemplates = data.templates || [];
+        renderMetaTemplateOptions();
+        const approved = metaTemplates.filter(t => t.status === 'APPROVED').length;
+        note.innerText = `${metaTemplates.length} template(s) in Meta, ${approved} approved.`;
+    } catch (e) {
+        metaTemplates = [];
+        select.innerHTML = '<option value="">No templates loaded</option>';
+        note.className = 'text-[11px] text-danger mt-1 block';
+        note.innerText = e.message;
+    } finally {
+        spinner.classList.remove('animate-spin');
+        onTestTemplateChange();
+    }
+}
+
+function renderMetaTemplateOptions() {
+    const select = document.getElementById('test_template');
+    const option = (t, i) => {
+        const status = t.status === 'APPROVED' ? '' : ` — ${metaLabel(t.status)}`;
+        const event = t.linked_event ? ` · ${t.linked_event}` : '';
+        return `<option value="${i}" ${t.status === 'APPROVED' ? '' : 'disabled'}>${escapeHtml(t.name)} (${escapeHtml(t.language)})${escapeHtml(event)}${escapeHtml(status)}</option>`;
+    };
+    const groups = [
+        ['Linked to a message event', metaTemplates.map((t, i) => [t, i]).filter(([t]) => t.linked_id)],
+        ['Other templates in Meta', metaTemplates.map((t, i) => [t, i]).filter(([t]) => !t.linked_id)],
+    ];
+    select.innerHTML = groups.filter(([, items]) => items.length)
+        .map(([label, items]) => `<optgroup label="${label}">${items.map(([t, i]) => option(t, i)).join('')}</optgroup>`).join('')
+        || '<option value="">No templates in Meta yet</option>';
+    const firstApproved = metaTemplates.findIndex(t => t.status === 'APPROVED');
+    if (firstApproved >= 0) select.value = String(firstApproved);
+}
+
+function onTestTemplateChange() {
+    const t = metaTemplates[document.getElementById('test_template').value];
+    const media = t && ['DOCUMENT', 'IMAGE', 'VIDEO'].includes(t.header_format) ? t.header_format : null;
+    document.getElementById('test_media_wrap').classList.toggle('hidden', !media);
+    if (media) {
+        document.getElementById('test_media_label').innerText = 'Sample ' + ({ DOCUMENT: 'PDF', IMAGE: 'image', VIDEO: 'video' })[media] + ' URL (public)';
+    }
+    document.getElementById('test_preview_wrap').classList.toggle('hidden', !t);
+    if (!t) return;
+    document.getElementById('test_preview_bubble').innerHTML = renderWaPreview(remotePreviewModel(t));
+    document.getElementById('test_preview_meta').innerText = [t.category, t.has_pay_button ? 'Pay Now button' : null, t.linked_event ? 'Linked: ' + t.linked_event : 'Not linked to an event — generic samples are used'].filter(Boolean).join(' · ');
+}
+
 async function sendTestMessage() {
     const result = document.getElementById('test-send-result');
     const btn = document.getElementById('btn-test-send');
@@ -834,15 +1039,18 @@ async function sendTestMessage() {
     result.className = 'text-xs text-slate-400';
     result.innerText = 'Sending...';
     try {
+        const t = metaTemplates[document.getElementById('test_template').value];
+        if (!t) throw new Error('Pick an approved template from Meta first.');
         const { ok, message } = await postJson("{{ route('admin.settings.whatsapp.test_send') }}", {
             phone: document.getElementById('test_phone').value.trim(),
-            template_id: document.getElementById('test_template').value,
+            template_name: t.name,
+            language_code: t.language,
             document_url: document.getElementById('test_document_url').value.trim() || null,
         });
-        result.className = 'text-xs ' + (ok ? 'text-emerald-400' : 'text-rose-400');
+        result.className = 'text-xs ' + (ok ? 'text-success' : 'text-danger');
         result.innerText = (ok ? '✓ ' : '✕ ') + message;
     } catch (e) {
-        result.className = 'text-xs text-rose-400';
+        result.className = 'text-xs text-danger';
         result.innerText = '✕ ' + e.message;
     } finally {
         btn.disabled = false;
@@ -855,9 +1063,9 @@ const META_STATUS_URL = "{{ route('admin.settings.whatsapp.templates.statuses') 
 const META_WAITING = ['PENDING', 'IN_APPEAL', 'PENDING_DELETION'];
 const META_CLASS = {
     APPROVED: 'bg-success/15 text-success',
-    PENDING: 'bg-warning/15 text-warning', IN_APPEAL: 'bg-warning/15 text-warning', PENDING_DELETION: 'bg-warning/15 text-warning',
+    PENDING: 'bg-info/15 text-info', IN_APPEAL: 'bg-info/15 text-info', PENDING_DELETION: 'bg-info/15 text-info',
     REJECTED: 'bg-danger/15 text-danger', DISABLED: 'bg-danger/15 text-danger', NOT_IN_META: 'bg-danger/15 text-danger', DELETED: 'bg-danger/15 text-danger',
-    PAUSED: 'bg-orange-500/15 text-orange-400', FLAGGED: 'bg-orange-500/15 text-orange-400',
+    PAUSED: 'bg-warning/15 text-warning', FLAGGED: 'bg-warning/15 text-warning',
 };
 function metaLabel(status) {
     if (!status) return 'Not submitted';
@@ -902,7 +1110,7 @@ function scheduleMetaPoll(waiting) {
     const dot = document.getElementById('meta-live-dot');
     const text = document.getElementById('meta-live-text');
     if (waiting) {
-        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        dot.className = 'w-2 h-2 rounded-full bg-success animate-pulse';
         text.innerText = 'Live — waiting for Meta\'s review. Statuses update here automatically.';
         metaPollTimer = setTimeout(pollMetaStatuses, 15000);
     } else {

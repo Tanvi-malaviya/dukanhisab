@@ -85,6 +85,115 @@ class WhatsAppTemplateSync
     }
 
     /**
+     * Every template currently on the WABA, described for the admin's test-send picker and
+     * marked with the local row it is linked to (same name + language code), if any.
+     */
+    public function remoteTemplates(): array
+    {
+        $this->ensureConfigured();
+
+        $local = WhatsAppTemplate::get(['id', 'key', 'language', 'meta_template_name', 'meta_language_code', 'variables'])
+            ->keyBy(fn ($t) => $t->meta_template_name . '|' . $t->meta_language_code);
+
+        return collect($this->client->listTemplates())
+            ->map(function ($meta) use ($local) {
+                $described = $this->describeRemote($meta);
+                $linked = $local->get($meta['name'] . '|' . $meta['language']);
+                $described['linked_id'] = $linked?->id;
+                $described['linked_event'] = $linked ? (WhatsAppTemplate::EVENTS[$linked->key]['label'] ?? $linked->key) : null;
+                $described['linked_variables'] = $linked?->variables ?? [];
+
+                return $described;
+            })
+            ->sortBy(fn ($t) => [$t['status'] === 'APPROVED' ? 0 : 1, $t['linked_id'] ? 0 : 1, $t['name'], $t['language']])
+            ->values()
+            ->all();
+    }
+
+    /** Finds one template on the WABA by name + language code, with its raw components. */
+    public function findRemote(string $name, string $languageCode): ?array
+    {
+        $this->ensureConfigured();
+
+        foreach ($this->client->listTemplates() as $meta) {
+            if ($meta['name'] === $name && $meta['language'] === $languageCode) {
+                return $meta;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Send-time components for a test of any Meta template: every body / text-header variable
+     * gets a sample value (positional {{1}} or named {{customer_name}}), a media header uses
+     * $mediaUrl, and a dynamic URL button gets the suffix "test".
+     */
+    public static function testComponents(array $meta, ?string $mediaUrl = null): array
+    {
+        $components = [];
+
+        foreach ($meta['components'] ?? [] as $c) {
+            $type = strtoupper($c['type'] ?? '');
+
+            if ($type === 'HEADER') {
+                $format = strtoupper($c['format'] ?? 'TEXT');
+                if (in_array($format, ['DOCUMENT', 'IMAGE', 'VIDEO'], true)) {
+                    if (!$mediaUrl) {
+                        throw new WhatsAppException('This template has a ' . strtolower($format) . ' header — enter a public sample URL for it.');
+                    }
+                    $media = strtolower($format);
+                    $components[] = ['type' => 'header', 'parameters' => [[
+                        'type' => $media,
+                        $media => array_filter(['link' => $mediaUrl, 'filename' => $media === 'document' ? 'INV-1024.pdf' : null]),
+                    ]]];
+                } elseif ($params = self::sampleParameters($c['text'] ?? '')) {
+                    $components[] = ['type' => 'header', 'parameters' => $params];
+                }
+            }
+
+            if ($type === 'BODY' && ($params = self::sampleParameters($c['text'] ?? ''))) {
+                $components[] = ['type' => 'body', 'parameters' => $params];
+            }
+
+            if ($type === 'BUTTONS') {
+                foreach (array_values($c['buttons'] ?? []) as $i => $button) {
+                    if (strtoupper($button['type'] ?? '') === 'URL' && str_contains($button['url'] ?? '', '{{')) {
+                        $components[] = ['type' => 'button', 'sub_type' => 'url', 'index' => (string) $i, 'parameters' => [['type' => 'text', 'text' => 'test']]];
+                    }
+                }
+            }
+        }
+
+        return $components;
+    }
+
+    /** Sample text parameters for the {{n}} / {{name}} placeholders in a component's text. */
+    private static function sampleParameters(string $text): array
+    {
+        preg_match_all('/\{\{\s*([a-z0-9_]+)\s*\}\}/i', $text, $m);
+        $names = array_values(array_unique($m[1]));
+        if (!$names) {
+            return [];
+        }
+
+        $samples = WhatsAppTemplate::sampleValues();
+
+        // Positional templates are filled in {{1}}, {{2}} ... order; named ones carry their name.
+        if (ctype_digit($names[0])) {
+            sort($names, SORT_NUMERIC);
+
+            return array_map(fn ($n) => ['type' => 'text', 'text' => 'Sample ' . $n], $names);
+        }
+
+        return array_map(fn ($n) => [
+            'type' => 'text',
+            'parameter_name' => $n,
+            'text' => (string) ($samples[$n] ?? 'Sample ' . str_replace('_', ' ', $n)),
+        ], $names);
+    }
+
+    /**
      * Sends the template to Meta for review — a new template, or a resubmission of one Meta
      * already holds (approved / rejected / paused). The row goes to PENDING until Meta decides.
      */
@@ -187,12 +296,35 @@ class WhatsAppTemplateSync
             }
         }
 
+        // Header, footer and buttons as Meta holds them — used to draw the chat-bubble preview.
+        $headerFormat = null;
+        $headerText = null;
+        $footer = null;
+        $buttons = [];
+        foreach ($components as $c) {
+            $type = strtoupper($c['type'] ?? '');
+            if ($type === 'HEADER') {
+                $headerFormat = strtoupper($c['format'] ?? 'TEXT');
+                $headerText = $c['text'] ?? null;
+            } elseif ($type === 'FOOTER') {
+                $footer = $c['text'] ?? null;
+            } elseif ($type === 'BUTTONS') {
+                foreach ($c['buttons'] ?? [] as $b) {
+                    $buttons[] = ['type' => strtoupper($b['type'] ?? ''), 'text' => (string) ($b['text'] ?? '')];
+                }
+            }
+        }
+
         return [
             'name' => $meta['name'],
             'language' => $meta['language'],
             'status' => strtoupper((string) $meta['status']),
             'category' => $meta['category'] ?? null,
             'body' => WhatsAppTemplate::bodyFromMetaComponents($components) ?? '',
+            'header_format' => $headerFormat,
+            'header_text' => $headerText,
+            'footer' => $footer,
+            'buttons' => $buttons,
             'has_document' => $hasDocument,
             'has_pay_button' => $hasPayButton,
         ];

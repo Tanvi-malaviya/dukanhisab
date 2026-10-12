@@ -108,6 +108,7 @@ Route::group([
     Route::get('settings/whatsapp', [WhatsAppSettingController::class, 'index'])->name('settings.whatsapp');
     Route::post('settings/whatsapp', [WhatsAppSettingController::class, 'update'])->name('settings.whatsapp.update');
     Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'testConnection'])->name('settings.whatsapp.test');
+    Route::get('settings/whatsapp/meta-templates', [WhatsAppSettingController::class, 'metaTemplates'])->name('settings.whatsapp.meta_templates');
     Route::post('settings/whatsapp/test-send', [WhatsAppSettingController::class, 'sendTest'])->name('settings.whatsapp.test_send');
     Route::post('settings/whatsapp/templates', [WhatsAppSettingController::class, 'storeTemplate'])->name('settings.whatsapp.templates.store');
     Route::post('settings/whatsapp/templates/sync', [WhatsAppSettingController::class, 'syncTemplates'])->name('settings.whatsapp.templates.sync');
