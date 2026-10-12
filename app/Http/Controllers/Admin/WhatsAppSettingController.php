@@ -9,7 +9,9 @@ use App\Models\WhatsAppPack;
 use App\Models\WhatsAppTemplate;
 use App\Services\WhatsApp\WhatsAppClient;
 use App\Services\WhatsApp\WhatsAppException;
+use App\Services\WhatsApp\WhatsAppTemplateSync;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -17,7 +19,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Admin → Settings → WhatsApp: Cloud API credentials for the platform's single DukanHisab
- * number, the fixed message templates (mirroring the ones approved in Meta), and the
+ * number, the fixed message templates (submitted to and synced with Meta), and the
  * message-credit packs shop owners can buy.
  */
 class WhatsAppSettingController extends Controller
@@ -31,6 +33,7 @@ class WhatsAppSettingController extends Controller
             'whatsapp_api_version' => AppSetting::get('whatsapp_api_version') ?: WhatsAppClient::DEFAULT_API_VERSION,
             'whatsapp_phone_number_id' => AppSetting::get('whatsapp_phone_number_id', ''),
             'whatsapp_waba_id' => AppSetting::get('whatsapp_waba_id', ''),
+            'whatsapp_app_id' => AppSetting::get('whatsapp_app_id', ''),
             'whatsapp_webhook_verify_token' => AppSetting::get('whatsapp_webhook_verify_token', ''),
             'has_access_token' => $token !== '',
             'access_token_hint' => $token !== '' ? '••••' . substr($token, -4) : '',
@@ -40,11 +43,11 @@ class WhatsAppSettingController extends Controller
         $templates = WhatsAppTemplate::orderBy('key')->orderBy('language')->get();
         $packs = WhatsAppPack::orderBy('credits')->get();
 
-        // Which (event, language) pairs still have no active template — those messages can't be sent.
+        // Which (event, language) pairs still have no sendable template — those messages can't be sent.
         $missing = [];
         foreach (array_keys(WhatsAppTemplate::EVENTS) as $key) {
             foreach (array_keys(WhatsAppTemplate::LANGUAGES) as $lang) {
-                if (!$templates->first(fn ($t) => $t->key === $key && $t->language === $lang && $t->status === 'active')) {
+                if (!$templates->first(fn ($t) => $t->key === $key && $t->language === $lang && $t->isSendable())) {
                     $missing[] = WhatsAppTemplate::EVENTS[$key]['label'] . ' (' . WhatsAppTemplate::LANGUAGES[$lang] . ')';
                 }
             }
@@ -55,6 +58,7 @@ class WhatsAppSettingController extends Controller
             'templates' => $templates,
             'packs' => $packs,
             'missing' => $missing,
+            'unlinked' => Cache::get(WhatsAppTemplateSync::UNLINKED_CACHE_KEY, []),
             'events' => WhatsAppTemplate::EVENTS,
             'languages' => WhatsAppTemplate::LANGUAGES,
             'variables' => WhatsAppTemplate::VARIABLES,
@@ -71,6 +75,7 @@ class WhatsAppSettingController extends Controller
             'whatsapp_api_version' => ['required', 'regex:/^v\d+\.\d+$/'],
             'whatsapp_phone_number_id' => 'nullable|digits_between:5,30',
             'whatsapp_waba_id' => 'nullable|digits_between:5,30',
+            'whatsapp_app_id' => 'nullable|digits_between:5,30',
             'whatsapp_access_token' => 'nullable|string|max:1000',
             'whatsapp_webhook_verify_token' => 'nullable|string|max:255',
             'whatsapp_app_secret' => 'nullable|string|max:255',
@@ -78,6 +83,11 @@ class WhatsAppSettingController extends Controller
 
         foreach (['whatsapp_enabled', 'whatsapp_api_version', 'whatsapp_phone_number_id', 'whatsapp_waba_id'] as $key) {
             AppSetting::set($key, (string) $request->input($key, ''));
+        }
+
+        // The webhook tab's form doesn't carry the App ID — only overwrite it when it was posted.
+        if ($request->has('whatsapp_app_id')) {
+            AppSetting::set('whatsapp_app_id', (string) $request->input('whatsapp_app_id', ''));
         }
 
         if ($request->has('whatsapp_webhook_verify_token')) {
@@ -197,16 +207,113 @@ class WhatsAppSettingController extends Controller
         $template = WhatsAppTemplate::create($this->validateTemplate($request));
         AuditLog::log('Created WhatsApp template', ['id' => $template->id, 'key' => $template->key, 'language' => $template->language]);
 
-        return back()->with('success', 'WhatsApp template added.');
+        return $this->afterTemplateSave($request, $template, 'WhatsApp template added.');
     }
 
     public function updateTemplate(Request $request, $id)
     {
         $template = WhatsAppTemplate::findOrFail($id);
-        $template->update($this->validateTemplate($request, $template));
+        $template->fill($this->validateTemplate($request, $template));
+
+        // A new name or language is a different template in Meta — forget the old link.
+        if ($template->isDirty(['meta_template_name', 'meta_language_code'])) {
+            $template->fill([
+                'meta_template_id' => null,
+                'meta_status' => null,
+                'meta_category' => null,
+                'meta_rejected_reason' => null,
+                'meta_body' => null,
+                'meta_synced_at' => null,
+            ]);
+        }
+
+        $template->save();
         AuditLog::log('Updated WhatsApp template', ['id' => $template->id, 'key' => $template->key, 'language' => $template->language]);
 
-        return back()->with('success', 'WhatsApp template updated.');
+        return $this->afterTemplateSave($request, $template, 'WhatsApp template updated.');
+    }
+
+    /** "Save & Submit to Meta" in the template modal submits right after saving. */
+    private function afterTemplateSave(Request $request, WhatsAppTemplate $template, string $message)
+    {
+        $redirect = redirect()->to(route('admin.settings.whatsapp') . '#templates');
+
+        if (!$request->boolean('submit_to_meta')) {
+            return $redirect->with('success', $message);
+        }
+
+        try {
+            WhatsAppTemplateSync::fromSettings()->submit($template);
+            AuditLog::log('Submitted WhatsApp template to Meta', ['id' => $template->id, 'name' => $template->meta_template_name]);
+
+            return $redirect->with('success', $message . ' Submitted to Meta for review.');
+        } catch (WhatsAppException $e) {
+            return $redirect->with('error', $message . ' But Meta rejected the submission: ' . $e->getMessage());
+        }
+    }
+
+    /** Sends one template to Meta for review (new, or a resubmission after edits / rejection). */
+    public function submitTemplate($id)
+    {
+        $template = WhatsAppTemplate::findOrFail($id);
+        $redirect = redirect()->to(route('admin.settings.whatsapp') . '#templates');
+
+        try {
+            WhatsAppTemplateSync::fromSettings()->submit($template);
+        } catch (WhatsAppException $e) {
+            return $redirect->with('error', 'Meta did not accept the template: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp template submit error: ' . $e->getMessage());
+
+            return $redirect->with('error', 'Could not submit the template: ' . $e->getMessage());
+        }
+
+        AuditLog::log('Submitted WhatsApp template to Meta', ['id' => $template->id, 'name' => $template->meta_template_name]);
+
+        return $redirect->with('success', "“{$template->meta_template_name}” submitted to Meta — status: {$template->meta_status}. You'll see the result here as soon as Meta reviews it.");
+    }
+
+    /** Pulls every template's review status from Meta. */
+    public function syncTemplates()
+    {
+        $redirect = redirect()->to(route('admin.settings.whatsapp') . '#templates');
+
+        try {
+            $result = WhatsAppTemplateSync::fromSettings()->sync();
+        } catch (WhatsAppException $e) {
+            return $redirect->with('error', 'Sync failed: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp template sync error: ' . $e->getMessage());
+
+            return $redirect->with('error', 'Sync failed: ' . $e->getMessage());
+        }
+
+        AuditLog::log('Synced WhatsApp templates from Meta', ['updated' => $result['updated'], 'not_in_meta' => $result['not_in_meta'], 'unlinked' => count($result['unlinked'])]);
+
+        $message = "Synced with Meta: {$result['updated']} template(s) updated";
+        if ($result['not_in_meta']) {
+            $message .= ", {$result['not_in_meta']} not found in Meta";
+        }
+        if ($result['unlinked']) {
+            $message .= ', ' . count($result['unlinked']) . ' in Meta not added here yet';
+        }
+
+        return $redirect->with('success', $message . '.');
+    }
+
+    /** Current Meta review state of every template — polled by the page so webhook updates show live. */
+    public function templateStatuses()
+    {
+        return response()->json([
+            'templates' => WhatsAppTemplate::get(['id', 'meta_status', 'meta_category', 'meta_rejected_reason', 'meta_synced_at'])
+                ->map(fn ($t) => [
+                    'id' => $t->id,
+                    'meta_status' => $t->meta_status,
+                    'meta_category' => $t->meta_category,
+                    'meta_rejected_reason' => $t->meta_rejected_reason,
+                    'meta_synced_at' => $t->meta_synced_at?->diffForHumans(),
+                ]),
+        ]);
     }
 
     public function destroyTemplate($id)

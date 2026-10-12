@@ -8,6 +8,19 @@
 @php
     $inputClass = 'block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white';
     $labelClass = 'block text-xs font-semibold text-slate-400 uppercase mb-2';
+    // Badge colours for Meta's template review states.
+    $metaStatusClass = fn ($status) => match ($status) {
+        'APPROVED' => 'bg-success/15 text-success',
+        'PENDING', 'IN_APPEAL', 'PENDING_DELETION' => 'bg-warning/15 text-warning',
+        'REJECTED', 'DISABLED', 'NOT_IN_META', 'DELETED' => 'bg-danger/15 text-danger',
+        'PAUSED', 'FLAGGED' => 'bg-orange-500/15 text-orange-400',
+        default => 'bg-secondary/20 text-slate-400',
+    };
+    $metaStatusLabel = fn ($status) => match ($status) {
+        null => 'Not submitted',
+        'NOT_IN_META' => 'Not in Meta',
+        default => ucwords(strtolower(str_replace('_', ' ', $status))),
+    };
 @endphp
 <div class="space-y-3 w-full">
 
@@ -114,6 +127,14 @@
                         <input type="text" name="whatsapp_waba_id" id="whatsapp_waba_id"
                             value="{{ old('whatsapp_waba_id', $settings['whatsapp_waba_id']) }}" placeholder="e.g. 102290129340398"
                             class="{{ $inputClass }} font-mono">
+                        <span class="text-[11px] text-slate-500 mt-1 block">Needed to submit and sync message templates with Meta.</span>
+                    </div>
+                    <div>
+                        <label class="{{ $labelClass }}">Meta App ID <span class="normal-case font-normal">(for PDF-header templates)</span></label>
+                        <input type="text" name="whatsapp_app_id" id="whatsapp_app_id"
+                            value="{{ old('whatsapp_app_id', $settings['whatsapp_app_id']) }}" placeholder="e.g. 1234567890123456"
+                            class="{{ $inputClass }} font-mono">
+                        <span class="text-[11px] text-slate-500 mt-1 block">Meta App &rarr; App Settings &rarr; Basic. Used to upload the sample PDF Meta requires for document headers.</span>
                     </div>
                 </div>
 
@@ -127,7 +148,7 @@
                     <input type="password" name="whatsapp_access_token" id="whatsapp_access_token" autocomplete="off"
                         placeholder="{{ $settings['has_access_token'] ? 'Enter a new token only to replace the saved one' : 'System User access token (EAAG...)' }}"
                         class="{{ $inputClass }} font-mono">
-                    <span class="text-[11px] text-slate-500 mt-1 block">Create it in Business Settings &rarr; System Users with the <code>whatsapp_business_messaging</code> permission. Stored encrypted.</span>
+                    <span class="text-[11px] text-slate-500 mt-1 block">Create it in Business Settings &rarr; System Users with the <code>whatsapp_business_messaging</code> and <code>whatsapp_business_management</code> permissions (the second one lets the panel submit and sync templates). Stored encrypted.</span>
                 </div>
 
 
@@ -194,10 +215,24 @@
                         <span>Message Templates</span>
                         <span class="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-mono">{{ count($templates) }} Registered</span>
                     </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Add each template only after Meta approves it, with exactly the same name, language and body. Shop owners see these read-only.</p>
+                    <p class="text-xs text-slate-400 mt-0.5">Create a template here and <strong>Submit to Meta</strong> for review — its status updates live when Meta approves or rejects it. Only approved templates are sent. Shop owners see these read-only.</p>
                     <p class="text-xs text-slate-400 mt-1">Due reminder Pay Now button: create it in Meta as a <strong>URL button with a dynamic suffix</strong> pointing to <code class="text-emerald-400 font-mono">{{ $payUrlBase }}@{{1}}</code>.</p>
                 </div>
-                <x-button type="button" onclick="openTemplateModal()" variant="primary" class="whitespace-nowrap shrink-0">+ Add Template</x-button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <form action="{{ route('admin.settings.whatsapp.templates.sync') }}" method="POST" onsubmit="this.querySelector('button').disabled = true; this.querySelector('span').innerText = 'Syncing...';">
+                        @csrf
+                        <button type="submit" title="Pull every template's review status from Meta"
+                            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span>Sync from Meta</span>
+                        </button>
+                    </form>
+                    <x-button type="button" onclick="openTemplateModal()" variant="primary" class="whitespace-nowrap">+ Add Template</x-button>
+                </div>
+            </div>
+            <div class="px-6 py-2 border-b border-border-dark text-[11px] text-slate-500 flex items-center gap-2">
+                <span id="meta-live-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                <span id="meta-live-text">Review results arrive from Meta through the webhook (subscribe to <code>message_template_status_update</code>).</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -207,6 +242,7 @@
                             <th class="px-6 py-3">Language</th>
                             <th class="px-6 py-3">Meta Template</th>
                             <th class="px-6 py-3">Preview</th>
+                            <th class="px-6 py-3">Meta Review</th>
                             <th class="px-6 py-3">Status</th>
                             <th class="px-6 py-3 text-right">Actions</th>
                         </tr>
@@ -232,21 +268,61 @@
                                     <span class="whitespace-pre-line">{{ $t->renderBody($sampleValues) }}</span>
                                     @if($t->has_pay_button)<span class="block mt-1 text-emerald-400 font-semibold">[ 💳 Pay Now ]</span>@endif
                                 </td>
+                                <td class="px-6 py-4 text-xs" data-meta-row="{{ $t->id }}">
+                                    <span data-meta-badge class="inline-flex px-2 py-0.5 rounded-full font-semibold whitespace-nowrap {{ $metaStatusClass($t->meta_status) }}">{{ $metaStatusLabel($t->meta_status) }}</span>
+                                    <span data-meta-category class="block text-slate-500 mt-1 {{ $t->meta_category ? '' : 'hidden' }}">{{ $t->meta_category }}</span>
+                                    <span data-meta-reason class="block text-danger mt-1 max-w-[12rem] {{ $t->meta_rejected_reason ? '' : 'hidden' }}">{{ $t->meta_rejected_reason ? 'Reason: ' . $t->meta_rejected_reason : '' }}</span>
+                                    @if($t->differsFromMeta())
+                                        <span class="block text-warning mt-1">Edited here — resubmit</span>
+                                    @endif
+                                    <span data-meta-synced class="block text-slate-600 mt-1">{{ $t->meta_synced_at?->diffForHumans() }}</span>
+                                </td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $t->status === 'active' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger' }}">{{ ucfirst($t->status) }}</span>
                                 </td>
                                 <td class="px-6 py-4 text-right whitespace-nowrap">
+                                    @if(!$t->meta_template_id || $t->canEditInMeta())
+                                        <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.submit', $t->id) }}', title: '{{ $t->meta_template_id ? 'Resubmit to Meta' : 'Submit to Meta' }}', message: 'Send “{{ $t->meta_template_name }}” ({{ $t->meta_language_code }}) to Meta for review? It can take from a few minutes up to 24 hours; shops can\'t send it until Meta approves.', buttonText: 'Submit', variant: 'info', method: 'POST' })" class="p-1 text-xs text-emerald-400 hover:underline cursor-pointer">{{ $t->meta_template_id ? 'Resubmit' : 'Submit to Meta' }}</button>
+                                    @endif
                                     <button type="button" onclick='openTemplateModal(@json($t))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Edit</button>
                                     <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.destroy', $t->id) }}', title: 'Delete Template', message: 'Delete this template? Shops will stop sending this message in this language.', buttonText: 'Delete', variant: 'danger', method: 'DELETE' })" class="p-1 text-xs text-danger hover:underline cursor-pointer">Delete</button>
                                 </td>
                             </tr>
                         @empty
-                            <x-empty-state colspan="6" title="No templates yet" message="Add the templates you have approved in Meta WhatsApp Manager." />
+                            <x-empty-state colspan="7" title="No templates yet" message="Add a template and submit it to Meta, or click Sync from Meta to pull the ones you already have." />
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
+
+        @if(count($unlinked))
+            <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-border-dark bg-secondary/10">
+                    <h3 class="font-bold text-white text-sm">In Meta, not added here ({{ count($unlinked) }})</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Found in your WhatsApp Business Account during the last sync. Import one to pick its event and map its &#123;&#123;n&#125;&#125; variables.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <tbody class="divide-y divide-border-dark text-sm text-slate-300">
+                            @foreach($unlinked as $u)
+                                <tr class="align-top">
+                                    <td class="px-6 py-3 text-xs font-mono">{{ $u['name'] }}<span class="block text-slate-500">{{ $u['language'] }}</span></td>
+                                    <td class="px-6 py-3 text-xs max-w-md whitespace-pre-line">{{ $u['body'] }}</td>
+                                    <td class="px-6 py-3 text-xs">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full font-semibold {{ $metaStatusClass($u['status']) }}">{{ $metaStatusLabel($u['status']) }}</span>
+                                        <span class="block text-slate-500 mt-1">{{ $u['category'] }}</span>
+                                    </td>
+                                    <td class="px-6 py-3 text-right whitespace-nowrap">
+                                        <button type="button" onclick='importMetaTemplate(@json($u))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Import</button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
     </div>
 
     <!-- ========================================== -->
@@ -442,7 +518,7 @@
                         <span class="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">4</span>
                         <h4 class="text-xs font-bold text-white">Subscribe</h4>
                     </div>
-                    <p class="text-xs text-slate-400">Under Webhook fields, click <strong>Manage</strong> and subscribe to <code class="text-teal-400 font-mono text-[11px]">messages</code>.</p>
+                    <p class="text-xs text-slate-400">Under Webhook fields, click <strong>Manage</strong> and subscribe to <code class="text-teal-400 font-mono text-[11px]">messages</code>, <code class="text-teal-400 font-mono text-[11px]">message_template_status_update</code> and <code class="text-teal-400 font-mono text-[11px]">template_category_update</code>.</p>
                 </div>
             </div>
         </div>
@@ -483,6 +559,7 @@
                 <div>
                     <label class="{{ $labelClass }}">Meta Template Name</label>
                     <input type="text" name="meta_template_name" id="tpl_meta_name" required placeholder="due_reminder_gu" class="{{ $inputClass }} font-mono">
+                    <span class="text-[11px] text-slate-500 mt-1 block">Lowercase, numbers and underscores. Changing it later creates a new template in Meta.</span>
                 </div>
                 <div>
                     <label class="{{ $labelClass }}">Meta Language Code</label>
@@ -490,7 +567,7 @@
                 </div>
             </div>
             <div>
-                <label class="{{ $labelClass }}">Body (exactly as approved, with &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125; ...)</label>
+                <label class="{{ $labelClass }}">Body (with &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125; ... — sent to Meta with the sample values as examples)</label>
                 <textarea name="body" id="tpl_body" rows="4" required maxlength="1024" oninput="refreshTemplateForm()" class="{{ $inputClass }}"></textarea>
             </div>
             <div id="tpl_variables" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -514,7 +591,8 @@
             </div>
             <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
                 <x-button type="button" onclick="closeModal('templateModal')" variant="secondary">Cancel</x-button>
-                <x-button type="submit" variant="primary">Save Template</x-button>
+                <x-button type="submit" variant="secondary">Save Only</x-button>
+                <x-button type="submit" name="submit_to_meta" value="1" variant="primary">Save &amp; Submit to Meta</x-button>
             </div>
         </form>
     </div>
@@ -651,6 +729,17 @@ function openTemplateModal(t = null) {
     document.getElementById('templateModal').classList.remove('hidden');
 }
 
+// Prefills the Add modal from a template found only in Meta; the admin picks the event and variables.
+function importMetaTemplate(u) {
+    const appLanguage = Object.keys(WA_META_LANG).find(k => u.language === k || u.language.startsWith(k + '_')) || 'en';
+    openTemplateModal({
+        key: 'sale_invoice', language: appLanguage,
+        meta_template_name: u.name, meta_language_code: u.language,
+        body: u.body, variables: [], has_document: u.has_document, has_pay_button: u.has_pay_button, status: 'active',
+    });
+    document.getElementById('templateModalTitle').innerText = 'Import Template from Meta';
+}
+
 function suggestMetaLanguage() {
     document.getElementById('tpl_meta_lang').value = WA_META_LANG[document.getElementById('tpl_language').value] || 'en';
 }
@@ -759,6 +848,72 @@ async function sendTestMessage() {
         btn.disabled = false;
     }
 }
+
+// Live Meta review status: while any template is waiting on Meta, poll our own DB (which the
+// webhook keeps current) and update the badges in place.
+const META_STATUS_URL = "{{ route('admin.settings.whatsapp.templates.statuses') }}";
+const META_WAITING = ['PENDING', 'IN_APPEAL', 'PENDING_DELETION'];
+const META_CLASS = {
+    APPROVED: 'bg-success/15 text-success',
+    PENDING: 'bg-warning/15 text-warning', IN_APPEAL: 'bg-warning/15 text-warning', PENDING_DELETION: 'bg-warning/15 text-warning',
+    REJECTED: 'bg-danger/15 text-danger', DISABLED: 'bg-danger/15 text-danger', NOT_IN_META: 'bg-danger/15 text-danger', DELETED: 'bg-danger/15 text-danger',
+    PAUSED: 'bg-orange-500/15 text-orange-400', FLAGGED: 'bg-orange-500/15 text-orange-400',
+};
+function metaLabel(status) {
+    if (!status) return 'Not submitted';
+    if (status === 'NOT_IN_META') return 'Not in Meta';
+    return status.toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+let metaPollTimer = null;
+let metaWasWaiting = {};
+async function pollMetaStatuses() {
+    let data;
+    try {
+        const res = await fetch(META_STATUS_URL, { headers: { 'Accept': 'application/json' } });
+        data = await res.json();
+    } catch (e) {
+        return scheduleMetaPoll(true);
+    }
+    let changed = false;
+    (data.templates || []).forEach(t => {
+        const cell = document.querySelector(`[data-meta-row="${t.id}"]`);
+        if (!cell) return;
+        const badge = cell.querySelector('[data-meta-badge]');
+        if (metaWasWaiting[t.id] && !META_WAITING.includes(t.meta_status)) changed = true;
+        metaWasWaiting[t.id] = META_WAITING.includes(t.meta_status);
+        badge.className = 'inline-flex px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ' + (META_CLASS[t.meta_status] || 'bg-secondary/20 text-slate-400');
+        badge.innerText = metaLabel(t.meta_status);
+        const cat = cell.querySelector('[data-meta-category]');
+        cat.innerText = t.meta_category || '';
+        cat.classList.toggle('hidden', !t.meta_category);
+        const reason = cell.querySelector('[data-meta-reason]');
+        reason.innerText = t.meta_rejected_reason ? 'Reason: ' + t.meta_rejected_reason : '';
+        reason.classList.toggle('hidden', !t.meta_rejected_reason);
+        cell.querySelector('[data-meta-synced]').innerText = t.meta_synced_at || '';
+    });
+    // A decision just arrived: reload so the Submit / Resubmit actions and missing list catch up.
+    if (changed) {
+        location.hash = 'templates';
+        return location.reload();
+    }
+    scheduleMetaPoll(Object.values(metaWasWaiting).some(Boolean));
+}
+function scheduleMetaPoll(waiting) {
+    const dot = document.getElementById('meta-live-dot');
+    const text = document.getElementById('meta-live-text');
+    if (waiting) {
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        text.innerText = 'Live — waiting for Meta\'s review. Statuses update here automatically.';
+        metaPollTimer = setTimeout(pollMetaStatuses, 15000);
+    } else {
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+    }
+}
+(function initMetaPoll() {
+    const statuses = @json($templates->mapWithKeys(fn ($t) => [$t->id => $t->meta_status]));
+    Object.entries(statuses).forEach(([id, s]) => metaWasWaiting[id] = META_WAITING.includes(s));
+    scheduleMetaPoll(Object.values(metaWasWaiting).some(Boolean));
+})();
 
 // Re-open the modal that failed validation, with what the admin typed.
 @if($errors->any() && old('form_type') === 'template')

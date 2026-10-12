@@ -18,13 +18,26 @@ class WhatsAppTemplate extends Model
         'has_document',
         'has_pay_button',
         'status',
+        'meta_template_id',
+        'meta_status',
+        'meta_category',
+        'meta_rejected_reason',
+        'meta_body',
+        'meta_synced_at',
     ];
 
     protected $casts = [
         'variables' => 'array',
         'has_document' => 'boolean',
         'has_pay_button' => 'boolean',
+        'meta_synced_at' => 'datetime',
     ];
+
+    /** Meta review states in which a template can still be edited and resubmitted. */
+    public const META_EDITABLE_STATUSES = ['APPROVED', 'REJECTED', 'PAUSED'];
+
+    /** Label on the due reminder's Pay Now URL button as submitted to Meta. */
+    public const PAY_BUTTON_TEXT = 'Pay Now';
 
     /**
      * Every message the platform can send, and who receives it. Shop owners toggle these;
@@ -55,6 +68,33 @@ class WhatsAppTemplate extends Model
         'due_amount' => ['label' => 'Pending due', 'sample' => '₹1,200.00'],
         'date' => ['label' => 'Date', 'sample' => '01 Oct 2026'],
     ];
+
+    /**
+     * Templates shops may send with: active here and not blocked in Meta. Rows never submitted or
+     * synced (meta_status null) predate the Meta sync and are trusted as approved.
+     */
+    public function scopeSendable($query)
+    {
+        return $query->where('status', 'active')
+            ->where(fn ($q) => $q->whereNull('meta_status')->orWhere('meta_status', 'APPROVED'));
+    }
+
+    public function isSendable(): bool
+    {
+        return $this->status === 'active' && in_array($this->meta_status, [null, 'APPROVED'], true);
+    }
+
+    /** Submitted before, so a resubmission edits the same Meta template rather than creating one. */
+    public function canEditInMeta(): bool
+    {
+        return $this->meta_template_id !== null && in_array($this->meta_status, self::META_EDITABLE_STATUSES, true);
+    }
+
+    /** The body here was changed after Meta last reported it — it needs resubmitting. */
+    public function differsFromMeta(): bool
+    {
+        return $this->meta_body !== null && trim($this->meta_body) !== trim($this->body);
+    }
 
     public function getRecipientAttribute(): ?string
     {
@@ -113,5 +153,57 @@ class WhatsAppTemplate extends Model
         }
 
         return $components;
+    }
+
+    /**
+     * Components for Meta's template create/edit API: an optional DOCUMENT header (Meta needs an
+     * uploaded sample, passed as $documentHandle), the body with sample values for each {{n}},
+     * and the due reminder's Pay Now URL button with a dynamic suffix.
+     */
+    public function metaComponents(string $payUrlBase, ?string $documentHandle = null): array
+    {
+        $components = [];
+
+        if ($this->has_document) {
+            $components[] = array_filter([
+                'type' => 'HEADER',
+                'format' => 'DOCUMENT',
+                'example' => $documentHandle ? ['header_handle' => [$documentHandle]] : null,
+            ]);
+        }
+
+        $body = ['type' => 'BODY', 'text' => $this->body];
+        $samples = self::sampleValues();
+        $examples = array_map(fn ($name) => (string) ($samples[$name] ?? $name), array_values($this->variables ?? []));
+        if ($examples) {
+            $body['example'] = ['body_text' => [$examples]];
+        }
+        $components[] = $body;
+
+        if ($this->has_pay_button) {
+            $components[] = [
+                'type' => 'BUTTONS',
+                'buttons' => [[
+                    'type' => 'URL',
+                    'text' => self::PAY_BUTTON_TEXT,
+                    'url' => $payUrlBase . '{{1}}',
+                    'example' => [$payUrlBase . 'sample-token'],
+                ]],
+            ];
+        }
+
+        return $components;
+    }
+
+    /** Body text out of the components Meta returns when listing templates. */
+    public static function bodyFromMetaComponents(array $components): ?string
+    {
+        foreach ($components as $component) {
+            if (strtoupper($component['type'] ?? '') === 'BODY') {
+                return $component['text'] ?? null;
+            }
+        }
+
+        return null;
     }
 }

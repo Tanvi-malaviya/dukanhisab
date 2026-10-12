@@ -110,6 +110,9 @@ Route::group([
     Route::post('settings/whatsapp/test', [WhatsAppSettingController::class, 'testConnection'])->name('settings.whatsapp.test');
     Route::post('settings/whatsapp/test-send', [WhatsAppSettingController::class, 'sendTest'])->name('settings.whatsapp.test_send');
     Route::post('settings/whatsapp/templates', [WhatsAppSettingController::class, 'storeTemplate'])->name('settings.whatsapp.templates.store');
+    Route::post('settings/whatsapp/templates/sync', [WhatsAppSettingController::class, 'syncTemplates'])->name('settings.whatsapp.templates.sync');
+    Route::get('settings/whatsapp/templates/statuses', [WhatsAppSettingController::class, 'templateStatuses'])->name('settings.whatsapp.templates.statuses');
+    Route::post('settings/whatsapp/templates/{id}/submit', [WhatsAppSettingController::class, 'submitTemplate'])->name('settings.whatsapp.templates.submit');
     Route::post('settings/whatsapp/templates/{id}', [WhatsAppSettingController::class, 'updateTemplate'])->name('settings.whatsapp.templates.update');
     Route::delete('settings/whatsapp/templates/{id}', [WhatsAppSettingController::class, 'destroyTemplate'])->name('settings.whatsapp.templates.destroy');
     Route::post('settings/whatsapp/packs', [WhatsAppSettingController::class, 'storePack'])->name('settings.whatsapp.packs.store');
