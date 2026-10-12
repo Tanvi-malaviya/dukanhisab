@@ -9,7 +9,7 @@
     $inputClass = 'block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white';
     $labelClass = 'block text-xs font-semibold text-slate-400 uppercase mb-2';
 @endphp
-<div class="space-y-6 max-w-5xl">
+<div class="space-y-3 w-full">
 
     <!-- 4 Tabs Navigation Bar -->
     <div class="bg-card-dark border border-border-dark p-2 rounded-2xl shadow-xs flex items-center gap-2 overflow-x-auto no-scrollbar">
@@ -43,21 +43,21 @@
             <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-secondary/20 text-slate-400">{{ count($packs) }}</span>
         </button>
 
-        <!-- Tab 4: Webhook Setup & Information -->
+        <!-- Tab 4: Webhook Setup -->
         <button type="button" onclick="switchTab('webhook')" id="tab-btn-webhook"
             class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-secondary/15 hover:bg-secondary/30 text-slate-400 hover:text-white border border-border-dark/60 transition-all cursor-pointer whitespace-nowrap shrink-0">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
-            <span>4. Webhook Setup & Info</span>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Guide</span>
+            <span>4. Webhook</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Meta API</span>
         </button>
     </div>
 
     <!-- ========================================== -->
     <!-- TAB 1: WHATSAPP SETUP                      -->
     <!-- ========================================== -->
-    <div id="tab-content-setup" class="space-y-6">
+    <div id="tab-content-setup" class="space-y-4">
         <!-- Card 1: Cloud API connection -->
         <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 flex items-center justify-between">
@@ -130,25 +130,7 @@
                     <span class="text-[11px] text-slate-500 mt-1 block">Create it in Business Settings &rarr; System Users with the <code>whatsapp_business_messaging</code> permission. Stored encrypted.</span>
                 </div>
 
-                <div>
-                    <label class="{{ $labelClass }} flex items-center justify-between">
-                        <span>App Secret</span>
-                        @if($settings['has_app_secret'])
-                            <span class="text-[10px] text-emerald-400 font-mono normal-case">Saved — leave blank to keep</span>
-                        @endif
-                    </label>
-                    <input type="password" name="whatsapp_app_secret" id="whatsapp_app_secret" autocomplete="off"
-                        placeholder="{{ $settings['has_app_secret'] ? 'Enter a new secret only to replace the saved one' : 'Meta App → App Settings → Basic → App Secret' }}"
-                        class="{{ $inputClass }} font-mono">
-                    <span class="text-[11px] text-slate-500 mt-1 block">Used to verify that delivery updates really come from Meta. Required for the webhook. Stored encrypted.</span>
-                </div>
 
-                <div>
-                    <label class="{{ $labelClass }}">Webhook Verify Token</label>
-                    <input type="text" name="whatsapp_webhook_verify_token" id="whatsapp_webhook_verify_token"
-                        value="{{ old('whatsapp_webhook_verify_token', $settings['whatsapp_webhook_verify_token']) }}" placeholder="Any random string — you will enter the same value in Meta"
-                        class="{{ $inputClass }} font-mono">
-                </div>
 
                 <div class="flex items-center justify-between pt-4 border-t border-border-dark">
                     <div class="text-xs text-slate-400">Shop owners can only send messages while this is enabled and they have credits.</div>
@@ -335,209 +317,136 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- TAB 4: WEBHOOK SETUP & INFO               -->
+    <!-- TAB 4: WEBHOOK SETUP & LIVE EVENTS         -->
     <!-- ========================================== -->
     <div id="tab-content-webhook" class="hidden space-y-6">
 
-        <!-- EDUCATIONAL SECTION: What is the use of Webhook setup? -->
+        <!-- Webhook Configuration Form Card -->
         <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-border-dark bg-gradient-to-r from-emerald-500/10 via-primary/5 to-transparent">
-                <div class="flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0 mt-0.5">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h2 class="text-base font-bold text-white flex flex-wrap items-center gap-2">
-                            <span>What is the use of Webhook Setup?</span>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 font-semibold border border-emerald-500/30">Webhook સેટઅપ શા માટે જરૂરી છે?</span>
-                        </h2>
-                        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                            Webhook એ <strong>Meta WhatsApp Cloud API</strong> અને તમારા <strong>DukanHisab સર્વર</strong> વચ્ચેનો <strong>રીઅલ-ટાઇમ કનેક્શન પુલ (Real-time Bridge)</strong> છે. જ્યારે DukanHisab પરથી કોઈ ઇન્વોઇસ કે ડ્યુ રિમાઇન્ડર મેસેજ મોકલવામાં આવે છે, ત્યારે Meta તરત સ્વીકારે છે, પરંતુ તે મેસેજ ખરેખર ગ્રાહકના ફોનમાં પહોંચ્યો કે નહીં, વંચાયો કે ફેઈલ થયો તેનો લાઈવ રિપોર્ટ Webhook દ્વારા જ તમારા સર્વર પર પાછો આવે છે.
-                        </p>
+                        <h3 class="font-bold text-white text-sm">Meta WhatsApp Webhook Configuration</h3>
+                        <p class="text-xs text-slate-400">Configure these credentials in your Meta App Dashboard under WhatsApp &rarr; Configuration.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="p-6 space-y-4">
-                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">મુખ્ય 4 ફાયદા અને ઉપયોગ (Key Functions of Webhook):</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- Benefit 1: Real-time Delivery Status -->
-                    <div class="p-4 rounded-xl bg-secondary/10 border border-border-dark/60 space-y-2 hover:border-emerald-500/40 transition-colors">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-7 h-7 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs font-bold">1</span>
-                            <h4 class="font-bold text-white text-xs">રીઅલ-ટાઇમ ડિલિવરી ટ્રેકિંગ (Live Delivery Status)</h4>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            જ્યારે પણ મેસેજ સેન્ડ થાય, ત્યારે વ્હોટ્સએપમાંથી લાઈવ સ્ટેટ્સ અપડેટ સીધું સર્વર પર નોંધાય છે:
-                        </p>
-                        <div class="flex flex-wrap gap-2 text-[11px] pt-1">
-                            <span class="px-2 py-1 rounded-md bg-slate-700/50 text-slate-300">📤 Sent (મોકલાયો)</span>
-                            <span class="px-2 py-1 rounded-md bg-slate-700/50 text-slate-300">📨 Delivered (ડબલ ગ્રે ટીક)</span>
-                            <span class="px-2 py-1 rounded-md bg-sky-500/20 text-sky-400">👁️ Read (બ્લુ ટીક)</span>
-                            <span class="px-2 py-1 rounded-md bg-rose-500/20 text-rose-400">❌ Failed (અસફળ)</span>
-                        </div>
-                    </div>
-
-                    <!-- Benefit 2: Automatic Credit Refund -->
-                    <div class="p-4 rounded-xl bg-secondary/10 border border-border-dark/60 space-y-2 hover:border-emerald-500/40 transition-colors">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">2</span>
-                            <h4 class="font-bold text-white text-xs">ઓટોમેટિક ક્રેડિટ રિફંડ (Auto Refund on Delivery Failure)</h4>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            જો કોઈ ગ્રાહકનો નંબર ખોટો હોય, નંબર વ્હોટ્સએપ પર ન હોય અથવા ફોન સ્વિચ ઓફ હોય, ત્યારે Meta <strong class="text-rose-400">failed</strong> ઇવેન્ટ મોકલે છે. DukanHisab Webhook દ્વારા આ જાણીને <strong>દુકાનદારના ખાતામાં કપાયેલી ૧ મેસેજ ક્રેડિટ આપોઆપ પરત (Refund)</strong> કરી દે છે, જેથી દુકાનદારનું કોઈ નુકસાન ન થાય!
-                        </p>
-                    </div>
-
-                    <!-- Benefit 3: Pay Now & Customer Engagement -->
-                    <div class="p-4 rounded-xl bg-secondary/10 border border-border-dark/60 space-y-2 hover:border-emerald-500/40 transition-colors">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs font-bold">3</span>
-                            <h4 class="font-bold text-white text-xs">ડ્યુ પેમેન્ટ એન્ગેજમેન્ટ (Payment Link & Reports)</h4>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            ડ્યુ રિમાઇન્ડર મેસેજ સાથે મોકલેલ <strong>"💳 Pay Now"</strong> બટન અને કસ્ટમરના રિસ્પોન્સનું ટ્રેકિંગ થાય છે, જેથી દુકાનદારને ખબર પડે કે ગ્રાહકે લિંક જોઈ છે અને ચુકવણીની સ્થિતિ શું છે.
-                        </p>
-                    </div>
-
-                    <!-- Benefit 4: Meta HMAC Security -->
-                    <div class="p-4 rounded-xl bg-secondary/10 border border-border-dark/60 space-y-2 hover:border-emerald-500/40 transition-colors">
-                        <div class="flex items-center gap-2.5">
-                            <span class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold">4</span>
-                            <h4 class="font-bold text-white text-xs">સુરક્ષિત વેરિફિકેશન (HMAC-SHA256 Signature)</h4>
-                        </div>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Meta દરેક વેબહુક પેલોડને તમારા <strong>App Secret</strong> વડે સુરક્ષિત રીતે સાઇન કરે છે (<code class="text-slate-300 font-mono">X-Hub-Signature-256</code>). આનાથી સુનિશ્ચિત થાય છે કે કોઈ ફેક કે બોગસ રિક્વેસ્ટ તમારા સર્વર પર ન આવી શકે.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Webhook Configuration & Credentials Card -->
-        <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm p-6 space-y-5">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-dark pb-4">
+            <div class="p-6 space-y-5">
+                <!-- Callback URL Box -->
                 <div>
-                    <h3 class="font-bold text-white text-sm">Webhook Credentials & Endpoint</h3>
-                    <p class="text-xs text-slate-400">Meta App Dashboard માં WhatsApp ➔ Configuration સેક્શનમાં આ URL અને Verify Token સેટ કરો.</p>
+                    <label class="{{ $labelClass }}">Callback URL</label>
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" readonly id="tab-webhook-url-input" value="{{ $webhookUrl }}"
+                                class="block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark rounded-xl text-xs text-emerald-400 font-mono select-all">
+                        </div>
+                        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('tab-webhook-url-input').value).then(() => { this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy URL', 2000); })"
+                            class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 transition-all cursor-pointer shrink-0">
+                            Copy URL
+                        </button>
+                    </div>
+                    <span class="text-[11px] text-slate-500 mt-1 block">Meta calls this endpoint to verify the handshake (GET) and stream real-time delivery events (POST).</span>
                 </div>
-                <div class="flex items-center gap-2">
-                    @if($settings['has_app_secret'])
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> App Secret Active
-                        </span>
-                    @else
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> App Secret Missing
-                        </span>
-                    @endif
-                </div>
-            </div>
 
-            <!-- Callback URL Row -->
-            <div>
-                <label class="{{ $labelClass }}">1. Webhook Callback URL (Copy & Paste into Meta)</label>
-                <div class="flex items-center gap-2">
-                    <input type="text" readonly id="tab-webhook-url-input" value="{{ $webhookUrl }}"
-                        class="block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark rounded-xl text-xs text-emerald-400 font-mono select-all">
-                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('tab-webhook-url-input').value).then(() => { this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy URL', 2000); })"
-                        class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-secondary/50 hover:bg-secondary text-white border border-border-dark transition-all cursor-pointer shrink-0">
-                        Copy URL
-                    </button>
-                </div>
-                <span class="text-[11px] text-slate-500 mt-1 block">Meta calls this URL to verify the handshake (GET) and push live message delivery receipts (POST).</span>
-            </div>
+                <!-- Webhook Form -->
+                <form action="{{ route('admin.settings.whatsapp.update') }}" method="POST" class="space-y-4 pt-2 border-t border-border-dark">
+                    @csrf
+                    <input type="hidden" name="whatsapp_enabled" value="{{ $settings['whatsapp_enabled'] }}">
+                    <input type="hidden" name="whatsapp_api_version" value="{{ $settings['whatsapp_api_version'] }}">
+                    <input type="hidden" name="whatsapp_phone_number_id" value="{{ $settings['whatsapp_phone_number_id'] }}">
+                    <input type="hidden" name="whatsapp_waba_id" value="{{ $settings['whatsapp_waba_id'] }}">
 
-            <!-- Webhook Settings Form -->
-            <form action="{{ route('admin.settings.whatsapp.update') }}" method="POST" class="space-y-4 pt-2">
-                @csrf
-                <!-- Retain Tab 1 settings so backend validation passes without altering them -->
-                <input type="hidden" name="whatsapp_enabled" value="{{ $settings['whatsapp_enabled'] }}">
-                <input type="hidden" name="whatsapp_api_version" value="{{ $settings['whatsapp_api_version'] }}">
-                <input type="hidden" name="whatsapp_phone_number_id" value="{{ $settings['whatsapp_phone_number_id'] }}">
-                <input type="hidden" name="whatsapp_waba_id" value="{{ $settings['whatsapp_waba_id'] }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-semibold text-slate-400 uppercase">Verify Token</label>
+                                @if($settings['whatsapp_webhook_verify_token'])
+                                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('tab_webhook_verify_token').value).then(() => { this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy Token', 2000); })" 
+                                        class="text-[11px] text-primary hover:underline cursor-pointer font-medium">Copy Token</button>
+                                @endif
+                            </div>
+                            <input type="text" name="whatsapp_webhook_verify_token" id="tab_webhook_verify_token"
+                                value="{{ old('whatsapp_webhook_verify_token', $settings['whatsapp_webhook_verify_token']) }}"
+                                placeholder="e.g. dukanhisab_secure_token_2026"
+                                class="{{ $inputClass }} font-mono">
+                            <span class="text-[11px] text-slate-500 mt-1 block">Secret handshake token entered into Meta during webhook verification.</span>
+                        </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="{{ $labelClass }} flex items-center justify-between">
-                            <span>2. Webhook Verify Token</span>
-                            @if($settings['whatsapp_webhook_verify_token'])
-                                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('tab_webhook_verify_token').value).then(() => { this.innerText = 'Copied!'; setTimeout(() => this.innerText = 'Copy', 2000); })" class="text-[10px] text-primary hover:underline cursor-pointer">Copy</button>
-                            @endif
-                        </label>
-                        <input type="text" name="whatsapp_webhook_verify_token" id="tab_webhook_verify_token"
-                            value="{{ old('whatsapp_webhook_verify_token', $settings['whatsapp_webhook_verify_token']) }}"
-                            placeholder="e.g. dukanhisab_secure_webhook_token_2026"
-                            class="{{ $inputClass }} font-mono">
-                        <span class="text-[11px] text-slate-500 mt-1 block">Any random secret string — enter the exact same string into Meta dashboard.</span>
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-xs font-semibold text-slate-400 uppercase">Meta App Secret</label>
+                                @if($settings['has_app_secret'])
+                                    <span class="text-[10px] text-emerald-400 font-mono">Saved &bull; Leave blank to keep</span>
+                                @endif
+                            </div>
+                            <input type="password" name="whatsapp_app_secret" autocomplete="off"
+                                placeholder="{{ $settings['has_app_secret'] ? 'Enter a new secret only to replace the saved one' : 'Meta App → App Settings → Basic → App Secret' }}"
+                                class="{{ $inputClass }} font-mono">
+                            <span class="text-[11px] text-slate-500 mt-1 block">Used to verify HMAC-SHA256 signature on every webhook event. Stored encrypted.</span>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="{{ $labelClass }} flex items-center justify-between">
-                            <span>3. Meta App Secret</span>
-                            @if($settings['has_app_secret'])
-                                <span class="text-[10px] text-emerald-400 font-mono normal-case">Saved — leave blank to keep</span>
-                            @endif
-                        </label>
-                        <input type="password" name="whatsapp_app_secret" autocomplete="off"
-                            placeholder="{{ $settings['has_app_secret'] ? 'Enter a new secret only to replace the saved one' : 'Meta App → App Settings → Basic → App Secret' }}"
-                            class="{{ $inputClass }} font-mono">
-                        <span class="text-[11px] text-slate-500 mt-1 block">Used to verify that delivery updates really come from Meta. Stored encrypted.</span>
+                    <div class="flex items-center justify-end pt-3 border-t border-border-dark">
+                        <x-button type="submit" variant="primary">Save Webhook Settings</x-button>
                     </div>
-                </div>
-
-                <div class="flex items-center justify-end pt-3 border-t border-border-dark">
-                    <x-button type="submit" variant="primary">Save Webhook Credentials</x-button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
 
-        <!-- Step-by-Step Meta Developer Portal Setup Guide Card -->
+        <!-- 4-Step Quick Setup Guide (Clean Stepper) -->
         <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm p-6 space-y-4">
-            <h3 class="font-bold text-white text-sm flex items-center gap-2">
-                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>Meta Developer Portal માં Webhook સેટ કરવાની રીત (Step-by-Step Setup Guide):</span>
-            </h3>
+            <div class="flex items-center justify-between border-b border-border-dark pb-3">
+                <h3 class="font-bold text-white text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Meta Developer Portal Setup Guide</span>
+                </h3>
+                <a href="https://developers.facebook.com/apps" target="_blank" class="text-xs text-primary hover:underline inline-flex items-center gap-1 font-semibold">
+                    <span>Open Meta Apps</span>
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            </div>
 
-            <div class="space-y-3">
-                <div class="flex items-start gap-3 p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60">
-                    <span class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">1</span>
-                    <div class="text-xs text-slate-300">
-                        <strong class="text-white">Meta Developer Portal ખોલો:</strong> <a href="https://developers.facebook.com" target="_blank" class="text-primary hover:underline font-semibold">developers.facebook.com</a> પર જાઓ, લોગિન કરો અને તમારું App સિલેક્ટ કરો.
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60 space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">1</span>
+                        <h4 class="text-xs font-bold text-white">Navigate</h4>
                     </div>
+                    <p class="text-xs text-slate-400">Go to your App &rarr; <strong>WhatsApp</strong> &rarr; <strong>Configuration</strong>.</p>
                 </div>
 
-                <div class="flex items-start gap-3 p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60">
-                    <span class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">2</span>
-                    <div class="text-xs text-slate-300">
-                        <strong class="text-white">Configuration પેજ પર જાઓ:</strong> ડાબી બાજુના મેનુમાં <strong>WhatsApp</strong> ➔ <strong>Configuration</strong> પર ક્લિક કરો.
+                <div class="p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60 space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">2</span>
+                        <h4 class="text-xs font-bold text-white">Edit Webhook</h4>
                     </div>
+                    <p class="text-xs text-slate-400">Under the <strong>Webhook</strong> section, click the <strong>Edit</strong> button.</p>
                 </div>
 
-                <div class="flex items-start gap-3 p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60">
-                    <span class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">3</span>
-                    <div class="text-xs text-slate-300">
-                        <strong class="text-white">Webhook એડિટ કરો:</strong> <strong>Webhook</strong> સેક્શનમાં જઈને <strong>Edit</strong> બટન પર ક્લિક કરો.
+                <div class="p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60 space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">3</span>
+                        <h4 class="text-xs font-bold text-white">Verify & Save</h4>
                     </div>
+                    <p class="text-xs text-slate-400">Paste the <strong>Callback URL</strong> and <strong>Verify Token</strong>, then click <strong>Verify and Save</strong>.</p>
                 </div>
 
-                <div class="flex items-start gap-3 p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60">
-                    <span class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">4</span>
-                    <div class="text-xs text-slate-300">
-                        <strong class="text-white">URL અને Token પેસ્ટ કરો:</strong> ઉપર દર્શાવેલ <strong class="text-emerald-400">Callback URL</strong> અને <strong class="text-emerald-400">Verify Token</strong> કોપી કરી Meta ના ડાયલોગમાં પેસ્ટ કરો, પછી <strong>Verify and Save</strong> પર ક્લિક કરો.
+                <div class="p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60 space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-xs font-extrabold shrink-0">4</span>
+                        <h4 class="text-xs font-bold text-white">Subscribe</h4>
                     </div>
-                </div>
-
-                <div class="flex items-start gap-3 p-3.5 rounded-xl bg-secondary/15 border border-border-dark/60">
-                    <span class="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">5</span>
-                    <div class="text-xs text-slate-300">
-                        <strong class="text-white">Messages ફીલ્ડ Subscribe કરો:</strong> તે જ પેજ પર <strong>Webhook fields</strong> પાસે <strong>Manage</strong> પર ક્લિક કરો અને <code class="text-teal-400 font-mono bg-teal-500/10 px-1.5 py-0.5 rounded">messages</code> ઇવેન્ટ શોધીને <strong>Subscribe</strong> કરો.
-                    </div>
+                    <p class="text-xs text-slate-400">Under Webhook fields, click <strong>Manage</strong> and subscribe to <code class="text-teal-400 font-mono text-[11px]">messages</code>.</p>
                 </div>
             </div>
         </div>
+
     </div>
 
 </div>

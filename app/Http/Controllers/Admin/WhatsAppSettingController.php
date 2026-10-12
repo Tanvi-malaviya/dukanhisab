@@ -76,8 +76,12 @@ class WhatsAppSettingController extends Controller
             'whatsapp_app_secret' => 'nullable|string|max:255',
         ]);
 
-        foreach (['whatsapp_enabled', 'whatsapp_api_version', 'whatsapp_phone_number_id', 'whatsapp_waba_id', 'whatsapp_webhook_verify_token'] as $key) {
+        foreach (['whatsapp_enabled', 'whatsapp_api_version', 'whatsapp_phone_number_id', 'whatsapp_waba_id'] as $key) {
             AppSetting::set($key, (string) $request->input($key, ''));
+        }
+
+        if ($request->has('whatsapp_webhook_verify_token')) {
+            AppSetting::set('whatsapp_webhook_verify_token', (string) $request->input('whatsapp_webhook_verify_token', ''));
         }
 
         // Blank secret fields mean "keep the saved one" — the page never echoes them back.

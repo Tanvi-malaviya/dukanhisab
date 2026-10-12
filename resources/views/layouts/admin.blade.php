@@ -7,6 +7,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'DukanHisab') - Super Admin Panel</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,7 +87,6 @@
                             ['admin.subscriptions.index', 'M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z', 'Subscription Plans', 'admin.subscriptions'],
                             ['admin.addons.index', 'M12 4v16m8-8H4', 'Add-Ons', 'admin.addons'],
                             ['admin.payments.index', 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z', 'Payments Ledger', 'admin.payments'],
-                            ['admin.whatsapp.usage', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', 'WhatsApp Usage', 'admin.whatsapp'],
                         ],
                         'Insights & Marketing' => [
                             ['admin.reports.index', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'Analytics & Reports', 'admin.reports'],
@@ -92,7 +97,17 @@
                             ['admin.settings.app', 'M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z', 'App Config', 'settings.app'],
                             ['admin.settings.invoice', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'Invoice Layout', 'settings.invoice'],
                             ['admin.settings.payment', 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', 'Payment Gateway', 'settings.payment'],
-                            ['admin.settings.whatsapp', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z', 'WhatsApp', 'settings.whatsapp'],
+                            [
+                                'is_dropdown' => true,
+                                'id' => 'nav-dropdown-whatsapp',
+                                'label' => 'WhatsApp',
+                                'icon' => 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+                                'activeWhen' => 'whatsapp',
+                                'children' => [
+                                    ['admin.settings.whatsapp', 'WhatsApp', 'settings.whatsapp', 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'],
+                                    ['admin.whatsapp.usage', 'WhatsApp Usage', 'whatsapp.usage', 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
+                                ],
+                            ],
                             ['admin.settings.translations', 'M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129', 'Translations', 'settings.translations'],
                             ['admin.backups.index', 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4', 'Database Backups', 'admin.backups'],
                             ['admin.logs.index', 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'Audit Trails', 'admin.logs'],
@@ -106,23 +121,65 @@
                             <div class="px-3 pb-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ $section }}</div>
                         @endif
                         <div class="space-y-0.5">
-                            @foreach ($items as [$routeName, $iconPath, $label, $activeWhen])
-                                @php
-                                    $isActive = collect(explode('|', $activeWhen))->contains(fn ($needle) => str_contains($route, $needle));
-                                @endphp
-                                <a href="{{ route($routeName) }}"
-                                    class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 {{ $isActive ? 'bg-primary text-white font-semibold shadow-sm' : 'text-slate-300 hover:bg-secondary/60 hover:text-white' }}">
-                                    @if ($isActive)
-                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 h-5 w-1 rounded-r bg-white/80"></span>
-                                    @endif
-                                    <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $iconPath }}"></path>
-                                    </svg>
-                                    <span class="truncate">{{ $label }}</span>
-                                    @if ($routeName === 'admin.support.index' && ($openTicketsBadge ?? 0) > 0)
-                                        <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full {{ $isActive ? 'bg-white/20 text-white' : 'bg-warning/20 text-warning' }}">{{ $openTicketsBadge }}</span>
-                                    @endif
-                                </a>
+                            @foreach ($items as $item)
+                                @if (isset($item['is_dropdown']) && $item['is_dropdown'])
+                                    @php
+                                        $isDropdownActive = collect(explode('|', $item['activeWhen']))->contains(fn ($needle) => str_contains($route, $needle));
+                                    @endphp
+                                    <div class="space-y-0.5">
+                                        <button type="button"
+                                            onclick="toggleNavDropdown('{{ $item['id'] }}')"
+                                            class="nav-dropdown-btn w-full relative flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 cursor-pointer select-none outline-none focus:outline-none">
+                                            <div class="flex items-center gap-3 truncate">
+                                                <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $item['icon'] }}"></path>
+                                                </svg>
+                                                <span class="truncate">{{ $item['label'] }}</span>
+                                            </div>
+                                            <svg id="{{ $item['id'] }}-arrow"
+                                                class="w-4 h-4 shrink-0 transition-transform duration-200 text-slate-400 inline-block transform {{ $isDropdownActive ? 'rotate-180' : '' }}"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+
+                                        <div id="{{ $item['id'] }}" class="pl-3 ml-2 border-l border-border-dark space-y-0.5 mt-0.5 {{ $isDropdownActive ? '' : 'hidden' }}">
+                                            @foreach ($item['children'] as [$childRoute, $childLabel, $childActiveWhen, $childIcon])
+                                                @php
+                                                    $isChildActive = collect(explode('|', $childActiveWhen))->contains(fn ($needle) => str_contains($route, $needle));
+                                                @endphp
+                                                <a href="{{ route($childRoute) }}"
+                                                    class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 {{ $isChildActive ? 'bg-primary text-white font-semibold shadow-sm text-white-force' : 'text-slate-300 hover:bg-secondary/60 hover:text-white' }}">
+                                                    @if ($isChildActive)
+                                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 h-5 w-1 rounded-r bg-white/80"></span>
+                                                    @endif
+                                                    <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $childIcon }}"></path>
+                                                    </svg>
+                                                    <span class="truncate">{{ $childLabel }}</span>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @else
+                                    @php
+                                        [$routeName, $iconPath, $label, $activeWhen] = $item;
+                                        $isActive = collect(explode('|', $activeWhen))->contains(fn ($needle) => str_contains($route, $needle));
+                                    @endphp
+                                    <a href="{{ route($routeName) }}"
+                                        class="relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 {{ $isActive ? 'bg-primary text-white font-semibold shadow-sm' : 'text-slate-300 hover:bg-secondary/60 hover:text-white' }}">
+                                        @if ($isActive)
+                                            <span class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-3 h-5 w-1 rounded-r bg-white/80"></span>
+                                        @endif
+                                        <svg class="w-[18px] h-[18px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $iconPath }}"></path>
+                                        </svg>
+                                        <span class="truncate">{{ $label }}</span>
+                                        @if ($routeName === 'admin.support.index' && ($openTicketsBadge ?? 0) > 0)
+                                            <span class="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full {{ $isActive ? 'bg-white/20 text-white' : 'bg-warning/20 text-warning' }}">{{ $openTicketsBadge }}</span>
+                                        @endif
+                                    </a>
+                                @endif
                             @endforeach
                         </div>
                     </div>
@@ -308,6 +365,20 @@
                         overlay.classList.add('hidden');
                         overlay.style.display = 'none';
                     }
+                }
+            }
+
+            function toggleNavDropdown(id) {
+                const el = document.getElementById(id);
+                const arrow = document.getElementById(id + '-arrow');
+                if (el) {
+                    const isHidden = el.classList.toggle('hidden');
+                    if (arrow) {
+                        arrow.classList.toggle('rotate-180', !isHidden);
+                    }
+                }
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+                    document.activeElement.blur();
                 }
             }
 

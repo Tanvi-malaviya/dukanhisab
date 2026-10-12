@@ -253,6 +253,21 @@ html:not(.dark) .text-slate-300 {
     color: #334155 !important; /* Crisp dark slate-700 */
 }
 
+html:not(.dark) .nav-dropdown-btn,
+html:not(.dark) .nav-dropdown-btn * {
+    color: #334155 !important;
+    background-color: transparent !important;
+}
+
+html:not(.dark) .nav-dropdown-btn:hover {
+    background-color: #F1F5F9 !important;
+    color: #0F172A !important;
+}
+
+html:not(.dark) .nav-dropdown-btn:hover * {
+    color: #0F172A !important;
+}
+
 html:not(.dark) .text-slate-400 {
     color: #475569 !important; /* Readable slate-600 */
 }

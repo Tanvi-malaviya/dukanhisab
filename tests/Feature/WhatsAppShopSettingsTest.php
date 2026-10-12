@@ -111,6 +111,15 @@ class WhatsAppShopSettingsTest extends TestCase
         ]])->assertStatus(422)->assertJsonValidationErrors('events.0.schedule_time');
 
         $this->withHeaders($this->h())->postJson('/api/v1/whatsapp/settings', ['events' => [
+            ['key' => 'due_reminder', 'enabled' => true, 'schedule_days' => ['mon', 'mon'], 'schedule_time' => '10:00'],
+        ]])->assertStatus(422)->assertJsonValidationErrors('events.0.schedule_days');
+
+        $this->withHeaders($this->h())->postJson('/api/v1/whatsapp/settings', ['events' => [
+            ['key' => 'due_reminder', 'enabled' => false, 'schedule_days' => ['mon'], 'schedule_time' => '10:00'],
+            ['key' => 'supplier_due', 'enabled' => false, 'schedule_days' => ['mon'], 'schedule_time' => '10:00'],
+        ]])->assertOk();
+
+        $this->withHeaders($this->h())->postJson('/api/v1/whatsapp/settings', ['events' => [
             ['key' => 'not_an_event', 'enabled' => true],
         ]])->assertStatus(422);
     }

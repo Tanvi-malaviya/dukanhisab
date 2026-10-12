@@ -107,8 +107,17 @@ class WhatsAppApiController extends Controller
             'events' => 'required|array',
             'events.*.key' => ['required', 'distinct', Rule::in(array_keys(WhatsAppTemplate::EVENTS))],
             'events.*.enabled' => 'required|boolean',
-            'events.*.schedule_days' => 'nullable|array|max:' . WhatsAppShopSetting::MAX_SCHEDULE_DAYS,
-            'events.*.schedule_days.*' => ['distinct', Rule::in(WhatsAppShopSetting::DAYS)],
+            'events.*.schedule_days' => [
+                'nullable',
+                'array',
+                'max:' . WhatsAppShopSetting::MAX_SCHEDULE_DAYS,
+                function ($attribute, $value, $fail) {
+                    if (is_array($value) && count($value) !== count(array_unique($value))) {
+                        $fail('The schedule days cannot contain duplicate values.');
+                    }
+                },
+            ],
+            'events.*.schedule_days.*' => [Rule::in(WhatsAppShopSetting::DAYS)],
             'events.*.schedule_time' => ['nullable', 'regex:/^([01]\d|2[0-3]):[0-5]\d$/'],
             'events.*.min_due_amount' => 'nullable|numeric|min:0|max:100000000',
         ], [
@@ -138,6 +147,29 @@ class WhatsAppApiController extends Controller
         }
 
         return $this->settings($request, app(WhatsAppMessenger::class));
+    }
+
+    public function updateUpi(Request $request)
+    {
+        $data = $request->validate([
+            'upi_id' => 'required|string|max:100',
+        ]);
+
+        $shopId = $request->attributes->get('shop_id');
+        $shop = Shop::find($shopId);
+
+        if (!$shop) {
+            return response()->json(['message' => 'Shop not found.'], 404);
+        }
+
+        $shop->update(['upi_id' => trim($data['upi_id'])]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'UPI ID updated successfully.',
+            'upi_id' => $shop->upi_id,
+            'shop' => $shop,
+        ]);
     }
 
     /** Sent messages with delivery status, newest first, with the customer / supplier name. */

@@ -1775,7 +1775,7 @@
                 if (this.shopUpdateForm.state) fd.append('state', this.shopUpdateForm.state);
                 if (this.shopUpdateForm.pincode) fd.append('pincode', this.shopUpdateForm.pincode);
                 if (this.shopUpdateForm.currency) fd.append('currency', this.shopUpdateForm.currency);
-                if (this.shopUpdateForm.upi_id) fd.append('upi_id', this.shopUpdateForm.upi_id);
+                fd.append('upi_id', this.shopUpdateForm.upi_id || '');
                 if (this.shopUpdateForm.bank_details) fd.append('bank_details', this.shopUpdateForm.bank_details);
                 if (this.shopUpdateForm.invoice_footer) fd.append('invoice_footer', this.shopUpdateForm.invoice_footer);
                 if (this.shopUpdateForm.website_settings) fd.append('website_settings', JSON.stringify(this.shopUpdateForm.website_settings));
