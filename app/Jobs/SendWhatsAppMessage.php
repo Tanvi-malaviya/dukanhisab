@@ -42,7 +42,7 @@ class SendWhatsAppMessage implements ShouldQueue
             $log->markFailed('WhatsApp messaging is turned off by the administrator.');
             return;
         }
-        if (!$log->template || $log->template->status !== 'active') {
+        if (!$log->template || !$log->template->isSendable()) {
             $log->markFailed('The WhatsApp template for this message is no longer available.');
             return;
         }

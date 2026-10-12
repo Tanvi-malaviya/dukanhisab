@@ -97,12 +97,12 @@ class WhatsAppMessenger
         return $log;
     }
 
-    /** The active template for the event in the shop owner's language, falling back to English. */
+    /** The active, Meta-approved template for the event in the shop owner's language, falling back to English. */
     public function templateFor(Shop $shop, string $event): ?WhatsAppTemplate
     {
         $language = $shop->owner?->language ?: 'en';
 
-        return WhatsAppTemplate::where('key', $event)->where('status', 'active')
+        return WhatsAppTemplate::sendable()->where('key', $event)
             ->whereIn('language', array_unique([$language, 'en']))
             ->get()
             ->sortBy(fn ($t) => $t->language === $language ? 0 : 1)

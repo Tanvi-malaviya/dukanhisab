@@ -20,6 +20,7 @@ class WhatsAppClient
         private string $accessToken,
         private string $phoneNumberId,
         private string $apiVersion = self::DEFAULT_API_VERSION,
+        private string $wabaId = '',
     ) {
     }
 
@@ -29,6 +30,7 @@ class WhatsAppClient
             self::storedAccessToken(),
             (string) AppSetting::get('whatsapp_phone_number_id', ''),
             AppSetting::get('whatsapp_api_version') ?: self::DEFAULT_API_VERSION,
+            (string) AppSetting::get('whatsapp_waba_id', ''),
         );
     }
 
@@ -106,6 +108,114 @@ class WhatsAppClient
         }
 
         return $messageId;
+    }
+
+    /** Template management works on the WhatsApp Business Account, not the phone number. */
+    public function canManageTemplates(): bool
+    {
+        return $this->accessToken !== '' && $this->wabaId !== '';
+    }
+
+    /**
+     * Every message template on the WABA, following Meta's pagination.
+     *
+     * @return array<int, array{id: string, name: string, language: string, status: string, category?: string, rejected_reason?: string, components?: array}>
+     */
+    public function listTemplates(): array
+    {
+        $templates = [];
+        $url = $this->url($this->wabaId . '/message_templates');
+        $query = ['fields' => 'id,name,language,status,category,rejected_reason,components', 'limit' => 100];
+
+        // Meta's "next" link already carries the query; the guard stops a misbehaving cursor.
+        for ($page = 0; $url && $page < 50; $page++) {
+            $response = Http::withToken($this->accessToken)->timeout(20)->get($url, $query);
+            if (!$response->successful()) {
+                throw WhatsAppException::fromResponse($response);
+            }
+
+            array_push($templates, ...($response->json('data') ?? []));
+            $url = $response->json('paging.next');
+            $query = [];
+        }
+
+        return $templates;
+    }
+
+    /**
+     * Submits a new template for Meta's review. Returns Meta's {id, status, category}.
+     */
+    public function createTemplate(string $name, string $languageCode, string $category, array $components): array
+    {
+        $response = Http::withToken($this->accessToken)
+            ->timeout(20)
+            ->post($this->url($this->wabaId . '/message_templates'), [
+                'name' => $name,
+                'language' => $languageCode,
+                'category' => $category,
+                'components' => $components,
+            ]);
+
+        if (!$response->successful()) {
+            throw WhatsAppException::fromResponse($response);
+        }
+
+        return $response->json();
+    }
+
+    /** Resubmits the components of an existing (approved / rejected / paused) template for review. */
+    public function editTemplate(string $templateId, string $category, array $components): void
+    {
+        $response = Http::withToken($this->accessToken)
+            ->timeout(20)
+            ->post($this->url($templateId), [
+                'category' => $category,
+                'components' => $components,
+            ]);
+
+        if (!$response->successful()) {
+            throw WhatsAppException::fromResponse($response);
+        }
+    }
+
+    /**
+     * Uploads a sample file through Meta's Resumable Upload API and returns its handle — Meta
+     * requires one as the example for a template's media (document) header.
+     */
+    public function uploadSampleMedia(string $appId, string $fileName, string $mimeType, string $contents): string
+    {
+        $session = Http::withToken($this->accessToken)
+            ->timeout(20)
+            ->post($this->url($appId . '/uploads') . '?' . http_build_query([
+                'file_name' => $fileName,
+                'file_length' => strlen($contents),
+                'file_type' => $mimeType,
+            ]));
+
+        if (!$session->successful()) {
+            throw WhatsAppException::fromResponse($session);
+        }
+
+        $uploadId = (string) $session->json('id');
+        if ($uploadId === '') {
+            throw new WhatsAppException('Meta did not return an upload session.');
+        }
+
+        $upload = Http::withHeaders(['Authorization' => 'OAuth ' . $this->accessToken, 'file_offset' => '0'])
+            ->withBody($contents, $mimeType)
+            ->timeout(30)
+            ->post($this->url($uploadId));
+
+        if (!$upload->successful()) {
+            throw WhatsAppException::fromResponse($upload);
+        }
+
+        $handle = (string) $upload->json('h');
+        if ($handle === '') {
+            throw new WhatsAppException('Meta did not return a handle for the sample file.');
+        }
+
+        return $handle;
     }
 
     /**

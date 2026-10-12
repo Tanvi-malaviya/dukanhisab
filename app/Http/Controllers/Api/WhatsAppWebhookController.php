@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\WhatsAppMessageLog;
+use App\Services\WhatsApp\WhatsAppTemplateSync;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
@@ -12,7 +13,8 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * Meta WhatsApp Cloud API webhook: the one-time subscription handshake (GET) and message
- * status callbacks (POST) that move WhatsAppMessageLog rows through sent → delivered → read / failed.
+ * status callbacks (POST) that move WhatsAppMessageLog rows through sent → delivered → read / failed,
+ * plus template review results (message_template_status_update / template_category_update).
  */
 class WhatsAppWebhookController extends Controller
 {
@@ -38,6 +40,15 @@ class WhatsAppWebhookController extends Controller
 
         foreach ($request->input('entry', []) as $entry) {
             foreach ($entry['changes'] ?? [] as $change) {
+                $field = (string) ($change['field'] ?? '');
+                if (in_array($field, ['message_template_status_update', 'template_category_update'], true)) {
+                    $template = WhatsAppTemplateSync::fromSettings()->applyWebhookChange($field, $change['value'] ?? []);
+                    if ($template) {
+                        Log::info('WhatsApp template update from Meta', ['field' => $field, 'template' => $template->meta_template_name, 'status' => $template->meta_status]);
+                    }
+                    continue;
+                }
+
                 foreach ($change['value']['statuses'] ?? [] as $status) {
                     $this->applyStatus($status);
                 }
