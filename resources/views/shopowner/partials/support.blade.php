@@ -27,21 +27,18 @@
     </div>
 
     {{-- KPI Cards --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    {{-- KPI Cards --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
             <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400" x-text="t('total') || 'Total Tickets'">Total Tickets</span>
             <p class="text-2xl font-extrabold text-slate-800 dark:text-white mt-1" x-text="supportTickets.length"></p>
         </div>
         <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-amber-500" x-text="t('open_tickets') || 'Open Tickets'">Open Tickets</span>
-            <p class="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1" x-text="supportTickets.filter(t => t.status === 'open').length"></p>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-rose-500" x-text="t('open_tickets') || 'Open Tickets'">Open Tickets</span>
+            <p class="text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-1" x-text="supportTickets.filter(t => t.status === 'open' || ['inProgress', 'pending'].includes(t.status)).length"></p>
         </div>
         <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-blue-500" x-text="t('in_progress_tickets') || 'In Progress'">In Progress</span>
-            <p class="text-2xl font-extrabold text-blue-600 dark:text-blue-400 mt-1" x-text="supportTickets.filter(t => ['inProgress', 'pending'].includes(t.status)).length"></p>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-500" x-text="t('resolved_tickets') || 'Resolved'">Resolved</span>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-500" x-text="t('closed_tickets') || 'Closed Tickets'">Closed Tickets</span>
             <p class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1" x-text="supportTickets.filter(t => ['resolved', 'closed'].includes(t.status)).length"></p>
         </div>
     </div>
@@ -60,8 +57,6 @@
             <select x-model="supportFilter.status" class="px-3 py-2 border border-slate-200 dark:border-gray-600 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 dark:bg-gray-700 focus:outline-none cursor-pointer">
                 <option value="">All Statuses</option>
                 <option value="open">Open</option>
-                <option value="inProgress">In Progress</option>
-                <option value="resolved">Resolved</option>
                 <option value="closed">Closed</option>
             </select>
         </div>
@@ -99,18 +94,12 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase"
-                                    :class="{
-                                        'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300': tkt.status === 'open',
-                                        'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300': ['inProgress', 'pending'].includes(tkt.status),
-                                        'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300': ['resolved', 'closed'].includes(tkt.status)
-                                    }">
+                                    :class="tkt.status === 'closed' || tkt.status === 'resolved'
+                                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'">
                                     <span class="w-1.5 h-1.5 rounded-full"
-                                        :class="{
-                                            'bg-amber-500': tkt.status === 'open',
-                                            'bg-blue-500': ['inProgress', 'pending'].includes(tkt.status),
-                                            'bg-emerald-500': ['resolved', 'closed'].includes(tkt.status)
-                                        }"></span>
-                                    <span x-text="tkt.status === 'inProgress' ? 'In Progress' : (tkt.status === 'open' ? 'Open' : (tkt.status === 'resolved' ? 'Resolved' : tkt.status))"></span>
+                                        :class="tkt.status === 'closed' || tkt.status === 'resolved' ? 'bg-emerald-500' : 'bg-rose-500'"></span>
+                                    <span x-text="tkt.status === 'closed' || tkt.status === 'resolved' ? 'Closed' : 'Open'"></span>
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">

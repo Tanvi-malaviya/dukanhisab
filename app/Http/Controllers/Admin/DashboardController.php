@@ -48,7 +48,7 @@ class DashboardController extends Controller
 
         // "Needs attention" panel — the whole point of a dashboard someone actually uses: it should
         // surface what needs a click today, not just totals.
-        $openTicketsCount = SupportTicket::whereIn('status', ['open', 'pending', 'inProgress'])->count();
+        $openTicketsCount = SupportTicket::where('status', 'open')->count();
         $pendingRefundsCount = Refund::where('status', 'pending')->count();
         $expiringSoonCount = Subscription::where('status', 'active')
             ->whereNotNull('ends_at')

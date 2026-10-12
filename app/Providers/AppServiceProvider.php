@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider
         // admin controller.
         \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
             try {
-                $view->with('openTicketsBadge', \App\Models\SupportTicket::whereIn('status', ['open', 'pending', 'inProgress'])->count());
+                $view->with('openTicketsBadge', \App\Models\SupportTicket::where('status', 'open')->count());
             } catch (\Throwable $e) {
                 $view->with('openTicketsBadge', 0);
             }

@@ -82,6 +82,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     // WhatsApp messaging: settings, credits wallet & pack purchase
     Route::get('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'settings']);
     Route::post('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'updateSettings']);
+    Route::post('/whatsapp/upi', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'updateUpi']);
     Route::post('/whatsapp/reminders/{type}/{id}', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendReminder'])->whereIn('type', ['customer', 'supplier']);
     Route::get('/whatsapp/messages', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'messages']);
     Route::get('/whatsapp/payment-claims', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'paymentClaims']);

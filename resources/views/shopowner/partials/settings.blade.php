@@ -491,6 +491,24 @@
                     </div>
                 </div>
 
+                {{-- UPI ID for Payments & WhatsApp Due Reminders --}}
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3" id="settings-upi-section">
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" for="shop-settings-upi-input">
+                            <span class="font-bold text-slate-700 dark:text-slate-200">UPI ID</span>
+                            <span class="text-[11px] text-slate-400 font-normal">(for WhatsApp "Pay Now" links & Invoice QR)</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" placeholder="example@upi, mobile@okhdfcbank" x-model="shopUpdateForm.upi_id" id="shop-settings-upi-input"
+                                class="block w-full pl-9 pr-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                            <span class="absolute left-3 top-2 text-slate-400 pointer-events-none">
+                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Used to attach direct <strong>"Pay Now"</strong> payment links when sending due reminders to customers on WhatsApp.</p>
+                    </div>
+                </div>
+
                 <div class="pt-1 flex justify-end">
                     <button type="submit" :disabled="loading"
                         class="w-full sm:w-auto px-5 py-2 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-sm font-semibold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
