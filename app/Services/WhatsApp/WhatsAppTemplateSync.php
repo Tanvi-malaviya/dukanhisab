@@ -92,7 +92,7 @@ class WhatsAppTemplateSync
     {
         $this->ensureConfigured();
 
-        $local = WhatsAppTemplate::get(['id', 'key', 'language', 'meta_template_name', 'meta_language_code'])
+        $local = WhatsAppTemplate::get(['id', 'key', 'language', 'meta_template_name', 'meta_language_code', 'variables'])
             ->keyBy(fn ($t) => $t->meta_template_name . '|' . $t->meta_language_code);
 
         return collect($this->client->listTemplates())
@@ -101,6 +101,7 @@ class WhatsAppTemplateSync
                 $linked = $local->get($meta['name'] . '|' . $meta['language']);
                 $described['linked_id'] = $linked?->id;
                 $described['linked_event'] = $linked ? (WhatsAppTemplate::EVENTS[$linked->key]['label'] ?? $linked->key) : null;
+                $described['linked_variables'] = $linked?->variables ?? [];
 
                 return $described;
             })
@@ -295,10 +296,22 @@ class WhatsAppTemplateSync
             }
         }
 
+        // Header, footer and buttons as Meta holds them — used to draw the chat-bubble preview.
         $headerFormat = null;
+        $headerText = null;
+        $footer = null;
+        $buttons = [];
         foreach ($components as $c) {
-            if (strtoupper($c['type'] ?? '') === 'HEADER') {
+            $type = strtoupper($c['type'] ?? '');
+            if ($type === 'HEADER') {
                 $headerFormat = strtoupper($c['format'] ?? 'TEXT');
+                $headerText = $c['text'] ?? null;
+            } elseif ($type === 'FOOTER') {
+                $footer = $c['text'] ?? null;
+            } elseif ($type === 'BUTTONS') {
+                foreach ($c['buttons'] ?? [] as $b) {
+                    $buttons[] = ['type' => strtoupper($b['type'] ?? ''), 'text' => (string) ($b['text'] ?? '')];
+                }
             }
         }
 
@@ -309,6 +322,9 @@ class WhatsAppTemplateSync
             'category' => $meta['category'] ?? null,
             'body' => WhatsAppTemplate::bodyFromMetaComponents($components) ?? '',
             'header_format' => $headerFormat,
+            'header_text' => $headerText,
+            'footer' => $footer,
+            'buttons' => $buttons,
             'has_document' => $hasDocument,
             'has_pay_button' => $hasPayButton,
         ];

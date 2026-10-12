@@ -191,12 +191,9 @@
                 <input type="url" id="test_document_url" placeholder="https://..." class="{{ $inputClass }}">
             </div>
             <div id="test_preview_wrap" class="hidden">
-                <label class="{{ $labelClass }}">Template body in Meta</label>
-                <div class="rounded-xl bg-secondary/20 border border-border-dark p-4 text-sm text-slate-300 max-w-lg">
-                    <span id="test_preview_header" class="hidden block text-primary text-xs mb-1"></span>
-                    <span id="test_preview" class="whitespace-pre-line"></span>
-                    <span id="test_preview_meta" class="block mt-2 text-[11px] text-slate-500"></span>
-                </div>
+                <label class="{{ $labelClass }}">Preview — how the customer sees it</label>
+                <div id="test_preview_bubble" class="max-w-md"></div>
+                <span id="test_preview_meta" class="block mt-2 text-[11px] text-slate-500"></span>
             </div>
             <div class="flex items-center justify-between gap-4">
                 <span id="test-send-result" class="text-xs"></span>
@@ -295,6 +292,7 @@
                                     @if(!$t->meta_template_id || $t->canEditInMeta())
                                         <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.submit', $t->id) }}', title: '{{ $t->meta_template_id ? 'Resubmit to Meta' : 'Submit to Meta' }}', message: 'Send “{{ $t->meta_template_name }}” ({{ $t->meta_language_code }}) to Meta for review? It can take from a few minutes up to 24 hours; shops can\'t send it until Meta approves.', buttonText: 'Submit', method: 'POST' })" class="p-1 text-xs font-semibold text-primary hover:underline cursor-pointer">{{ $t->meta_template_id ? 'Resubmit' : 'Submit to Meta' }}</button>
                                     @endif
+                                    <button type="button" onclick='openPreviewModal(localPreviewModel(@json($t)), @json($t->meta_template_name . " · " . $t->meta_language_code))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Preview</button>
                                     <button type="button" onclick='openTemplateModal(@json($t))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Edit</button>
                                     <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.destroy', $t->id) }}', title: 'Delete Template', message: 'Delete this template? Shops will stop sending this message in this language.', buttonText: 'Delete', variant: 'danger', method: 'DELETE' })" class="p-1 text-xs text-danger hover:underline cursor-pointer">Delete</button>
                                 </td>
@@ -325,6 +323,7 @@
                                         <span class="block text-slate-500 mt-1">{{ $u['category'] }}</span>
                                     </td>
                                     <td class="px-6 py-3 text-right whitespace-nowrap">
+                                        <button type="button" onclick='openPreviewModal(remotePreviewModel(@json($u)), @json($u["name"] . " · " . $u["language"]))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Preview</button>
                                         <button type="button" onclick='importMetaTemplate(@json($u))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Import</button>
                                     </td>
                                 </tr>
@@ -593,12 +592,8 @@
                 </label>
             </div>
             <div>
-                <label class="{{ $labelClass }}">Preview with sample data</label>
-                <div class="rounded-xl bg-secondary/20 border border-border-dark p-4 text-sm text-slate-200 max-w-sm">
-                    <span id="tpl_preview_doc" class="hidden block text-primary text-xs mb-1">📄 INV-1024.pdf</span>
-                    <span id="tpl_preview" class="whitespace-pre-line"></span>
-                    <span id="tpl_preview_pay" class="hidden block mt-2 text-center text-success font-semibold text-xs border-t border-border-dark pt-2">💳 Pay Now</span>
-                </div>
+                <label class="{{ $labelClass }}">Preview — how the customer sees it (sample data)</label>
+                <div id="tpl_preview_bubble" class="max-w-md"></div>
             </div>
             <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
                 <x-button type="button" onclick="closeModal('templateModal')" variant="secondary">Cancel</x-button>
@@ -608,6 +603,59 @@
         </form>
     </div>
 </div>
+
+<!-- Modal: Template preview -->
+<div id="previewModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('previewModal')"></div>
+    <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden">
+        <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
+            <div>
+                <h3 class="text-sm font-semibold text-white">Template Preview</h3>
+                <p id="previewModalName" class="text-[11px] text-slate-400 font-mono"></p>
+            </div>
+            <button type="button" onclick="closeModal('previewModal')" class="text-slate-400 hover:text-white cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div class="p-5">
+            <div id="previewModalBubble"></div>
+            <p class="text-[11px] text-slate-500 mt-3">Shown with sample values. The real message uses each customer's details.</p>
+        </div>
+    </div>
+</div>
+
+<!-- WhatsApp chat look for template previews (WhatsApp's own light / dark colours) -->
+<style>
+    .wa-chat { background: #efeae2; border-radius: 14px; overflow: hidden; border: 1px solid #e2ddd5; }
+    .wa-chat-top { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #008069; color: #fff; }
+    .wa-chat-avatar { width: 30px; height: 30px; border-radius: 9999px; background: #dfe5e7; color: #008069; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+    .wa-chat-name { font-size: 13px; font-weight: 600; line-height: 1.1; color: #fff; }
+    .wa-chat-sub { font-size: 10px; opacity: .85; color: #fff; }
+    .wa-chat-body { padding: 14px 12px 16px; }
+    .wa-bubble { position: relative; max-width: 300px; background: #fff; color: #111b21; border-radius: 0 8px 8px 8px; box-shadow: 0 1px .5px rgba(11, 20, 26, .13); font-size: 13.5px; line-height: 19px; }
+    .wa-bubble::before { content: ""; position: absolute; top: 0; left: -7px; border-top: 0 solid transparent; border-right: 8px solid #fff; border-bottom: 10px solid transparent; }
+    .wa-media { margin: 3px 3px 0; border-radius: 6px; overflow: hidden; }
+    .wa-doc { display: flex; align-items: center; gap: 10px; padding: 10px; background: #f5f6f6; }
+    .wa-doc-icon { width: 30px; height: 36px; border-radius: 4px; background: #e53935; color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; flex-shrink: 0; }
+    .wa-doc-name { font-size: 13px; color: #111b21; font-weight: 500; }
+    .wa-doc-meta { font-size: 11px; color: #667781; }
+    .wa-img { height: 140px; background: #d1d7db; color: #8696a0; display: flex; align-items: center; justify-content: center; }
+    .wa-head-text { padding: 6px 9px 0; font-weight: 700; font-size: 14.5px; }
+    .wa-text { padding: 6px 9px 8px; white-space: pre-wrap; word-wrap: break-word; }
+    .wa-text code { font-family: ui-monospace, monospace; font-size: 12.5px; }
+    .wa-foot { padding: 0 9px 6px; font-size: 12px; color: #667781; }
+    .wa-time { float: right; margin: 4px 0 -4px 10px; font-size: 10.5px; color: #667781; }
+    .wa-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-top: 1px solid #e9edef; color: #027eb5; font-size: 13.5px; font-weight: 500; }
+    .wa-empty { color: #8696a0; font-style: italic; }
+    .dark .wa-chat { background: #0b141a; border-color: #222d34; }
+    .dark .wa-chat-top { background: #202c33; }
+    .dark .wa-chat-avatar { background: #6a7175; color: #e9edef; }
+    .dark .wa-bubble { background: #202c33; color: #e9edef; box-shadow: none; }
+    .dark .wa-bubble::before { border-right-color: #202c33; }
+    .dark .wa-doc { background: #1d282f; }
+    .dark .wa-doc-name { color: #e9edef; }
+    .dark .wa-doc-meta, .dark .wa-foot, .dark .wa-time { color: #8696a0; }
+    .dark .wa-img { background: #2a3942; }
+    .dark .wa-btn { border-top-color: #2a3942; color: #53bdeb; }
+</style>
 
 <!-- Modal: Add / Edit Pack -->
 <div id="packModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
@@ -776,14 +824,16 @@ function refreshTemplateForm() {
     }
     document.querySelectorAll('#tpl_variables select').forEach((sel, i) => templateVariables[i] = sel.value);
 
-    const preview = body.replace(/\{\{(\d+)\}\}/g, (m, n) => WA_SAMPLES[templateVariables[n - 1]] ?? m);
-    document.getElementById('tpl_preview').innerText = preview || '—';
-
     const isDueReminder = document.getElementById('tpl_key').value === 'due_reminder';
     document.getElementById('tpl_pay_wrap').classList.toggle('hidden', !isDueReminder);
     if (!isDueReminder) document.getElementById('tpl_pay').checked = false;
-    document.getElementById('tpl_preview_doc').classList.toggle('hidden', !document.getElementById('tpl_doc').checked);
-    document.getElementById('tpl_preview_pay').classList.toggle('hidden', !document.getElementById('tpl_pay').checked);
+
+    document.getElementById('tpl_preview_bubble').innerHTML = renderWaPreview(localPreviewModel({
+        body,
+        variables: templateVariables.slice(0, count),
+        has_document: document.getElementById('tpl_doc').checked,
+        has_pay_button: document.getElementById('tpl_pay').checked,
+    }));
 }
 
 function openPackModal(p = null) {
@@ -837,6 +887,87 @@ async function runConnectionTest() {
         spinner.classList.add('hidden');
         btn.disabled = false;
     }
+}
+
+// ------------------------------------------------------------ WhatsApp-style preview
+
+const WA_BUTTON_ICONS = {
+    URL: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>',
+    PHONE_NUMBER: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>',
+    QUICK_REPLY: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>',
+    COPY_CODE: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>',
+};
+
+// WhatsApp's own formatting: *bold*, _italic_, ~strike~, ```mono```.
+function waFormat(text) {
+    return escapeHtml(text)
+        .replace(/```([\s\S]+?)```/g, '<code>$1</code>')
+        .replace(/\*([^*\n]+)\*/g, '<strong>$1</strong>')
+        .replace(/(^|[\s(])_([^_\n]+)_/g, '$1<em>$2</em>')
+        .replace(/~([^~\n]+)~/g, '<s>$1</s>');
+}
+
+/**
+ * Draws a template as a WhatsApp chat bubble. model = { headerFormat, headerText, body, footer,
+ * buttons: [{type, text}], fill(name) } — fill() returns the sample for a numbered or named placeholder.
+ */
+function renderWaPreview(model) {
+    const fill = (text) => (text || '').replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi, (m, name) => model.fill(name) ?? m);
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    let media = '';
+    if (model.headerFormat === 'DOCUMENT') {
+        media = `<div class="wa-media"><div class="wa-doc"><span class="wa-doc-icon">PDF</span><span><span class="wa-doc-name block">INV-1024.pdf</span><span class="wa-doc-meta block">1 page · PDF</span></span></div></div>`;
+    } else if (model.headerFormat === 'IMAGE' || model.headerFormat === 'VIDEO') {
+        const icon = model.headerFormat === 'VIDEO'
+            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>'
+            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>';
+        media = `<div class="wa-media"><div class="wa-img"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">${icon}</svg></div></div>`;
+    }
+    const headText = model.headerFormat === 'TEXT' && model.headerText ? `<div class="wa-head-text">${waFormat(fill(model.headerText))}</div>` : '';
+    const body = (model.body || '').trim() ? waFormat(fill(model.body)) : '<span class="wa-empty">Type the message body…</span>';
+    const footer = model.footer ? `<div class="wa-foot">${escapeHtml(model.footer)}</div>` : '';
+
+    // WhatsApp shows up to 3 buttons, then folds the rest into "See all options".
+    let buttons = model.buttons || [];
+    if (buttons.length > 3) buttons = [...buttons.slice(0, 2), { type: 'LIST', text: 'See all options' }];
+    const buttonHtml = buttons.map(b => `<div class="wa-btn"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">${WA_BUTTON_ICONS[b.type] || '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>'}</svg><span>${escapeHtml(b.text)}</span></div>`).join('');
+
+    return `<div class="wa-chat">
+        <div class="wa-chat-top"><span class="wa-chat-avatar">DH</span><span><span class="wa-chat-name block">DukanHisab</span><span class="wa-chat-sub block">Business account</span></span></div>
+        <div class="wa-chat-body"><div class="wa-bubble">${media}${headText}<div class="wa-text">${body}<span class="wa-time">${now}</span></div>${footer}${buttonHtml}</div></div>
+    </div>`;
+}
+
+// One of our rows (or the form): numbered placeholders filled from its chosen variables.
+function localPreviewModel(t) {
+    const vars = t.variables || [];
+    return {
+        headerFormat: t.has_document ? 'DOCUMENT' : null,
+        body: t.body,
+        buttons: t.has_pay_button ? [{ type: 'URL', text: 'Pay Now' }] : [],
+        fill: (name) => /^\d+$/.test(name) ? WA_SAMPLES[vars[name - 1]] : undefined,
+    };
+}
+
+// A template as Meta holds it: linked ones use their variables' samples, others generic ones.
+function remotePreviewModel(t) {
+    const vars = t.linked_variables || [];
+    return {
+        headerFormat: t.header_format,
+        headerText: t.header_text,
+        body: t.body,
+        footer: t.footer,
+        buttons: t.buttons || [],
+        fill: (name) => /^\d+$/.test(name)
+            ? (WA_SAMPLES[vars[name - 1]] ?? 'Sample ' + name)
+            : (WA_SAMPLES[name] ?? 'Sample ' + name.replace(/_/g, ' ')),
+    };
+}
+
+function openPreviewModal(model, name) {
+    document.getElementById('previewModalName').innerText = name || '';
+    document.getElementById('previewModalBubble').innerHTML = renderWaPreview(model);
+    document.getElementById('previewModal').classList.remove('hidden');
 }
 
 // ------------------------------------------------------------ test send: real Meta templates
@@ -897,10 +1028,7 @@ function onTestTemplateChange() {
     }
     document.getElementById('test_preview_wrap').classList.toggle('hidden', !t);
     if (!t) return;
-    const header = document.getElementById('test_preview_header');
-    header.classList.toggle('hidden', !media);
-    header.innerText = media === 'DOCUMENT' ? '📄 INV-1024.pdf' : (media ? '🖼 ' + media.toLowerCase() + ' header' : '');
-    document.getElementById('test_preview').innerText = t.body || '—';
+    document.getElementById('test_preview_bubble').innerHTML = renderWaPreview(remotePreviewModel(t));
     document.getElementById('test_preview_meta').innerText = [t.category, t.has_pay_button ? 'Pay Now button' : null, t.linked_event ? 'Linked: ' + t.linked_event : 'Not linked to an event — generic samples are used'].filter(Boolean).join(' · ');
 }
 
