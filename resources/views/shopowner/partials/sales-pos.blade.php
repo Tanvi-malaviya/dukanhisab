@@ -35,6 +35,9 @@
                             </template>
                         </div>
                         <p class="text-[10px] text-slate-400 mt-0.5"><span x-text="t('barcode')">Barcode</span>: <span x-text="prod.barcode"></span></p>
+                        <template x-if="hasContainers() && prod.container_type_id">
+                            <p class="text-[10px] font-semibold text-amber-700 dark:text-amber-300 mt-0.5" x-text="'+' + (prod.containers_per_unit || 1) + ' ' + containerTypeName(prod.container_type_id)"></p>
+                        </template>
                     </div>
                     <div class="flex justify-between items-end mt-3 pt-2 border-t border-slate-100 dark:border-gray-700/60">
                         <div class="flex flex-col">
@@ -147,6 +150,61 @@
             </template>
         </div>
 
+        {{-- Returnable containers (module enabled per shop) — counted from linked products, editable --}}
+        <template x-if="hasContainers() && containerTypes.length > 0 && (posContainerRows().length > 0 || pos.selectedCustomer)">
+            <div class="mb-3 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-900/10 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300" x-text="t('containers')">Containers</span>
+                    <span class="text-[10px] text-slate-500" x-text="t('deposit_not_in_bill')">Deposit is separate from the bill</span>
+                </div>
+                <template x-if="!pos.selectedCustomer && posHasContainerActivity()">
+                    <p class="text-[11px] font-semibold text-rose-600" x-text="t('select_customer_for_containers')">Select a customer to give or receive containers.</p>
+                </template>
+                <div class="grid grid-cols-12 gap-1 text-[10px] font-semibold text-slate-500">
+                    <span class="col-span-4" x-text="t('container')">Container</span>
+                    <span class="col-span-3 text-center" x-text="t('given')">Given</span>
+                    <span class="col-span-3 text-center" x-text="t('empty_back')">Empty back</span>
+                    <span class="col-span-2 text-right" x-text="t('held')">Held</span>
+                </div>
+                <template x-for="type in (posContainerRows().length ? posContainerRows() : containerTypes)" :key="type.id">
+                    <div class="grid grid-cols-12 gap-1 items-center">
+                        <span class="col-span-4 text-xs font-bold text-slate-800 dark:text-white truncate" :title="type.name" x-text="type.name"></span>
+                        <div class="col-span-3 flex items-center gap-0.5">
+                            <input type="number" min="0" :value="posContainerGiven(type.id)"
+                                @input="posContainers.overrides[type.id] = $event.target.value === '' ? 0 : parseInt($event.target.value)"
+                                class="w-full px-1 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
+                            <button type="button" x-show="posContainers.overrides[type.id] !== undefined" @click="delete posContainers.overrides[type.id]"
+                                :title="t('auto_count')" class="text-[10px] text-primary">↺</button>
+                        </div>
+                        <input type="number" min="0" :disabled="!pos.selectedCustomer" x-model="posContainers.returned[type.id]" placeholder="0"
+                            class="col-span-3 w-full px-1 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white disabled:opacity-50">
+                        <span class="col-span-2 text-right text-xs font-semibold text-slate-600 dark:text-slate-300" x-text="posContainerHeld(type.id)"></span>
+                    </div>
+                </template>
+                <template x-if="posHasContainerActivity()">
+                    <div class="pt-1.5 border-t border-dashed border-amber-200 dark:border-amber-800/60 space-y-1.5">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-semibold text-slate-700 dark:text-slate-200"
+                                x-text="posContainerPreview().net > 0 ? t('deposit_to_collect') : (posContainerPreview().net < 0 ? t('deposit_to_refund') : t('nothing_to_settle'))"></span>
+                            <span class="font-extrabold" :class="posContainerPreview().net < 0 ? 'text-rose-600' : 'text-amber-700 dark:text-amber-300'"
+                                x-text="posContainerPreview().net !== 0 ? money(Math.abs(posContainerPreview().net)) : ''"></span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1">
+                            <template x-for="m in (posContainerPreview().net < 0 ? ['cash', 'upi', 'bank', 'due_adjustment'] : ['cash', 'upi', 'bank'])" :key="m">
+                                <button type="button" @click="posContainers.settlement_method = m" x-show="posContainerPreview().net !== 0"
+                                    :class="posContainers.settlement_method === m ? 'bg-amber-600 text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-gray-600'"
+                                    class="py-1 text-[10px] font-bold rounded-md truncate" x-text="containerMethodLabel(m)"></button>
+                            </template>
+                        </div>
+                        <label class="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 cursor-pointer">
+                            <span x-text="t('deposit_collected')">Deposit collected</span>
+                            <span class="app-toggle app-toggle-sm"><input type="checkbox" x-model="posContainers.collect_deposit"><span class="app-toggle-slider"></span></span>
+                        </label>
+                    </div>
+                </template>
+            </div>
+        </template>
+
         {{-- Totals & Payment --}}
         <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2 shrink-0">
             <div class="flex justify-between text-xs text-slate-600 dark:text-slate-400">
@@ -172,9 +230,9 @@
                     </template>
                 </div>
                 <div class="grid gap-1.5" :class="getSelectedPosCustomer() && parseFloat(getSelectedPosCustomer().credit_balance || 0) > 0 ? 'grid-cols-5' : 'grid-cols-4'">
-                    <button @click="pos.paymentType = 'Cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('cash')">Cash</button>
-                    <button @click="pos.paymentType = 'UPI'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('upi')">UPI</button>
-                    <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
+                    <button @click="pos.paymentType = 'Cash'; posContainers.settlement_method = 'cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('cash')">Cash</button>
+                    <button @click="pos.paymentType = 'UPI'; posContainers.settlement_method = 'upi'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('upi')">UPI</button>
+                    <button @click="pos.paymentType = 'Bank'; posContainers.settlement_method = 'bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
                     <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit')">Credit</button>
                     <template x-if="getSelectedPosCustomer() && parseFloat(getSelectedPosCustomer().credit_balance || 0) > 0">
                         <button @click="pos.paymentType = 'Store Credit'" :class="pos.paymentType === 'Store Credit' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'" class="py-2 text-center text-[10px] font-bold rounded-lg transition-all truncate" title="Use Store Credit">Store Credit</button>

@@ -15,6 +15,7 @@ class AppSettingController extends Controller
             'app_version' => AppSetting::get('app_version', '1.0.0'),
             'min_required_version' => AppSetting::get('min_required_version', '1.0.0'),
             'force_update' => AppSetting::get('force_update', 'no'),
+            'update_url' => AppSetting::get('update_url', ''),
             'maintenance_mode' => AppSetting::get('maintenance_mode', 'no'),
             'announcement_message' => AppSetting::get('announcement_message', ''),
             'feature_flags' => AppSetting::get('feature_flags', '{"billing_enabled": true, "backup_enabled": true}'),
@@ -29,15 +30,16 @@ class AppSettingController extends Controller
             'app_version' => 'required|string',
             'min_required_version' => 'required|string',
             'force_update' => 'required|in:yes,no',
+            'update_url' => 'nullable|url',
             'maintenance_mode' => 'required|in:yes,no',
             'announcement_message' => 'nullable|string',
             'feature_flags' => 'required|json',
         ]);
 
-        $keys = ['app_version', 'min_required_version', 'force_update', 'maintenance_mode', 'announcement_message', 'feature_flags'];
+        $keys = ['app_version', 'min_required_version', 'force_update', 'update_url', 'maintenance_mode', 'announcement_message', 'feature_flags'];
 
         foreach ($keys as $key) {
-            AppSetting::set($key, $request->input($key));
+            AppSetting::set($key, (string) $request->input($key, ''));
         }
 
         AuditLog::log('Updated platform application settings', $request->only($keys));
@@ -52,6 +54,7 @@ class AppSettingController extends Controller
             'app_version' => AppSetting::get('app_version', '1.0.0'),
             'min_required_version' => AppSetting::get('min_required_version', '1.0.0'),
             'force_update' => AppSetting::get('force_update', 'no') === 'yes',
+            'update_url' => AppSetting::get('update_url', ''),
             'maintenance_mode' => AppSetting::get('maintenance_mode', 'no') === 'yes',
             'announcement_message' => AppSetting::get('announcement_message', ''),
             'feature_flags' => json_decode(AppSetting::get('feature_flags', '{"billing_enabled": true}'), true),

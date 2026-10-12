@@ -1,6 +1,7 @@
 <script>
     function appState() {
         return {
+            ...containersModule(),
             dark: localStorage.getItem('darkMode') === 'true',
             getAvatarUrl(avatar, name = 'User') {
                 if (!avatar || !String(avatar).trim()) {
@@ -116,12 +117,14 @@
                 'transactions': 'transactions',
                 'reports': 'reports',
                 'reminders': 'reminders',
+                'whatsapp': 'whatsapp',
                 'settings': 'settings',
                 'subscription': 'subscription',
                 'addons': 'addons',
                 'sales-returned': 'sales-returned',
                 'purchase-returned': 'purchase-returned',
                 'support': 'support',
+                'containers': 'containers',
             },
 
             // Theme State
@@ -248,6 +251,7 @@
             showCurrentPass: false,
             showNewPass: false,
             showConfirmPass: false,
+            deleteAccountModal: { show: false, password: '', confirmText: '', loading: false },
 
             setupForm: { name: '', owner_name: '', mobile: '', gst_number: '', logo: null },
             logoPreview: null,
@@ -438,6 +442,7 @@
             selectedSale: null,
             showInvoiceModal: false,
             sendingSaleEmail: false,
+            sendingWhatsApp: false,
             sendingPurchaseEmail: false,
             showReturnModal: false,
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
@@ -488,6 +493,12 @@
                     localStorage.setItem('lifetime_offer_dismissed', 'true');
                 }
                 this.showLifetimeOfferPopup = false;
+            },
+
+            // Lifetime owners have nothing to switch to, so the subscription page shows a
+            // "you own it" card instead of the plan grid.
+            isLifetimePlan() {
+                return !!(this.user && this.user.active_plan && this.user.active_plan.billing_period === 'lifetime');
             },
 
             checkLifetimeOffer() {
@@ -655,6 +666,7 @@
                 else if (pageName === 'cashbook' || pageName === 'bank-accounts' || pageName === 'transactions') this.cashbookLoading = state;
                 else if (pageName === 'dashboard') this.dashboardLoading = state;
                 else if (pageName === 'support') this.supportTicketsLoading = state;
+                else if (pageName === 'containers') this.containersLoading = state;
             },
 
             // Navigate to a page - updates both state and browser URL
@@ -675,11 +687,11 @@
                 if (!this.token || !this.hasShop) return Promise.resolve();
                 if (pageName === 'dashboard') return this.loadDashboard();
                 else if (pageName === 'sales-history' || pageName === 'sales-returned') return this.loadSales();
-                else if (pageName === 'products') return this.loadProducts('', true);
+                else if (pageName === 'products') return Promise.allSettled([this.loadProducts('', true), this.loadContainerTypes()]);
                 else if (pageName === 'customers') { this.customerSearchQuery = ''; return this.loadCustomers(); }
                 else if (pageName === 'suppliers') return this.loadSuppliers();
                 else if (pageName === 'expenses') return this.loadExpenses();
-                else if (pageName === 'sales') { this.resetPOS(); return Promise.allSettled([this.loadProducts(), this.loadCustomers()]); }
+                else if (pageName === 'sales') { this.resetPOS(); return Promise.allSettled([this.loadProducts(), this.loadCustomers(), this.loadContainerTypes()]); }
                 else if (pageName === 'purchases') { this.resetNewPurchase(); return Promise.allSettled([this.loadProducts(), this.loadSuppliers()]); }
                 else if (pageName === 'purchase-history') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
                 else if (pageName === 'purchase-returned') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
@@ -693,6 +705,8 @@
                 else if (pageName === 'subscription') return this.loadSubscriptionPlans();
                 else if (pageName === 'addons') return this.loadAddOns();
                 else if (pageName === 'support') return this.loadSupportTickets();
+                else if (pageName === 'containers') return this.loadContainersPage();
+                else if (pageName === 'whatsapp') { window.dispatchEvent(new CustomEvent('whatsapp-open')); return Promise.resolve(); }
                 return Promise.resolve();
             },
 
@@ -740,6 +754,7 @@
             loadAllData() {
                 return Promise.allSettled([
                     this.loadProfile(),
+                    this.loadContainerTypes(),
                     this.loadDashboard(),
                     this.loadProducts(),
                     this.loadCustomers(),
@@ -1760,7 +1775,7 @@
                 if (this.shopUpdateForm.state) fd.append('state', this.shopUpdateForm.state);
                 if (this.shopUpdateForm.pincode) fd.append('pincode', this.shopUpdateForm.pincode);
                 if (this.shopUpdateForm.currency) fd.append('currency', this.shopUpdateForm.currency);
-                if (this.shopUpdateForm.upi_id) fd.append('upi_id', this.shopUpdateForm.upi_id);
+                fd.append('upi_id', this.shopUpdateForm.upi_id || '');
                 if (this.shopUpdateForm.bank_details) fd.append('bank_details', this.shopUpdateForm.bank_details);
                 if (this.shopUpdateForm.invoice_footer) fd.append('invoice_footer', this.shopUpdateForm.invoice_footer);
                 if (this.shopUpdateForm.website_settings) fd.append('website_settings', JSON.stringify(this.shopUpdateForm.website_settings));
@@ -2515,6 +2530,65 @@
                     });
             },
 
+            openDeleteAccountModal() {
+                this.deleteAccountModal.password = '';
+                this.deleteAccountModal.confirmText = '';
+                this.deleteAccountModal.loading = false;
+                this.deleteAccountModal.show = true;
+            },
+
+            closeDeleteAccountModal() {
+                this.deleteAccountModal.show = false;
+                this.deleteAccountModal.password = '';
+                this.deleteAccountModal.confirmText = '';
+                this.deleteAccountModal.loading = false;
+            },
+
+            submitDeleteAccount() {
+                if (!this.deleteAccountModal.password) {
+                    this.showToast(this.t('enter_password_to_delete') || 'Please enter your password.', 'error');
+                    return;
+                }
+                if (this.deleteAccountModal.confirmText.trim().toUpperCase() !== 'DELETE') {
+                    this.showToast(this.t('type_delete_to_confirm') || 'Please type DELETE to confirm.', 'error');
+                    return;
+                }
+
+                this.deleteAccountModal.loading = true;
+                fetch('/api/v1/shopowner/delete-account', {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify({
+                        password: this.deleteAccountModal.password
+                    })
+                })
+                .then(async r => {
+                    const d = await r.json();
+                    return { ok: r.ok, status: r.status, data: d };
+                })
+                .then(res => {
+                    this.deleteAccountModal.loading = false;
+                    if (res.ok) {
+                        this.deleteAccountModal.show = false;
+                        alert(res.data.message || this.t('account_deleted_success') || 'Your account and all associated data have been permanently deleted.');
+                        ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop', 'lifetime_offer_dismissed', 'shopowner_max_shops', 'shopowner_has_website_addon', 'shopowner_user_addons', 'shopowner_locked_shop_ids'].forEach(k => localStorage.removeItem(k));
+                        this.token = null;
+                        this.user = null;
+                        this.shop = null;
+                        this.hasShop = false;
+                        window.location.href = '/shop/login?deleted=1';
+                    } else if (res.data.errors && res.data.errors.password) {
+                        this.showToast(res.data.errors.password[0], 'error');
+                    } else {
+                        this.showToast(res.data.message || 'Failed to delete account.', 'error');
+                    }
+                })
+                .catch(() => {
+                    this.deleteAccountModal.loading = false;
+                    this.showToast('Error processing account deletion.', 'error');
+                });
+            },
+
             triggerCloudBackup() {
                 this.showToast('Cloud database backup snapshot generated successfully!');
             },
@@ -3062,6 +3136,7 @@
             // ── POS ───────────────────────────────────────────────────
             resetPOS() {
                 this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', items: [] };
+                this.resetPosContainers();
                 this.posCustomerSearchQuery = '';
                 this.posFilteredCustomers = this.customers;
                 this.posCustomerPrices = {};
@@ -3083,7 +3158,9 @@
                 if (customer) {
                     this.pos.selectedCustomer = customer.id;
                     this.loadPosCustomerPrices(customer.id);
+                    this.loadPosContainerHoldings(customer.id);
                 } else {
+                    this.posContainerDetail = null;
                     this.pos.selectedCustomer = ''; // Walk-In Customer
                     this.posCustomerPrices = {};
                     this.refreshPosCartItemPrices();
@@ -3266,6 +3343,12 @@
                     return;
                 }
 
+                const containers = this.posContainerPayload();
+                if (containers && !this.pos.selectedCustomer) {
+                    this.showConfirm('Validation Error', this.t('select_customer_for_containers') || 'Select a customer to give or receive containers.', () => { });
+                    return;
+                }
+
                 if (this.pos.paymentType === 'Store Credit') {
                     const cust = this.getSelectedPosCustomer();
                     if (!cust) {
@@ -3285,6 +3368,7 @@
                     payment_type: this.pos.paymentType,
                     items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
+                if (containers) body.containers = containers;
                 fetch('/api/v1/sales', { method: 'POST', headers: this.getHeaders(), body: JSON.stringify(body) })
                     .then(r => {
                         if (!r.ok) {
@@ -3377,7 +3461,8 @@
                                 payment_type: d.payment_type,
                                 refund_method: d.payment_type === 'Credit' ? 'due_adjustment' : (['cash', 'bank', 'upi'].includes((d.payment_type || '').toLowerCase()) ? d.payment_type.toLowerCase() : 'cash'),
                                 discount: parseFloat(d.discount) || 0,
-                                items: availableItems
+                                items: availableItems,
+                                container_pending: this.hasContainers() ? this.salePendingContainers(d) : 0
                             };
                             this.showReturnModal = true;
                         }
@@ -3424,6 +3509,15 @@
                             this.showReturnModal = false;
                             this.loadSales();
                             this.loadAllData();
+                            // Product came back — ask whether its containers did too (deposit refunded in the same step).
+                            if (this.returnForm.container_pending > 0 && this.returnForm.customer_id) {
+                                const { customer_id, saleId } = this.returnForm;
+                                this.showConfirm(
+                                    this.t('containers_also_returned') || 'Containers also returned?',
+                                    (this.t('containers_also_returned_msg') || 'This invoice still has containers with the customer. Receive them back now?') + ' (' + this.returnForm.container_pending + ')',
+                                    () => this.openContainerEntryModal('return', customer_id, saleId)
+                                );
+                            }
                         } else {
                             this.showToast(d.message || 'Failed to process return.', 'error');
                         }
@@ -3642,6 +3736,39 @@
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
             },
 
+            // Sends the invoice from the DukanHisab WhatsApp number using the shop's message credits.
+            sendViaWhatsApp(kind, id) {
+                if (!id) return;
+                this._postWhatsApp(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`);
+            },
+
+            // Due reminder (with Pay Now) to a customer, or due statement to a supplier.
+            sendWhatsAppReminder(type, id) {
+                if (!id) return;
+                this._postWhatsApp(`/api/v1/whatsapp/reminders/${type}/${id}`);
+            },
+
+            _postWhatsApp(url) {
+                if (this.sendingWhatsApp) return;
+                this.sendingWhatsApp = true;
+                fetch(url, { method: 'POST', headers: this.getHeaders() })
+                    .then(r => r.json().then(d => ({ status: r.status, body: d })))
+                    .then(({ status, body }) => {
+                        this.sendingWhatsApp = false;
+                        if (status === 202) {
+                            this.showToast(body.message || 'Sent on WhatsApp.');
+                        } else if (status === 402) {
+                            this.showConfirm(this.t('wa_buy_messages'), body.message, () => {
+                                this.showInvoiceModal = false;
+                                this.showPurchaseDetailsModal = false;
+                                this.navigateTo('whatsapp');
+                            });
+                        } else {
+                            this.showToast(body.message || 'Could not send on WhatsApp.', 'error');
+                        }
+                    }).catch(() => { this.sendingWhatsApp = false; this.showToast('Could not send on WhatsApp.', 'error'); });
+            },
+
             sendSaleInvoiceEmail() {
                 if (!this.selectedSale || this.sendingSaleEmail) return;
                 this.sendingSaleEmail = true;
@@ -3807,7 +3934,7 @@
                     });
             },
 
-            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true }; this.showProductModal = true; },
+            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true, container_type_id: '', containers_per_unit: 1 }; this.showProductModal = true; },
             openEditProductModal(product) {
                 this.newProduct = {
                     id: product.id,
@@ -3820,7 +3947,9 @@
                     initial_stock: parseInt(product.stock) || 0,
                     low_stock_threshold: product.low_stock_threshold,
                     available_for_sale: product.available_for_sale !== false && product.available_for_sale !== 0 && product.available_for_sale !== '0',
-                    available_for_purchase: product.available_for_purchase !== false && product.available_for_purchase !== 0 && product.available_for_purchase !== '0'
+                    available_for_purchase: product.available_for_purchase !== false && product.available_for_purchase !== 0 && product.available_for_purchase !== '0',
+                    container_type_id: product.container_type_id ? String(product.container_type_id) : '',
+                    containers_per_unit: product.containers_per_unit || 1
                 };
                 this.showProductModal = true;
             },

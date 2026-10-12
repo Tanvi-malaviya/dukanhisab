@@ -221,6 +221,15 @@
                     </div>
                 </div>
 
+                {{-- Returnable Containers (only for shops where the admin enabled it) --}}
+                <a href="/dukanhisab/containers" x-show="hasContainers()" x-cloak
+                    @click.prevent="navigateTo('containers')"
+                    :class="page === 'containers' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    <span x-text="t('containers')">Containers</span>
+                </a>
+
                 {{-- Reminders --}}
                 <a href="/dukanhisab/reminders"
                     @click.prevent="navigateTo('reminders')"
@@ -228,6 +237,15 @@
                     class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                     <span x-text="t('reminders')">Reminders</span>
+                </a>
+
+                {{-- WhatsApp Messages --}}
+                <a href="/dukanhisab/whatsapp"
+                    @click.prevent="navigateTo('whatsapp')"
+                    :class="page === 'whatsapp' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                    class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                    <span x-text="t('whatsapp_messages')">WhatsApp Messages</span>
                 </a>
 
                 {{-- Subscription Plan --}}
@@ -536,12 +554,28 @@
                        </div>
 
                        <!-- Reminders -->
+                       <a href="/dukanhisab/containers" x-show="hasContainers()" x-cloak
+                           @click.prevent="navigateTo('containers'); mobileSidebarOpen = false"
+                           :class="page === 'containers' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                           class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                           <span x-text="t('containers')">Containers</span>
+                       </a>
                        <a href="/dukanhisab/reminders"
                            @click.prevent="navigateTo('reminders'); mobileSidebarOpen = false"
                            :class="page === 'reminders' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
                            class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
                            <span x-text="t('reminders')">Reminders</span>
+                       </a>
+
+                       <!-- WhatsApp Messages -->
+                       <a href="/dukanhisab/whatsapp"
+                           @click.prevent="navigateTo('whatsapp'); mobileSidebarOpen = false"
+                           :class="page === 'whatsapp' ? 'bg-primary text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700'"
+                           class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all gap-3">
+                           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                           <span x-text="t('whatsapp_messages')">WhatsApp Messages</span>
                        </a>
 
                        <!-- Subscription Plan -->

@@ -38,6 +38,7 @@ class UserController extends Controller
             'total' => User::count(),
             'active' => User::where('status', 'active')->count(),
             'suspended' => User::where('status', 'suspended')->count(),
+            'deleted' => User::where('status', 'deleted')->count(),
             'total_shops' => \App\Models\Shop::count(),
             'premium' => User::whereHas('activePlan', function($qp) {
                 $qp->where('slug', '!=', 'free');
@@ -190,13 +191,51 @@ class UserController extends Controller
 
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with('shops')->findOrFail($id);
         $userName = $user->name;
-        $user->delete();
 
-        AuditLog::log("Deleted user account #{$id} ({$userName})");
+        $user->update(['status' => 'deleted']);
+        foreach ($user->shops as $shop) {
+            $shop->update(['status' => 'inactive']);
+        }
+        $user->tokens()->delete();
 
-        return redirect()->route('admin.users.index')->with('success', 'User account deleted successfully.');
+        AuditLog::log("Admin moved user account #{$id} ({$userName}) to deleted status");
+
+        return redirect()->route('admin.users.index')->with('success', "User account '{$userName}' has been moved to Deleted Accounts. It can be recovered anytime.");
+    }
+
+    public function recover($id)
+    {
+        $user = User::with('shops')->findOrFail($id);
+        $userName = $user->name;
+
+        $user->update(['status' => 'active']);
+        foreach ($user->shops as $shop) {
+            $shop->update(['status' => 'active']);
+        }
+
+        AuditLog::log("Admin recovered deleted user account #{$id} ({$userName})");
+
+        return back()->with('success', "User account '{$userName}' and all associated shops have been successfully recovered!");
+    }
+
+    public function forceDelete($id)
+    {
+        $user = User::with('shops')->findOrFail($id);
+        $userName = $user->name;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+            foreach ($user->shops as $shop) {
+                $shop->delete();
+            }
+            $user->tokens()->delete();
+            $user->delete();
+        });
+
+        AuditLog::log("Admin permanently purged user account #{$id} ({$userName}) from database");
+
+        return redirect()->route('admin.users.index')->with('success', "User account '{$userName}' has been permanently purged from the database.");
     }
 
     /**

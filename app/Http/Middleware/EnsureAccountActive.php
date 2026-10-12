@@ -17,15 +17,17 @@ class EnsureAccountActive
     {
         $user = $request->user();
 
-        if ($user && $user->isSuspended()) {
+        if ($user && ($user->isSuspended() || $user->isDeleted())) {
             $token = $user->currentAccessToken();
             if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
                 $token->delete();
             }
 
             return response()->json([
-                'error' => 'account_suspended',
-                'message' => 'Your account has been suspended.',
+                'error' => $user->isDeleted() ? 'account_deleted' : 'account_suspended',
+                'message' => $user->isDeleted()
+                    ? 'Your account has been deleted. Please contact the administrator to restore your account.'
+                    : 'Your account has been suspended.',
             ], 403);
         }
 

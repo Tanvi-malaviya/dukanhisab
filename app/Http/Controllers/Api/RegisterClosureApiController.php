@@ -54,11 +54,22 @@ class RegisterClosureApiController extends Controller
         // 4. Opening cash before today's transactions
         $openingBalance = (float) ($expectedCashInHand - ($todayCashIn - $todayCashOut));
 
+        // Container deposits are cash held for customers, not sales — shown on their own lines so the
+        // drawer total still explains itself (already included in cash_in / cash_out above).
+        $todayContainerCash = fn (array $refTypes, string $type) => (float) CashBook::where('shop_id', $shopId)
+            ->where('type', $type)
+            ->where('payment_method', 'cash')
+            ->whereIn('reference_type', $refTypes)
+            ->whereDate('transaction_date', $today)
+            ->sum('amount');
+
         $data = [
             'closing_date' => $today->toDateString(),
             'opening_balance' => round($openingBalance, 2),
             'cash_in' => round((float) $todayCashIn, 2),
             'cash_out' => round((float) $todayCashOut, 2),
+            'container_deposits_in' => round($todayContainerCash(['container_deposit', 'container_reversal'], 'cash_in'), 2),
+            'container_refunds_out' => round($todayContainerCash(['container_refund', 'container_reversal'], 'cash_out'), 2),
             'expected_cash' => round($expectedCashInHand, 2),
             'is_closed_today' => !empty($lastClosure),
             'last_closure' => $lastClosure,

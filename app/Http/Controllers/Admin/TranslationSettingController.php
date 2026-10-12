@@ -44,7 +44,23 @@ class TranslationSettingController extends Controller
             return str_repeat(' ', (int) (strlen($matches[1]) / 2));
         }, $json);
 
-        return file_put_contents($filePath, $json . "\n") !== false;
+        return @file_put_contents($filePath, $json . "\n", LOCK_EX) !== false;
+    }
+
+    /**
+     * Return the translation files the web server cannot write to.
+     */
+    protected function unwritableFiles(): array
+    {
+        return array_values(array_map('basename', array_filter(
+            [$this->enPath, $this->guPath, $this->hiPath],
+            fn ($path) => file_exists($path) ? !is_writable($path) : !is_writable(dirname($path))
+        )));
+    }
+
+    protected function unwritableMessage(array $files): string
+    {
+        return 'Cannot save: ' . implode(', ', $files) . ' in the lang/ folder is not writable by the web server. Fix the file permissions on the server and try again.';
     }
 
     /**
@@ -146,6 +162,10 @@ class TranslationSettingController extends Controller
             'translations.*.hi' => 'nullable|string',
         ]);
 
+        if ($unwritable = $this->unwritableFiles()) {
+            return back()->withInput()->with('error', $this->unwritableMessage($unwritable));
+        }
+
         [$en, $gu, $hi] = $this->loadTranslations();
 
         $submitted = $request->input('translations', []);
@@ -184,6 +204,13 @@ class TranslationSettingController extends Controller
             'hi'  => 'nullable|string',
         ]);
 
+        if ($unwritable = $this->unwritableFiles()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $this->unwritableMessage($unwritable),
+            ], 500);
+        }
+
         $key = trim($request->input('key'));
         [$en, $gu, $hi] = $this->loadTranslations();
 
@@ -220,6 +247,10 @@ class TranslationSettingController extends Controller
             'new_gu'  => 'nullable|string',
             'new_hi'  => 'nullable|string',
         ]);
+
+        if ($unwritable = $this->unwritableFiles()) {
+            return back()->withInput()->with('error', $this->unwritableMessage($unwritable));
+        }
 
         $key = trim($request->input('new_key'));
         [$en, $gu, $hi] = $this->loadTranslations();

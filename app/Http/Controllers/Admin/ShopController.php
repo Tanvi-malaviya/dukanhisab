@@ -164,6 +164,31 @@ class ShopController extends Controller
         return back()->with('success', "Shop status and owner account have been updated to {$newStatus}.");
     }
 
+    /** Switch an optional module (Shop::FEATURES) on or off for one shop — free, admin-only. */
+    public function updateFeature(Request $request, $id)
+    {
+        $shop = Shop::findOrFail($id);
+
+        $request->validate([
+            'feature' => 'required|string|in:' . implode(',', array_keys(Shop::FEATURES)),
+            'enabled' => 'required|boolean',
+        ]);
+
+        $feature = $request->input('feature');
+        $features = array_values(array_diff($shop->features ?? [], [$feature]));
+        if ($request->boolean('enabled')) {
+            $features[] = $feature;
+        }
+        // Turning a module off only hides it — its data stays and comes back if switched on again.
+        $shop->forceFill(['features' => $features])->save();
+
+        $label = Shop::FEATURES[$feature];
+        $state = $request->boolean('enabled') ? 'enabled' : 'disabled';
+        AuditLog::log("{$label} {$state} for shop #{$shop->id} ({$shop->name})", ['feature' => $feature, 'enabled' => $request->boolean('enabled')]);
+
+        return back()->with('success', "{$label} {$state} for {$shop->name}.");
+    }
+
     public function updateSubscription(Request $request, $id)
     {
         $shop = Shop::findOrFail($id);

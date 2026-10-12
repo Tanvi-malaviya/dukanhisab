@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DukanHisab - Shop Owner Panel</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -249,6 +255,8 @@
                     @include('shopowner.partials.transactions')
                     @include('shopowner.partials.reports')
                     @include('shopowner.partials.reminders')
+                    @include('shopowner.partials.containers')
+                    @include('shopowner.partials.whatsapp')
                     @include('shopowner.partials.settings')
                     @include('shopowner.partials.subscription')
                     @include('shopowner.partials.addons')
@@ -306,8 +314,10 @@
 
     {{-- ===== ALL MODALS (outside x-if — always in DOM, Alpine reactivity works correctly) ===== --}}
     @include('shopowner.partials.modals')
+    @include('shopowner.partials.container-modals')
 
     {{-- Alpine JS Controller --}}
+    @include('shopowner.partials.containers-scripts')
     @include('shopowner.partials.scripts')
 
 </body>

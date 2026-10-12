@@ -37,6 +37,12 @@
                     <span class="text-[10px] text-slate-500 mt-1 block">Minimum client version to run.</span>
                 </div>
                 <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Update Link</label>
+                    <input type="url" name="update_url" value="{{ old('update_url', $settings['update_url']) }}" placeholder="https://play.google.com/store/apps/details?id=..."
+                        class="block w-full px-3.5 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white font-mono">
+                    <span class="text-[10px] text-slate-500 mt-1 block">Store / download page opened by the app's Update button.</span>
+                </div>
+                <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Force Client Update</label>
                     <select name="force_update" required 
                         class="block w-full px-3 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">

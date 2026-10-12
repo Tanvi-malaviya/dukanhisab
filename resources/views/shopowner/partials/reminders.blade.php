@@ -47,6 +47,12 @@
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                                 <span x-text="t('collect')">Collect</span>
                                             </button>
+                                            {{-- Automatic: sent from the DukanHisab number using WhatsApp credits --}}
+                                            <button type="button" @click="sendWhatsAppReminder('customer', cust.id)" :disabled="sendingWhatsApp"
+                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-50 cursor-pointer"
+                                                :title="t('wa_send_auto_reminder')">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                            </button>
                                             <a :href="`https://wa.me/${cust.mobile || ''}?text=${encodeURIComponent(
                                                 currentLang === 'gu' ? ('નમસ્તે ' + cust.name + ', ' + (shop ? shop.name : 'દુકાન') + ' પર તમારી ₹' + parseFloat(cust.due_amount).toFixed(2) + ' ની બાકી રકમ જમા કરાવવા વિનંતી છે. આભાર!') :
                                                 currentLang === 'hi' ? ('नमस्ते ' + cust.name + ', ' + (shop ? shop.name : 'दुकान') + ' पर आपकी ₹' + parseFloat(cust.due_amount).toFixed(2) + ' की बकाया राशि जमा कराने का अनुरोध है। धन्यवाद!') :
@@ -125,6 +131,12 @@
                                                 class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold transition-all inline-flex items-center gap-1 shrink-0 shadow-sm cursor-pointer whitespace-nowrap">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                                 <span class="whitespace-nowrap" x-text="t('pay_due')">Pay Due</span>
+                                            </button>
+                                            {{-- Automatic: sent from the DukanHisab number using WhatsApp credits --}}
+                                            <button type="button" @click="sendWhatsAppReminder('supplier', sup.id)" :disabled="sendingWhatsApp"
+                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-50 cursor-pointer"
+                                                :title="t('wa_send_auto_reminder')">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                                             </button>
                                             <a :href="`https://wa.me/${sup.mobile || ''}?text=${encodeURIComponent(
                                                 currentLang === 'gu' ? ('નમસ્તે ' + sup.name + ', મારી પાસે તમારી ₹' + parseFloat(sup.due_amount).toFixed(2) + ' ની બાકી રકમની ચુકવણી બાબતે સંપર્ક કરું છું. આભાર!') :

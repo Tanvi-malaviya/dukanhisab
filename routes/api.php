@@ -1,5 +1,11 @@
 <?php
 
+// -- Public routes (no authentication required) ------------------------------
+Route::prefix('public')->group(function () {
+    Route::get('/plans', [\App\Http\Controllers\Api\PublicApiController::class, 'plans']);
+    Route::get('/addons', [\App\Http\Controllers\Api\PublicApiController::class, 'addons']);
+});
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AppSettingController;
@@ -63,13 +69,28 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
     Route::post('/sales/{id}/return', [\App\Http\Controllers\Api\SaleApiController::class, 'returnSale']);
     Route::get('/sales/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePDF']);
     Route::post('/sales/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailSaleInvoice']);
+    Route::post('/sales/{id}/whatsapp', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendSaleInvoice']);
 
     // Purchase CRUD
     Route::apiResource('purchases', \App\Http\Controllers\Api\PurchaseApiController::class);
     Route::post('/purchases/{id}/cancel', [\App\Http\Controllers\Api\PurchaseApiController::class, 'cancel']);
     Route::get('/purchases/{id}/invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'generatePurchasePDF']);
     Route::post('/purchases/{id}/email-invoice', [\App\Http\Controllers\Api\InvoiceApiController::class, 'emailPurchaseInvoice']);
+    Route::post('/purchases/{id}/whatsapp', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendPurchaseInvoice']);
     Route::post('/purchases/{id}/return', [\App\Http\Controllers\Api\PurchaseApiController::class, 'returnPurchase']);
+
+    // WhatsApp messaging: settings, credits wallet & pack purchase
+    Route::get('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'settings']);
+    Route::post('/whatsapp/settings', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'updateSettings']);
+    Route::post('/whatsapp/upi', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'updateUpi']);
+    Route::post('/whatsapp/reminders/{type}/{id}', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'sendReminder'])->whereIn('type', ['customer', 'supplier']);
+    Route::get('/whatsapp/messages', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'messages']);
+    Route::get('/whatsapp/payment-claims', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'paymentClaims']);
+    Route::post('/whatsapp/payment-claims/{id}/confirm', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'confirmPaymentClaim']);
+    Route::post('/whatsapp/payment-claims/{id}/reject', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'rejectPaymentClaim']);
+    Route::get('/whatsapp/wallet', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'wallet']);
+    Route::post('/whatsapp/packs/{id}/purchase', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'purchasePack']);
+    Route::post('/whatsapp/packs/verify-payment', [\App\Http\Controllers\Api\WhatsAppApiController::class, 'verifyPackPayment']);
 
     // CashBook
     Route::apiResource('cashbooks', \App\Http\Controllers\Api\CashBookApiController::class)->except(['update']);
@@ -93,6 +114,30 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active', 'shop.scope',
 
     // Credit Notes
     Route::apiResource('credit-notes', \App\Http\Controllers\Api\CreditNoteApiController::class)->only(['index', 'show']);
+
+    // Returnable containers & deposits — optional module, switched on per shop by the admin
+    Route::middleware('shop.feature:containers')->group(function () {
+        Route::get('/containers/summary', [\App\Http\Controllers\Api\ContainerApiController::class, 'summary']);
+        Route::get('/containers/customers', [\App\Http\Controllers\Api\ContainerApiController::class, 'customers']);
+        Route::get('/containers/customers/{customerId}', [\App\Http\Controllers\Api\ContainerApiController::class, 'customer']);
+        Route::get('/containers/entries', [\App\Http\Controllers\Api\ContainerApiController::class, 'index']);
+        Route::post('/containers/entries', [\App\Http\Controllers\Api\ContainerApiController::class, 'store']);
+        Route::get('/containers/entries/{id}', [\App\Http\Controllers\Api\ContainerApiController::class, 'show']);
+        Route::post('/containers/entries/{id}/reverse', [\App\Http\Controllers\Api\ContainerApiController::class, 'reverse']);
+        Route::apiResource('container-types', \App\Http\Controllers\Api\ContainerTypeApiController::class);
+        Route::post('/container-types/{id}/adjust-stock', [\App\Http\Controllers\Api\ContainerTypeApiController::class, 'adjustStock']);
+    });
+});
+
+// WhatsApp Cloud API callbacks — called by Meta, so no user auth. The webhook checks Meta's
+// signature; invoice PDFs are only reachable through temporary signed links.
+Route::prefix('v1/whatsapp')->group(function () {
+    Route::get('/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'verify']);
+    Route::post('/webhook', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'handle']);
+    Route::get('/invoices/sale/{id}', [\App\Http\Controllers\Api\InvoiceApiController::class, 'signedSalePDF'])
+        ->middleware('signed:relative')->name('whatsapp.invoice.sale');
+    Route::get('/invoices/purchase/{id}', [\App\Http\Controllers\Api\InvoiceApiController::class, 'signedPurchasePDF'])
+        ->middleware('signed:relative')->name('whatsapp.invoice.purchase');
 });
 
 // ShopOwner Common API Authentication Module
@@ -112,6 +157,10 @@ Route::prefix('v1/shopowner')->group(function () {
         Route::get('/profile', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'profile']);
         Route::post('/profile', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'updateProfile']);
         Route::get('/pincode/{pincode}', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'getPincodeDetails']);
+
+        // Account Deletion (Google Play / App Store & Web Panel compliance)
+        Route::post('/delete-account', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
+        Route::delete('/delete-account', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
 
         // Subscription plans & current plan status
         Route::get('/subscription-plans', [\App\Http\Controllers\Api\ShopOwner\SubscriptionApiController::class, 'plans']);
@@ -157,6 +206,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'account.active'])->group(funct
     Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markRead']);
     Route::post('/notifications/mark-all-read', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'markAllRead']);
     Route::delete('/notifications/{id}', [\App\Http\Controllers\Api\ShopOwner\NotificationApiController::class, 'destroy']);
+
+    // Direct account deletion for mobile clients
+    Route::delete('/account', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
+    Route::post('/account/delete', [\App\Http\Controllers\Api\ShopOwner\AuthApiController::class, 'deleteAccount']);
 });
+
 
 

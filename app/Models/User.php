@@ -61,10 +61,10 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
-        // Suspending an account (from any admin screen) signs it out of the web panel and every
-        // app device at once — otherwise tokens issued before the suspension kept working.
+        // Suspending or deleting an account signs it out of the web panel and every
+        // app device at once — otherwise tokens issued before kept working.
         static::updated(function (User $user) {
-            if ($user->wasChanged('status') && $user->status === 'suspended') {
+            if ($user->wasChanged('status') && in_array($user->status, ['suspended', 'deleted'])) {
                 $user->tokens()->delete();
             }
         });
@@ -148,6 +148,11 @@ class User extends Authenticatable
     public function isSuspended(): bool
     {
         return $this->status === 'suspended';
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->status === 'deleted';
     }
 
     /**

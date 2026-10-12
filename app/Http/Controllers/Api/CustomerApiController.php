@@ -85,6 +85,7 @@ class CustomerApiController extends Controller
             'mobile' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'due_amount' => 'nullable|numeric',
+            'whatsapp_opt_out' => 'sometimes|boolean',
         ]);
 
         if ($validator->fails()) {
@@ -102,6 +103,18 @@ class CustomerApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $customer = Customer::where('shop_id', $shopId)->findOrFail($id);
+
+        // Deleting would hide the deposit the shop still owes this customer.
+        $pendingContainers = \App\Models\ContainerMovement::where('shop_id', $shopId)
+            ->where('customer_id', $customer->id)
+            ->openLots()
+            ->sum(\Illuminate\Support\Facades\DB::raw('quantity - closed_quantity'));
+        if ($pendingContainers > 0) {
+            return response()->json([
+                'message' => "{$customer->name} still has {$pendingContainers} returnable containers. Receive them back before deleting this customer.",
+            ], 422);
+        }
+
         $customer->delete();
         return response()->json(null, 204);
     }
@@ -162,6 +175,8 @@ class CustomerApiController extends Controller
 
         // 3. Sync Sale Statuses based on Customer Due Balance
         static::syncCustomerSaleStatuses($customer->id, $shopId);
+
+        app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->customerPaid($customer, $amount);
 
         return response()->json([
             'message' => 'Udhar repayment recorded successfully.',

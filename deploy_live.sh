@@ -22,8 +22,8 @@ if command -v npm &> /dev/null; then
     npm run build
 fi
 
-chown -R www-data:www-data storage bootstrap/cache
-chmod -R 775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache lang
+chmod -R 775 storage bootstrap/cache lang
 
 echo "=========================================="
 echo " Deployment Successfully Completed!"

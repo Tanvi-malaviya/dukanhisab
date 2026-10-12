@@ -167,6 +167,16 @@
                         </template>
                     </div>
 
+                    {{-- Returnable containers still with the customer from this sale --}}
+                    <template x-if="hasContainers() && salePendingContainers(sale) > 0">
+                        <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-[11px]">
+                            <span class="font-semibold text-amber-800 dark:text-amber-300 truncate"
+                                x-text="saleContainerRows(sale).map(r => r.qty + ' ' + r.name).join(', ') + ' ' + t('pending')"></span>
+                            <button @click="openContainerEntryModal('return', sale.customer_id, sale.id)"
+                                class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md font-bold shrink-0" x-text="t('receive')">Receive</button>
+                        </div>
+                    </template>
+
                     {{-- Actions --}}
                     <div
                         class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700/50 gap-2 w-full">

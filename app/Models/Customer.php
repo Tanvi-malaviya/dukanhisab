@@ -15,7 +15,13 @@ class Customer extends Model
         'mobile',
         'email',
         'due_amount',
+        'whatsapp_opt_out',
         'credit_balance',
+    ];
+
+    protected $casts = [
+        'whatsapp_opt_out' => 'boolean',
+        'last_whatsapp_reminder_at' => 'datetime',
     ];
 
     protected $appends = ['net_balance'];
@@ -49,5 +55,10 @@ class Customer extends Model
     public function customProductPrices()
     {
         return $this->hasMany(CustomerProductPrice::class);
+    }
+
+    public function containerMovements()
+    {
+        return $this->hasMany(ContainerMovement::class);
     }
 }

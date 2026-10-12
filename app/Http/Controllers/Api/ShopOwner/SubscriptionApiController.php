@@ -105,6 +105,10 @@ class SubscriptionApiController extends Controller
         $user = $request->user();
         $user->load(['activePlan', 'currentSubscription']);
 
+        if ($locked = $this->lifetimeLockedResponse($user)) {
+            return $locked;
+        }
+
         $subscription = $user->currentSubscription;
         if (!$subscription || $subscription->status !== 'active' || !$user->activePlan || $user->activePlan->slug === 'free') {
             return response()->json(['message' => 'You do not have an active paid subscription to cancel.'], 400);
@@ -147,6 +151,10 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        if ($locked = $this->lifetimeLockedResponse($user)) {
+            return $locked;
         }
 
         // The admin's "Gateway Enable/Disable" toggle (Admin > Settings > Payment Gateway) only
@@ -239,6 +247,10 @@ class SubscriptionApiController extends Controller
 
         if (!$plan) {
             return response()->json(['message' => 'Subscription plan not found.'], 404);
+        }
+
+        if ($locked = $this->lifetimeLockedResponse($user)) {
+            return $locked;
         }
 
         // Free is always allowed — it downgrades locally and never touches the gateway. The
@@ -539,6 +551,16 @@ class SubscriptionApiController extends Controller
         $event = $request->input('event');
         $payload = $request->input('payload');
 
+        // WhatsApp message packs are one-time orders. Crediting here as well as in the app's
+        // verify call means credits still arrive if the app closes right after paying.
+        if ($event === 'order.paid' && ($payload['order']['entity']['notes']['type'] ?? null) === 'whatsapp_pack') {
+            $purchase = \App\Models\WhatsAppPackPurchase::where('razorpay_order_id', $payload['order']['entity']['id'] ?? null)->first();
+            if ($purchase) {
+                app(\App\Services\WhatsApp\WhatsAppWallet::class)->completePurchase($purchase, $payload['payment']['entity']['id'] ?? null);
+            }
+            return response()->json(['status' => 'success']);
+        }
+
         // Auto-renewal is over (user cancelled, renewal payment kept failing,
         // all cycles done, or paused). Access is NOT revoked here: the user keeps
         // what they already paid for until ends_at, and it just won't renew.
@@ -693,6 +715,22 @@ class SubscriptionApiController extends Controller
             Log::error("Razorpay subscription cancel failed ({$razorpaySubscriptionId}): " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Lifetime plans are bought once and never expire, so an owner has nothing to
+     * upgrade to, downgrade to or cancel. Admins can still change it from Admin > Users.
+     */
+    private function lifetimeLockedResponse(\App\Models\User $user): ?\Illuminate\Http\JsonResponse
+    {
+        $user->loadMissing('activePlan');
+        if ($user->activePlan && $user->activePlan->billing_period === 'lifetime') {
+            return response()->json([
+                'message' => 'You already own the Lifetime plan. It never expires, so there is nothing to change or cancel.',
+            ], 400);
+        }
+
+        return null;
     }
 
     private function downgradeToFree(\App\Models\User $user, \App\Models\Subscription $subscription, string $reason): void

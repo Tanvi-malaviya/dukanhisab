@@ -36,7 +36,21 @@ class Shop extends Model
     protected $casts = [
         'website_settings' => 'array',
         'added_by_admin' => 'boolean',
+        'features' => 'array',
     ];
+
+    /**
+     * Optional modules the admin can switch on per shop, free of charge. Not in $fillable on
+     * purpose: only the admin panel turns them on or off (ShopController::updateFeature).
+     */
+    public const FEATURES = [
+        'containers' => 'Returnable Containers',
+    ];
+
+    public function hasFeature(string $feature): bool
+    {
+        return in_array($feature, $this->features ?? [], true);
+    }
 
     public function owner()
     {

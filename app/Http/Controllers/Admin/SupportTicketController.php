@@ -14,8 +14,16 @@ class SupportTicketController extends Controller
     {
         $query = SupportTicket::with(['user', 'messages.senderAdmin', 'messages.senderUser']);
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        $selectedStatus = $request->input('status', 'open');
+
+        if ($selectedStatus === 'all') {
+            // Show all tickets
+        } elseif ($selectedStatus === 'closed') {
+            $query->whereIn('status', ['closed', 'resolved']);
+        } else {
+            // Default to 'open'
+            $selectedStatus = 'open';
+            $query->whereIn('status', ['open', 'pending', 'inProgress']);
         }
 
         if ($request->filled('date')) {
@@ -37,12 +45,11 @@ class SupportTicketController extends Controller
 
         $stats = [
             'total' => SupportTicket::count(),
-            'open' => SupportTicket::where('status', 'open')->count(),
-            'in_progress' => SupportTicket::whereIn('status', ['inProgress', 'pending'])->count(),
-            'resolved' => SupportTicket::whereIn('status', ['resolved', 'closed'])->count(),
+            'open' => SupportTicket::whereIn('status', ['open', 'pending', 'inProgress'])->count(),
+            'closed' => SupportTicket::whereIn('status', ['closed', 'resolved'])->count(),
         ];
 
-        return view('admin.support.index', compact('tickets', 'stats'));
+        return view('admin.support.index', compact('tickets', 'stats', 'selectedStatus'));
     }
 
     public function reply(Request $request, $id)
@@ -51,7 +58,7 @@ class SupportTicketController extends Controller
 
         $request->validate([
             'admin_reply' => 'required|string|max:5000',
-            'status' => 'nullable|string|in:open,pending,inProgress,resolved,closed',
+            'status' => 'nullable|string|in:open,closed',
             'attachment' => 'nullable|file|mimes:jpeg,png,jpg,webp,pdf,doc,docx,xls,xlsx,zip|max:10240',
         ]);
 
@@ -71,7 +78,7 @@ class SupportTicketController extends Controller
             'attachment' => $attachmentPath,
         ]);
 
-        $status = $request->input('status', ($ticket->status === 'open' ? 'inProgress' : $ticket->status));
+        $status = $request->input('status', ($ticket->status === 'closed' ? 'closed' : 'open'));
 
         $ticket->update([
             'admin_reply' => $adminReplyText,
@@ -103,8 +110,8 @@ class SupportTicketController extends Controller
     {
         $ticket = SupportTicket::findOrFail($id);
 
-        if (!in_array($status, ['open', 'pending', 'inProgress', 'resolved', 'closed'])) {
-            return back()->with('error', 'Invalid status.');
+        if (!in_array($status, ['open', 'closed'])) {
+            return back()->with('error', 'Invalid status. Only Open and Closed are supported.');
         }
 
         $ticket->update(['status' => $status]);

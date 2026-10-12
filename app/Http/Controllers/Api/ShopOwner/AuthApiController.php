@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use App\Models\AuditLog;
 use Carbon\Carbon;
 
 class AuthApiController extends Controller
@@ -204,6 +207,12 @@ class AuthApiController extends Controller
 
         if ($user->isSuspended()) {
             return response()->json(['message' => 'Your account has been suspended.'], 403);
+        }
+
+        if ($user->isDeleted()) {
+            return response()->json([
+                'message' => 'Your account has been deleted. Please contact the administrator to restore your account.'
+            ], 403);
         }
 
         if (!$user->email_verified_at) {
@@ -696,6 +705,64 @@ class AuthApiController extends Controller
         }
 
         return self::$pincodeFallbackData[$pincode] ?? null;
+    }
+
+    /**
+     * Delete user account and all associated shop data (Mobile App & Web API).
+     * Permanent and irreversible. Complies with Google Play & App Store policies.
+     */
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'message' => 'The provided password does not match our records.',
+                'errors' => [
+                    'password' => ['The provided password is incorrect.']
+                ]
+            ], 422);
+        }
+
+        $userId = $user->id;
+        $userName = $user->name;
+        $userEmail = $user->email;
+
+        DB::transaction(function () use ($user, $userId, $userName, $userEmail) {
+            // Set all associated shops to inactive
+            foreach ($user->shops as $shop) {
+                $shop->update(['status' => 'inactive']);
+            }
+
+            // Revoke all Sanctum API tokens immediately
+            $user->tokens()->delete();
+
+            // Mark user status as deleted
+            $user->update(['status' => 'deleted']);
+
+            // Record audit log
+            AuditLog::log("User self-deleted account #{$userId} ({$userName} - {$userEmail})", [
+                'action_type' => 'account_deleted',
+                'user_id' => $userId,
+            ], $userId);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your account and all associated data have been permanently deleted.'
+        ], 200);
     }
 }
 
