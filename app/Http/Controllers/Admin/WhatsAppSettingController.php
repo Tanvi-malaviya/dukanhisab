@@ -147,14 +147,47 @@ class WhatsAppSettingController extends Controller
         }
     }
 
-    /** Sends Meta's built-in hello_world, or one of our templates filled with sample values. */
+    /** The templates that really exist in Meta, for the test-send picker. */
+    public function metaTemplates()
+    {
+        try {
+            return response()->json(['success' => true, 'templates' => WhatsAppTemplateSync::fromSettings()->remoteTemplates()]);
+        } catch (WhatsAppException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp template list error: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'Could not load templates from Meta: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Sends a test of a real Meta template (picked by name + language code), or — as before —
+     * Meta's hello_world / one of our rows by id. A Meta template linked to one of our rows is
+     * filled with that row's sample values; any other gets generic samples for its variables.
+     */
     public function sendTest(Request $request)
     {
         $request->validate([
             'phone' => 'required|string|max:20',
-            'template_id' => 'required|string',
+            'template_id' => 'required_without:template_name|nullable|string',
+            'template_name' => 'required_without:template_id|nullable|string|max:512',
+            'language_code' => 'required_with:template_name|nullable|string|max:15',
             'document_url' => 'nullable|url|max:1000',
         ]);
+
+        if ($request->filled('template_name')) {
+            $linked = WhatsAppTemplate::where('meta_template_name', $request->input('template_name'))
+                ->where('meta_language_code', $request->input('language_code'))
+                ->first();
+            if ($linked) {
+                $request->merge(['template_id' => (string) $linked->id]);
+            } elseif ($request->input('template_name') === 'hello_world') {
+                $request->merge(['template_id' => 'hello_world']);
+            } else {
+                return $this->sendRemoteTest($request);
+            }
+        }
 
         $to = WhatsAppClient::normalizePhone($request->input('phone'));
         if (!$to) {
@@ -189,6 +222,50 @@ class WhatsAppSettingController extends Controller
             }
 
             AuditLog::log('Sent WhatsApp test message', ['to' => $to, 'template' => $request->input('template_id')]);
+
+            return response()->json(['success' => true, 'message' => "Test message sent to +{$to} (id: {$messageId})."]);
+        } catch (WhatsAppException $e) {
+            return response()->json(['success' => false, 'message' => 'WhatsApp API error: ' . $e->getMessage()], 400);
+        } catch (\Throwable $e) {
+            Log::error('WhatsApp test send error: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'Could not send the message: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /** Test send of a Meta template that has no row here, using generic sample values. */
+    private function sendRemoteTest(Request $request)
+    {
+        $to = WhatsAppClient::normalizePhone($request->input('phone'));
+        if (!$to) {
+            return response()->json(['success' => false, 'message' => 'Please enter a valid mobile number.'], 422);
+        }
+
+        $client = WhatsAppClient::fromSettings();
+        if (!$client->isConfigured()) {
+            return response()->json(['success' => false, 'message' => 'Save the Phone Number ID and Access Token first.'], 422);
+        }
+
+        $name = (string) $request->input('template_name');
+        $language = (string) $request->input('language_code');
+
+        try {
+            $meta = (new WhatsAppTemplateSync($client))->findRemote($name, $language);
+            if (!$meta) {
+                return response()->json(['success' => false, 'message' => "“{$name}” ({$language}) was not found in Meta — refresh the list."], 422);
+            }
+            if (strtoupper((string) $meta['status']) !== 'APPROVED') {
+                return response()->json(['success' => false, 'message' => "“{$name}” is {$meta['status']} in Meta — only approved templates can be sent."], 422);
+            }
+
+            try {
+                $components = WhatsAppTemplateSync::testComponents($meta, $request->input('document_url'));
+            } catch (WhatsAppException $e) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            $messageId = $client->sendTemplate($to, $name, $language, $components);
+            AuditLog::log('Sent WhatsApp test message', ['to' => $to, 'template' => $name, 'language' => $language]);
 
             return response()->json(['success' => true, 'message' => "Test message sent to +{$to} (id: {$messageId})."]);
         } catch (WhatsAppException $e) {

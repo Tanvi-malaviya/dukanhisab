@@ -99,7 +99,7 @@
             :class="activeTab === 'claims' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700'">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>Payment Claims</span>
-            <span x-show="wa.claims.length" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse" x-text="wa.claims.length"></span>
+            <span x-show="wa.claims.length" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse" x-text="wa.claims.length"></span>
         </button>
     </div>
 
@@ -172,7 +172,7 @@
                                             <div class="flex flex-wrap gap-1">
                                                 <template x-for="day in days" :key="day">
                                                     <button type="button" @click="toggleDay(ev, day)"
-                                                        :class="(ev.schedule_days || []).includes(day) ? 'bg-primary text-white border-primary shadow-2xs' : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-gray-600 hover:bg-slate-100'"
+                                                        :class="(ev.schedule_days || []).includes(day) ? 'bg-primary text-white border-primary shadow-2xs' : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700'"
                                                         class="px-2 py-1 rounded-lg border text-[11px] font-bold capitalize transition-all cursor-pointer" x-text="day"></button>
                                                 </template>
                                             </div>
@@ -264,7 +264,7 @@
                                             <div class="flex flex-wrap gap-1">
                                                 <template x-for="day in days" :key="day">
                                                     <button type="button" @click="toggleDay(ev, day)"
-                                                        :class="(ev.schedule_days || []).includes(day) ? 'bg-primary text-white border-primary shadow-2xs' : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-gray-600 hover:bg-slate-100'"
+                                                        :class="(ev.schedule_days || []).includes(day) ? 'bg-primary text-white border-primary shadow-2xs' : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700'"
                                                         class="px-2 py-1 rounded-lg border text-[11px] font-bold capitalize transition-all cursor-pointer" x-text="day"></button>
                                                 </template>
                                             </div>
@@ -481,7 +481,7 @@
                         <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="wt('wa_payment_claims', 'Customer Payment Claims')"></h4>
                         <p class="text-xs text-slate-400" x-text="wt('wa_payment_claims_desc', 'Customers who clicked Pay Now and submitted UTR transaction numbers.')"></p>
                     </div>
-                    <span x-show="wa.claims.length" class="px-2.5 py-1 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-xs font-black" x-text="wa.claims.length + ' Pending'"></span>
+                    <span x-show="wa.claims.length" class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-black" x-text="wa.claims.length + ' Pending'"></span>
                 </div>
 
                 <div x-show="!wa.claims.length" class="py-8 text-center text-xs text-slate-400">
@@ -500,7 +500,7 @@
                                 <button type="button" @click="resolveClaim(claim, 'confirm')" :disabled="wa.resolvingId === claim.id"
                                     class="px-3.5 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold disabled:opacity-60 cursor-pointer shadow-xs" x-text="wt('wa_confirm', 'Confirm & Record')"></button>
                                 <button type="button" @click="resolveClaim(claim, 'reject')" :disabled="wa.resolvingId === claim.id"
-                                    class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 text-xs font-semibold disabled:opacity-60 cursor-pointer" x-text="wt('wa_reject', 'Dismiss')"></button>
+                                    class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold disabled:opacity-60 cursor-pointer" x-text="wt('wa_reject', 'Dismiss')"></button>
                             </div>
                         </div>
                     </template>
@@ -528,7 +528,7 @@
                 {{-- Modal Header --}}
                 <div class="px-5 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
-                        <span class="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-primary flex items-center justify-center">
+                        <span class="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-primary dark:text-teal-300 flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </span>
                         <div>
@@ -553,7 +553,7 @@
                                 required
                                 class="block w-full pl-9 pr-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             <span class="absolute left-3 top-2.5 text-slate-400 pointer-events-none">
-                                <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                <svg class="w-4 h-4 text-primary dark:text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             </span>
                         </div>
                         <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">

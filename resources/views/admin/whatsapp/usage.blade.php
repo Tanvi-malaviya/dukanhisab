@@ -6,7 +6,7 @@
 
 @section('content')
 @php
-    $inputClass = 'block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white';
+    $inputClass = 'block w-full px-3.5 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white';
     $labelClass = 'block text-xs font-semibold text-slate-400 uppercase mb-2';
 @endphp
 <div class="space-y-6">
@@ -15,10 +15,10 @@
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
         @foreach([
             ['Messages (' . $periodDays . 'd)', number_format($totals['messages']), 'text-white'],
-            ['Delivered / read', number_format($totals['delivered']), 'text-emerald-400'],
-            ['Failed (refunded)', number_format($totals['failed']), 'text-rose-400'],
-            ['Pack sales (' . $periodDays . 'd)', '₹' . number_format($totals['revenue'], 2) . ' · ' . number_format($totals['credits_sold']) . ' cr', 'text-teal-400'],
-            ['Unused credits (all shops)', number_format($totals['outstanding_credits']), 'text-amber-400'],
+            ['Delivered / read', number_format($totals['delivered']), 'text-success'],
+            ['Failed (refunded)', number_format($totals['failed']), 'text-danger'],
+            ['Pack sales (' . $periodDays . 'd)', '₹' . number_format($totals['revenue'], 2) . ' · ' . number_format($totals['credits_sold']) . ' cr', 'text-primary'],
+            ['Unused credits (all shops)', number_format($totals['outstanding_credits']), 'text-warning'],
         ] as [$label, $value, $color])
             <div class="bg-card-dark border border-border-dark rounded-2xl p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{{ $label }}</p>
@@ -36,7 +36,7 @@
             </div>
             <div class="flex items-center gap-2">
                 <form method="GET" class="flex gap-2">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search shop..." class="px-3 py-1.5 bg-secondary/40 border border-border-dark rounded-xl text-xs text-white">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search shop..." class="px-3 py-1.5 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-xs text-white">
                 </form>
                 <x-button type="button" onclick="openAdjustModal()" variant="primary" class="whitespace-nowrap">Adjust Credits</x-button>
             </div>
@@ -58,9 +58,9 @@
                         <tr class="hover:bg-secondary/10 transition-colors">
                             <td class="px-6 py-3 font-semibold text-white">{{ $shop->name }} <span class="block text-[11px] text-slate-500 font-normal">ID #{{ $shop->id }}</span></td>
                             <td class="px-6 py-3 text-xs">{{ $shop->owner?->name }} <span class="block text-slate-500">{{ $shop->owner?->email ?? $shop->owner?->mobile }}</span></td>
-                            <td class="px-6 py-3 font-mono text-xs {{ $shop->balance < 20 ? 'text-amber-400' : '' }}">{{ number_format($shop->balance) }}</td>
+                            <td class="px-6 py-3 font-mono text-xs {{ $shop->balance < 20 ? 'text-warning font-semibold' : '' }}">{{ number_format($shop->balance) }}</td>
                             <td class="px-6 py-3 font-mono text-xs">{{ number_format($shop->sent) }}</td>
-                            <td class="px-6 py-3 font-mono text-xs {{ $shop->failed ? 'text-rose-400' : '' }}">{{ number_format($shop->failed) }}</td>
+                            <td class="px-6 py-3 font-mono text-xs {{ $shop->failed ? 'text-danger font-semibold' : '' }}">{{ number_format($shop->failed) }}</td>
                             <td class="px-6 py-3 text-right">
                                 <button type="button" onclick="openAdjustModal({{ $shop->id }})" class="text-xs text-primary hover:underline cursor-pointer">Adjust</button>
                             </td>
