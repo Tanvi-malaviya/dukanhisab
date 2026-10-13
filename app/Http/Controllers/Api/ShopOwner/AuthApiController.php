@@ -137,6 +137,10 @@ class AuthApiController extends Controller
         $user->load(['shops', 'activePlan', 'currentSubscription']);
         $shop = $user->shops()->first();
 
+        if ($shop) {
+            app(\App\Services\WhatsApp\WhatsAppWallet::class)->grantWelcomeCreditsIfEligible($shop);
+        }
+
         return response()->json([
             'message' => 'Email verified successfully.',
             'token' => $token,
@@ -229,6 +233,10 @@ class AuthApiController extends Controller
         $token = $user->issueDeviceToken('shopowner-auth-token');
         $user->load(['shops', 'activePlan', 'currentSubscription']);
         $shop = $user->shops()->first();
+
+        if ($shop) {
+            app(\App\Services\WhatsApp\WhatsAppWallet::class)->grantWelcomeCreditsIfEligible($shop);
+        }
 
         return response()->json([
             'message' => 'Login successful.',
@@ -595,6 +603,8 @@ class AuthApiController extends Controller
                 $unlinkedAddOn->update(['shop_id' => $shop->id]);
             }
         }
+
+        app(\App\Services\WhatsApp\WhatsAppWallet::class)->grantWelcomeCreditsIfEligible($shop);
 
         $user->load(['shops', 'activePlan', 'currentSubscription']);
 

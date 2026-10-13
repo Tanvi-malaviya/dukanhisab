@@ -6,26 +6,32 @@
 
 @section('content')
 @php
-    $inputClass = 'block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white';
-    $labelClass = 'block text-xs font-semibold text-slate-400 uppercase mb-2';
+    $inputClass = 'block w-full px-3.5 py-2.5 bg-white dark:bg-secondary/30 border border-slate-300 dark:border-border-dark focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none rounded-xl text-xs sm:text-sm text-slate-800 dark:text-white transition-all shadow-2xs';
+    $labelClass = 'block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5';
     // Badge colours for Meta's template review states.
     $metaStatusClass = fn ($status) => match ($status) {
-        'APPROVED' => 'bg-success/15 text-success',
-        'PENDING', 'IN_APPEAL', 'PENDING_DELETION' => 'bg-info/15 text-info',
-        'REJECTED', 'DISABLED', 'NOT_IN_META', 'DELETED' => 'bg-danger/15 text-danger',
-        'PAUSED', 'FLAGGED' => 'bg-warning/15 text-warning',
-        default => 'bg-secondary/20 text-slate-400',
+        'APPROVED' => 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50',
+        'PENDING', 'IN_APPEAL', 'PENDING_DELETION' => 'bg-amber-50 text-amber-800 border border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50',
+        'REJECTED', 'DISABLED', 'NOT_IN_META', 'DELETED' => 'bg-rose-50 text-rose-800 border border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50',
+        'PAUSED', 'FLAGGED' => 'bg-orange-50 text-orange-800 border border-orange-200/80 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800/50',
+        default => 'bg-slate-100 text-slate-700 border border-slate-200/80 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
     };
     $metaStatusLabel = fn ($status) => match ($status) {
         null => 'Not submitted',
         'NOT_IN_META' => 'Not in Meta',
         default => ucwords(strtolower(str_replace('_', ' ', $status))),
     };
+    $languageBadgeClass = fn ($code) => match ($code) {
+        'en' => 'bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50',
+        'gu' => 'bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50',
+        'hi' => 'bg-purple-50 text-purple-700 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/50',
+        default => 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-white/10 dark:text-slate-300 dark:border-white/10',
+    };
 @endphp
 <div class="space-y-3 w-full">
 
     <!-- 4 Tabs Navigation Bar -->
-    <div class="bg-card-dark border border-border-dark p-2 rounded-2xl shadow-xs flex items-center gap-2 overflow-x-auto no-scrollbar">
+    <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark p-2 rounded-2xl shadow-xs flex items-center gap-2 overflow-x-auto no-scrollbar">
         <!-- Tab 1: WhatsApp Setup -->
         <button type="button" onclick="switchTab('setup')" id="tab-btn-setup"
             class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-primary text-white shadow-sm transition-all cursor-pointer whitespace-nowrap shrink-0 text-white-force">
@@ -38,32 +44,32 @@
 
         <!-- Tab 2: Message Template -->
         <button type="button" onclick="switchTab('templates')" id="tab-btn-templates"
-            class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-secondary/15 hover:bg-secondary/30 text-slate-400 hover:text-white border border-border-dark/60 transition-all cursor-pointer whitespace-nowrap shrink-0">
+            class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-secondary/20 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-border-dark transition-all cursor-pointer whitespace-nowrap shrink-0">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
             </svg>
             <span>2. Message Template</span>
-            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full {{ count($missing) > 0 ? 'bg-warning/20 text-warning' : 'bg-secondary/20 text-slate-400' }}">{{ count($templates) }}</span>
+            <span id="tab-badge-templates" class="tab-counter-badge px-2 py-0.5 text-[11px] font-bold rounded-full transition-all">{{ count($templates) }}</span>
         </button>
 
         <!-- Tab 3: Message Pack -->
         <button type="button" onclick="switchTab('packs')" id="tab-btn-packs"
-            class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-secondary/15 hover:bg-secondary/30 text-slate-400 hover:text-white border border-border-dark/60 transition-all cursor-pointer whitespace-nowrap shrink-0">
+            class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-secondary/20 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-border-dark transition-all cursor-pointer whitespace-nowrap shrink-0">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
             </svg>
             <span>3. Message Pack</span>
-            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-secondary/20 text-slate-400">{{ count($packs) }}</span>
+            <span id="tab-badge-packs" class="tab-counter-badge px-2 py-0.5 text-[11px] font-bold rounded-full transition-all">{{ count($packs) }}</span>
         </button>
 
         <!-- Tab 4: Webhook Setup -->
         <button type="button" onclick="switchTab('webhook')" id="tab-btn-webhook"
-            class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-secondary/15 hover:bg-secondary/30 text-slate-400 hover:text-white border border-border-dark/60 transition-all cursor-pointer whitespace-nowrap shrink-0">
+            class="tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-secondary/20 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-border-dark transition-all cursor-pointer whitespace-nowrap shrink-0">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
             <span>4. Webhook</span>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/30">Meta API</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">Meta API</span>
         </button>
     </div>
 
@@ -205,96 +211,103 @@
     <!-- ========================================== -->
     <!-- TAB 2: MESSAGE TEMPLATES                   -->
     <!-- ========================================== -->
-    <div id="tab-content-templates" class="hidden space-y-6">
+    <div id="tab-content-templates" class="hidden space-y-4">
         @if(count($missing))
-            <div class="p-4 rounded-xl bg-warning/10 border border-warning/30 text-warning text-xs space-y-1">
-                <div class="flex items-center gap-2 font-semibold">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    <span>{{ count($missing) }} message type(s) have no active template and will not be sent:</span>
-                </div>
-                <p class="text-slate-300 pl-6">{{ implode(' · ', $missing) }}</p>
+            <div class="p-3 rounded-xl bg-warning/10 border border-warning/30 text-warning text-xs flex items-center gap-2">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                <span>{{ count($missing) }} message type(s) have no active template: {{ implode(', ', $missing) }}</span>
             </div>
         @endif
 
-        <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
-            <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-white text-sm flex items-center gap-2">
-                        <span>Message Templates</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary font-mono">{{ count($templates) }} Registered</span>
-                    </h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Create a template here and <strong>Submit to Meta</strong> for review — its status updates live when Meta approves or rejects it. Only approved templates are sent. Shop owners see these read-only.</p>
-                    <p class="text-xs text-slate-400 mt-1">Due reminder Pay Now button: create it in Meta as a <strong>URL button with a dynamic suffix</strong> pointing to <code class="text-primary font-mono">{{ $payUrlBase }}@{{1}}</code>.</p>
+        <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl shadow-xs overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200 dark:border-border-dark bg-slate-50/80 dark:bg-secondary/10 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <h3 class="font-bold text-slate-900 dark:text-white text-sm">Message Templates</h3>
+                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 font-bold font-mono">{{ count($templates) }} Registered</span>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <form action="{{ route('admin.settings.whatsapp.templates.sync') }}" method="POST" onsubmit="this.querySelector('button').disabled = true; this.querySelector('span').innerText = 'Syncing...';">
                         @csrf
-                        <button type="submit" title="Pull every template's review status from Meta"
-                            class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <button type="submit" title="Pull review status from Meta"
+                            class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-secondary/20 hover:bg-slate-100 dark:hover:bg-secondary/30 text-slate-700 dark:text-white border border-slate-300 dark:border-border-dark transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-2xs">
+                            <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                             <span>Sync from Meta</span>
                         </button>
                     </form>
-                    <x-button type="button" onclick="openTemplateModal()" variant="primary" class="whitespace-nowrap">+ Add Template</x-button>
+                    <button type="button" onclick="openTemplateModal()" class="px-3.5 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Add Template</span>
+                    </button>
                 </div>
             </div>
-            <div class="px-6 py-2 border-b border-border-dark text-[11px] text-slate-500 flex items-center gap-2">
-                <span id="meta-live-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-                <span id="meta-live-text">Review results arrive from Meta through the webhook (subscribe to <code>message_template_status_update</code>).</span>
-            </div>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse table-auto">
                     <thead>
-                        <tr class="bg-secondary/40 border-b border-border-dark text-[11px] font-semibold uppercase text-slate-400 tracking-wider">
-                            <th class="px-6 py-3">Event</th>
-                            <th class="px-6 py-3">Language</th>
-                            <th class="px-6 py-3">Meta Template</th>
-                            <th class="px-6 py-3">Preview</th>
-                            <th class="px-6 py-3">Meta Review</th>
-                            <th class="px-6 py-3">Status</th>
-                            <th class="px-6 py-3 text-right">Actions</th>
+                        <tr class="bg-slate-50 dark:bg-secondary/20 border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-600 dark:text-slate-400 tracking-wider">
+                            <th class="px-3.5 py-3">Event</th>
+                            <th class="px-3 py-3">Language</th>
+                            <th class="px-3 py-3">Meta Template</th>
+                            <th class="px-3 py-3">Preview</th>
+                            <th class="px-3 py-3">Meta Review</th>
+                            <th class="px-3 py-3">Status</th>
+                            <th class="px-3.5 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-border-dark text-sm text-slate-300">
+                    <tbody class="divide-y divide-slate-200/80 dark:divide-border-dark text-sm">
                         @forelse($templates as $t)
-                            <tr class="hover:bg-secondary/10 transition-colors align-top">
-                                <td class="px-6 py-4">
-                                    <p class="font-semibold text-white">{{ $events[$t->key]['label'] ?? $t->key }}</p>
-                                    <p class="text-[11px] text-slate-500">To {{ $t->recipient }}</p>
+                            <tr class="hover:bg-slate-50/80 dark:hover:bg-secondary/10 transition-colors align-middle">
+                                <td class="px-3.5 py-3">
+                                    <div class="font-bold text-slate-900 dark:text-white text-xs whitespace-nowrap">{{ $events[$t->key]['label'] ?? $t->key }}</div>
+                                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">To {{ $t->recipient }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-xs">
-                                    <span class="inline-flex px-2 py-0.5 rounded-md bg-secondary/20 font-medium text-slate-300">
+                                <td class="px-3 py-3 text-xs">
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-md font-bold text-[11px] whitespace-nowrap {{ $languageBadgeClass($t->language) }}">
                                         {{ $languages[$t->language] ?? $t->language }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-xs font-mono">
-                                    {{ $t->meta_template_name }}
-                                    <span class="block text-slate-500">{{ $t->meta_language_code }}</span>
+                                <td class="px-3 py-3 text-xs font-mono">
+                                    <div class="text-slate-900 dark:text-white font-bold text-xs whitespace-nowrap">{{ $t->meta_template_name }}</div>
+                                    <div class="text-[11px] font-medium text-slate-500 dark:text-slate-400">{{ $t->meta_language_code }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-xs max-w-xs">
-                                    @if($t->has_document)<span class="block text-primary mb-1">📄 INV-1024.pdf</span>@endif
-                                    <span class="whitespace-pre-line">{{ $t->renderBody($sampleValues) }}</span>
-                                    @if($t->has_pay_button)<span class="block mt-1 text-success font-semibold">[ 💳 Pay Now ]</span>@endif
+                                <td class="px-3 py-3 text-xs">
+                                    <div class="max-w-[190px] xl:max-w-[240px]">
+                                        <p class="text-slate-800 dark:text-slate-200 text-xs font-medium truncate" title="{{ $t->renderBody($sampleValues) }}">
+                                            {{ preg_replace('/\s+/', ' ', $t->renderBody($sampleValues)) }}
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 mt-1 text-[10px]">
+                                        @if($t->has_document)
+                                            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 font-semibold whitespace-nowrap">📄 PDF</span>
+                                        @endif
+                                        @if($t->has_pay_button)
+                                            <span class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/50 font-semibold whitespace-nowrap">💳 Pay Now</span>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td class="px-6 py-4 text-xs" data-meta-row="{{ $t->id }}">
-                                    <span data-meta-badge class="inline-flex px-2 py-0.5 rounded-full font-semibold whitespace-nowrap {{ $metaStatusClass($t->meta_status) }}">{{ $metaStatusLabel($t->meta_status) }}</span>
-                                    <span data-meta-category class="block text-slate-500 mt-1 {{ $t->meta_category ? '' : 'hidden' }}">{{ $t->meta_category }}</span>
-                                    <span data-meta-reason class="block text-danger mt-1 max-w-[12rem] {{ $t->meta_rejected_reason ? '' : 'hidden' }}">{{ $t->meta_rejected_reason ? 'Reason: ' . $t->meta_rejected_reason : '' }}</span>
+                                <td class="px-3 py-3 text-xs" data-meta-row="{{ $t->id }}">
+                                    <span data-meta-badge class="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap {{ $metaStatusClass($t->meta_status) }}">{{ $metaStatusLabel($t->meta_status) }}</span>
                                     @if($t->differsFromMeta())
-                                        <span class="block text-warning mt-1">Edited here — resubmit</span>
+                                        <span class="block text-amber-600 dark:text-amber-400 font-medium text-[10px] mt-0.5 whitespace-nowrap">Edited · resubmit</span>
                                     @endif
-                                    <span data-meta-synced class="block text-slate-600 mt-1">{{ $t->meta_synced_at?->diffForHumans() }}</span>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $t->status === 'active' ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger' }}">{{ ucfirst($t->status) }}</span>
+                                <td class="px-3 py-3">
+                                    <span class="inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap {{ $t->status === 'active' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50' : 'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-white/10 dark:text-slate-400' }}">{{ ucfirst($t->status) }}</span>
                                 </td>
-                                <td class="px-6 py-4 text-right whitespace-nowrap">
-                                    @if(!$t->meta_template_id || $t->canEditInMeta())
-                                        <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.submit', $t->id) }}', title: '{{ $t->meta_template_id ? 'Resubmit to Meta' : 'Submit to Meta' }}', message: 'Send “{{ $t->meta_template_name }}” ({{ $t->meta_language_code }}) to Meta for review? It can take from a few minutes up to 24 hours; shops can\'t send it until Meta approves.', buttonText: 'Submit', method: 'POST' })" class="p-1 text-xs font-semibold text-primary hover:underline cursor-pointer">{{ $t->meta_template_id ? 'Resubmit' : 'Submit to Meta' }}</button>
-                                    @endif
-                                    <button type="button" onclick='openPreviewModal(localPreviewModel(@json($t)), @json($t->meta_template_name . " · " . $t->meta_language_code))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Preview</button>
-                                    <button type="button" onclick='openTemplateModal(@json($t))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Edit</button>
-                                    <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.destroy', $t->id) }}', title: 'Delete Template', message: 'Delete this template? Shops will stop sending this message in this language.', buttonText: 'Delete', variant: 'danger', method: 'DELETE' })" class="p-1 text-xs text-danger hover:underline cursor-pointer">Delete</button>
+                                <td class="px-3.5 py-3 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        @if(!$t->meta_template_id || $t->canEditInMeta())
+                                            <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.submit', $t->id) }}', title: '{{ $t->meta_template_id ? 'Resubmit to Meta' : 'Submit to Meta' }}', message: 'Send “{{ $t->meta_template_name }}” ({{ $t->meta_language_code }}) to Meta for review?', buttonText: 'Submit', method: 'POST' })"
+                                                class="px-2.5 py-1 text-[11px] font-bold bg-teal-50 hover:bg-teal-100 dark:bg-primary/20 dark:hover:bg-primary/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-700/50 rounded-lg transition-colors cursor-pointer" title="Submit to Meta">
+                                                {{ $t->meta_template_id ? 'Resubmit' : 'Submit' }}
+                                            </button>
+                                        @endif
+                                        <button type="button" onclick='openPreviewModal(localPreviewModel(@json($t)), @json($t->meta_template_name . " · " . $t->meta_language_code))'
+                                            class="px-2.5 py-1 text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-lg transition-colors cursor-pointer">Preview</button>
+                                        <button type="button" onclick='openTemplateModal(@json($t))'
+                                            class="px-2.5 py-1 text-[11px] font-semibold bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/40 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 rounded-lg transition-colors cursor-pointer">Edit</button>
+                                        <button type="button" onclick="confirmAction({ actionUrl: '{{ route('admin.settings.whatsapp.templates.destroy', $t->id) }}', title: 'Delete Template', message: 'Delete this template?', buttonText: 'Delete', variant: 'danger', method: 'DELETE' })"
+                                            class="px-2.5 py-1 text-[11px] font-semibold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50 rounded-lg transition-colors cursor-pointer">Delete</button>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -307,24 +320,23 @@
 
         @if(count($unlinked))
             <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-border-dark bg-secondary/10">
-                    <h3 class="font-bold text-white text-sm">In Meta, not added here ({{ count($unlinked) }})</h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Found in your WhatsApp Business Account during the last sync. Import one to pick its event and map its &#123;&#123;n&#125;&#125; variables.</p>
+                <div class="px-5 py-3 border-b border-border-dark bg-secondary/10 flex items-center justify-between">
+                    <h3 class="font-bold text-white text-xs">In Meta, not added here ({{ count($unlinked) }})</h3>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                    <table class="w-full text-left border-collapse table-auto">
                         <tbody class="divide-y divide-border-dark text-sm text-slate-300">
                             @foreach($unlinked as $u)
-                                <tr class="align-top">
-                                    <td class="px-6 py-3 text-xs font-mono">{{ $u['name'] }}<span class="block text-slate-500">{{ $u['language'] }}</span></td>
-                                    <td class="px-6 py-3 text-xs max-w-md whitespace-pre-line">{{ $u['body'] }}</td>
-                                    <td class="px-6 py-3 text-xs">
-                                        <span class="inline-flex px-2 py-0.5 rounded-full font-semibold {{ $metaStatusClass($u['status']) }}">{{ $metaStatusLabel($u['status']) }}</span>
-                                        <span class="block text-slate-500 mt-1">{{ $u['category'] }}</span>
+                                <tr class="align-middle">
+                                    <td class="px-3.5 py-2.5 text-xs font-mono">{{ $u['name'] }}<span class="block text-slate-500 text-[10px]">{{ $u['language'] }}</span></td>
+                                    <td class="px-3 py-2.5 text-xs max-w-xs truncate text-slate-300" title="{{ $u['body'] }}">{{ preg_replace('/\s+/', ' ', $u['body']) }}</td>
+                                    <td class="px-3 py-2.5 text-xs">
+                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $metaStatusClass($u['status']) }}">{{ $metaStatusLabel($u['status']) }}</span>
+                                        <span class="block text-slate-500 text-[10px] mt-0.5">{{ $u['category'] }}</span>
                                     </td>
-                                    <td class="px-6 py-3 text-right whitespace-nowrap">
-                                        <button type="button" onclick='openPreviewModal(remotePreviewModel(@json($u)), @json($u["name"] . " · " . $u["language"]))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Preview</button>
-                                        <button type="button" onclick='importMetaTemplate(@json($u))' class="p-1 text-xs text-primary hover:underline cursor-pointer">Import</button>
+                                    <td class="px-3.5 py-2.5 text-right whitespace-nowrap">
+                                        <button type="button" onclick='openPreviewModal(remotePreviewModel(@json($u)), @json($u["name"] . " · " . $u["language"]))' class="px-2 py-1 text-[11px] text-primary hover:underline cursor-pointer">Preview</button>
+                                        <button type="button" onclick='importMetaTemplate(@json($u))' class="px-2 py-1 text-[11px] text-primary hover:underline cursor-pointer">Import</button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -538,86 +550,167 @@
 </div>
 
 <!-- Modal: Add / Edit Template -->
-<div id="templateModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('templateModal')"></div>
-    <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-2xl shadow-2xl relative z-10 overflow-hidden">
-        <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
-            <h3 id="templateModalTitle" class="text-sm font-semibold text-white">Add Template</h3>
-            <button type="button" onclick="closeModal('templateModal')" class="text-slate-400 hover:text-white cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+<div id="templateModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-5">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onclick="closeModal('templateModal')"></div>
+    <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl w-full max-w-4xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[92vh] my-auto animate-in fade-in zoom-in-95 duration-200">
+        
+        {{-- Sticky Modal Header --}}
+        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/90 dark:bg-secondary/15 shrink-0">
+            <div class="flex items-center gap-2.5">
+                <span class="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                </span>
+                <div>
+                    <h3 id="templateModalTitle" class="text-sm font-extrabold text-slate-800 dark:text-white">Add WhatsApp Template</h3>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Configure Meta Cloud API message template &amp; preview live</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('templateModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer" title="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-        <form id="templateForm" method="POST" class="p-6 space-y-4">
+
+        {{-- Form wrapped around body & sticky footer --}}
+        <form id="templateForm" method="POST" class="flex flex-col flex-1 overflow-hidden m-0">
             @csrf
             <input type="hidden" name="form_type" value="template">
             <input type="hidden" name="template_id" id="tpl_id">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="{{ $labelClass }}">Event</label>
-                    <select name="key" id="tpl_key" required class="{{ $inputClass }}" onchange="refreshTemplateForm()">
-                        @foreach($events as $key => $event)
-                            <option value="{{ $key }}">{{ $event['label'] }} (to {{ $event['recipient'] }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="{{ $labelClass }}">App Language</label>
-                    <select name="language" id="tpl_language" required class="{{ $inputClass }}" onchange="suggestMetaLanguage()">
-                        @foreach($languages as $code => $label)
-                            <option value="{{ $code }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="{{ $labelClass }}">Meta Template Name</label>
-                    <input type="text" name="meta_template_name" id="tpl_meta_name" required placeholder="due_reminder_gu" class="{{ $inputClass }} font-mono">
-                    <span class="text-[11px] text-slate-500 mt-1 block">Lowercase, numbers and underscores. Changing it later creates a new template in Meta.</span>
-                </div>
-                <div>
-                    <label class="{{ $labelClass }}">Meta Language Code</label>
-                    <input type="text" name="meta_language_code" id="tpl_meta_lang" required placeholder="en_US" class="{{ $inputClass }} font-mono">
+
+            {{-- Scrollable Body: 2 Columns on LG screens --}}
+            <div class="overflow-y-auto flex-1 p-4 sm:p-5">
+                <div class="flex flex-col lg:flex-row gap-5 lg:gap-6 items-start w-full">
+                    
+                    {{-- Left Column: Form Fields (Takes remaining width) --}}
+                    <div class="w-full lg:flex-1 min-w-0 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label class="{{ $labelClass }}">Event</label>
+                                <select name="key" id="tpl_key" required class="{{ $inputClass }}" onchange="refreshTemplateForm()">
+                                    @foreach($events as $key => $event)
+                                        <option value="{{ $key }}">{{ $event['label'] }} (to {{ $event['recipient'] }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="{{ $labelClass }}">App Language</label>
+                                <select name="language" id="tpl_language" required class="{{ $inputClass }}" onchange="suggestMetaLanguage()">
+                                    @foreach($languages as $code => $label)
+                                        <option value="{{ $code }}">{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <div>
+                                <label class="{{ $labelClass }}">Meta Template Name</label>
+                                <input type="text" name="meta_template_name" id="tpl_meta_name" required placeholder="due_reminder_gu" class="{{ $inputClass }} font-mono">
+                                <span class="text-[10px] text-slate-500 mt-1 block">Lowercase, numbers &amp; underscores only.</span>
+                            </div>
+                            <div>
+                                <label class="{{ $labelClass }}">Meta Language Code</label>
+                                <input type="text" name="meta_language_code" id="tpl_meta_lang" required placeholder="en" class="{{ $inputClass }} font-mono">
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="{{ $labelClass }} mb-0">Message Body</label>
+                                <span class="text-[11px] text-slate-400 font-mono">Use &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125;...</span>
+                            </div>
+                            <textarea name="body" id="tpl_body" rows="4" required maxlength="1024" oninput="refreshTemplateForm()"
+                                placeholder="Type your WhatsApp message text with variables..."
+                                class="{{ $inputClass }} resize-y"></textarea>
+                        </div>
+
+                        {{-- Dynamic Variables Section --}}
+                        <div class="space-y-1.5">
+                            <label class="{{ $labelClass }} mb-1">Variables Mapping</label>
+                            <div id="tpl_variables" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"></div>
+                            <p id="tpl_no_vars" class="text-xs text-slate-400 italic">No &#123;&#123;1&#125;&#125; variables in message body yet.</p>
+                        </div>
+
+                        {{-- Options & Status --}}
+                        <div class="p-3.5 bg-slate-50 dark:bg-secondary/10 rounded-xl border border-slate-200 dark:border-border-dark space-y-2.5">
+                            <span class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Features &amp; Status</span>
+                            <div class="flex flex-wrap items-center gap-4 text-xs text-slate-700 dark:text-slate-300">
+                                <label class="flex items-center gap-2 cursor-pointer font-medium hover:text-primary transition-colors">
+                                    <input type="checkbox" name="has_document" value="1" id="tpl_doc" onchange="refreshTemplateForm()" class="rounded border-slate-300 text-primary focus:ring-primary">
+                                    <span>PDF document header</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer font-medium hover:text-primary transition-colors" id="tpl_pay_wrap">
+                                    <input type="checkbox" name="has_pay_button" value="1" id="tpl_pay" onchange="refreshTemplateForm()" class="rounded border-slate-300 text-primary focus:ring-primary">
+                                    <span>Pay Now button (URL)</span>
+                                </label>
+                                <label class="flex items-center gap-2 ml-auto">
+                                    <span class="font-bold">Status:</span>
+                                    <select name="status" id="tpl_status" class="px-2.5 py-1 bg-white dark:bg-secondary/30 border border-slate-300 dark:border-border-dark rounded-lg text-xs font-semibold text-slate-700 dark:text-white cursor-pointer">
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Right Column: Live WhatsApp Phone Preview (Fixed 320px width) --}}
+                    <div class="w-full lg:w-[320px] shrink-0 space-y-2 lg:sticky lg:top-0">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Live Preview</label>
+                            <span class="text-[10px] text-slate-400 font-medium">How customer sees it</span>
+                        </div>
+                        <div class="p-3 bg-slate-100/70 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-border-dark flex justify-center shadow-inner">
+                            <div id="tpl_preview_bubble" class="w-full max-w-[300px]"></div>
+                        </div>
+                        <p class="text-[10px] text-slate-400 text-center">Preview updates live as you type.</p>
+                    </div>
+
                 </div>
             </div>
-            <div>
-                <label class="{{ $labelClass }}">Body (with &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125; ... — sent to Meta with the sample values as examples)</label>
-                <textarea name="body" id="tpl_body" rows="4" required maxlength="1024" oninput="refreshTemplateForm()" class="{{ $inputClass }}"></textarea>
-            </div>
-            <div id="tpl_variables" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-            <div class="flex flex-wrap gap-6 text-sm text-slate-300">
-                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="has_document" value="1" id="tpl_doc" onchange="refreshTemplateForm()"> PDF document header</label>
-                <label class="flex items-center gap-2 cursor-pointer" id="tpl_pay_wrap"><input type="checkbox" name="has_pay_button" value="1" id="tpl_pay" onchange="refreshTemplateForm()"> Pay Now button (URL, dynamic suffix)</label>
-                <label class="flex items-center gap-2">Status
-                    <select name="status" id="tpl_status" class="px-2 py-1 bg-secondary/30 border border-border-dark rounded-lg text-xs text-white">
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </label>
-            </div>
-            <div>
-                <label class="{{ $labelClass }}">Preview — how the customer sees it (sample data)</label>
-                <div id="tpl_preview_bubble" class="max-w-md"></div>
-            </div>
-            <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
-                <x-button type="button" onclick="closeModal('templateModal')" variant="secondary">Cancel</x-button>
-                <x-button type="submit" variant="secondary">Save Only</x-button>
-                <x-button type="submit" name="submit_to_meta" value="1" variant="primary">Save &amp; Submit to Meta</x-button>
+
+            {{-- Sticky Modal Footer --}}
+            <div class="px-5 py-3.5 bg-slate-50 dark:bg-secondary/15 border-t border-slate-200 dark:border-border-dark flex flex-wrap items-center justify-between gap-2 shrink-0">
+                <span class="text-[11px] text-slate-400 hidden sm:inline-block">Template approval takes ~5 minutes on Meta</span>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="button" onclick="closeModal('templateModal')"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-secondary/30 dark:hover:bg-secondary/50 text-slate-800 dark:text-white text-xs font-bold rounded-xl transition-all cursor-pointer">
+                        Save Only
+                    </button>
+                    <button type="submit" name="submit_to_meta" value="1"
+                        class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        <span>Save &amp; Submit to Meta</span>
+                    </button>
+                </div>
             </div>
         </form>
+
     </div>
 </div>
 
 <!-- Modal: Template preview -->
-<div id="previewModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('previewModal')"></div>
-    <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden">
-        <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
+<div id="previewModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onclick="closeModal('previewModal')"></div>
+    <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-200">
+        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/90 dark:bg-secondary/15 shrink-0">
             <div>
-                <h3 class="text-sm font-semibold text-white">Template Preview</h3>
+                <h3 class="text-sm font-bold text-slate-800 dark:text-white">Template Preview</h3>
                 <p id="previewModalName" class="text-[11px] text-slate-400 font-mono"></p>
             </div>
-            <button type="button" onclick="closeModal('previewModal')" class="text-slate-400 hover:text-white cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <button type="button" onclick="closeModal('previewModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 rounded-lg transition-colors cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         </div>
-        <div class="p-5">
-            <div id="previewModalBubble"></div>
-            <p class="text-[11px] text-slate-500 mt-3">Shown with sample values. The real message uses each customer's details.</p>
+        <div class="p-5 overflow-y-auto flex-1 flex flex-col items-center">
+            <div id="previewModalBubble" class="w-full max-w-[320px]"></div>
+            <p class="text-[11px] text-slate-400 text-center mt-3">Shown with sample customer values. The real message dynamically replaces these.</p>
+        </div>
+        <div class="px-5 py-3 bg-slate-50 dark:bg-secondary/15 border-t border-slate-200 dark:border-border-dark flex justify-end shrink-0">
+            <button type="button" onclick="closeModal('previewModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer">Close</button>
         </div>
     </div>
 </div>
@@ -655,44 +748,68 @@
     .dark .wa-doc-meta, .dark .wa-foot, .dark .wa-time { color: #8696a0; }
     .dark .wa-img { background: #2a3942; }
     .dark .wa-btn { border-top-color: #2a3942; color: #53bdeb; }
+
+    /* Tab count badges: High contrast in both active (primary) and inactive states */
+    .tab-btn.bg-primary .tab-counter-badge {
+        background-color: rgba(0, 0, 0, 0.28) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    }
+    .tab-btn:not(.bg-primary) .tab-counter-badge {
+        background-color: #f1f5f9 !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    .dark .tab-btn:not(.bg-primary) .tab-counter-badge {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
 </style>
 
 <!-- Modal: Add / Edit Pack -->
-<div id="packModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal('packModal')"></div>
-    <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden">
-        <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
-            <h3 id="packModalTitle" class="text-sm font-semibold text-white">Add Message Pack</h3>
-            <button type="button" onclick="closeModal('packModal')" class="text-slate-400 hover:text-white cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+<div id="packModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-3 sm:p-4">
+    <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onclick="closeModal('packModal')"></div>
+    <div class="bg-white dark:bg-card-dark border border-slate-200 dark:border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh] my-auto animate-in fade-in zoom-in-95 duration-200">
+        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/90 dark:bg-secondary/15 shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                </span>
+                <h3 id="packModalTitle" class="text-sm font-bold text-slate-800 dark:text-white">Add Message Pack</h3>
+            </div>
+            <button type="button" onclick="closeModal('packModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1.5 rounded-lg transition-colors cursor-pointer"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         </div>
-        <form id="packForm" method="POST" class="p-6 space-y-4">
+        <form id="packForm" method="POST" class="flex flex-col flex-1 overflow-hidden m-0">
             @csrf
             <input type="hidden" name="form_type" value="pack">
             <input type="hidden" name="pack_id" id="pack_id">
-            <div>
-                <label class="{{ $labelClass }}">Pack Name</label>
-                <input type="text" name="name" id="pack_name" required placeholder="Starter — 100 messages" class="{{ $inputClass }}">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="p-5 space-y-4 overflow-y-auto flex-1">
                 <div>
-                    <label class="{{ $labelClass }}">Messages (credits)</label>
-                    <input type="number" name="credits" id="pack_credits" min="1" required class="{{ $inputClass }}">
+                    <label class="{{ $labelClass }}">Pack Name</label>
+                    <input type="text" name="name" id="pack_name" required placeholder="Starter — 100 messages" class="{{ $inputClass }}">
+                </div>
+                <div class="grid grid-cols-2 gap-3.5">
+                    <div>
+                        <label class="{{ $labelClass }}">Messages (credits)</label>
+                        <input type="number" name="credits" id="pack_credits" min="1" required class="{{ $inputClass }}">
+                    </div>
+                    <div>
+                        <label class="{{ $labelClass }}">Price (INR)</label>
+                        <input type="number" step="0.01" min="0" name="price" id="pack_price" required class="{{ $inputClass }}">
+                    </div>
                 </div>
                 <div>
-                    <label class="{{ $labelClass }}">Price (INR)</label>
-                    <input type="number" step="0.01" min="0" name="price" id="pack_price" required class="{{ $inputClass }}">
+                    <label class="{{ $labelClass }}">Status</label>
+                    <select name="status" id="pack_status" class="{{ $inputClass }}">
+                        <option value="active">Active (visible to shop owners)</option>
+                        <option value="inactive">Inactive (hidden)</option>
+                    </select>
                 </div>
             </div>
-            <div>
-                <label class="{{ $labelClass }}">Status</label>
-                <select name="status" id="pack_status" class="{{ $inputClass }}">
-                    <option value="active">Active (visible to shop owners)</option>
-                    <option value="inactive">Inactive (hidden)</option>
-                </select>
-            </div>
-            <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
-                <x-button type="button" onclick="closeModal('packModal')" variant="secondary">Cancel</x-button>
-                <x-button type="submit" variant="primary">Save Pack</x-button>
+            <div class="px-5 py-3.5 bg-slate-50 dark:bg-secondary/15 border-t border-slate-200 dark:border-border-dark flex justify-end gap-2 shrink-0">
+                <button type="button" onclick="closeModal('packModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all cursor-pointer">Cancel</button>
+                <button type="submit" class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer">Save Pack</button>
             </div>
         </form>
     </div>
@@ -721,7 +838,7 @@ function switchTab(tabId) {
             if (t === tabId) {
                 btn.className = 'tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-primary text-white shadow-sm transition-all cursor-pointer whitespace-nowrap shrink-0 text-white-force';
             } else {
-                btn.className = 'tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-secondary/15 hover:bg-secondary/30 text-slate-400 hover:text-white border border-border-dark/60 transition-all cursor-pointer whitespace-nowrap shrink-0';
+                btn.className = 'tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white dark:bg-card-dark hover:bg-slate-50 dark:hover:bg-secondary/20 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-border-dark transition-all cursor-pointer whitespace-nowrap shrink-0';
             }
         }
     });
@@ -818,11 +935,16 @@ function refreshTemplateForm() {
             `<option value="${key}" ${templateVariables[i] === key ? 'selected' : ''}>${escapeHtml(v.label)}</option>`).join('');
         wrap.insertAdjacentHTML('beforeend', `
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">&#123;&#123;${i + 1}&#125;&#125; is</label>
-                <select name="variables[]" onchange="refreshTemplateForm()" class="block w-full px-3 py-2 bg-secondary/30 border border-border-dark rounded-xl text-sm text-white">${options}</select>
+                <label class="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">&#123;&#123;${i + 1}&#125;&#125; is</label>
+                <select name="variables[]" onchange="refreshTemplateForm()" class="block w-full px-3 py-2 bg-white dark:bg-secondary/30 border border-slate-300 dark:border-border-dark rounded-xl text-xs sm:text-sm text-slate-800 dark:text-white shadow-2xs">${options}</select>
             </div>`);
     }
     document.querySelectorAll('#tpl_variables select').forEach((sel, i) => templateVariables[i] = sel.value);
+
+    const noVarsEl = document.getElementById('tpl_no_vars');
+    if (noVarsEl) {
+        noVarsEl.classList.toggle('hidden', count > 0);
+    }
 
     const isDueReminder = document.getElementById('tpl_key').value === 'due_reminder';
     document.getElementById('tpl_pay_wrap').classList.toggle('hidden', !isDueReminder);

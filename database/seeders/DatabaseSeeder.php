@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             SubscriptionPlanSeeder::class,
             AddOnSeeder::class,
             SaaSDataSeeder::class,
+            WhatsAppTemplateSeeder::class,
         ]);
     }
 }

@@ -321,7 +321,7 @@ class UserController extends Controller
             'activePlan',
             'currentSubscription',
             'subscriptions.plan',
-            'shops'
+            'shops.whatsappWallet'
         ])->findOrFail($id);
 
         // Fetch User audit logs
