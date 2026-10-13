@@ -446,6 +446,21 @@
                                 @endif
                             </div>
 
+                            <!-- WhatsApp Message Credits -->
+                            <div class="pt-2 border-t border-teal-200/80 flex items-center justify-between">
+                                <div>
+                                    <span class="text-[10px] text-slate-500 uppercase font-bold block">WhatsApp Credits</span>
+                                    <span class="text-xs font-mono font-bold text-emerald-700">
+                                        {{ number_format($shop->whatsappWallet?->balance ?? 20) }} messages
+                                    </span>
+                                </div>
+                                <button type="button" onclick="openShopWhatsAppModal({{ $shop->id }}, '{{ addslashes($shop->name) }}', {{ (int)($shop->whatsappWallet?->balance ?? 20) }})"
+                                    class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                    <span>Assign</span>
+                                </button>
+                            </div>
+
                             <!-- Optional modules (free, admin-enabled per shop) -->
                             <div class="pt-2 border-t border-teal-200/80 space-y-1.5">
                                 <span class="text-[10px] text-slate-400 uppercase font-bold">Extra Modules</span>
@@ -1242,4 +1257,68 @@
             </script>
         </div>
     </div>
+
+    <!-- Modal: Assign WhatsApp Credits to Shop -->
+    <div id="shopWhatsAppModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeShopWhatsAppModal()"></div>
+        <div class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden">
+            <div class="px-6 py-4 border-b border-border-dark flex items-center justify-between bg-secondary/20">
+                <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                    <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Assign WhatsApp Credits</span>
+                </h3>
+                <button type="button" onclick="closeShopWhatsAppModal()" class="text-slate-400 hover:text-white cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <form action="{{ route('admin.whatsapp.usage.adjust') }}" method="POST" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" name="shop_id" id="modal_shop_id">
+                
+                <div class="p-3 bg-secondary/30 border border-border-dark rounded-xl">
+                    <span class="text-[10px] text-slate-400 uppercase font-bold block">Shop</span>
+                    <span id="modal_shop_name" class="text-sm font-bold text-white block">Shop Name</span>
+                    <span class="text-xs text-slate-400 mt-1 block">Current Balance: <strong id="modal_shop_balance" class="text-emerald-400 font-mono">0</strong> messages</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Credits to Assign (+ to add, − to remove)</label>
+                    <input type="number" name="credits" id="modal_shop_credits" value="20" required class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white" placeholder="e.g. 20">
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <span class="text-[11px] text-slate-400 self-center mr-1">Quick add:</span>
+                        @foreach([10, 20, 50, 100, 200, 500] as $preset)
+                            <button type="button" onclick="document.getElementById('modal_shop_credits').value = {{ $preset }}" class="px-2 py-0.5 rounded-lg bg-secondary/50 hover:bg-primary/20 hover:text-primary text-slate-300 border border-border-dark text-[11px] font-semibold transition-colors cursor-pointer">+{{ $preset }}</button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Reason / Note</label>
+                    <input type="text" name="note" id="modal_shop_note" value="Admin assigned credits" required maxlength="200" class="block w-full px-3.5 py-2 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white" placeholder="e.g. Welcome bonus or Admin top-up">
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        @foreach(['Welcome Bonus', 'Admin Topup', 'Support Compensation', 'Promotional Pack'] as $reason)
+                            <button type="button" onclick="document.getElementById('modal_shop_note').value = '{{ $reason }}'" class="px-2 py-0.5 rounded-lg bg-secondary/30 hover:bg-secondary/60 text-slate-400 text-[10px] transition-colors cursor-pointer">{{ $reason }}</button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2 border-t border-border-dark">
+                    <x-button type="button" onclick="closeShopWhatsAppModal()" variant="secondary">Cancel</x-button>
+                    <x-button type="submit" variant="primary">Assign Credits</x-button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openShopWhatsAppModal(shopId, shopName, currentBalance) {
+            document.getElementById('modal_shop_id').value = shopId;
+            document.getElementById('modal_shop_name').innerText = shopName;
+            document.getElementById('modal_shop_balance').innerText = currentBalance;
+            document.getElementById('shopWhatsAppModal').classList.remove('hidden');
+        }
+        function closeShopWhatsAppModal() {
+            document.getElementById('shopWhatsAppModal').classList.add('hidden');
+        }
+    </script>
 @endsection

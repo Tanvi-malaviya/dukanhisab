@@ -17,10 +17,51 @@ use Illuminate\Support\Facades\DB;
 class WhatsAppWallet
 {
     public const LOW_BALANCE_THRESHOLD = 20;
+    public const DEFAULT_WELCOME_CREDITS = 20;
 
     public function balance(int $shopId): int
     {
-        return (int) (Wallet::where('shop_id', $shopId)->value('balance') ?? 0);
+        $wallet = Wallet::where('shop_id', $shopId)->first();
+        if (!$wallet && !WhatsAppCreditLedger::where('shop_id', $shopId)->exists()) {
+            $shop = Shop::find($shopId);
+            if ($shop) {
+                $this->grantWelcomeCreditsIfEligible($shop);
+                $wallet = Wallet::where('shop_id', $shopId)->first();
+            }
+        }
+
+        return (int) ($wallet?->balance ?? 0);
+    }
+
+    /**
+     * Grants default 20 free messages to a newly created shop or new user login if they haven't received them yet.
+     */
+    public function grantWelcomeCreditsIfEligible(Shop $shop, int $credits = self::DEFAULT_WELCOME_CREDITS): bool
+    {
+        return DB::transaction(function () use ($shop, $credits) {
+            $hasLedger = WhatsAppCreditLedger::where('shop_id', $shop->id)->exists();
+            if ($hasLedger) {
+                return false;
+            }
+
+            $wallet = $this->lockedWallet($shop->id);
+            if ($wallet->balance > 0) {
+                return false;
+            }
+
+            $wallet->balance += $credits;
+            $wallet->save();
+
+            WhatsAppCreditLedger::create([
+                'shop_id' => $shop->id,
+                'type' => 'adjustment',
+                'credits' => $credits,
+                'balance_after' => $wallet->balance,
+                'note' => 'Default free messages (' . $credits . ' messages welcome bonus)',
+            ]);
+
+            return true;
+        });
     }
 
     /** Takes one credit for a message. Throws when the shop has none left. */

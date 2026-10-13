@@ -45,7 +45,6 @@ class WhatsAppUsageController extends Controller
         $shops = Shop::with('owner:id,name,email,mobile')
             ->leftJoin('whatsapp_wallets', 'whatsapp_wallets.shop_id', '=', 'shops.id')
             ->leftJoinSub($sent, 'sent', 'sent.shop_id', '=', 'shops.id')
-            ->where(fn ($q) => $q->whereNotNull('whatsapp_wallets.id')->orWhereNotNull('sent.shop_id'))
             ->when($request->filled('search'), fn ($q) => $q->where('shops.name', 'like', '%' . $request->search . '%'))
             ->select('shops.id', 'shops.name', 'shops.owner_id',
                 DB::raw('coalesce(whatsapp_wallets.balance, 0) as balance'),
@@ -62,7 +61,7 @@ class WhatsAppUsageController extends Controller
             'shops' => $shops,
             'purchases' => $purchases,
             'periodDays' => self::PERIOD_DAYS,
-            'allShops' => Shop::orderBy('name')->get(['id', 'name']),
+            'allShops' => Shop::with('whatsappWallet')->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

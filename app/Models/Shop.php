@@ -76,4 +76,20 @@ class Shop extends Model
     {
         return $this->hasOneThrough(Subscription::class, User::class, 'id', 'user_id', 'owner_id', 'id')->latestOfMany('id');
     }
+
+    public function whatsappWallet()
+    {
+        return $this->hasOne(WhatsAppWallet::class, 'shop_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Shop $shop) {
+            try {
+                app(\App\Services\WhatsApp\WhatsAppWallet::class)->grantWelcomeCreditsIfEligible($shop);
+            } catch (\Throwable $e) {
+                // Ensure resilient execution
+            }
+        });
+    }
 }
