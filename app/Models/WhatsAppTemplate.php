@@ -187,7 +187,7 @@ class WhatsAppTemplate extends Model
                     'type' => 'URL',
                     'text' => self::PAY_BUTTON_TEXT,
                     'url' => $payUrlBase . '{{1}}',
-                    'example' => [$payUrlBase . 'sample-token'],
+                    'example' => ['sample-token'],
                 ]],
             ];
         }

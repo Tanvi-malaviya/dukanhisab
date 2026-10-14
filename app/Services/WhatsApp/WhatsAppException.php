@@ -20,7 +20,22 @@ class WhatsAppException extends \RuntimeException
     public static function fromResponse(Response $response): self
     {
         $error = $response->json('error') ?? [];
-        $message = $error['error_data']['details'] ?? $error['message'] ?? ('HTTP ' . $response->status());
+        $detail = $error['error_user_msg']
+            ?? $error['error_data']['details']
+            ?? null;
+        $title = $error['error_user_title'] ?? null;
+        $base = $error['message'] ?? ('HTTP ' . $response->status());
+
+        $parts = array_filter([$title, $detail ?: $base]);
+        $message = implode(': ', $parts);
+        if (empty($message)) {
+            $message = $base;
+        }
+
+        if (!empty($error['error_subcode'])) {
+            $message .= ' (subcode: ' . $error['error_subcode'] . ')';
+        }
+
         $code = (int) ($error['code'] ?? $response->status());
 
         return new self($message, $code, $response->serverError() || in_array($code, self::RETRYABLE_CODES, true));

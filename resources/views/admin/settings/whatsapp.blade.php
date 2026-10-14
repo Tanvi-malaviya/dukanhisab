@@ -611,7 +611,7 @@
                             </div>
                             <div>
                                 <label class="{{ $labelClass }}">Meta Language Code</label>
-                                <input type="text" name="meta_language_code" id="tpl_meta_lang" required placeholder="en" class="{{ $inputClass }} font-mono">
+                                <input type="text" name="meta_language_code" id="tpl_meta_lang" required placeholder="en_US" class="{{ $inputClass }} font-mono">
                             </div>
                         </div>
 
@@ -818,7 +818,7 @@
 <script>
 const WA_VARIABLES = @json($variables);
 const WA_SAMPLES = @json($sampleValues);
-const WA_META_LANG = { en: 'en', gu: 'gu', hi: 'hi' };
+const WA_META_LANG = { en: 'en_US', gu: 'gu', hi: 'hi' };
 const TEMPLATE_STORE_URL = "{{ route('admin.settings.whatsapp.templates.store') }}";
 const TEMPLATE_UPDATE_URL = "{{ route('admin.settings.whatsapp.templates.update', ['id' => ':id']) }}";
 const PACK_STORE_URL = "{{ route('admin.settings.whatsapp.packs.store') }}";
@@ -896,7 +896,7 @@ function openTemplateModal(t = null) {
     document.getElementById('tpl_key').value = t ? t.key : 'sale_invoice';
     document.getElementById('tpl_language').value = t ? t.language : 'en';
     document.getElementById('tpl_meta_name').value = t ? t.meta_template_name : '';
-    document.getElementById('tpl_meta_lang').value = t ? t.meta_language_code : 'en';
+    document.getElementById('tpl_meta_lang').value = t ? t.meta_language_code : 'en_US';
     document.getElementById('tpl_body').value = t ? t.body : '';
     document.getElementById('tpl_doc').checked = t ? !!t.has_document : false;
     document.getElementById('tpl_pay').checked = t ? !!t.has_pay_button : false;
@@ -918,7 +918,7 @@ function importMetaTemplate(u) {
 }
 
 function suggestMetaLanguage() {
-    document.getElementById('tpl_meta_lang').value = WA_META_LANG[document.getElementById('tpl_language').value] || 'en';
+    document.getElementById('tpl_meta_lang').value = WA_META_LANG[document.getElementById('tpl_language').value] || 'en_US';
 }
 
 // One variable picker per numbered placeholder in the body, plus a live preview with sample values.
