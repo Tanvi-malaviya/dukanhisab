@@ -5,12 +5,7 @@
 
 
 @section('content')
-    <div class="space-y-2">
-
-        <div class="p-4 rounded-2xl bg-info/10 border border-info/30 flex items-start gap-3">
-            <svg class="w-5 h-5 text-info shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <p class="text-sm text-info">Dispatching here now reaches the shop owner: the web panel shows a bell with an unread badge in the header, and the mobile app shows a bell on the dashboard plus a Notifications tile under More — both read and mark-as-read against the same broadcast.</p>
-        </div>
+    <div class="space-y-6">
 
         <!-- Main Grid: Broadcaster & Segment Telemetry -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -40,7 +35,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">
                             Notification Image
-                            <span class="text-slate-500 normal-case font-normal">(Optional — shown to shop owners in the bell panel)</span>
+                            <span class="text-slate-500 normal-case font-normal">(Optional)</span>
                         </label>
 
                         {{-- Drop/Click Zone --}}
@@ -71,8 +66,7 @@
                         </label>
                         <input type="file" name="image" id="notif_image_input" accept="image/*" class="hidden" onchange="previewNotifImage(this)">
 
-                        <div class="flex items-center justify-between mt-2">
-                            <p class="text-[10px] text-slate-600">Image will appear as a banner in the notification card on the shop owner's web panel.</p>
+                        <div class="flex items-center justify-end mt-2">
                             <button type="button" onclick="clearNotifImage()" id="notif_img_clear_btn"
                                 class="hidden text-[11px] text-rose-400 hover:text-rose-600 font-semibold transition-colors flex items-center gap-1">
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -115,7 +109,7 @@
             <!-- Right Side: Segment Telemetry info card -->
             <div class="space-y-5">
                 <div class="bg-card-dark border border-border-dark p-6 rounded-2xl">
-                    <h3 class="text-sm font-semibold text-white mb-4">Segment Segmentations</h3>
+                    <h3 class="text-sm font-semibold text-white mb-4">Target Audience</h3>
 
                     <div class="space-y-4 text-xs">
                         <div class="p-3 bg-secondary/20 border border-border-dark rounded-xl">
