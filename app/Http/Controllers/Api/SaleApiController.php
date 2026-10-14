@@ -276,7 +276,16 @@ class SaleApiController extends Controller
                 $sale->load('containerLots.containerType:id,name');
             }
             app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->saleCreated($sale);
-            return response()->json($sale, 201);
+
+            $isAutoShared = \App\Services\WhatsApp\WhatsAppClient::isEnabled()
+                && \App\Models\WhatsAppShopSetting::isEnabled((int) $shopId, 'sale_invoice')
+                && !empty($sale->customer?->mobile)
+                && !$sale->customer?->whatsapp_opt_out;
+
+            $data = $sale->toArray();
+            $data['whatsapp_shared'] = (bool) $isAutoShared;
+
+            return response()->json($data, 201);
         });
     }
 
@@ -287,7 +296,11 @@ class SaleApiController extends Controller
         if ($this->containersEnabled($shopId)) {
             $sale->load('containerLots.containerType:id,name');
         }
-        return response()->json($sale);
+        $data = $sale->toArray();
+        $data['whatsapp_shared'] = \App\Models\WhatsAppMessageLog::where('sale_id', $sale->id)
+            ->whereIn('status', ['queued', 'sent', 'delivered', 'read'])
+            ->exists();
+        return response()->json($data);
     }
 
     public function update(Request $request, $id)

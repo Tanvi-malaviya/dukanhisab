@@ -800,6 +800,7 @@
                         return;
                     }
                     this.applySettings(d);
+                    window.dispatchEvent(new CustomEvent('whatsapp-settings-updated', { detail: d }));
                     this.showToast(this.wt('wa_settings_saved', 'WhatsApp settings saved successfully.'));
                 } catch (e) {
                     this.showToast('Could not save settings.', 'error');

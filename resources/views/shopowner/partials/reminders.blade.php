@@ -1,5 +1,67 @@
 {{-- REMINDERS PANEL --}}
-<div x-show="page === 'reminders'" class="space-y-6">
+<div x-show="page === 'reminders'" class="space-y-4" @reminders-open.window="loadWhatsAppSettingsSummary()" @whatsapp-settings-updated.window="loadWhatsAppSettingsSummary()" x-init="$watch('page', p => { if (p === 'reminders') loadWhatsAppSettingsSummary(); })">
+    {{-- WhatsApp Reminders Automation Status Banner --}}
+    <div class="rounded-2xl border p-4 shadow-sm transition-all"
+        :class="waDueReminderActive() 
+            ? 'bg-gradient-to-r from-teal-500/10 via-emerald-500/5 to-transparent border-teal-200 dark:border-teal-800/60 dark:bg-gray-800' 
+            : 'bg-slate-50 dark:bg-gray-800 border-slate-200 dark:border-gray-700'">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+                    :class="waDueReminderActive() ? 'bg-teal-600 text-white' : 'bg-slate-200 dark:bg-gray-700 text-slate-500 dark:text-slate-400'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <h4 class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white flex items-center gap-1.5">
+                            <span x-show="waDueReminderActive()">
+                                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1"></span>
+                                <span x-text="t('wa_auto_reminders_active') || 'Automatic WhatsApp Reminders: Active'"></span>
+                            </span>
+                            <span x-show="!waDueReminderActive()">
+                                <span class="inline-block w-2 h-2 rounded-full bg-slate-400 mr-1"></span>
+                                <span x-text="t('wa_auto_reminders_off') || 'Automatic WhatsApp Reminders: Off (Paused)'"></span>
+                            </span>
+                        </h4>
+                        <span x-show="waCreditsBalance() !== null" 
+                            class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                            :class="waCreditsBalance() > 5 ? 'bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300'">
+                            <span x-text="(waCreditsBalance() || 0) + ' ' + (t('wa_credits_left') || 'credits left')"></span>
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        <span x-show="waDueReminderActive()">
+                            <span x-text="t('wa_auto_reminders_active_desc') || 'Scheduled reminders are sent automatically to customers in the background.'"></span>
+                            <template x-if="waDueReminderScheduleText()">
+                                <strong class="text-slate-700 dark:text-slate-200" x-text="' (' + waDueReminderScheduleText() + ')'"></strong>
+                            </template>
+                        </span>
+                        <span x-show="!waDueReminderActive()">
+                            <span x-text="t('wa_auto_reminders_off_desc') || 'Automatic background sending is paused. You can send on-demand reminders by clicking WhatsApp below, or enable automation.'"></span>
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+                <button type="button" @click="navigateTo('whatsapp')"
+                    class="px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    :class="waDueReminderActive() 
+                        ? 'bg-teal-700 hover:bg-teal-800 text-white' 
+                        : 'bg-primary hover:bg-primary-hover text-white'">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span x-text="waDueReminderActive() 
+                        ? (t('wa_manage_automation') || 'Manage Rules & Logs') 
+                        : (t('wa_turn_on_automation') || 'Turn On Auto Reminders')"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {{-- CUSTOMER DUES TRACKER --}}
         <div
@@ -49,27 +111,16 @@
                                             </button>
                                             {{-- Automatic: sent from the DukanHisab number using WhatsApp credits --}}
                                             <button type="button" @click.stop="sendWhatsAppReminder('customer', cust.id)" :disabled="sendingWhatsAppKey === ('customer_' + cust.id)"
-                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-60 cursor-pointer"
+                                                class="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-[11px] font-bold transition-all inline-flex items-center gap-1 shrink-0 shadow-sm disabled:opacity-60 cursor-pointer whitespace-nowrap"
                                                 :title="t('wa_send_auto_reminder')">
                                                 <template x-if="sendingWhatsAppKey === ('customer_' + cust.id)">
-                                                    <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                                    <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                                                 </template>
                                                 <template x-if="sendingWhatsAppKey !== ('customer_' + cust.id)">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                                                 </template>
+                                                <span>WhatsApp</span>
                                             </button>
-                                            <a :href="`https://wa.me/${cust.mobile || ''}?text=${encodeURIComponent(
-                                                currentLang === 'gu' ? ('નમસ્તે *' + cust.name + '*, *' + (shop ? shop.name : 'દુકાન') + '* પર તમારી *₹' + customerNetDue(cust).toFixed(2) + '* ની બાકી રકમ જમા કરાવવા વિનંતી છે. આભાર!') :
-                                                currentLang === 'hi' ? ('नमस्ते *' + cust.name + '*, *' + (shop ? shop.name : 'દુક़ાન') + '* पर आपकी *₹' + customerNetDue(cust).toFixed(2) + '* की बकाया राशि जमा कराने का अनुरोध है। धन्यवाद!') :
-                                                ('Dear *' + cust.name + '*, this is a friendly reminder that you have an outstanding balance of *₹' + customerNetDue(cust).toFixed(2) + '* at *' + (shop ? shop.name : 'DukanHisab') + '*. Please clear it at your earliest convenience. Thank you!')
-                                            )}`"
-                                                target="_blank"
-                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all hover:scale-105 shrink-0 shadow-sm"
-                                                :title="t('send_whatsapp_reminder')">
-                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.377-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.454 5.709 1.455h.008c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                                                </svg>
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -139,27 +190,16 @@
                                             </button>
                                             {{-- Automatic: sent from the DukanHisab number using WhatsApp credits --}}
                                             <button type="button" @click.stop="sendWhatsAppReminder('supplier', sup.id)" :disabled="sendingWhatsAppKey === ('supplier_' + sup.id)"
-                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-60 cursor-pointer"
+                                                class="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-[11px] font-bold transition-all inline-flex items-center gap-1 shrink-0 shadow-sm disabled:opacity-60 cursor-pointer whitespace-nowrap"
                                                 :title="t('wa_send_auto_reminder')">
                                                 <template x-if="sendingWhatsAppKey === ('supplier_' + sup.id)">
-                                                    <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                                    <svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                                                 </template>
                                                 <template x-if="sendingWhatsAppKey !== ('supplier_' + sup.id)">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                                                 </template>
+                                                <span>WhatsApp</span>
                                             </button>
-                                            <a :href="`https://wa.me/${sup.mobile || ''}?text=${encodeURIComponent(
-                                                currentLang === 'gu' ? ('નમસ્તે *' + sup.name + '*, મારી પાસે તમારી *₹' + parseFloat(sup.due_amount).toFixed(2) + '* ની બાકી રકમની ચુકવણી બાબતે સંપર્ક કરું છું. આભાર!') :
-                                                currentLang === 'hi' ? ('नमस्ते *' + sup.name + '*, मैं आपके *₹' + parseFloat(sup.due_amount).toFixed(2) + '* के बकाया भुगतान के संबंध में संपर्क कर रहा हूँ। धन्यवाद!') :
-                                                ('Hello *' + sup.name + '*, I am contacting you regarding the outstanding balance of *₹' + parseFloat(sup.due_amount).toFixed(2) + '* that I owe you. Let\'s coordinate the payment. Thank you!')
-                                            )}`"
-                                                target="_blank"
-                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all hover:scale-105 shrink-0 shadow-sm"
-                                                :title="t('send_whatsapp_message')">
-                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.377-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.746.953 3.71 1.454 5.709 1.455h.008c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-                                                </svg>
-                                            </a>
                                         </div>
                                     </td>
                                 </tr>

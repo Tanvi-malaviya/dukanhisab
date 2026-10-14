@@ -33,6 +33,7 @@ class InvoiceSettingApiController extends Controller
             'date_format' => 'nullable|string|max:20',
             'paper_size' => 'nullable|string|in:A4,58mm,80mm',
             'theme_color' => 'nullable|string|max:10',
+            'text_color' => 'nullable|string|max:10',
             'show_customer_address' => 'nullable|boolean',
             'show_customer_gst' => 'nullable|boolean',
             'show_hsn_code' => 'nullable|boolean',

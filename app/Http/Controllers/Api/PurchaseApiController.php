@@ -202,7 +202,15 @@ class PurchaseApiController extends Controller
             $purchase->refresh();
             app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->purchaseCreated($purchase);
 
-            return response()->json($purchase->load('items.product', 'supplier'), 201);
+            $isAutoShared = \App\Services\WhatsApp\WhatsAppClient::isEnabled()
+                && \App\Models\WhatsAppShopSetting::isEnabled((int) $shopId, 'purchase_record')
+                && !empty($purchase->supplier?->mobile)
+                && !$purchase->supplier?->whatsapp_opt_out;
+
+            $data = $purchase->load('items.product', 'supplier')->toArray();
+            $data['whatsapp_shared'] = (bool) $isAutoShared;
+
+            return response()->json($data, 201);
         });
     }
 
@@ -210,7 +218,11 @@ class PurchaseApiController extends Controller
     {
         $shopId = $request->attributes->get('shop_id');
         $purchase = Purchase::where('shop_id', $shopId)->with('items.product', 'supplier')->findOrFail($id);
-        return response()->json($purchase);
+        $data = $purchase->toArray();
+        $data['whatsapp_shared'] = \App\Models\WhatsAppMessageLog::where('purchase_id', $purchase->id)
+            ->whereIn('status', ['queued', 'sent', 'delivered', 'read'])
+            ->exists();
+        return response()->json($data);
     }
 
     public function update(Request $request, $id)
@@ -383,7 +395,11 @@ class PurchaseApiController extends Controller
             foreach (array_unique(array_filter([$purchase->supplier_id, $oldSupplierId])) as $sid) { SupplierApiController::syncSupplierPurchaseStatuses($sid, $shopId); }
 
             $purchase->refresh();
-            return response()->json($purchase->load('supplier'));
+            $data = $purchase->load('supplier', 'items.product')->toArray();
+            $data['whatsapp_shared'] = \App\Models\WhatsAppMessageLog::where('purchase_id', $purchase->id)
+                ->whereIn('status', ['queued', 'sent', 'delivered', 'read'])
+                ->exists();
+            return response()->json($data);
         });
     }
 
