@@ -26,7 +26,7 @@ class WhatsAppReminderSender
 
     public function remindCustomer(Shop $shop, Customer $customer): WhatsAppMessageLog
     {
-        $due = (float) $customer->net_balance;
+        $due = (float) ($customer->due_amount ?? $customer->net_balance ?? 0);
         if ($due <= 0) {
             throw new WhatsAppException("{$customer->name} has no pending due.");
         }
@@ -51,7 +51,8 @@ class WhatsAppReminderSender
 
     public function remindSupplier(Shop $shop, Supplier $supplier): WhatsAppMessageLog
     {
-        if ((float) $supplier->net_balance <= 0) {
+        $due = (float) ($supplier->due_amount ?? $supplier->net_balance ?? 0);
+        if ($due <= 0) {
             throw new WhatsAppException("Nothing is due to {$supplier->name}.");
         }
 
@@ -93,7 +94,7 @@ class WhatsAppReminderSender
             ->whereNotNull('mobile')
             ->where(fn ($q) => $q->whereNull('last_whatsapp_reminder_at')->orWhere('last_whatsapp_reminder_at', '<', now()->startOfDay()))
             ->get()
-            ->filter(fn ($r) => (float) $r->net_balance >= $minDue && WhatsAppClient::normalizePhone($r->mobile));
+            ->filter(fn ($r) => (float) ($r->due_amount ?? $r->net_balance ?? 0) >= $minDue && WhatsAppClient::normalizePhone($r->mobile));
 
         $result = ['sent' => 0, 'skipped_no_credits' => 0, 'failed' => 0];
         foreach ($recipients->values() as $i => $recipient) {

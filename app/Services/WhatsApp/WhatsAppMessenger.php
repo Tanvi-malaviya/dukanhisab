@@ -134,13 +134,16 @@ class WhatsAppMessenger
             $invoiceNo = 'N/A';
         }
 
+        // Use direct due_amount which matches the UI (Reminders / Customers table)
+        $dueAmount = (float) ($recipient->due_amount ?? $recipient->net_balance ?? 0);
+
         return [
             'party_name' => $partyName,
             'shop_name' => $shopName,
             'shop_mobile' => $shopMobile,
             'invoice_no' => $invoiceNo,
             'amount' => $amount !== null ? $this->money($shop, $amount) : '₹0.00',
-            'due_amount' => $this->money($shop, max(0, (float) $recipient->net_balance)),
+            'due_amount' => $this->money($shop, max(0, $dueAmount)),
             'date' => $date->format('d M Y'),
         ];
     }
