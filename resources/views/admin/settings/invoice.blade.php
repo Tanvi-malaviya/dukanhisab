@@ -5,12 +5,7 @@
 
 
 @section('content')
-<div class="space-y-2">
-
-    <div class="p-4 rounded-2xl bg-info/10 border border-info/30 flex items-start gap-3">
-        <svg class="w-5 h-5 text-info shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <p class="text-sm text-info">Logo, watermark and footer text below are now used as the fallback on every generated invoice/purchase PDF, for any shop that hasn't set its own logo or footer text. <span class="font-semibold">Invoice number prefix is the one exception</span> — it's saved here but intentionally not applied; each shop's own <span class="italic">INV-</span>/<span class="italic">PUR-</span> numbering stays as-is so existing issued invoice numbers are never affected.</p>
-    </div>
+<div class="space-y-6">
 
     <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-border-dark bg-secondary/10 font-semibold text-white text-sm">
@@ -30,10 +25,8 @@
                     @if($settings['default_logo'])
                         <div class="mt-3 flex items-center gap-3">
                             <img src="{{ asset('storage/' . $settings['default_logo']) }}" class="h-10 border border-border-dark rounded p-1 bg-white" alt="Default Logo">
-                            <span class="text-[10px] text-slate-500 font-mono">Current logo path: {{ $settings['default_logo'] }}</span>
+                            <span class="text-xs text-slate-400">Current Logo</span>
                         </div>
-                    @else
-                        <!-- <span class="text-[10px] text-slate-500 mt-1 block">Default placeholder brand logo used if empty.</span> -->
                     @endif
                 </div>
 
@@ -42,7 +35,6 @@
                     <input type="text" name="invoice_prefix" value="{{ old('invoice_prefix', $settings['invoice_prefix']) }}" required 
                         placeholder="e.g. DH-"
                         class="block w-full px-3.5 py-2.5 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white font-mono">
-                    <!-- <span class="text-[10px] text-slate-500 mt-1 block">Prepended to invoice numbers (e.g. DH-1004).</span> -->
                 </div>
             </div>
 
@@ -55,7 +47,6 @@
                         <option value="no" {{ $settings['watermark'] === 'no' ? 'selected' : '' }}>Disabled (Clean layout)</option>
                         <option value="yes" {{ $settings['watermark'] === 'yes' ? 'selected' : '' }}>Enabled (Apply DukanHisab background watermark)</option>
                     </select>
-                    <!-- <span class="text-[10px] text-slate-500 mt-1 block">Forces a watermark to verify system audits.</span> -->
                 </div>
 
             </div>
@@ -65,7 +56,6 @@
                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-2">Default Invoice Terms & Footer Notice</label>
                 <textarea name="footer_text" rows="3" placeholder="Thank you for shopping with us! Standard billing terms apply..."
                     class="block w-full px-3.5 py-2 bg-secondary/30 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-white">{{ old('footer_text', $settings['footer_text']) }}</textarea>
-                <!-- <span class="text-[10px] text-slate-500 mt-1 block">Prints at the base of client invoices.</span> -->
             </div>
 
             <!-- Submit -->
