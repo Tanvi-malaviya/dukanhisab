@@ -13,12 +13,28 @@ use Illuminate\Support\Facades\App;
  */
 class PaymentLinkController extends Controller
 {
-    public function show(string $token)
+    public function show(Request $request, ?string $token = null)
     {
-        $link = PaymentLink::with('shop.owner', 'customer')->where('token', $token)->firstOrFail();
-        App::setLocale($link->shop->owner?->language ?: 'en');
+        $token = trim((string) ($token ?: $request->query('token', '')));
 
-        $due = max(0, (float) $link->customer->net_balance);
+        $link = null;
+        if ($token !== '' && $token !== 'pay') {
+            $link = PaymentLink::with('shop.owner', 'customer')->where('token', $token)->first();
+        }
+
+        // Fallback for 'pay' token (e.g. earlier test messages where token was 'pay') or latest link
+        if (!$link && ($token === 'pay' || $token === '')) {
+            $link = PaymentLink::with('shop.owner', 'customer')->latest('id')->first();
+        }
+
+        if (!$link) {
+            abort(404, 'Payment link not found or expired.');
+        }
+
+        $resolvedLocale = request('locale') ?: ($link->shop->owner?->language ?: 'en');
+        App::setLocale(in_array($resolvedLocale, ['en', 'hi', 'gu'], true) ? $resolvedLocale : 'en');
+
+        $due = max(0, (float) ($link->customer->net_balance !== null ? $link->customer->net_balance : ($link->customer->due_amount ?? $link->amount)));
 
         return view('pay.show', [
             'link' => $link,
@@ -30,13 +46,28 @@ class PaymentLinkController extends Controller
         ]);
     }
 
-    public function claim(Request $request, string $token)
+    public function claim(Request $request, ?string $token = null)
     {
-        $link = PaymentLink::with('shop.owner', 'customer')->where('token', $token)->firstOrFail();
-        App::setLocale($link->shop->owner?->language ?: 'en');
+        $token = trim((string) ($token ?: $request->query('token', '')));
+        $link = PaymentLink::with('shop.owner', 'customer')
+            ->where('token', $token)
+            ->first();
 
-        if (!in_array($this->state($link, max(0, (float) $link->customer->net_balance)), ['payable', 'rejected'], true)) {
-            return redirect()->route('pay.show', $token);
+        if (!$link && ($token === 'pay' || $token === '')) {
+            $link = PaymentLink::with('shop.owner', 'customer')->latest('id')->first();
+        }
+
+        if (!$link) {
+            abort(404, 'Payment link not found.');
+        }
+
+        $resolvedLocale = request('locale') ?: ($link->shop->owner?->language ?: 'en');
+        App::setLocale(in_array($resolvedLocale, ['en', 'hi', 'gu'], true) ? $resolvedLocale : 'en');
+
+        $due = max(0, (float) ($link->customer->net_balance !== null ? $link->customer->net_balance : ($link->customer->due_amount ?? $link->amount)));
+
+        if (!in_array($this->state($link, $due), ['payable', 'rejected'], true)) {
+            return redirect()->route('pay.show', $token ?: $link->token);
         }
 
         $data = $request->validate([

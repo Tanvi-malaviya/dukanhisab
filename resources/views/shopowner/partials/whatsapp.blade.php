@@ -62,7 +62,7 @@
     transform: translateX(16px);
 }
 </style>
-<div x-show="page === 'whatsapp'" x-cloak x-data="whatsappPage()" @whatsapp-open.window="load()" class="space-y-4">
+<div x-show="page === 'whatsapp'" x-cloak x-data="whatsappPage()" @whatsapp-open.window="load()" @language-changed.window="load()" class="space-y-4">
 
     {{-- Top Header Bar: Clean white card, matching other DukanHisab panels --}}
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-gray-700 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -75,11 +75,15 @@
                 </svg>
             </div>
             <div class="min-w-0">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <h3 class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-white tracking-tight truncate" x-text="wt('whatsapp_messages', 'WhatsApp Messages')"></h3>
                     <span x-show="wa.available" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 dark:bg-teal-950/60 text-primary dark:text-teal-300 border border-teal-200/70 dark:border-teal-800/50">
                         <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
                         <span>Active</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-gray-600">
+                        <span>Language:</span>
+                        <strong class="uppercase text-primary dark:text-teal-300" x-text="currentLang"></strong>
                     </span>
                 </div>
                 <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xl" x-text="wt('whatsapp_messages_desc', 'Automated invoices, receipts & due reminders to customers & suppliers.')"></p>
@@ -264,7 +268,7 @@
                                         <div x-show="open" x-transition class="mt-1.5 rounded-xl rounded-tl-none bg-[#eef9f2] dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/40 p-2.5 text-xs text-slate-800 dark:text-slate-200 shadow-xs max-w-sm">
                                             <p class="text-[10px] font-black text-primary dark:text-teal-300 mb-1 flex items-center justify-between">
                                                 <span>DukanHisab Notification</span>
-                                                <span class="text-[9px] text-slate-400">Preview</span>
+                                                <span class="text-[9px] text-slate-400 font-semibold" x-text="'Preview (' + (currentLang === 'gu' ? 'ગુજરાતી' : (currentLang === 'hi' ? 'हिंदी' : 'English')) + ')'"></span>
                                             </p>
                                             <p x-show="ev.has_document" class="mb-1 text-primary dark:text-teal-300 font-semibold text-[11px]">📄 INV-1024.pdf</p>
                                             <p class="whitespace-pre-line text-[11px] leading-relaxed" x-text="ev.preview"></p>
@@ -355,7 +359,7 @@
                                         <div x-show="open" x-transition class="mt-1.5 rounded-xl rounded-tl-none bg-[#eef9f2] dark:bg-teal-950/40 border border-teal-200/80 dark:border-teal-800/40 p-2.5 text-xs text-slate-800 dark:text-slate-200 shadow-xs max-w-sm">
                                             <p class="text-[10px] font-black text-primary dark:text-teal-300 mb-1 flex items-center justify-between">
                                                 <span>DukanHisab Notification</span>
-                                                <span class="text-[9px] text-slate-400">Preview</span>
+                                                <span class="text-[9px] text-slate-400 font-semibold" x-text="'Preview (' + (currentLang === 'gu' ? 'ગુજરાતી' : (currentLang === 'hi' ? 'हिंदी' : 'English')) + ')'"></span>
                                             </p>
                                             <p x-show="ev.has_document" class="mb-1 text-primary dark:text-teal-300 font-semibold text-[11px]">📄 Purchase-PO-1024.pdf</p>
                                             <p class="whitespace-pre-line text-[11px] leading-relaxed" x-text="ev.preview"></p>
@@ -732,8 +736,9 @@
                 if (this.wa.loading || !this.shop) return;
                 this.wa.loading = true;
                 try {
+                    const lang = this.currentLang || localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en';
                     const [settings, wallet, claims] = await Promise.all([
-                        fetch('/api/v1/whatsapp/settings', { headers: this.getHeaders() }).then(r => r.json()),
+                        fetch('/api/v1/whatsapp/settings?locale=' + encodeURIComponent(lang), { headers: this.getHeaders() }).then(r => r.json()),
                         fetch('/api/v1/whatsapp/wallet', { headers: this.getHeaders() }).then(r => r.json()),
                         fetch('/api/v1/whatsapp/payment-claims', { headers: this.getHeaders() }).then(r => r.json()),
                     ]);

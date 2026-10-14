@@ -8,7 +8,7 @@
                 <div class="flex justify-between items-center mb-3">
                     <h4 class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200 truncate" x-text="t('customer_dues_outstanding')">Customer Dues (Outstanding)</h4>
                     <span class="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 rounded-full text-xs font-bold shrink-0 ml-2"
-                        x-text="customers.filter(c => parseFloat(c.due_amount) > 0).length"></span>
+                        x-text="customers.filter(c => customerNetDue(c) > 0).length"></span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full divide-y divide-slate-200 dark:divide-gray-700">
@@ -32,14 +32,14 @@
                                 </tr>
                             </template>
                             <template
-                                x-for="cust in (customersLoading ? [] : customers.filter(c => parseFloat(c.due_amount) > 0).slice((customerDuesPage - 1) * customerDuesPerPage, customerDuesPage * customerDuesPerPage))"
+                                x-for="cust in (customersLoading ? [] : customers.filter(c => customerNetDue(c) > 0).slice((customerDuesPage - 1) * customerDuesPerPage, customerDuesPage * customerDuesPerPage))"
                                 :key="cust.id">
                                 <tr class="hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-colors">
                                     <td class="px-2.5 py-2.5 text-xs font-bold text-slate-800 dark:text-white truncate max-w-[110px]" x-text="cust.name">
                                     </td>
                                     <td class="px-2.5 py-2.5 text-xs text-slate-500 dark:text-slate-400 font-mono whitespace-nowrap" x-text="cust.mobile || 'N/A'"></td>
                                     <td class="px-2.5 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 whitespace-nowrap">₹<span
-                                            x-text="parseFloat(cust.due_amount).toFixed(2)"></span></td>
+                                            x-text="customerNetDue(cust).toFixed(2)"></span></td>
                                     <td class="px-2.5 py-2.5 text-right text-xs whitespace-nowrap">
                                         <div class="flex items-center justify-end gap-1 whitespace-nowrap">
                                             <button @click="openCollectCustomerPaymentModal(cust)"
@@ -48,15 +48,20 @@
                                                 <span x-text="t('collect')">Collect</span>
                                             </button>
                                             {{-- Automatic: sent from the DukanHisab number using WhatsApp credits --}}
-                                            <button type="button" @click="sendWhatsAppReminder('customer', cust.id)" :disabled="sendingWhatsApp"
-                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-50 cursor-pointer"
+                                            <button type="button" @click.stop="sendWhatsAppReminder('customer', cust.id)" :disabled="sendingWhatsAppKey === ('customer_' + cust.id)"
+                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-60 cursor-pointer"
                                                 :title="t('wa_send_auto_reminder')">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                <template x-if="sendingWhatsAppKey === ('customer_' + cust.id)">
+                                                    <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                                </template>
+                                                <template x-if="sendingWhatsAppKey !== ('customer_' + cust.id)">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                </template>
                                             </button>
                                             <a :href="`https://wa.me/${cust.mobile || ''}?text=${encodeURIComponent(
-                                                currentLang === 'gu' ? ('નમસ્તે ' + cust.name + ', ' + (shop ? shop.name : 'દુકાન') + ' પર તમારી ₹' + parseFloat(cust.due_amount).toFixed(2) + ' ની બાકી રકમ જમા કરાવવા વિનંતી છે. આભાર!') :
-                                                currentLang === 'hi' ? ('नमस्ते ' + cust.name + ', ' + (shop ? shop.name : 'दुकान') + ' पर आपकी ₹' + parseFloat(cust.due_amount).toFixed(2) + ' की बकाया राशि जमा कराने का अनुरोध है। धन्यवाद!') :
-                                                ('Dear ' + cust.name + ', this is a friendly reminder that you have an outstanding balance of ₹' + parseFloat(cust.due_amount).toFixed(2) + ' at ' + (shop ? shop.name : 'DukanHisab') + '. Please clear it at your earliest convenience. Thank you!')
+                                                currentLang === 'gu' ? ('નમસ્તે *' + cust.name + '*, *' + (shop ? shop.name : 'દુકાન') + '* પર તમારી *₹' + customerNetDue(cust).toFixed(2) + '* ની બાકી રકમ જમા કરાવવા વિનંતી છે. આભાર!') :
+                                                currentLang === 'hi' ? ('नमस्ते *' + cust.name + '*, *' + (shop ? shop.name : 'દુક़ાન') + '* पर आपकी *₹' + customerNetDue(cust).toFixed(2) + '* की बकाया राशि जमा कराने का अनुरोध है। धन्यवाद!') :
+                                                ('Dear *' + cust.name + '*, this is a friendly reminder that you have an outstanding balance of *₹' + customerNetDue(cust).toFixed(2) + '* at *' + (shop ? shop.name : 'DukanHisab') + '*. Please clear it at your earliest convenience. Thank you!')
                                             )}`"
                                                 target="_blank"
                                                 class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all hover:scale-105 shrink-0 shadow-sm"
@@ -70,7 +75,7 @@
                                 </tr>
                             </template>
                             <template
-                                x-if="!customersLoading && customers.filter(c => parseFloat(c.due_amount) > 0).length === 0">
+                                x-if="!customersLoading && customers.filter(c => customerNetDue(c) > 0).length === 0">
                                 <tr>
                                     <td colspan="4" class="text-center text-slate-400 py-6 text-xs" x-text="t('no_customer_dues_outstanding')">No customer dues
                                         outstanding. Great job!</td>
@@ -82,7 +87,7 @@
             </div>
             <div class="mt-3">
                 <x-pagination currentPage="customerDuesPage"
-                    totalItems="customers.filter(c => parseFloat(c.due_amount) > 0).length" perPage="customerDuesPerPage" loading="customersLoading" />
+                    totalItems="customers.filter(c => customerNetDue(c) > 0).length" perPage="customerDuesPerPage" loading="customersLoading" />
             </div>
         </div>
 
@@ -133,15 +138,20 @@
                                                 <span class="whitespace-nowrap" x-text="t('pay_due')">Pay Due</span>
                                             </button>
                                             {{-- Automatic: sent from the DukanHisab number using WhatsApp credits --}}
-                                            <button type="button" @click="sendWhatsAppReminder('supplier', sup.id)" :disabled="sendingWhatsApp"
-                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-50 cursor-pointer"
+                                            <button type="button" @click.stop="sendWhatsAppReminder('supplier', sup.id)" :disabled="sendingWhatsAppKey === ('supplier_' + sup.id)"
+                                                class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-teal-700 hover:bg-teal-800 text-white transition-all hover:scale-105 shrink-0 shadow-sm disabled:opacity-60 cursor-pointer"
                                                 :title="t('wa_send_auto_reminder')">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                <template x-if="sendingWhatsAppKey === ('supplier_' + sup.id)">
+                                                    <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                                </template>
+                                                <template x-if="sendingWhatsAppKey !== ('supplier_' + sup.id)">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                                </template>
                                             </button>
                                             <a :href="`https://wa.me/${sup.mobile || ''}?text=${encodeURIComponent(
-                                                currentLang === 'gu' ? ('નમસ્તે ' + sup.name + ', મારી પાસે તમારી ₹' + parseFloat(sup.due_amount).toFixed(2) + ' ની બાકી રકમની ચુકવણી બાબતે સંપર્ક કરું છું. આભાર!') :
-                                                currentLang === 'hi' ? ('नमस्ते ' + sup.name + ', मैं आपके ₹' + parseFloat(sup.due_amount).toFixed(2) + ' के बकाया भुगतान के संबंध में संपर्क कर रहा हूँ। धन्यवाद!') :
-                                                ('Hello ' + sup.name + ', I am contacting you regarding the outstanding balance of ₹' + parseFloat(sup.due_amount).toFixed(2) + ' that I owe you. Let\'s coordinate the payment. Thank you!')
+                                                currentLang === 'gu' ? ('નમસ્તે *' + sup.name + '*, મારી પાસે તમારી *₹' + parseFloat(sup.due_amount).toFixed(2) + '* ની બાકી રકમની ચુકવણી બાબતે સંપર્ક કરું છું. આભાર!') :
+                                                currentLang === 'hi' ? ('नमस्ते *' + sup.name + '*, मैं आपके *₹' + parseFloat(sup.due_amount).toFixed(2) + '* के बकाया भुगतान के संबंध में संपर्क कर रहा हूँ। धन्यवाद!') :
+                                                ('Hello *' + sup.name + '*, I am contacting you regarding the outstanding balance of *₹' + parseFloat(sup.due_amount).toFixed(2) + '* that I owe you. Let\'s coordinate the payment. Thank you!')
                                             )}`"
                                                 target="_blank"
                                                 class="inline-flex items-center justify-center w-6.5 h-6.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-all hover:scale-105 shrink-0 shadow-sm"

@@ -200,15 +200,17 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
-        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        // Locale from request parameters/headers or shop owner to ensure correct translations in PDF generation
         $request = request();
-        $locale = $request->input('locale')
+        $rawLocale = $request->input('locale')
             ?? $request->header('X-Locale')
             ?? $request->header('Accept-Language')
-            ?? app()->getLocale();
+            ?? $shop->owner?->language
+            ?? app()->getLocale()
+            ?? 'en';
 
         // Clean and validate locale
-        $locale = strtolower(trim($locale));
+        $locale = strtolower(trim((string) $rawLocale));
         if (str_contains($locale, ',')) {
             $locale = explode(',', $locale)[0];
         }
@@ -218,10 +220,11 @@ class InvoiceApiController extends Controller
         if (str_contains($locale, '_')) {
             $locale = explode('_', $locale)[0];
         }
+        if (!in_array($locale, ['en', 'gu', 'hi'], true)) {
+            $locale = 'en';
+        }
 
-        // Force English locale for all PDF invoices for now to bypass font cache permissions issues
-        app()->setLocale('en');
-        $locale = 'en';
+        app()->setLocale($locale);
 
         $fontFaceStyles = '';
         if ($locale === 'gu') {
@@ -684,11 +687,11 @@ class InvoiceApiController extends Controller
                                     $netPayment = max(0, (float)$sale->grand_total - (float)$sale->store_credit);
                                     $html .= '
                                     <tr>
-                                        <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit', [], 'Store Credit') . ':</td>
+                                        <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit') . ':</td>
                                         <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377; ' . number_format($sale->store_credit, 2) . '</td>
                                     </tr>
                                     <tr>
-                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due', [], 'Balance Due') : __('net_paid', [], 'Net Paid (' . $sale->payment_type . ')')) . ':</td>
+                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due') : __('net_paid') . ' (' . __(strtolower(str_replace(' ', '_', $sale->payment_type))) . ')') . ':</td>
                                         <td class="total-value" style="font-weight: bold;">&#8377; ' . number_format($netPayment, 2) . '</td>
                                     </tr>';
                                 }
@@ -787,15 +790,17 @@ class InvoiceApiController extends Controller
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
         $textColor = $this->contrastTextColor($themeColor);
 
-        // Force locale from request parameters/headers to ensure correct translations in PDF generation
+        // Locale from request parameters/headers or shop owner to ensure correct translations in PDF generation
         $request = request();
-        $locale = $request->input('locale')
+        $rawLocale = $request->input('locale')
             ?? $request->header('X-Locale')
             ?? $request->header('Accept-Language')
-            ?? app()->getLocale();
+            ?? $shop->owner?->language
+            ?? app()->getLocale()
+            ?? 'en';
 
         // Clean and validate locale
-        $locale = strtolower(trim($locale));
+        $locale = strtolower(trim((string) $rawLocale));
         if (str_contains($locale, ',')) {
             $locale = explode(',', $locale)[0];
         }
@@ -805,10 +810,11 @@ class InvoiceApiController extends Controller
         if (str_contains($locale, '_')) {
             $locale = explode('_', $locale)[0];
         }
+        if (!in_array($locale, ['en', 'gu', 'hi'], true)) {
+            $locale = 'en';
+        }
 
-        // Force English locale for all PDF invoices for now to bypass font cache permissions issues
-        app()->setLocale('en');
-        $locale = 'en';
+        app()->setLocale($locale);
 
         $fontFaceStyles = '';
         if ($locale === 'gu') {
@@ -1016,6 +1022,19 @@ class InvoiceApiController extends Controller
                     width: 100%;
                     border-collapse: collapse;
                 }
+                .total-label {
+                    text-align: right;
+                    padding: 6px 12px;
+                    font-size: 13px;
+                    color: #4b5563;
+                }
+                .total-value {
+                    text-align: right;
+                    width: 120px;
+                    padding: 6px 12px;
+                    font-size: 13px;
+                    color: #111827;
+                }
                 .grand-total-label {
                     text-align: right;
                     padding: 10px 12px;
@@ -1080,13 +1099,13 @@ class InvoiceApiController extends Controller
             <div class="container">
                 <table class="header-table">
                     <tr>
-                        <td style="vertical-align: top;">
+                        <td style="vertical-align: middle; width: 52%;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
                         if ($logoBase64) {
-                            $html .= '<td style="vertical-align: top; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="' . $logoBase64 . '" /></td>';
+                            $html .= '<td style="vertical-align: middle; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: middle;" src="' . $logoBase64 . '" /></td>';
                         }
                         $html .= '
-                                <td style="vertical-align: top; padding: 0;">
+                                <td style="vertical-align: middle; padding: 0;">
                                     <span class="shop-name">' . $this->renderMultilingualText($shop->name) . '</span><br>
                                     <span class="shop-details">
                                         ' . __('mobile') . ': ' . htmlspecialchars($shop->mobile ?? $shop->owner->mobile ?? '') . '<br>
@@ -1096,15 +1115,11 @@ class InvoiceApiController extends Controller
                                 </td>
                             </tr></table>
                         </td>
-                        <td class="invoice-title" style="vertical-align: middle;">
-                            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; float: right;">
-                                <tr>
-                                    <td style="font-size: 26px; font-weight: bold; color: ' . $textColor . '; vertical-align: middle; padding: 0; line-height: 1;">' . strtoupper(__('purchase_invoice')) . '</td>
-                                    ' . ($badgeHtml ? '<td style="vertical-align: middle; padding: 0 0 0 8px; line-height: 1;">' . $badgeHtml . '</td>' : '') . '
-                                </tr>
-                            </table>
-                            <div style="clear: both;"></div>
-                            <div class="invoice-meta" style="margin-top: 5px;">
+                        <td class="invoice-title" style="vertical-align: middle; width: 48%; text-align: right;">
+                            <div style="font-size: 22px; font-weight: bold; color: ' . $textColor . '; line-height: 1.2;">
+                                ' . strtoupper(__('purchase_invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '
+                            </div>
+                            <div class="invoice-meta" style="margin-top: 6px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->purchase_date, $dateFormat, $timeFormat) . '
                                 ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->paid_date ?? $purchase->updated_at, $dateFormat, $timeFormat) : '') . '
@@ -1128,21 +1143,21 @@ class InvoiceApiController extends Controller
                             <div class="party-info">
                                 <strong>' . __('payment_status') . ':</strong> ' . (
                                     $purchase->status === 'Returned'
-                                        ? '<span class="badge badge-returned">' . strtoupper(__('returned')) . '</span>'
+                                        ? '<span style="color:#ef4444;font-weight:bold;">' . strtoupper(__('returned')) . '</span>'
                                         : ($purchase->status === 'Partially Returned'
-                                            ? '<span class="badge badge-warning">' . strtoupper(__('partially_returned')) . '</span>'
+                                            ? '<span style="color:#d97706;font-weight:bold;">' . strtoupper(__('partially_returned')) . '</span>'
                                             : ($purchase->status === 'Unpaid'
-                                                ? '<span class="badge badge-unpaid">' . strtoupper(__('due')) . '</span>'
+                                                ? '<span style="color:#dc2626;font-weight:bold;">' . strtoupper(__('due')) . '</span>'
                                                 : ($purchase->status === 'Partially Paid'
-                                                    ? '<span class="badge badge-warning">' . strtoupper(__('partially_paid')) . '</span>'
-                                                    : '<span class="badge badge-paid">' . strtoupper(__('fully_paid')) . '</span>'
+                                                    ? '<span style="color:#d97706;font-weight:bold;">' . strtoupper(__('partially_paid')) . '</span>'
+                                                    : '<span style="color:#16a34a;font-weight:bold;">' . strtoupper(__('fully_paid')) . '</span>'
                                                 )
                                             )
                                         )
                                 ) . '
                             </div>
                             <div class="meta-row">
-                                <strong>' . __('method') . ':</strong> ' . __(strtolower($purchase->payment_type)) . '
+                                <strong>' . __('method') . ':</strong> ' . __(strtolower(str_replace(' ', '_', $purchase->payment_type))) . '
                             </div>
                         </td>
                     </tr>
@@ -1151,12 +1166,12 @@ class InvoiceApiController extends Controller
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 5%;">#</th>
-                            <th style="width: ' . ($isReturned ? '40%' : '55%') . ';">' . __('item') . '</th>
-                            <th style="width: ' . ($isReturned ? '12%' : '15%') . '; text-align: center;">' . ($isReturned ? __('purchased_qty') : __('quantity')) . '</th>
-                            ' . ($isReturned ? '<th style="width: 12%; text-align: center;">' . __('returned_qty') . '</th><th style="width: 12%; text-align: center;">' . __('net_qty') . '</th>' : '') . '
-                            <th style="width: 15%; text-align: right;">' . __('price') . '</th>
-                            <th style="width: 15%; text-align: right;">' . __('total') . '</th>
+                            <th style="width: 5%; text-align: center;">#</th>
+                            <th style="width: ' . ($isReturned ? '33%' : '50%') . ';">' . __('item') . '</th>
+                            <th style="width: ' . ($isReturned ? '13%' : '15%') . '; text-align: center;">' . ($isReturned ? __('purchased_qty') : __('quantity')) . '</th>
+                            ' . ($isReturned ? '<th style="width: 13%; text-align: center;">' . __('returned_qty') . '</th><th style="width: 10%; text-align: center;">' . __('net_qty') . '</th>' : '') . '
+                            <th style="width: ' . ($isReturned ? '12%' : '15%') . '; text-align: right;">' . __('price') . '</th>
+                            <th style="width: ' . ($isReturned ? '14%' : '15%') . '; text-align: right;">' . __('total') . '</th>
                         </tr>
                     </thead>
                     <tbody>';
@@ -1175,13 +1190,13 @@ class InvoiceApiController extends Controller
 
                         $html .= '
                         <tr>
-                            <td>' . $rowNum++ . '</td>
+                            <td style="text-align: center;">' . $rowNum++ . '</td>
                             <td>
                                 <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
-                                ($lineDiscount > 0 ? '<span style="font-size:11px;font-weight:600;color:#059669;display:block;margin-top:2px;">' . __('scheme_discount', [], 'Scheme Disc') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</span>' : '') .
+                                ($lineDiscount > 0 ? '<span style="font-size:11px;font-weight:600;color:#059669;display:block;margin-top:2px;">' . __('scheme_discount') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</span>' : '') .
                             '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>
-                            ' . ($isReturned ? '<td style="text-align: center; color: #dc2626;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
+                            ' . ($isReturned ? '<td style="text-align: center; color: #dc2626; font-weight: bold;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
                             <td style="text-align: right;">&#8377; ' . number_format($item->purchase_price, 2) . '</td>
                             <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
                         </tr>';
@@ -1212,12 +1227,12 @@ class InvoiceApiController extends Controller
                                 if ($totalDiscount > 0) {
                                     $html .= '
                                     <tr>
-                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #6b7280;">' . __('subtotal') . ':</td>
-                                        <td style="text-align: right; font-size: 13px; color: #374151;">&#8377; ' . number_format($grossSubtotal, 2) . '</td>
+                                        <td class="total-label">' . __('subtotal') . ':</td>
+                                        <td class="total-value">&#8377; ' . number_format($grossSubtotal, 2) . '</td>
                                     </tr>
                                     <tr>
-                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #059669;">' . __('discount') . ':</td>
-                                        <td style="text-align: right; font-size: 13px; color: #059669;">-&#8377; ' . number_format($totalDiscount, 2) . '</td>
+                                        <td class="total-label" style="color: #059669;">' . __('discount') . ':</td>
+                                        <td class="total-value" style="color: #059669;">-&#8377; ' . number_format($totalDiscount, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '
@@ -1228,12 +1243,12 @@ class InvoiceApiController extends Controller
                                 if ($paidAmount > 0 || $dueAmount > 0) {
                                     $html .= '
                                     <tr>
-                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #16a34a;">' . __('paid_amount', [], 'Paid Amount') . ':</td>
-                                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #16a34a;">&#8377; ' . number_format($paidAmount, 2) . '</td>
+                                        <td class="total-label" style="color: #16a34a; font-weight: bold; padding-top: 8px;">' . __('paid_amount') . ':</td>
+                                        <td class="total-value" style="color: #16a34a; font-weight: bold; padding-top: 8px;">&#8377; ' . number_format($paidAmount, 2) . '</td>
                                     </tr>
                                     <tr>
-                                        <td class="grand-total-label" style="font-size: 13px; font-weight: normal; color: #dc2626;">' . __('balance_due', [], 'Balance Due') . ':</td>
-                                        <td style="text-align: right; font-size: 13px; font-weight: bold; color: #dc2626;">&#8377; ' . number_format($dueAmount, 2) . '</td>
+                                        <td class="total-label" style="color: #dc2626; font-weight: bold;">' . __('balance_due') . ':</td>
+                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377; ' . number_format($dueAmount, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '

@@ -24,21 +24,21 @@ class WhatsAppReminderSender
     {
     }
 
-    public function remindCustomer(Shop $shop, Customer $customer): WhatsAppMessageLog
+    public function remindCustomer(Shop $shop, Customer $customer, ?string $language = null): WhatsAppMessageLog
     {
-        $due = (float) ($customer->due_amount ?? $customer->net_balance ?? 0);
+        $due = (float) ($customer->net_balance !== null ? $customer->net_balance : ($customer->due_amount ?? 0));
         if ($due <= 0) {
             throw new WhatsAppException("{$customer->name} has no pending due.");
         }
 
         // The link, the log and the credit debit commit together, or not at all.
-        $log = DB::transaction(function () use ($shop, $customer, $due) {
-            $context = [];
-            $template = $this->messenger->templateFor($shop, 'due_reminder');
-            if ($template?->has_pay_button) {
-                // Issued even without a UPI ID: the template's button needs a target, and the
-                // page then asks the customer to pay the shop directly.
-                $context['button_suffix'] = PaymentLink::issue($shop, $customer, $due)->token;
+        $log = DB::transaction(function () use ($shop, $customer, $due, $language) {
+            $link = PaymentLink::issue($shop, $customer, $due);
+            $context = [
+                'button_suffix' => $link->token,
+            ];
+            if ($language) {
+                $context['language'] = $language;
             }
 
             return $this->messenger->send($shop, 'due_reminder', $customer, $context);
@@ -49,14 +49,19 @@ class WhatsAppReminderSender
         return $log;
     }
 
-    public function remindSupplier(Shop $shop, Supplier $supplier): WhatsAppMessageLog
+    public function remindSupplier(Shop $shop, Supplier $supplier, ?string $language = null): WhatsAppMessageLog
     {
         $due = (float) ($supplier->due_amount ?? $supplier->net_balance ?? 0);
         if ($due <= 0) {
             throw new WhatsAppException("Nothing is due to {$supplier->name}.");
         }
 
-        $log = $this->messenger->send($shop, 'supplier_due', $supplier);
+        $context = [];
+        if ($language) {
+            $context['language'] = $language;
+        }
+
+        $log = $this->messenger->send($shop, 'supplier_due', $supplier, $context);
         $this->stamp($supplier);
 
         return $log;

@@ -55,7 +55,8 @@ class WhatsAppMessenger
             throw new WhatsAppException("{$recipient->name} does not have a valid mobile number.");
         }
 
-        $template = $this->templateFor($shop, $event);
+        $preferredLang = $context['language'] ?? null;
+        $template = $this->templateFor($shop, $event, $preferredLang);
         if (!$template) {
             throw new WhatsAppException('This WhatsApp message is not available yet.');
         }
@@ -64,11 +65,11 @@ class WhatsAppMessenger
         $purchase = $context['purchase'] ?? null;
 
         $payload = ['values' => $this->values($shop, $recipient, $sale, $purchase, $context['amount'] ?? null)];
-        if ($template->has_document && ($document = $this->document($sale, $purchase))) {
+        if ($template->has_document && ($document = $this->document($sale, $purchase, $template->language))) {
             $payload += $document;
         }
-        if ($template->has_pay_button && isset($context['button_suffix'])) {
-            $payload['button_suffix'] = $context['button_suffix'];
+        if (isset($context['button_suffix']) && trim((string) $context['button_suffix']) !== '') {
+            $payload['button_suffix'] = trim((string) $context['button_suffix']);
         }
 
         // The log row and its one-credit debit commit together; no credits → nothing is queued.
@@ -97,10 +98,21 @@ class WhatsAppMessenger
         return $log;
     }
 
-    /** The active, Meta-approved template for the event in the shop owner's language, falling back to English. */
-    public function templateFor(Shop $shop, string $event): ?WhatsAppTemplate
+    /** The active, Meta-approved template for the event in the given or shop owner's language, falling back to English. */
+    public function templateFor(Shop $shop, string $event, ?string $preferredLang = null): ?WhatsAppTemplate
     {
-        $language = $shop->owner?->language ?: 'en';
+        $language = $preferredLang
+            ?: request()?->header('X-Locale')
+            ?: request()?->query('locale')
+            ?: request()?->input('locale')
+            ?: app()->getLocale()
+            ?: $shop->owner?->language
+            ?: 'en';
+
+        $language = strtolower(substr(trim((string) $language), 0, 2));
+        if (!in_array($language, ['en', 'gu', 'hi'], true)) {
+            $language = 'en';
+        }
 
         return WhatsAppTemplate::sendable()->where('key', $event)
             ->whereIn('language', array_unique([$language, 'en']))
@@ -134,8 +146,8 @@ class WhatsAppMessenger
             $invoiceNo = 'N/A';
         }
 
-        // Use direct due_amount which matches the UI (Reminders / Customers table)
-        $dueAmount = (float) ($recipient->due_amount ?? $recipient->net_balance ?? 0);
+        // Use net_balance which matches the Customer tab (Due minus Credit / Advance)
+        $dueAmount = (float) ($recipient->net_balance !== null ? $recipient->net_balance : ($recipient->due_amount ?? 0));
 
         return [
             'party_name' => $partyName,
@@ -148,20 +160,21 @@ class WhatsAppMessenger
         ];
     }
 
-    private function document(?Sale $sale, ?Purchase $purchase): ?array
+    private function document(?Sale $sale, ?Purchase $purchase, ?string $locale = null): ?array
     {
         // Signed over the path only (signed:relative), so a proxy changing scheme/host can't break it.
         $expires = now()->addHours(self::DOCUMENT_LINK_TTL_HOURS);
+        $params = $locale ? ['locale' => $locale] : [];
 
         if ($sale) {
             return [
-                'document_url' => url(URL::temporarySignedRoute('whatsapp.invoice.sale', $expires, ['id' => $sale->id], false)),
+                'document_url' => url(URL::temporarySignedRoute('whatsapp.invoice.sale', $expires, ['id' => $sale->id] + $params, false)),
                 'document_name' => 'Invoice-' . $sale->sale_number . '.pdf',
             ];
         }
         if ($purchase) {
             return [
-                'document_url' => url(URL::temporarySignedRoute('whatsapp.invoice.purchase', $expires, ['id' => $purchase->id], false)),
+                'document_url' => url(URL::temporarySignedRoute('whatsapp.invoice.purchase', $expires, ['id' => $purchase->id] + $params, false)),
                 'document_name' => 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf',
             ];
         }
