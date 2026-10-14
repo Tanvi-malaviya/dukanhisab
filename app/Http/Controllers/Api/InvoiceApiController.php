@@ -124,16 +124,36 @@ class InvoiceApiController extends Controller
 
     private function renderWithDompdf(string $html): string
     {
+        $hasWatermark = str_contains($html, 'class="dh-watermark"');
+        if ($hasWatermark) {
+            $html = preg_replace('/<div class="dh-watermark">.*?<\/div>/s', '', $html);
+        }
+
         $pdf = Pdf::loadHTML($html);
         $pdf->setPaper('A4', 'portrait');
         $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', true);
         $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
+
+        if ($hasWatermark) {
+            $pdf->render();
+            $canvas = $pdf->getDomPDF()->getCanvas();
+            $fontMetrics = $pdf->getDomPDF()->getFontMetrics();
+            $font = $fontMetrics->getFont('Helvetica', 'bold');
+            $canvas->set_opacity(0.06);
+            $canvas->text(100, 520, 'DukanHisab', $font, 65, [0.58, 0.64, 0.72], 0, 0, -45);
+            return $pdf->output();
+        }
 
         return $pdf->output();
     }
 
     private function renderWithMpdf(string $html): string
     {
+        $hasWatermark = str_contains($html, 'class="dh-watermark"');
+        if ($hasWatermark) {
+            $html = preg_replace('/<div class="dh-watermark">.*?<\/div>/s', '', $html);
+        }
+
         $tempDir = storage_path('app/mpdf');
         if (!is_dir($tempDir)) {
             @mkdir($tempDir, 0777, true);
@@ -169,6 +189,12 @@ class InvoiceApiController extends Controller
             'default_font' => 'muktavaani',
         ]);
 
+        if ($hasWatermark) {
+            $mpdf->SetWatermarkText('DukanHisab', 0.07);
+            $mpdf->showWatermarkText = true;
+            $mpdf->watermarkTextAlpha = 0.07;
+        }
+
         // Point every font family the invoice HTML asks for at a face that has
         // Gujarati/Latin/₹ glyphs, so no run falls back to a font without them.
         $family = preg_match('/[\x{0A80}-\x{0AFF}]/u', $html) ? 'muktavaani' : 'hind';
@@ -198,7 +224,7 @@ class InvoiceApiController extends Controller
         $dateFormat = $invoiceConfig->date_format ?: ($shop->owner->date_format ?? 'DD/MM/YYYY');
         $timeFormat = $shop->owner->time_format ?? '12h';
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
-        $textColor = $this->contrastTextColor($themeColor);
+        $headerTextColor = $invoiceConfig->text_color ?: '#FFFFFF';
 
         // Locale from request parameters/headers or shop owner to ensure correct translations in PDF generation
         $request = request();
@@ -275,7 +301,7 @@ class InvoiceApiController extends Controller
             $qrBase64 = $this->fetchQrCodeBase64($shop->upi_id, $shop->name, $sale->grand_total);
         }
 
-        // Build premium styled HTML for PDF invoice
+        // Build unified styled HTML for PDF invoice matching on-screen modal design
         $html = '
         <!DOCTYPE html>
         <html lang="' . $locale . '">
@@ -285,6 +311,9 @@ class InvoiceApiController extends Controller
             <title>' . __('invoice') . ' - ' . $sale->sale_number . '</title>
             <style>
                 ' . $fontFaceStyles . '
+                * {
+                    box-sizing: border-box;
+                }
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
                     -webkit-font-smoothing: antialiased;
@@ -292,141 +321,167 @@ class InvoiceApiController extends Controller
                     text-rendering: geometricPrecision;
                 }
                 body {
-                    color: #111;
-                    font-size: 14px;
-                    line-height: 1.6;
+                    color: #1e293b;
+                    font-size: 12px;
+                    line-height: 1.5;
                     margin: 0;
                     padding: 0;
-                }
-                .font-default {
-                    font-family: "DejaVu Sans", sans-serif;
-                }
-                .font-gujarati {
-                    font-family: "NotoSansGujarati", sans-serif;
-                }
-                .font-devanagari {
-                    font-family: "NotoSansDevanagari", sans-serif;
+                    background-color: #ffffff;
                 }
                 .container {
-                    padding: 30px;
+                    padding: 24px;
                 }
                 .header-table {
                     width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 30px;
+                    border-collapse: separate;
+                    border-spacing: 0;
                     background-color: ' . $themeColor . ';
+                    color: ' . $headerTextColor . ';
+                    border-radius: 8px;
+                    overflow: hidden;
+                    margin-bottom: 16px;
                 }
                 .header-table td {
-                    padding: 20px;
+                    padding: 14px 16px;
                 }
-                .header-logo {
-                    max-width: 65px;
-                    max-height: 50px;
-                    display: block;
+                .shop-logo-box {
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 6px;
+                    background-color: rgba(255, 255, 255, 0.2);
+                    text-align: center;
+                    line-height: 42px;
+                    overflow: hidden;
+                }
+                .shop-logo-box img {
+                    max-width: 42px;
+                    max-height: 42px;
+                    vertical-align: middle;
                 }
                 .shop-name {
-                    font-size: 22px;
+                    font-size: 15px;
                     font-weight: bold;
-                    line-height: 1;
-                    color: ' . $textColor . ';
+                    line-height: 1.2;
+                    color: ' . $headerTextColor . ';
                 }
                 .shop-details {
-                    font-size: 12px;
-                    line-height: 1.5;
-                    color: ' . $textColor . ';
+                    font-size: 10px;
+                    line-height: 1.4;
+                    opacity: 0.9;
+                    margin-top: 2px;
+                    color: ' . $headerTextColor . ';
                 }
                 .invoice-title {
-                    font-size: 26px;
+                    font-size: 18px;
                     font-weight: bold;
-                    color: ' . $textColor . ';
+                    color: ' . $headerTextColor . ';
                     text-align: right;
                     white-space: nowrap;
+                    line-height: 1.2;
                 }
                 .status-badge {
                     display: inline-block;
-                    font-size: 11px;
+                    font-size: 9.5px;
                     font-weight: bold;
-                    border: 1px solid ' . $textColor . ';
-                    color: ' . $textColor . ';
-                    padding: 3px 12px;
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                    color: ' . $headerTextColor . ';
+                    padding: 2px 8px;
                     border-radius: 12px;
                     text-transform: uppercase;
-                    line-height: 1;
+                    vertical-align: middle;
+                    margin-left: 6px;
                 }
                 .invoice-meta {
                     text-align: right;
-                    font-size: 13px;
-                    color: ' . $textColor . ';
+                    font-size: 10px;
+                    opacity: 0.9;
+                    line-height: 1.4;
+                    margin-top: 3px;
+                    color: ' . $headerTextColor . ';
                     white-space: nowrap;
                 }
                 .details-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 30px;
+                    margin-bottom: 16px;
                 }
                 .details-table td {
                     width: 50%;
                     vertical-align: top;
+                    padding: 0;
                 }
                 .section-title {
-                    font-size: 11.5px;
+                    font-size: 10px;
                     text-transform: uppercase;
-                    color: #475569;
+                    color: #94a3b8;
                     font-weight: bold;
                     letter-spacing: 0.5px;
-                    margin-bottom: 5px;
+                    margin-bottom: 2px;
                 }
                 .party-name {
-                    font-size: 16px;
+                    font-size: 13.5px;
                     font-weight: bold;
-                    color: #1f2937;
+                    color: #1e293b;
                 }
                 .party-info {
-                    font-size: 13px;
-                    color: #4b5563;
+                    font-size: 11px;
+                    color: #64748b;
+                    line-height: 1.4;
                 }
                 .items-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 20px;
+                    margin-bottom: 16px;
                 }
                 .items-table th {
-                    background-color: #f9fafb;
-                    border-bottom: 2px solid #e5e7eb;
+                    background-color: #f8fafc;
+                    border-top: 1px solid #e2e8f0;
+                    border-bottom: 1px solid #e2e8f0;
                     text-align: left;
-                    padding: 12px;
-                    font-size: 12px;
+                    padding: 8px 12px;
+                    font-size: 11px;
                     font-weight: bold;
-                    color: #4b5563;
+                    color: #64748b;
                     text-transform: uppercase;
                 }
                 .items-table td {
-                    padding: 12px;
-                    border-bottom: 1px solid #f3f4f6;
-                    font-size: 13px;
+                    padding: 9px 12px;
+                    border-bottom: 1px solid #f1f5f9;
+                    font-size: 12px;
+                    color: #1e293b;
                 }
                 .footer-row-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 10px;
+                    border-top: 1px solid #e2e8f0;
+                    margin-top: 8px;
+                    padding-top: 12px;
                 }
                 .footer-row-table td {
                     vertical-align: top;
+                    padding: 0;
                 }
                 .qr-cell {
-                    width: 45%;
+                    width: 48%;
                     text-align: left;
                 }
                 .qr-cell img {
-                    width: 80px;
-                    height: 80px;
+                    width: 75px;
+                    height: 75px;
+                    padding: 3px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 4px;
+                    background: #fff;
                 }
                 .bank-details {
-                    font-size: 11.5px;
-                    color: #334155;
+                    font-size: 9.5px;
+                    color: #64748b;
                     white-space: pre-line;
-                    margin-top: 8px;
-                    line-height: 1.4;
+                    margin-top: 6px;
+                    line-height: 1.35;
+                    border-top: 1px dashed #e2e8f0;
+                    padding-top: 4px;
+                    max-width: 260px;
                 }
                 .total-table {
                     width: 100%;
@@ -434,56 +489,57 @@ class InvoiceApiController extends Controller
                 }
                 .total-label {
                     text-align: right;
-                    padding: 6px 12px;
-                    font-size: 13px;
-                    color: #4b5563;
+                    padding: 3px 12px;
+                    font-size: 12px;
+                    color: #64748b;
                 }
                 .total-value {
                     text-align: right;
-                    width: 120px;
-                    padding: 6px 12px;
-                    font-size: 13px;
-                    color: #111827;
+                    width: 105px;
+                    padding: 3px 0 3px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #1e293b;
                 }
                 .grand-total-label {
                     text-align: right;
-                    padding: 10px 12px;
-                    font-size: 16px;
+                    padding: 8px 12px 4px 12px;
+                    font-size: 13.5px;
                     font-weight: bold;
-                    color: #111827;
-                    border-top: 2px solid #e5e7eb;
+                    color: #1e293b;
+                    border-top: 1px dashed #cbd5e1;
                 }
                 .grand-total-value {
                     text-align: right;
-                    width: 120px;
-                    padding: 10px 12px;
-                    font-size: 16px;
-                    font-weight: bold;
+                    width: 105px;
+                    padding: 8px 0 4px 12px;
+                    font-size: 14.5px;
+                    font-weight: 800;
                     color: ' . $themeColor . ';
-                    border-top: 2px solid #e5e7eb;
+                    border-top: 1px dashed #cbd5e1;
                 }
                 .invoice-footer-text {
-                    margin-top: 25px;
+                    margin-top: 16px;
                     text-align: center;
-                    font-size: 12.5px;
-                    color: #334155;
+                    font-size: 10.5px;
+                    color: #94a3b8;
                     font-weight: 500;
                 }
                 .signature-img {
-                    margin-top: 15px;
+                    margin-top: 10px;
                     text-align: right;
                 }
                 .signature-img img {
-                    max-height: 45px;
+                    max-height: 40px;
                     max-width: 120px;
                 }
                 .footer {
-                    margin-top: 20px;
+                    margin-top: 16px;
                     text-align: center;
-                    font-size: 11px;
-                    color: #64748b;
-                    border-top: 1px solid #cbd5e1;
-                    padding-top: 15px;
+                    font-size: 10px;
+                    color: #94a3b8;
+                    border-top: 1px solid #f1f5f9;
+                    padding-top: 10px;
                 }
                 .brand-highlight {
                     color: ' . $themeColor . ';
@@ -507,18 +563,18 @@ class InvoiceApiController extends Controller
         <body>
             ' . $watermarkHtml . '
             <div class="container">
-                <table class="header-table">
+                <table class="header-table" cellpadding="0" cellspacing="0">
                     <tr>
-                        <td style="vertical-align: top;">
+                        <td style="vertical-align: middle;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
                         if ($logoBase64) {
-                            $html .= '<td style="vertical-align: top; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: top;" src="' . $logoBase64 . '" /></td>';
+                            $html .= '<td style="vertical-align: middle; width: 44px; padding: 0 10px 0 0; line-height: 0;"><div class="shop-logo-box"><img class="header-logo" src="' . $logoBase64 . '" width="42" height="42" style="width: 42px; height: 42px; object-fit: cover;" /></div></td>';
                         }
                         $html .= '
-                                <td style="vertical-align: top; padding: 0;">
+                                <td style="vertical-align: middle; padding: 0;">
                                     <span class="shop-name">' . $this->renderMultilingualText($shop->name) . '</span><br>
                                     <span class="shop-details">
-                                        ' . __('mobile') . ': ' . htmlspecialchars($shop->mobile ?? $shop->owner->mobile ?? '') . '<br>
+                                        ' . ($shop->mobile ? __('mobile') . ': ' . htmlspecialchars($shop->mobile) . '<br>' : '') . '
                                         ' . ($shop->address ? $this->renderMultilingualText($shop->address) . '<br>' : '') . '
                                         ' . ($shop->gst_number ? __('gstin_label') . ': ' . htmlspecialchars($shop->gst_number) : '') . '
                                     </span>
@@ -526,14 +582,8 @@ class InvoiceApiController extends Controller
                             </tr></table>
                         </td>
                         <td class="invoice-title" style="vertical-align: middle;">
-                            <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; float: right;">
-                                <tr>
-                                    <td style="font-size: 26px; font-weight: bold; color: ' . $textColor . '; vertical-align: middle; padding: 0; line-height: 1;">' . strtoupper(__('invoice')) . '</td>
-                                    ' . ($badgeHtml ? '<td style="vertical-align: middle; padding: 0 0 0 8px; line-height: 1;">' . $badgeHtml . '</td>' : '') . '
-                                </tr>
-                            </table>
-                            <div style="clear: both;"></div>
-                            <div class="invoice-meta" style="margin-top: 5px;">
+                            <div>' . strtoupper(__('invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '</div>
+                            <div class="invoice-meta">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->sale_date, $dateFormat, $timeFormat) . '
                                 ' . (($sale->status === 'Completed' && $sale->payment_type === 'Credit' && ($sale->paid_date ?? $sale->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->paid_date ?? $sale->updated_at, $dateFormat, $timeFormat) : '') . '
@@ -548,7 +598,7 @@ class InvoiceApiController extends Controller
                             <div class="section-title">' . __('bill_to') . '</div>
                             <div class="party-name">' . $this->renderMultilingualText($sale->customer->name ?? __('walk_in_customer')) . '</div>
                             <div class="party-info">
-                                ' . ($sale->customer && $sale->customer->mobile ? __('mobile') . ': ' . htmlspecialchars($sale->customer->mobile) . '<br>' : '') . '
+                                ' . (($invoiceConfig->show_customer_address ?? true) && $sale->customer && $sale->customer->mobile ? __('mobile') . ': ' . htmlspecialchars($sale->customer->mobile) . '<br>' : '') . '
                                 ' . ($sale->customer && $sale->customer->email ? __('email') . ': ' . htmlspecialchars($sale->customer->email) : '') . '
                             </div>
                         </td>
@@ -557,16 +607,16 @@ class InvoiceApiController extends Controller
                             <div class="party-info">
                                 <strong>' . __('payment_status') . ':</strong> ' . (
                                     $sale->status === 'Returned'
-                                        ? '<span style="color:#ef4444;">' . __('returned') . '</span>'
+                                        ? '<span style="color:#ef4444;font-weight:bold;">' . __('returned') . '</span>'
                                         : ($sale->status === 'Partially Returned'
-                                            ? '<span style="color:#f59e0b;">' . __('partially_returned') . '</span>'
+                                            ? '<span style="color:#f59e0b;font-weight:bold;">' . __('partially_returned') . '</span>'
                                             : ($sale->status === 'Unpaid'
                                                 ? '<span style="color:#dc2626;font-weight:bold;">' . __('due') . '</span>'
                                                 : ($sale->status === 'Partially Paid'
                                                     ? '<span style="color:#f59e0b;font-weight:bold;">' . __('partially_paid') . '</span>'
                                                     : '<span style="color:#10b981;font-weight:bold;">' . __('fully_paid') . '</span>')))
                                 ) . '<br>
-                                <strong>' . __('method') . ':</strong> ' . __(strtolower($sale->payment_type)) . '
+                                <strong>' . __('method') . ':</strong> ' . ucfirst($sale->payment_type ?? 'Cash') . '
                             </div>
                         </td>
                     </tr>
@@ -575,10 +625,9 @@ class InvoiceApiController extends Controller
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 50px; text-align: center;">#</th>
-                            <th>' . __('product_name') . '</th>
-                            <th style="width: 80px; text-align: right;">' . __('price') . '</th>
-                            <th style="width: 80px; text-align: center;">' . __('qty') . '</th>';
+                            <th>' . __('product') . '</th>
+                            <th style="width: 85px; text-align: right;">' . __('price') . '</th>
+                            <th style="width: 65px; text-align: center;">' . __('qty') . '</th>';
 
         $showDiscountCol = ($invoiceConfig->show_discount ?? true);
         if (!$showDiscountCol) {
@@ -606,17 +655,16 @@ class InvoiceApiController extends Controller
 
         if ($isReturned) {
             $html .= '
-                            <th style="width: 80px; text-align: center;">' . __('returned') . '</th>
-                            <th style="width: 80px; text-align: center;">' . __('net_qty') . '</th>';
+                            <th style="width: 75px; text-align: center;">' . __('returned') . '</th>
+                            <th style="width: 75px; text-align: center;">' . __('net_qty') . '</th>';
         }
 
         $html .= '
-                            <th style="width: 100px; text-align: right;">' . __('total') . '</th>
+                            <th style="width: 95px; text-align: right;">' . __('total') . '</th>
                         </tr>
                     </thead>
                     <tbody>';
 
-                    $i = 1;
                     foreach ($sale->items as $item) {
                         $returnedQty = 0;
                         $netQty = $item->quantity;
@@ -633,14 +681,13 @@ class InvoiceApiController extends Controller
 
                         $html .= '
                         <tr>
-                            <td style="text-align: center;">' . $i++ . '</td>
                             <td>' . $this->renderMultilingualText($item->product->name ?? __('unknown_product')) . '</td>
-                            <td style="text-align: right;">&#8377; ' . number_format($item->selling_price, 2) . '</td>
+                            <td style="text-align: right;">&#8377;' . number_format($item->selling_price, 2) . '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>';
 
                         if ($showDiscountCol) {
                             $html .= '
-                            <td style="text-align: right;">' . ($itemDiscount > 0 ? '&#8377; ' . number_format($itemDiscount, 2) : '-') . '</td>';
+                            <td style="text-align: right; color: #d97706; font-weight: 600;">' . ($itemDiscount > 0 ? '-&#8377;' . number_format($itemDiscount, 2) : '-') . '</td>';
                         }
 
                         if ($isReturned) {
@@ -650,7 +697,7 @@ class InvoiceApiController extends Controller
                         }
 
                         $html .= '
-                            <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
+                            <td style="text-align: right; font-weight: bold;">&#8377;' . number_format($lineTotal, 2) . '</td>
                         </tr>';
                     }
 
@@ -662,7 +709,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:11px;color:#475569;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:9.5px;color:#64748b;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -673,26 +720,26 @@ class InvoiceApiController extends Controller
                             <table class="total-table">
                                 <tr>
                                     <td class="total-label">' . __('subtotal') . ':</td>
-                                    <td class="total-value">&#8377; ' . number_format($sale->subtotal, 2) . '</td>
+                                    <td class="total-value">&#8377;' . number_format($sale->subtotal, 2) . '</td>
                                 </tr>
                                 <tr>
                                     <td class="total-label">' . __('discount') . ':</td>
-                                    <td class="total-value">-&#8377; ' . number_format($sale->discount, 2) . '</td>
+                                    <td class="total-value">-&#8377;' . number_format($sale->discount, 2) . '</td>
                                 </tr>
                                 <tr>
                                     <td class="grand-total-label">' . __('grand_total') . ':</td>
-                                    <td class="grand-total-value">&#8377; ' . number_format($sale->grand_total, 2) . '</td>
+                                    <td class="grand-total-value">&#8377;' . number_format($sale->grand_total, 2) . '</td>
                                 </tr>';
                                 if ((float)($sale->store_credit ?? 0) > 0) {
                                     $netPayment = max(0, (float)$sale->grand_total - (float)$sale->store_credit);
                                     $html .= '
                                     <tr>
                                         <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit') . ':</td>
-                                        <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377; ' . number_format($sale->store_credit, 2) . '</td>
+                                        <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377;' . number_format($sale->store_credit, 2) . '</td>
                                     </tr>
                                     <tr>
-                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due') : __('net_paid') . ' (' . __(strtolower(str_replace(' ', '_', $sale->payment_type))) . ')') . ':</td>
-                                        <td class="total-value" style="font-weight: bold;">&#8377; ' . number_format($netPayment, 2) . '</td>
+                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due') : __('net_paid') . ' (' . ucfirst($sale->payment_type ?? 'Cash') . ')') . ':</td>
+                                        <td class="total-value" style="font-weight: bold;">&#8377;' . number_format($netPayment, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '
@@ -788,7 +835,7 @@ class InvoiceApiController extends Controller
         $dateFormat = $invoiceConfig->date_format ?: ($shop->owner->date_format ?? 'DD/MM/YYYY');
         $timeFormat = $shop->owner->time_format ?? '12h';
         $themeColor = $invoiceConfig->theme_color ?: '#0F766E';
-        $textColor = $this->contrastTextColor($themeColor);
+        $headerTextColor = $invoiceConfig->text_color ?: '#FFFFFF';
 
         // Locale from request parameters/headers or shop owner to ensure correct translations in PDF generation
         $request = request();
@@ -874,7 +921,7 @@ class InvoiceApiController extends Controller
             }
         }
 
-        // Build premium styled HTML for PDF invoice
+        // Build unified styled HTML for PDF invoice matching on-screen modal design
         $html = '
         <!DOCTYPE html>
         <html lang="' . $locale . '">
@@ -884,6 +931,9 @@ class InvoiceApiController extends Controller
             <title>' . __('purchase_invoice') . ' - ' . $purchase->purchase_number . '</title>
             <style>
                 ' . $fontFaceStyles . '
+                * {
+                    box-sizing: border-box;
+                }
                 body, table, td, th, div, span, p, strong {
                     font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
                     -webkit-font-smoothing: antialiased;
@@ -891,132 +941,167 @@ class InvoiceApiController extends Controller
                     text-rendering: geometricPrecision;
                 }
                 body {
-                    color: #111;
-                    font-size: 14px;
-                    line-height: 1.6;
+                    color: #1e293b;
+                    font-size: 12px;
+                    line-height: 1.5;
                     margin: 0;
                     padding: 0;
+                    background-color: #ffffff;
                 }
                 .container {
-                    padding: 30px;
+                    padding: 24px;
                 }
                 .header-table {
                     width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 30px;
+                    border-collapse: separate;
+                    border-spacing: 0;
                     background-color: ' . $themeColor . ';
+                    color: ' . $headerTextColor . ';
+                    border-radius: 8px;
+                    overflow: hidden;
+                    margin-bottom: 16px;
                 }
                 .header-table td {
-                    padding: 20px;
+                    padding: 14px 16px;
                 }
-                .header-logo {
-                    max-width: 65px;
-                    max-height: 50px;
-                    display: block;
+                .shop-logo-box {
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 6px;
+                    background-color: rgba(255, 255, 255, 0.2);
+                    text-align: center;
+                    line-height: 42px;
+                    overflow: hidden;
+                }
+                .shop-logo-box img {
+                    max-width: 42px;
+                    max-height: 42px;
+                    vertical-align: middle;
                 }
                 .shop-name {
-                    font-size: 22px;
+                    font-size: 15px;
                     font-weight: bold;
-                    line-height: 1;
-                    color: ' . $textColor . ';
+                    line-height: 1.2;
+                    color: ' . $headerTextColor . ';
                 }
                 .shop-details {
-                    font-size: 12px;
-                    line-height: 1.5;
-                    color: ' . $textColor . ';
+                    font-size: 10px;
+                    line-height: 1.4;
+                    opacity: 0.9;
+                    margin-top: 2px;
+                    color: ' . $headerTextColor . ';
                 }
                 .invoice-title {
-                    font-size: 26px;
+                    font-size: 18px;
                     font-weight: bold;
-                    color: ' . $textColor . ';
+                    color: ' . $headerTextColor . ';
                     text-align: right;
                     white-space: nowrap;
+                    line-height: 1.2;
                 }
                 .status-badge {
                     display: inline-block;
-                    font-size: 11px;
+                    font-size: 9.5px;
                     font-weight: bold;
-                    border: 1px solid ' . $textColor . ';
-                    color: ' . $textColor . ';
-                    padding: 3px 12px;
+                    border: 1px solid rgba(255, 255, 255, 0.4);
+                    color: ' . $headerTextColor . ';
+                    padding: 2px 8px;
                     border-radius: 12px;
                     text-transform: uppercase;
-                    line-height: 1;
+                    vertical-align: middle;
+                    margin-left: 6px;
                 }
                 .invoice-meta {
                     text-align: right;
-                    font-size: 13px;
-                    color: ' . $textColor . ';
+                    font-size: 10px;
+                    opacity: 0.9;
+                    line-height: 1.4;
+                    margin-top: 3px;
+                    color: ' . $headerTextColor . ';
                     white-space: nowrap;
                 }
                 .details-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 30px;
+                    margin-bottom: 16px;
                 }
                 .details-table td {
                     width: 50%;
                     vertical-align: top;
+                    padding: 0;
                 }
                 .section-title {
-                    font-size: 11.5px;
+                    font-size: 10px;
                     text-transform: uppercase;
-                    color: #475569;
+                    color: #94a3b8;
                     font-weight: bold;
                     letter-spacing: 0.5px;
-                    margin-bottom: 5px;
+                    margin-bottom: 2px;
                 }
                 .party-name {
-                    font-size: 16px;
+                    font-size: 13.5px;
                     font-weight: bold;
-                    color: #1f2937;
+                    color: #1e293b;
                 }
                 .party-info {
-                    font-size: 13px;
-                    color: #4b5563;
+                    font-size: 11px;
+                    color: #64748b;
+                    line-height: 1.4;
                 }
                 .items-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 20px;
+                    margin-bottom: 16px;
                 }
                 .items-table th {
-                    background-color: #f9fafb;
-                    border-bottom: 2px solid #e5e7eb;
+                    background-color: #f8fafc;
+                    border-top: 1px solid #e2e8f0;
+                    border-bottom: 1px solid #e2e8f0;
                     text-align: left;
-                    padding: 12px;
-                    font-size: 12px;
+                    padding: 8px 12px;
+                    font-size: 11px;
                     font-weight: bold;
-                    color: #4b5563;
+                    color: #64748b;
                     text-transform: uppercase;
                 }
                 .items-table td {
-                    padding: 12px;
-                    border-bottom: 1px solid #f3f4f6;
-                    font-size: 13px;
+                    padding: 9px 12px;
+                    border-bottom: 1px solid #f1f5f9;
+                    font-size: 12px;
+                    color: #1e293b;
                 }
                 .footer-row-table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-top: 10px;
+                    border-top: 1px solid #e2e8f0;
+                    margin-top: 8px;
+                    padding-top: 12px;
                 }
                 .footer-row-table td {
                     vertical-align: top;
+                    padding: 0;
                 }
                 .qr-cell {
-                    width: 45%;
+                    width: 48%;
                     text-align: left;
                 }
                 .qr-cell img {
-                    width: 80px;
-                    height: 80px;
+                    width: 75px;
+                    height: 75px;
+                    padding: 3px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 4px;
+                    background: #fff;
                 }
                 .bank-details {
-                    font-size: 11.5px;
-                    color: #334155;
+                    font-size: 9.5px;
+                    color: #64748b;
                     white-space: pre-line;
-                    margin-top: 8px;
-                    line-height: 1.4;
+                    margin-top: 6px;
+                    line-height: 1.35;
+                    border-top: 1px dashed #e2e8f0;
+                    padding-top: 4px;
+                    max-width: 260px;
                 }
                 .total-table {
                     width: 100%;
@@ -1024,56 +1109,57 @@ class InvoiceApiController extends Controller
                 }
                 .total-label {
                     text-align: right;
-                    padding: 6px 12px;
-                    font-size: 13px;
-                    color: #4b5563;
+                    padding: 3px 12px;
+                    font-size: 12px;
+                    color: #64748b;
                 }
                 .total-value {
                     text-align: right;
-                    width: 120px;
-                    padding: 6px 12px;
-                    font-size: 13px;
-                    color: #111827;
+                    width: 105px;
+                    padding: 3px 0 3px 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #1e293b;
                 }
                 .grand-total-label {
                     text-align: right;
-                    padding: 10px 12px;
-                    font-size: 16px;
+                    padding: 8px 12px 4px 12px;
+                    font-size: 13.5px;
                     font-weight: bold;
-                    color: #111827;
-                    border-top: 2px solid #e5e7eb;
+                    color: #1e293b;
+                    border-top: 1px dashed #cbd5e1;
                 }
                 .grand-total-value {
                     text-align: right;
-                    width: 120px;
-                    padding: 10px 12px;
-                    font-size: 16px;
-                    font-weight: bold;
+                    width: 105px;
+                    padding: 8px 0 4px 12px;
+                    font-size: 14.5px;
+                    font-weight: 800;
                     color: ' . $themeColor . ';
-                    border-top: 2px solid #e5e7eb;
+                    border-top: 1px dashed #cbd5e1;
                 }
                 .invoice-footer-text {
-                    margin-top: 25px;
+                    margin-top: 16px;
                     text-align: center;
-                    font-size: 12.5px;
-                    color: #334155;
+                    font-size: 10.5px;
+                    color: #94a3b8;
                     font-weight: 500;
                 }
                 .signature-img {
-                    margin-top: 15px;
+                    margin-top: 10px;
                     text-align: right;
                 }
                 .signature-img img {
-                    max-height: 45px;
+                    max-height: 40px;
                     max-width: 120px;
                 }
                 .footer {
-                    margin-top: 20px;
+                    margin-top: 16px;
                     text-align: center;
-                    font-size: 11px;
-                    color: #64748b;
-                    border-top: 1px solid #cbd5e1;
-                    padding-top: 15px;
+                    font-size: 10px;
+                    color: #94a3b8;
+                    border-top: 1px solid #f1f5f9;
+                    padding-top: 10px;
                 }
                 .brand-highlight {
                     color: ' . $themeColor . ';
@@ -1099,27 +1185,29 @@ class InvoiceApiController extends Controller
             <div class="container">
                 <table class="header-table">
                     <tr>
-                        <td style="vertical-align: middle; width: 52%;">
+                        <td style="vertical-align: middle; width: 55%;">
                             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;"><tr>';
                         if ($logoBase64) {
-                            $html .= '<td style="vertical-align: middle; max-width: 65px; padding: 0 10px 0 0; line-height: 0;"><img class="header-logo" style="vertical-align: middle;" src="' . $logoBase64 . '" /></td>';
+                            $html .= '<td style="vertical-align: middle; padding: 0 10px 0 0; line-height: 0;">
+                                <div class="shop-logo-box"><img class="header-logo" src="' . $logoBase64 . '" width="42" height="42" style="width: 42px; height: 42px; object-fit: cover;" /></div>
+                            </td>';
                         }
                         $html .= '
                                 <td style="vertical-align: middle; padding: 0;">
                                     <span class="shop-name">' . $this->renderMultilingualText($shop->name) . '</span><br>
                                     <span class="shop-details">
-                                        ' . __('mobile') . ': ' . htmlspecialchars($shop->mobile ?? $shop->owner->mobile ?? '') . '<br>
+                                        ' . ($shop->mobile ? __('mobile') . ': ' . htmlspecialchars($shop->mobile) . '<br>' : '') . '
                                         ' . ($shop->address ? $this->renderMultilingualText($shop->address) . '<br>' : '') . '
                                         ' . ($shop->gst_number ? __('gstin_label') . ': ' . htmlspecialchars($shop->gst_number) : '') . '
                                     </span>
                                 </td>
                             </tr></table>
                         </td>
-                        <td class="invoice-title" style="vertical-align: middle; width: 48%; text-align: right;">
-                            <div style="font-size: 22px; font-weight: bold; color: ' . $textColor . '; line-height: 1.2;">
+                        <td class="invoice-title" style="vertical-align: middle; width: 45%; text-align: right;">
+                            <div style="font-size: 18px; font-weight: bold; color: ' . $headerTextColor . '; line-height: 1.2;">
                                 ' . strtoupper(__('purchase_invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '
                             </div>
-                            <div class="invoice-meta" style="margin-top: 6px;">
+                            <div class="invoice-meta" style="margin-top: 4px;">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($purchase->purchase_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->purchase_date, $dateFormat, $timeFormat) . '
                                 ' . (($purchase->status === 'Completed' && $purchase->payment_type === 'Credit' && ($purchase->paid_date ?? $purchase->updated_at)) ? '<br><strong>' . __('paid_date') . ':</strong> ' . $this->formatInvoiceDateTime($purchase->paid_date ?? $purchase->updated_at, $dateFormat, $timeFormat) : '') . '
@@ -1131,7 +1219,7 @@ class InvoiceApiController extends Controller
                 <table class="details-table">
                     <tr>
                         <td>
-                            <div class="section-title">' . __('supplier_name') . '</div>
+                            <div class="section-title">' . __('supplier_details') . '</div>
                             <div class="party-name">' . $this->renderMultilingualText($purchase->supplier->name ?? __('walk_in_supplier')) . '</div>
                             <div class="party-info">
                                 ' . ($purchase->supplier && $purchase->supplier->mobile ? __('mobile') . ': ' . htmlspecialchars($purchase->supplier->mobile) . '<br>' : '') . '
@@ -1149,14 +1237,12 @@ class InvoiceApiController extends Controller
                                             : ($purchase->status === 'Unpaid'
                                                 ? '<span style="color:#dc2626;font-weight:bold;">' . strtoupper(__('due')) . '</span>'
                                                 : ($purchase->status === 'Partially Paid'
-                                                    ? '<span style="color:#d97706;font-weight:bold;">' . strtoupper(__('partially_paid')) . '</span>'
+                                                    ? '<span style="color:#2563eb;font-weight:bold;">' . strtoupper(__('partially_paid')) . '</span>'
                                                     : '<span style="color:#16a34a;font-weight:bold;">' . strtoupper(__('fully_paid')) . '</span>'
                                                 )
                                             )
                                         )
-                                ) . '
-                            </div>
-                            <div class="meta-row">
+                                ) . '<br>
                                 <strong>' . __('method') . ':</strong> ' . __(strtolower(str_replace(' ', '_', $purchase->payment_type))) . '
                             </div>
                         </td>
@@ -1166,17 +1252,15 @@ class InvoiceApiController extends Controller
                 <table class="items-table">
                     <thead>
                         <tr>
-                            <th style="width: 5%; text-align: center;">#</th>
-                            <th style="width: ' . ($isReturned ? '33%' : '50%') . ';">' . __('item') . '</th>
-                            <th style="width: ' . ($isReturned ? '13%' : '15%') . '; text-align: center;">' . ($isReturned ? __('purchased_qty') : __('quantity')) . '</th>
-                            ' . ($isReturned ? '<th style="width: 13%; text-align: center;">' . __('returned_qty') . '</th><th style="width: 10%; text-align: center;">' . __('net_qty') . '</th>' : '') . '
-                            <th style="width: ' . ($isReturned ? '12%' : '15%') . '; text-align: right;">' . __('price') . '</th>
-                            <th style="width: ' . ($isReturned ? '14%' : '15%') . '; text-align: right;">' . __('total') . '</th>
+                            <th style="width: ' . ($isReturned ? '36%' : '52%') . ';">' . __('product') . '</th>
+                            <th style="width: ' . ($isReturned ? '16%' : '18%') . '; text-align: right;">' . __('price') . '</th>
+                            <th style="width: ' . ($isReturned ? '12%' : '14%') . '; text-align: center;">' . __('quantity') . '</th>
+                            ' . ($isReturned ? '<th style="width: 12%; text-align: center;">' . __('returned') . '</th><th style="width: 10%; text-align: center;">' . __('net_qty') . '</th>' : '') . '
+                            <th style="width: ' . ($isReturned ? '14%' : '16%') . '; text-align: right;">' . __('total') . '</th>
                         </tr>
                     </thead>
                     <tbody>';
 
-                    $rowNum = 1;
                     foreach ($purchase->items as $item) {
                         $retQty = (int)($item->returned_quantity ?? 0);
                         if (!$hasReturnedQty && $purchase->status === 'Partially Returned') {
@@ -1190,15 +1274,14 @@ class InvoiceApiController extends Controller
 
                         $html .= '
                         <tr>
-                            <td style="text-align: center;">' . $rowNum++ . '</td>
                             <td>
                                 <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
-                                ($lineDiscount > 0 ? '<span style="font-size:11px;font-weight:600;color:#059669;display:block;margin-top:2px;">' . __('scheme_discount') . ': -&#8377; ' . number_format($lineDiscount, 2) . '</span>' : '') .
+                                ($lineDiscount > 0 ? '<div style="font-size:10px;font-weight:600;color:#059669;margin-top:2px;">' . __('scheme_discount') . ': -&#8377;' . number_format($lineDiscount, 2) . '</div>' : '') .
                             '</td>
+                            <td style="text-align: right;">&#8377;' . number_format($item->purchase_price, 2) . '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>
-                            ' . ($isReturned ? '<td style="text-align: center; color: #dc2626; font-weight: bold;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
-                            <td style="text-align: right;">&#8377; ' . number_format($item->purchase_price, 2) . '</td>
-                            <td style="text-align: right;">&#8377; ' . number_format($lineTotal, 2) . '</td>
+                            ' . ($isReturned ? '<td style="text-align: center; color: #ef4444; font-weight: bold;">' . ($retQty > 0 ? '-' . $retQty : '0') . '</td><td style="text-align: center; font-weight: bold;">' . $netQty . '</td>' : '') . '
+                            <td style="text-align: right; font-weight: bold;">&#8377;' . number_format($lineTotal, 2) . '</td>
                         </tr>';
                     }
 
@@ -1215,7 +1298,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:11px;color:#475569;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:9.5px;color:#64748b;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -1228,27 +1311,27 @@ class InvoiceApiController extends Controller
                                     $html .= '
                                     <tr>
                                         <td class="total-label">' . __('subtotal') . ':</td>
-                                        <td class="total-value">&#8377; ' . number_format($grossSubtotal, 2) . '</td>
+                                        <td class="total-value">&#8377;' . number_format($grossSubtotal, 2) . '</td>
                                     </tr>
                                     <tr>
-                                        <td class="total-label" style="color: #059669;">' . __('discount') . ':</td>
-                                        <td class="total-value" style="color: #059669;">-&#8377; ' . number_format($totalDiscount, 2) . '</td>
+                                        <td class="total-label" style="color: #059669;">' . __('scheme_discount') . ':</td>
+                                        <td class="total-value" style="color: #059669;">-&#8377;' . number_format($totalDiscount, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '
                                 <tr>
                                     <td class="grand-total-label">' . __('total_amount') . ':</td>
-                                    <td class="grand-total-value">&#8377; ' . number_format($purchase->total_amount, 2) . '</td>
+                                    <td class="grand-total-value">&#8377;' . number_format($purchase->total_amount, 2) . '</td>
                                 </tr>';
                                 if ($paidAmount > 0 || $dueAmount > 0) {
                                     $html .= '
                                     <tr>
-                                        <td class="total-label" style="color: #16a34a; font-weight: bold; padding-top: 8px;">' . __('paid_amount') . ':</td>
-                                        <td class="total-value" style="color: #16a34a; font-weight: bold; padding-top: 8px;">&#8377; ' . number_format($paidAmount, 2) . '</td>
+                                        <td class="total-label" style="color: #16a34a; font-weight: bold; padding-top: 6px;">' . __('paid_amount') . ':</td>
+                                        <td class="total-value" style="color: #16a34a; font-weight: bold; padding-top: 6px;">&#8377;' . number_format($paidAmount, 2) . '</td>
                                     </tr>
                                     <tr>
                                         <td class="total-label" style="color: #dc2626; font-weight: bold;">' . __('balance_due') . ':</td>
-                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377; ' . number_format($dueAmount, 2) . '</td>
+                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377;' . number_format($dueAmount, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '

@@ -13,6 +13,7 @@ class InvoiceConfig extends Model
         'date_format',
         'paper_size',
         'theme_color',
+        'text_color',
         'show_customer_address',
         'show_customer_gst',
         'show_hsn_code',

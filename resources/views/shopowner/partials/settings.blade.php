@@ -107,6 +107,7 @@
             date_format: 'DD/MM/YYYY',
             paper_size: 'A4',
             theme_color: '#0F766E',
+            text_color: '#FFFFFF',
             show_customer_address: true,
             show_customer_gst: true,
             show_hsn_code: false,
@@ -260,6 +261,7 @@
                 date_format: value.date_format || 'DD/MM/YYYY',
                 paper_size: value.paper_size || 'A4',
                 theme_color: value.theme_color || '#0F766E',
+                text_color: value.text_color || '#FFFFFF',
                 show_customer_address: !!value.show_customer_address,
                 show_customer_gst: !!value.show_customer_gst,
                 show_hsn_code: !!value.show_hsn_code,
@@ -1281,7 +1283,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-center">
                     <div>
                         <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('paper_size')">Paper Size</label>
                         <div class="flex gap-1">
@@ -1299,6 +1301,15 @@
                             <input type="color" x-model="invoiceConfigForm.theme_color"
                                 class="h-8 w-10 rounded border border-slate-300 dark:border-gray-600 cursor-pointer bg-transparent">
                             <input type="text" x-model="invoiceConfigForm.theme_color"
+                                class="flex-1 min-w-0 px-2.5 py-1 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('text_color')">Text Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" x-model="invoiceConfigForm.text_color"
+                                class="h-8 w-10 rounded border border-slate-300 dark:border-gray-600 cursor-pointer bg-transparent">
+                            <input type="text" x-model="invoiceConfigForm.text_color"
                                 class="flex-1 min-w-0 px-2.5 py-1 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                         </div>
                     </div>
@@ -1697,8 +1708,7 @@
                         :class="invoiceConfigForm.paper_size === 'A4' ? '' : 'max-w-[280px]'">
                         {{-- Themed Header: Logo/Shop info left, INVOICE title + number + date right --}}
                         <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all invoice-theme-header"
-                            :class="getContrastColor(invoiceConfigForm.theme_color || '#0F766E')"
-                            :style="'background-color: ' + (invoiceConfigForm.theme_color || '#0F766E')">
+                            :style="'background-color: ' + (invoiceConfigForm.theme_color || '#0F766E') + '; color: ' + (invoiceConfigForm.text_color || '#FFFFFF') + ' !important;'">
                             <div class="flex items-start gap-2">
                                 <div x-show="logoPreview || (shop && shop.logo)"
                                     class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
@@ -1718,8 +1728,11 @@
                                 </div>
                             </div>
                             <div
-                                class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[55%]">
-                                <h3 class="font-bold text-sm" x-text="t('view_invoice') ? t('view_invoice').replace(' देखें', '').replace(' જુઓ', '') : 'INVOICE'">INVOICE</h3>
+                                class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[55%]"
+                                :style="'color: ' + (invoiceConfigForm.text_color || '#FFFFFF') + ' !important;'">
+                                <h3 class="font-bold text-sm"
+                                    :style="'color: ' + (invoiceConfigForm.text_color || '#FFFFFF') + ' !important;'"
+                                    x-text="t('view_invoice') ? t('view_invoice').replace(' देखें', '').replace(' જુઓ', '') : 'INVOICE'">INVOICE</h3>
                                 <p class="font-bold"><span class="font-normal opacity-80" x-text="(t('invoice_no') || 'Invoice No') + ':'">Invoice No:</span> <span
                                         x-text="previewInvoiceNumber()"></span></p>
                                 <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="(t('date') || 'Date') + ':'">Date:</span> <span

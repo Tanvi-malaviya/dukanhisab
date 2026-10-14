@@ -72,6 +72,10 @@
             animation: shopIndeterminate 1.5s infinite ease-in-out;
         }
         /* Invoice Themed Header Contrast Overrides */
+        .invoice-theme-header,
+        .invoice-theme-header * {
+            color: inherit !important;
+        }
         .invoice-theme-header.text-white,
         .invoice-theme-header.text-white * {
             color: #ffffff !important;

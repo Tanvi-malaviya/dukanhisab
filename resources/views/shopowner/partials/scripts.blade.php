@@ -66,6 +66,10 @@
                         <\/script>
                         <style>
                             body { font-family: 'Poppins', sans-serif; background-color: #ffffff !important; color: #0f172a !important; padding: 20px; }
+                            .invoice-theme-header,
+                            .invoice-theme-header * {
+                                color: inherit !important;
+                            }
                             .invoice-theme-header.text-white,
                             .invoice-theme-header.text-white * {
                                 color: #ffffff !important;
@@ -458,6 +462,8 @@
             sendingSaleEmail: false,
             sendingWhatsApp: false,
             sendingWhatsAppKey: null,
+            waSettings: null,
+            waSettingsLoading: false,
             sendingPurchaseEmail: false,
             showReturnModal: false,
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
@@ -715,7 +721,7 @@
                 else if (pageName === 'bank-accounts') return Promise.allSettled([this.loadBankAccounts(), this.loadCashBook('', 'all')]);
                 else if (pageName === 'transactions') return this.loadCashBook('', 'all');
                 else if (pageName === 'reports') return this.loadReports();
-                else if (pageName === 'reminders') return Promise.allSettled([this.loadCustomers(), this.loadSuppliers(), this.loadProducts(), this.loadDashboard()]);
+                else if (pageName === 'reminders') return Promise.allSettled([this.loadCustomers(), this.loadSuppliers(), this.loadProducts(), this.loadDashboard(), this.loadWhatsAppSettingsSummary()]);
                 else if (pageName === 'settings') return this.loadInvoiceSettings();
                 else if (pageName === 'subscription') return this.loadSubscriptionPlans();
                 else if (pageName === 'addons') return this.loadAddOns();
@@ -3395,7 +3401,17 @@
                     })
                     .then(d => {
                         this.loading = false;
-                        if (d.sale_number) { this.showToast('Sale saved!'); this.selectedSale = d; this.showInvoiceModal = true; this.resetPOS(); this.loadAllData(); }
+                        if (d.sale_number) {
+                            if (d.whatsapp_shared) {
+                                this.showToast(this.t('your_invoice_shared_to_customer'));
+                            } else {
+                                this.showToast('Sale saved!');
+                            }
+                            this.selectedSale = d;
+                            this.showInvoiceModal = true;
+                            this.resetPOS();
+                            this.loadAllData();
+                        }
                         else { this.showToast(d.message || 'Failed to save sale.', 'error'); }
                     }).catch((err) => {
                         this.loading = false;
@@ -3765,6 +3781,43 @@
                 this._postWhatsApp(`/api/v1/whatsapp/reminders/${type}/${id}`, key);
             },
 
+            loadWhatsAppSettingsSummary() {
+                if (!this.token || !this.hasShop) return Promise.resolve();
+                this.waSettingsLoading = true;
+                return fetch('/api/v1/whatsapp/settings?locale=' + encodeURIComponent(this.currentLang || 'en'), { headers: this.getHeaders() })
+                    .then(r => r.json())
+                    .then(data => {
+                        this.waSettingsLoading = false;
+                        if (data && data.events) {
+                            this.waSettings = data;
+                        }
+                    })
+                    .catch(() => {
+                        this.waSettingsLoading = false;
+                    });
+            },
+
+            waDueReminderActive() {
+                if (!this.waSettings || !this.waSettings.events) return false;
+                const custReminder = this.waSettings.events.find(e => e.key === 'due_reminder');
+                const supReminder = this.waSettings.events.find(e => e.key === 'supplier_due');
+                return !!((custReminder && custReminder.enabled) || (supReminder && supReminder.enabled));
+            },
+
+            waDueReminderScheduleText() {
+                if (!this.waSettings || !this.waSettings.events) return '';
+                const ev = this.waSettings.events.find(e => (e.key === 'due_reminder' || e.key === 'supplier_due') && e.enabled);
+                if (!ev) return '';
+                const dayMap = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
+                const days = (ev.schedule_days || []).map(d => dayMap[d.toLowerCase()] || d).join(', ');
+                const time = ev.schedule_time || '';
+                return (days ? days : '') + (time ? ' at ' + time : '');
+            },
+
+            waCreditsBalance() {
+                return (this.waSettings && this.waSettings.balance !== undefined) ? this.waSettings.balance : null;
+            },
+
             _postWhatsApp(url, key = null) {
                 if (this.sendingWhatsApp) return;
                 this.sendingWhatsApp = true;
@@ -3776,6 +3829,13 @@
                         this.sendingWhatsAppKey = null;
                         if (status === 202) {
                             this.showToast(body.message || 'Sent on WhatsApp.');
+                            if (this.selectedPurchase) {
+                                this.selectedPurchase.whatsapp_shared = true;
+                            }
+                            if (this.selectedSale) {
+                                this.selectedSale.whatsapp_shared = true;
+                            }
+                            this.loadWhatsAppSettingsSummary();
                         } else if (status === 402) {
                             this.showConfirm(this.t('wa_buy_messages'), body.message, () => {
                                 this.showInvoiceModal = false;
@@ -4675,7 +4735,11 @@
                     .then(r => r.json()).then(d => {
                         this.loading = false;
                         if (d.purchase_number) {
-                            this.showToast('Purchase recorded!');
+                            if (d.whatsapp_shared) {
+                                this.showToast(this.t('your_invoice_shared_to_supplier'));
+                            } else {
+                                this.showToast('Purchase recorded!');
+                            }
                             this.showPurchaseModal = false;
                             this.resetNewPurchase();
                             this.selectedPurchase = d;

@@ -14,12 +14,29 @@
                     </path>
                 </svg></button>
         </div>
-        <div id="print-area" class="flex-1 overflow-y-auto p-6 space-y-6 text-slate-800 dark:text-slate-200">
+        <!-- WhatsApp Auto-shared confirmation banner -->
+        <template x-if="selectedSale && selectedSale.whatsapp_shared">
+            <div class="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                        </svg>
+                    </span>
+                    <span class="text-xs font-bold leading-tight" x-text="t('your_invoice_shared_to_customer')">Your Invoice Shared to Customer</span>
+                    <span class="text-[11px] opacity-75 hidden sm:inline">• <span x-text="t('wa_auto_sent_desc_customer')">Invoice shared automatically via official WhatsApp</span></span>
+                </div>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-sm">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    <span x-text="t('sent') || 'Sent'">Sent</span>
+                </span>
+            </div>
+        </template>
+        <div id="print-area" class="flex-1 overflow-y-auto px-6 pt-4 pb-6 space-y-4 text-slate-800 dark:text-slate-200">
             <template x-if="selectedSale">
                 <div>
                     <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all mb-4 invoice-theme-header"
-                         :class="getContrastColor(invoiceSettings ? invoiceSettings.theme_color : '#0F766E')"
-                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E')">
+                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E') + '; color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                         <!-- Left Side: Logo & Shop Name -->
                         <div class="flex items-start gap-2">
                             <div x-show="shop && shop.logo" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
@@ -34,8 +51,10 @@
                         </div>
                         
                         <!-- Right Side: Invoice Meta -->
-                        <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
-                            <h3 class="font-bold text-sm flex items-center justify-end gap-2">
+                        <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]"
+                             :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
+                            <h3 class="font-bold text-sm flex items-center justify-end gap-2"
+                                :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                                 <span x-text="t('invoice')">INVOICE</span>
                                 <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
                                     <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
@@ -217,21 +236,24 @@
                 </button>
             </div>
             <div class="flex gap-2">
-                {{-- Same rule as the app: only when "WhatsApp share" is on in invoice settings --}}
-                <button x-show="!!(invoiceSettings && invoiceSettings.whatsapp_share)" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })"
-                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
-                    Share WhatsApp
-                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                    </span>
-                </button>
                 {{-- Sent from the DukanHisab number using the shop's WhatsApp message credits --}}
-                <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)" :disabled="sendingWhatsApp"
-                    class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
-                    <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
-                    <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
-                </button>
+                <template x-if="selectedSale && selectedSale.whatsapp_shared">
+                    <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)" :disabled="sendingWhatsApp"
+                        class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 disabled:opacity-60 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                        </svg>
+                        <span x-show="!sendingWhatsApp" x-text="t('wa_resend_via_whatsapp')">Resend via WhatsApp</span>
+                        <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
+                    </button>
+                </template>
+                <template x-if="!selectedSale || !selectedSale.whatsapp_shared">
+                    <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)" :disabled="sendingWhatsApp"
+                        class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                        <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
+                        <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
+                    </button>
+                </template>
                 <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })" :disabled="sendingSaleEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
@@ -581,12 +603,29 @@
                     </path>
                 </svg></button>
         </div>
-        <div id="purchase-print-area" class="flex-1 overflow-y-auto p-6 space-y-6 text-slate-800 dark:text-slate-200">
+        <!-- WhatsApp Auto-shared confirmation banner -->
+        <template x-if="selectedPurchase && selectedPurchase.whatsapp_shared">
+            <div class="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                        </svg>
+                    </span>
+                    <span class="text-xs font-bold leading-tight" x-text="t('your_invoice_shared_to_supplier')">Your Invoice Shared to Supplier</span>
+                    <span class="text-[11px] opacity-75 hidden sm:inline">• <span x-text="t('wa_auto_sent_desc_supplier')">Bill shared automatically via official WhatsApp</span></span>
+                </div>
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-sm">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                    <span x-text="t('sent') || 'Sent'">Sent</span>
+                </span>
+            </div>
+        </template>
+        <div id="purchase-print-area" class="flex-1 overflow-y-auto px-6 pt-4 pb-6 space-y-4 text-slate-800 dark:text-slate-200">
             <template x-if="selectedPurchase">
                 <div>
                     <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all mb-4 invoice-theme-header"
-                         :class="getContrastColor(invoiceSettings ? invoiceSettings.theme_color : '#0F766E')"
-                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E')">
+                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E') + '; color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                         <!-- Left Side: Logo & Shop Name -->
                         <div class="flex items-start gap-2">
                             <div x-show="shop && shop.logo" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
@@ -601,8 +640,10 @@
                         </div>
 
                         <!-- Right Side: Invoice Meta -->
-                        <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]">
-                            <h3 class="font-bold text-sm flex items-center justify-end gap-2">
+                        <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]"
+                             :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
+                            <h3 class="font-bold text-sm flex items-center justify-end gap-2"
+                                :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                                 <span x-text="t('purchase_invoice')">PURCHASE INVOICE</span>
                                 <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
                                     <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
@@ -746,21 +787,24 @@
                 </button>
             </div>
             <div class="flex gap-2">
-                {{-- Same rule as the app: only when "WhatsApp share" is on in invoice settings --}}
-                <button x-show="!!(invoiceSettings && invoiceSettings.whatsapp_share)" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') window.open(whatsappPurchaseLink(), '_blank'); else showConfirm('Upgrade Plan Required', 'WhatsApp Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
-                    :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg flex items-center gap-1">
-                    Share WhatsApp
-                    <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
-                    </span>
-                </button>
                 {{-- Sent from the DukanHisab number using the shop's WhatsApp message credits --}}
-                <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)" :disabled="sendingWhatsApp"
-                    class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
-                    <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
-                    <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
-                </button>
+                <template x-if="selectedPurchase && selectedPurchase.whatsapp_shared">
+                    <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)" :disabled="sendingWhatsApp"
+                        class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 disabled:opacity-60 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                        </svg>
+                        <span x-show="!sendingWhatsApp" x-text="t('wa_resend_via_whatsapp')">Resend via WhatsApp</span>
+                        <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
+                    </button>
+                </template>
+                <template x-if="!selectedPurchase || !selectedPurchase.whatsapp_shared">
+                    <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)" :disabled="sendingWhatsApp"
+                        class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                        <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
+                        <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
+                    </button>
+                </template>
                 <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })" :disabled="sendingPurchaseEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
