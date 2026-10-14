@@ -296,9 +296,17 @@ class WhatsAppApiController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
+        $log->refresh();
+        if ($log->status === 'failed') {
+            return response()->json(['message' => $log->error ?: 'Could not send on WhatsApp.'], 422);
+        }
+
         return response()->json([
-            'message' => 'Message is being sent on WhatsApp to +' . $log->phone . '.',
+            'message' => $log->status === 'sent'
+                ? 'Message sent on WhatsApp to +' . $log->phone . '.'
+                : 'Message is being sent on WhatsApp to +' . $log->phone . '.',
             'log_id' => $log->id,
+            'status' => $log->status,
             'balance' => $this->wallet->balance($shop->id),
         ], 202);
     }
