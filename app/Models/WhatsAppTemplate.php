@@ -76,12 +76,12 @@ class WhatsAppTemplate extends Model
     public function scopeSendable($query)
     {
         return $query->where('status', 'active')
-            ->where(fn ($q) => $q->whereNull('meta_status')->orWhere('meta_status', 'APPROVED'));
+            ->where(fn ($q) => $q->whereNull('meta_status')->orWhereIn('meta_status', ['APPROVED', 'PENDING']));
     }
 
     public function isSendable(): bool
     {
-        return $this->status === 'active' && in_array($this->meta_status, [null, 'APPROVED'], true);
+        return $this->status === 'active' && in_array($this->meta_status, [null, 'APPROVED', 'PENDING'], true);
     }
 
     /** Submitted before, so a resubmission edits the same Meta template rather than creating one. */
