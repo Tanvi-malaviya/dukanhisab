@@ -136,19 +136,38 @@ class WhatsAppTemplate extends Model
         }
 
         $bodyParams = array_map(
-            fn ($name) => ['type' => 'text', 'text' => (string) ($values[$name] ?? '')],
+            function ($name) use ($values) {
+                $val = trim((string) ($values[$name] ?? ''));
+                if ($val === '') {
+                    $val = match ($name) {
+                        'shop_mobile' => 'Contact Shop',
+                        'party_name' => 'Customer',
+                        'shop_name' => 'Our Shop',
+                        'amount', 'due_amount' => '₹0.00',
+                        'date' => date('d M Y'),
+                        'invoice_no' => 'N/A',
+                        default => '-',
+                    };
+                }
+
+                return ['type' => 'text', 'text' => $val];
+            },
             array_values($this->variables ?? [])
         );
         if ($bodyParams) {
             $components[] = ['type' => 'body', 'parameters' => $bodyParams];
         }
 
-        if ($this->has_pay_button && $buttonSuffix !== null) {
+        if ($this->has_pay_button) {
+            $suffix = trim((string) $buttonSuffix);
+            if ($suffix === '') {
+                $suffix = 'pay';
+            }
             $components[] = [
                 'type' => 'button',
                 'sub_type' => 'url',
                 'index' => '0',
-                'parameters' => [['type' => 'text', 'text' => $buttonSuffix]],
+                'parameters' => [['type' => 'text', 'text' => $suffix]],
             ];
         }
 
