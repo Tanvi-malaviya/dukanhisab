@@ -209,11 +209,32 @@ class WhatsAppTemplateSync
         $payBase = (str_starts_with($payUrl, 'https://') ? $payUrl : str_replace('http://', 'https://', $payUrl)) . '/';
         $components = $template->metaComponents($payBase, $template->has_document ? $this->sampleDocumentHandle() : null);
 
-        if ($template->canEditInMeta()) {
-            $this->client->editTemplate($template->meta_template_id, $template->meta_category ?: self::CATEGORY, $components);
-            $result = ['id' => $template->meta_template_id, 'status' => 'PENDING', 'category' => $template->meta_category];
-        } else {
-            $result = $this->client->createTemplate($template->meta_template_name, $template->meta_language_code, self::CATEGORY, $components);
+        try {
+            if ($template->canEditInMeta()) {
+                $this->client->editTemplate($template->meta_template_id, $template->meta_category ?: self::CATEGORY, $components);
+                $result = ['id' => $template->meta_template_id, 'status' => 'PENDING', 'category' => $template->meta_category];
+            } else {
+                $result = $this->client->createTemplate($template->meta_template_name, $template->meta_language_code, self::CATEGORY, $components);
+            }
+        } catch (WhatsAppException $e) {
+            // If the template already exists in Meta (subcode 2388024 / already exists), auto-link to it directly
+            if (str_contains($e->getMessage(), 'already exists') || str_contains($e->getMessage(), '2388024')) {
+                $remote = $this->findRemote($template->meta_template_name, $template->meta_language_code);
+                if ($remote) {
+                    $template->update([
+                        'meta_template_id' => (string) $remote['id'],
+                        'meta_status' => strtoupper((string) $remote['status']),
+                        'meta_category' => $remote['category'] ?? self::CATEGORY,
+                        'meta_rejected_reason' => $this->reason($remote['rejected_reason'] ?? null),
+                        'meta_body' => WhatsAppTemplate::bodyFromMetaComponents($remote['components'] ?? []) ?: $template->body,
+                        'meta_synced_at' => now(),
+                    ]);
+
+                    return;
+                }
+            }
+
+            throw $e;
         }
 
         $template->update([
