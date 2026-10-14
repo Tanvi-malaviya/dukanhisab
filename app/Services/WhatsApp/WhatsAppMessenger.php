@@ -114,12 +114,32 @@ class WhatsAppMessenger
         $amount ??= $sale ? (float) $sale->grand_total : ($purchase ? (float) $purchase->total_amount : null);
         $date = $sale?->sale_date ?? $purchase?->purchase_date ?? now();
 
+        $shopMobile = trim((string) ($shop->mobile ?: ($shop->owner?->mobile ?: '')));
+        if ($shopMobile === '') {
+            $shopMobile = 'Contact Shop';
+        }
+
+        $partyName = trim((string) $recipient->name);
+        if ($partyName === '') {
+            $partyName = 'Customer';
+        }
+
+        $shopName = trim((string) $shop->name);
+        if ($shopName === '') {
+            $shopName = 'Our Shop';
+        }
+
+        $invoiceNo = trim((string) ($sale?->sale_number ?? $purchase?->purchase_number ?? ''));
+        if ($invoiceNo === '') {
+            $invoiceNo = 'N/A';
+        }
+
         return [
-            'party_name' => $recipient->name,
-            'shop_name' => $shop->name,
-            'shop_mobile' => (string) $shop->mobile,
-            'invoice_no' => (string) ($sale?->sale_number ?? $purchase?->purchase_number ?? ''),
-            'amount' => $amount !== null ? $this->money($shop, $amount) : '',
+            'party_name' => $partyName,
+            'shop_name' => $shopName,
+            'shop_mobile' => $shopMobile,
+            'invoice_no' => $invoiceNo,
+            'amount' => $amount !== null ? $this->money($shop, $amount) : '₹0.00',
             'due_amount' => $this->money($shop, max(0, (float) $recipient->net_balance)),
             'date' => $date->format('d M Y'),
         ];

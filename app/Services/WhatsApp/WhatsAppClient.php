@@ -111,6 +111,21 @@ class WhatsAppClient
      */
     public function sendTemplate(string $to, string $templateName, string $languageCode, array $components = []): string
     {
+        // Ensure Meta never receives an empty text value in any text parameter
+        if (!empty($components)) {
+            foreach ($components as &$comp) {
+                if (!empty($comp['parameters']) && is_array($comp['parameters'])) {
+                    foreach ($comp['parameters'] as &$param) {
+                        if (($param['type'] ?? '') === 'text' && (!isset($param['text']) || trim((string) $param['text']) === '')) {
+                            $param['text'] = '-';
+                        }
+                    }
+                    unset($param);
+                }
+            }
+            unset($comp);
+        }
+
         $template = [
             'name' => $templateName,
             'language' => ['code' => $languageCode],
