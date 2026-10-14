@@ -484,36 +484,37 @@ class InvoiceApiController extends Controller
                     max-width: 260px;
                 }
                 .total-table {
-                    width: 100%;
+                    width: 210px;
+                    margin-left: auto;
                     border-collapse: collapse;
                 }
                 .total-label {
                     text-align: right;
-                    padding: 3px 12px;
-                    font-size: 12px;
+                    padding: 3px 8px;
+                    font-size: 11.5px;
                     color: #64748b;
                 }
                 .total-value {
                     text-align: right;
-                    width: 105px;
-                    padding: 3px 0 3px 12px;
+                    width: 85px;
+                    padding: 3px 0 3px 8px;
                     font-size: 12px;
                     font-weight: 600;
                     color: #1e293b;
                 }
                 .grand-total-label {
                     text-align: right;
-                    padding: 8px 12px 4px 12px;
-                    font-size: 13.5px;
+                    padding: 6px 8px 4px 8px;
+                    font-size: 13px;
                     font-weight: bold;
                     color: #1e293b;
                     border-top: 1px dashed #cbd5e1;
                 }
                 .grand-total-value {
                     text-align: right;
-                    width: 105px;
-                    padding: 8px 0 4px 12px;
-                    font-size: 14.5px;
+                    width: 85px;
+                    padding: 6px 0 4px 8px;
+                    font-size: 14px;
                     font-weight: 800;
                     color: ' . $themeColor . ';
                     border-top: 1px dashed #cbd5e1;
@@ -598,8 +599,7 @@ class InvoiceApiController extends Controller
                             <div class="section-title">' . __('bill_to') . '</div>
                             <div class="party-name">' . $this->renderMultilingualText($sale->customer->name ?? __('walk_in_customer')) . '</div>
                             <div class="party-info">
-                                ' . (($invoiceConfig->show_customer_address ?? true) && $sale->customer && $sale->customer->mobile ? __('mobile') . ': ' . htmlspecialchars($sale->customer->mobile) . '<br>' : '') . '
-                                ' . ($sale->customer && $sale->customer->email ? __('email') . ': ' . htmlspecialchars($sale->customer->email) : '') . '
+                                ' . (($invoiceConfig->show_customer_address ?? true) && $sale->customer && $sale->customer->mobile ? __('mobile') . ': ' . htmlspecialchars($sale->customer->mobile) : '') . '
                             </div>
                         </td>
                         <td style="text-align: right;">
@@ -607,16 +607,16 @@ class InvoiceApiController extends Controller
                             <div class="party-info">
                                 <strong>' . __('payment_status') . ':</strong> ' . (
                                     $sale->status === 'Returned'
-                                        ? '<span style="color:#ef4444;font-weight:bold;">' . __('returned') . '</span>'
+                                        ? '<span style="color:#e11d48;font-weight:bold;">' . __('returned') . '</span>'
                                         : ($sale->status === 'Partially Returned'
-                                            ? '<span style="color:#f59e0b;font-weight:bold;">' . __('partially_returned') . '</span>'
+                                            ? '<span style="color:#d97706;font-weight:bold;">' . __('partially_returned') . '</span>'
                                             : ($sale->status === 'Unpaid'
-                                                ? '<span style="color:#dc2626;font-weight:bold;">' . __('due') . '</span>'
+                                                ? '<span style="color:#d97706;font-weight:bold;">' . __('unpaid') . '</span>'
                                                 : ($sale->status === 'Partially Paid'
-                                                    ? '<span style="color:#f59e0b;font-weight:bold;">' . __('partially_paid') . '</span>'
-                                                    : '<span style="color:#10b981;font-weight:bold;">' . __('fully_paid') . '</span>')))
+                                                    ? '<span style="color:#2563eb;font-weight:bold;">' . __('partially_paid') . '</span>'
+                                                    : '<span style="color:#16a34a;font-weight:bold;">' . __('paid') . '</span>')))
                                 ) . '<br>
-                                <strong>' . __('method') . ':</strong> ' . ucfirst($sale->payment_type ?? 'Cash') . '
+                                <strong>' . __('method') . ':</strong> ' . __(strtolower(str_replace(' ', '_', $sale->payment_type ?? 'cash'))) . '
                             </div>
                         </td>
                     </tr>
@@ -627,21 +627,19 @@ class InvoiceApiController extends Controller
                         <tr>
                             <th>' . __('product') . '</th>
                             <th style="width: 85px; text-align: right;">' . __('price') . '</th>
-                            <th style="width: 65px; text-align: center;">' . __('qty') . '</th>';
+                            <th style="width: 80px; text-align: center;">' . __('quantity') . '</th>';
 
-        $showDiscountCol = ($invoiceConfig->show_discount ?? true);
-        if (!$showDiscountCol) {
-            foreach ($sale->items as $item) {
-                if ((float)($item->discount ?? 0) > 0) {
-                    $showDiscountCol = true;
-                    break;
-                }
+        $showDiscountCol = false;
+        foreach ($sale->items as $item) {
+            if ((float)($item->discount ?? 0) > 0) {
+                $showDiscountCol = true;
+                break;
             }
         }
 
         if ($showDiscountCol) {
             $html .= '
-                            <th style="width: 80px; text-align: right;">' . __('discount') . '</th>';
+                            <th style="width: 80px; text-align: right; color: #d97706;">' . __('discount') . '</th>';
         }
 
         $isReturned = ($sale->status === 'Returned' || $sale->status === 'Partially Returned');
@@ -655,8 +653,8 @@ class InvoiceApiController extends Controller
 
         if ($isReturned) {
             $html .= '
-                            <th style="width: 75px; text-align: center;">' . __('returned') . '</th>
-                            <th style="width: 75px; text-align: center;">' . __('net_qty') . '</th>';
+                            <th style="width: 70px; text-align: center;">' . __('returned') . '</th>
+                            <th style="width: 70px; text-align: center;">' . __('net_qty') . '</th>';
         }
 
         $html .= '
@@ -709,15 +707,15 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:9.5px;color:#64748b;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" width="75" height="75" style="width: 75px; height: 75px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff;" /><br><span style="font-size:9px;color:#64748b;font-weight:600;display:inline-block;margin-top:3px;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
                         }
                         $html .= '
                         </td>
-                        <td>
-                            <table class="total-table">
+                        <td style="vertical-align: top; text-align: right;">
+                            <table class="total-table" style="width: 220px; margin-left: auto; border-collapse: collapse;">
                                 <tr>
                                     <td class="total-label">' . __('subtotal') . ':</td>
                                     <td class="total-value">&#8377;' . number_format($sale->subtotal, 2) . '</td>
@@ -1104,36 +1102,37 @@ class InvoiceApiController extends Controller
                     max-width: 260px;
                 }
                 .total-table {
-                    width: 100%;
+                    width: 210px;
+                    margin-left: auto;
                     border-collapse: collapse;
                 }
                 .total-label {
                     text-align: right;
-                    padding: 3px 12px;
-                    font-size: 12px;
+                    padding: 3px 8px;
+                    font-size: 11.5px;
                     color: #64748b;
                 }
                 .total-value {
                     text-align: right;
-                    width: 105px;
-                    padding: 3px 0 3px 12px;
+                    width: 85px;
+                    padding: 3px 0 3px 8px;
                     font-size: 12px;
                     font-weight: 600;
                     color: #1e293b;
                 }
                 .grand-total-label {
                     text-align: right;
-                    padding: 8px 12px 4px 12px;
-                    font-size: 13.5px;
+                    padding: 6px 8px 4px 8px;
+                    font-size: 13px;
                     font-weight: bold;
                     color: #1e293b;
                     border-top: 1px dashed #cbd5e1;
                 }
                 .grand-total-value {
                     text-align: right;
-                    width: 105px;
-                    padding: 8px 0 4px 12px;
-                    font-size: 14.5px;
+                    width: 85px;
+                    padding: 6px 0 4px 8px;
+                    font-size: 14px;
                     font-weight: 800;
                     color: ' . $themeColor . ';
                     border-top: 1px dashed #cbd5e1;
@@ -1231,11 +1230,11 @@ class InvoiceApiController extends Controller
                             <div class="party-info">
                                 <strong>' . __('payment_status') . ':</strong> ' . (
                                     $purchase->status === 'Returned'
-                                        ? '<span style="color:#ef4444;font-weight:bold;">' . strtoupper(__('returned')) . '</span>'
+                                        ? '<span style="color:#e11d48;font-weight:bold;">' . strtoupper(__('returned')) . '</span>'
                                         : ($purchase->status === 'Partially Returned'
                                             ? '<span style="color:#d97706;font-weight:bold;">' . strtoupper(__('partially_returned')) . '</span>'
                                             : ($purchase->status === 'Unpaid'
-                                                ? '<span style="color:#dc2626;font-weight:bold;">' . strtoupper(__('due')) . '</span>'
+                                                ? '<span style="color:#d97706;font-weight:bold;">' . strtoupper(__('unpaid')) . '</span>'
                                                 : ($purchase->status === 'Partially Paid'
                                                     ? '<span style="color:#2563eb;font-weight:bold;">' . strtoupper(__('partially_paid')) . '</span>'
                                                     : '<span style="color:#16a34a;font-weight:bold;">' . strtoupper(__('fully_paid')) . '</span>'
@@ -1298,15 +1297,15 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" /><br><span style="font-size:9.5px;color:#64748b;font-weight:600;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" width="75" height="75" style="width: 75px; height: 75px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff;" /><br><span style="font-size:9px;color:#64748b;font-weight:600;display:inline-block;margin-top:3px;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
                         }
                         $html .= '
                         </td>
-                        <td>
-                            <table class="total-table">';
+                        <td style="vertical-align: top; text-align: right;">
+                            <table class="total-table" style="width: 210px; margin-left: auto; border-collapse: collapse;">';
                                 if ($totalDiscount > 0) {
                                     $html .= '
                                     <tr>
