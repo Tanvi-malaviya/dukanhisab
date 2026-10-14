@@ -133,6 +133,7 @@ class InvoiceApiController extends Controller
         $pdf->setPaper('A4', 'portrait');
         $pdf->getDomPDF()->getOptions()->set('isFontSubsettingEnabled', true);
         $pdf->getDomPDF()->getOptions()->set('isHtml5ParserEnabled', true);
+        $pdf->getDomPDF()->getOptions()->set('defaultFont', 'DejaVu Sans');
 
         if ($hasWatermark) {
             $pdf->render();
@@ -499,7 +500,7 @@ class InvoiceApiController extends Controller
                     width: 85px;
                     padding: 3px 0 3px 8px;
                     font-size: 12px;
-                    font-weight: 600;
+                    font-weight: bold;
                     color: #1e293b;
                 }
                 .grand-total-label {
@@ -515,7 +516,7 @@ class InvoiceApiController extends Controller
                     width: 85px;
                     padding: 6px 0 4px 8px;
                     font-size: 14px;
-                    font-weight: 800;
+                    font-weight: bold;
                     color: ' . $themeColor . ';
                     border-top: 1px dashed #cbd5e1;
                 }
@@ -524,7 +525,7 @@ class InvoiceApiController extends Controller
                     text-align: center;
                     font-size: 10.5px;
                     color: #94a3b8;
-                    font-weight: 500;
+                    font-weight: normal;
                 }
                 .signature-img {
                     margin-top: 10px;
@@ -554,7 +555,7 @@ class InvoiceApiController extends Controller
                     text-align: center;
                     transform: rotate(-35deg);
                     font-size: 70px;
-                    font-weight: 800;
+                    font-weight: bold;
                     color: #94a3b8;
                     opacity: 0.15;
                     letter-spacing: 4px;
@@ -685,7 +686,7 @@ class InvoiceApiController extends Controller
 
                         if ($showDiscountCol) {
                             $html .= '
-                            <td style="text-align: right; color: #d97706; font-weight: 600;">' . ($itemDiscount > 0 ? '-&#8377;' . number_format($itemDiscount, 2) : '-') . '</td>';
+                            <td style="text-align: right; color: #d97706; font-weight: bold;">' . ($itemDiscount > 0 ? '-&#8377;' . number_format($itemDiscount, 2) : '-') . '</td>';
                         }
 
                         if ($isReturned) {
@@ -707,7 +708,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" width="75" height="75" style="width: 75px; height: 75px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff;" /><br><span style="font-size:9px;color:#64748b;font-weight:600;display:inline-block;margin-top:3px;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" width="75" height="75" style="width: 75px; height: 75px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff;" /><br><span style="font-size:9px;color:#64748b;font-weight:bold;display:inline-block;margin-top:3px;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
@@ -1117,7 +1118,7 @@ class InvoiceApiController extends Controller
                     width: 85px;
                     padding: 3px 0 3px 8px;
                     font-size: 12px;
-                    font-weight: 600;
+                    font-weight: bold;
                     color: #1e293b;
                 }
                 .grand-total-label {
@@ -1133,7 +1134,7 @@ class InvoiceApiController extends Controller
                     width: 85px;
                     padding: 6px 0 4px 8px;
                     font-size: 14px;
-                    font-weight: 800;
+                    font-weight: bold;
                     color: ' . $themeColor . ';
                     border-top: 1px dashed #cbd5e1;
                 }
@@ -1142,7 +1143,7 @@ class InvoiceApiController extends Controller
                     text-align: center;
                     font-size: 10.5px;
                     color: #94a3b8;
-                    font-weight: 500;
+                    font-weight: normal;
                 }
                 .signature-img {
                     margin-top: 10px;
@@ -1172,7 +1173,7 @@ class InvoiceApiController extends Controller
                     text-align: center;
                     transform: rotate(-35deg);
                     font-size: 70px;
-                    font-weight: 800;
+                    font-weight: bold;
                     color: #94a3b8;
                     opacity: 0.15;
                     letter-spacing: 4px;
@@ -1275,7 +1276,7 @@ class InvoiceApiController extends Controller
                         <tr>
                             <td>
                                 <strong>' . $this->renderMultilingualText($item->product->name ?? __('deleted_product')) . '</strong>' .
-                                ($lineDiscount > 0 ? '<div style="font-size:10px;font-weight:600;color:#059669;margin-top:2px;">' . __('scheme_discount') . ': -&#8377;' . number_format($lineDiscount, 2) . '</div>' : '') .
+                                ($lineDiscount > 0 ? '<div style="font-size:10px;font-weight:bold;color:#059669;margin-top:2px;">' . __('scheme_discount') . ': -&#8377;' . number_format($lineDiscount, 2) . '</div>' : '') .
                             '</td>
                             <td style="text-align: right;">&#8377;' . number_format($item->purchase_price, 2) . '</td>
                             <td style="text-align: center;">' . $item->quantity . '</td>
@@ -1297,7 +1298,7 @@ class InvoiceApiController extends Controller
                     <tr>
                         <td class="qr-cell">';
                         if ($qrBase64) {
-                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" width="75" height="75" style="width: 75px; height: 75px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff;" /><br><span style="font-size:9px;color:#64748b;font-weight:600;display:inline-block;margin-top:3px;">' . htmlspecialchars($shop->upi_id) . '</span>';
+                            $html .= '<img src="data:image/png;base64,' . $qrBase64 . '" width="75" height="75" style="width: 75px; height: 75px; padding: 2px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff;" /><br><span style="font-size:9px;color:#64748b;font-weight:bold;display:inline-block;margin-top:3px;">' . htmlspecialchars($shop->upi_id) . '</span>';
                         }
                         if ($invoiceConfig->show_bank_details && $shop->bank_details) {
                             $html .= '<div class="bank-details">' . nl2br(htmlspecialchars($shop->bank_details)) . '</div>';
