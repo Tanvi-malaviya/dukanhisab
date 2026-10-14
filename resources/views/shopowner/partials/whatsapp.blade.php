@@ -1,4 +1,67 @@
 {{-- WHATSAPP MESSAGING PANEL: Compact, high-efficiency design matching DukanHisab UI --}}
+<style>
+.app-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+.app-toggle input {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+}
+.app-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #CBD5E1;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 9999px;
+}
+.app-toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #FFFFFF;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.app-toggle input:checked + .app-toggle-slider {
+    background-color: #0F766E !important;
+}
+.app-toggle input:checked + .app-toggle-slider::before {
+    transform: translateX(20px);
+}
+.dark .app-toggle-slider {
+    background-color: #4B5563;
+}
+.dark .app-toggle input:checked + .app-toggle-slider {
+    background-color: #0F766E !important;
+}
+.app-toggle.app-toggle-sm {
+    width: 38px;
+    height: 22px;
+}
+.app-toggle.app-toggle-sm .app-toggle-slider::before {
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+}
+.app-toggle.app-toggle-sm input:checked + .app-toggle-slider::before {
+    transform: translateX(16px);
+}
+</style>
 <div x-show="page === 'whatsapp'" x-cloak x-data="whatsappPage()" @whatsapp-open.window="load()" class="space-y-4">
 
     {{-- Top Header Bar: Clean white card, matching other DukanHisab panels --}}
@@ -156,12 +219,11 @@
                                         </div>
 
                                         {{-- Toggle Switch --}}
-                                        <button type="button" role="switch" :aria-checked="ev.enabled" :disabled="!ev.template_available"
-                                            @click="ev.enabled = !ev.enabled"
-                                            :class="ev.enabled ? 'bg-primary' : 'bg-slate-300 dark:bg-gray-600'"
-                                            class="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer mt-0.5">
-                                            <span :class="ev.enabled ? 'translate-x-4' : 'translate-x-0.5'" class="inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transform transition-transform"></span>
-                                        </button>
+                                        <label class="app-toggle app-toggle-sm shrink-0 mt-0.5"
+                                            :class="{ 'opacity-40 pointer-events-none cursor-not-allowed': !ev.template_available, 'cursor-pointer': ev.template_available }">
+                                            <input type="checkbox" x-model="ev.enabled" :disabled="!ev.template_available">
+                                            <span class="app-toggle-slider"></span>
+                                        </label>
                                     </div>
 
                                     {{-- Weekly schedule block (for due reminders) --}}
@@ -248,12 +310,11 @@
                                         </div>
 
                                         {{-- Toggle Switch --}}
-                                        <button type="button" role="switch" :aria-checked="ev.enabled" :disabled="!ev.template_available"
-                                            @click="ev.enabled = !ev.enabled"
-                                            :class="ev.enabled ? 'bg-primary' : 'bg-slate-300 dark:bg-gray-600'"
-                                            class="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer mt-0.5">
-                                            <span :class="ev.enabled ? 'translate-x-4' : 'translate-x-0.5'" class="inline-block h-4 w-4 mt-0.5 rounded-full bg-white shadow transform transition-transform"></span>
-                                        </button>
+                                        <label class="app-toggle app-toggle-sm shrink-0 mt-0.5"
+                                            :class="{ 'opacity-40 pointer-events-none cursor-not-allowed': !ev.template_available, 'cursor-pointer': ev.template_available }">
+                                            <input type="checkbox" x-model="ev.enabled" :disabled="!ev.template_available">
+                                            <span class="app-toggle-slider"></span>
+                                        </label>
                                     </div>
 
                                     {{-- Weekly schedule block (for supplier dues) --}}

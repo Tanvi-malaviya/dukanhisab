@@ -205,7 +205,9 @@ class WhatsAppTemplateSync
             throw new WhatsAppException("This template is {$template->meta_status} in Meta and can't be resubmitted right now — sync again once Meta has reviewed it.");
         }
 
-        $components = $template->metaComponents(url('/pay') . '/', $template->has_document ? $this->sampleDocumentHandle() : null);
+        $payUrl = url('/pay');
+        $payBase = (str_starts_with($payUrl, 'https://') ? $payUrl : str_replace('http://', 'https://', $payUrl)) . '/';
+        $components = $template->metaComponents($payBase, $template->has_document ? $this->sampleDocumentHandle() : null);
 
         if ($template->canEditInMeta()) {
             $this->client->editTemplate($template->meta_template_id, $template->meta_category ?: self::CATEGORY, $components);
