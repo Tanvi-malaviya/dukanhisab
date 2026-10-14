@@ -1252,7 +1252,7 @@
             document.addEventListener('submit', function (e) {
                 const form = e.target;
                 if (form) {
-                    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]') || lastClickedBtn;
+                    const submitBtn = e.submitter || lastClickedBtn || form.querySelector('button[type="submit"], input[type="submit"]');
                     if (submitBtn) showButtonLoader(submitBtn);
                 }
             });

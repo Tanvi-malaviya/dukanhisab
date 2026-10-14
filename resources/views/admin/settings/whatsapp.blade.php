@@ -318,33 +318,6 @@
             </div>
         </div>
 
-        @if(count($unlinked))
-            <div class="bg-card-dark border border-border-dark rounded-2xl shadow-sm overflow-hidden">
-                <div class="px-5 py-3 border-b border-border-dark bg-secondary/10 flex items-center justify-between">
-                    <h3 class="font-bold text-white text-xs">In Meta, not added here ({{ count($unlinked) }})</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse table-auto">
-                        <tbody class="divide-y divide-border-dark text-sm text-slate-300">
-                            @foreach($unlinked as $u)
-                                <tr class="align-middle">
-                                    <td class="px-3.5 py-2.5 text-xs font-mono">{{ $u['name'] }}<span class="block text-slate-500 text-[10px]">{{ $u['language'] }}</span></td>
-                                    <td class="px-3 py-2.5 text-xs max-w-xs truncate text-slate-300" title="{{ $u['body'] }}">{{ preg_replace('/\s+/', ' ', $u['body']) }}</td>
-                                    <td class="px-3 py-2.5 text-xs">
-                                        <span class="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $metaStatusClass($u['status']) }}">{{ $metaStatusLabel($u['status']) }}</span>
-                                        <span class="block text-slate-500 text-[10px] mt-0.5">{{ $u['category'] }}</span>
-                                    </td>
-                                    <td class="px-3.5 py-2.5 text-right whitespace-nowrap">
-                                        <button type="button" onclick='openPreviewModal(remotePreviewModel(@json($u)), @json($u["name"] . " · " . $u["language"]))' class="px-2 py-1 text-[11px] text-primary hover:underline cursor-pointer">Preview</button>
-                                        <button type="button" onclick='importMetaTemplate(@json($u))' class="px-2 py-1 text-[11px] text-primary hover:underline cursor-pointer">Import</button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        @endif
     </div>
 
     <!-- ========================================== -->
@@ -906,16 +879,7 @@ function openTemplateModal(t = null) {
     document.getElementById('templateModal').classList.remove('hidden');
 }
 
-// Prefills the Add modal from a template found only in Meta; the admin picks the event and variables.
-function importMetaTemplate(u) {
-    const appLanguage = Object.keys(WA_META_LANG).find(k => u.language === k || u.language.startsWith(k + '_')) || 'en';
-    openTemplateModal({
-        key: 'sale_invoice', language: appLanguage,
-        meta_template_name: u.name, meta_language_code: u.language,
-        body: u.body, variables: [], has_document: u.has_document, has_pay_button: u.has_pay_button, status: 'active',
-    });
-    document.getElementById('templateModalTitle').innerText = 'Import Template from Meta';
-}
+
 
 function suggestMetaLanguage() {
     document.getElementById('tpl_meta_lang').value = WA_META_LANG[document.getElementById('tpl_language').value] || 'en_US';

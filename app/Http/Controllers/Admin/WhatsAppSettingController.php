@@ -325,7 +325,12 @@ class WhatsAppSettingController extends Controller
 
             return $redirect->with('success', $message . ' Submitted to Meta for review.');
         } catch (WhatsAppException $e) {
-            return $redirect->with('error', $message . ' But Meta rejected the submission: ' . $e->getMessage());
+            $err = $e->getMessage();
+            if (str_contains($err, '2388124') || str_contains($err, 'once in 24 hours')) {
+                $err = 'Meta Policy: You can only edit an active template once in 24 hours. Your changes were saved in DukanHisab, but Meta will only accept resubmission after 24 hours from your last edit.';
+            }
+
+            return $redirect->with('error', $message . ' ' . $err);
         }
     }
 
@@ -338,7 +343,12 @@ class WhatsAppSettingController extends Controller
         try {
             WhatsAppTemplateSync::fromSettings()->submit($template);
         } catch (WhatsAppException $e) {
-            return $redirect->with('error', 'Meta did not accept the template: ' . $e->getMessage());
+            $err = $e->getMessage();
+            if (str_contains($err, '2388124') || str_contains($err, 'once in 24 hours')) {
+                $err = 'Meta Policy: You can only edit an active template once in 24 hours. Please wait 24 hours from your last edit to submit again.';
+            }
+
+            return $redirect->with('error', 'Meta did not accept the template: ' . $err);
         } catch (\Throwable $e) {
             Log::error('WhatsApp template submit error: ' . $e->getMessage());
 
