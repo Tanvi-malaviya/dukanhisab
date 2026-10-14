@@ -205,7 +205,7 @@ Route::get('/shopowner/{any?}', function () {
 })->where('any', '.*');
 
 // WhatsApp "Pay Now" page for due reminders (public; the random token is the key)
-Route::get('/pay/{token}', [\App\Http\Controllers\PaymentLinkController::class, 'show'])->name('pay.show');
+Route::get('/pay/{token?}', [\App\Http\Controllers\PaymentLinkController::class, 'show'])->name('pay.show');
 Route::post('/pay/{token}/claim', [\App\Http\Controllers\PaymentLinkController::class, 'claim'])
     ->middleware('throttle:10,1')->name('pay.claim');
 

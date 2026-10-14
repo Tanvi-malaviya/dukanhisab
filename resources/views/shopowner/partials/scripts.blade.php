@@ -153,6 +153,20 @@
                 this.currentLang = lang;
                 localStorage.setItem('dukanhisab_lang', lang);
                 localStorage.setItem('locale', lang);
+                if (this.user) {
+                    this.user.language = lang;
+                    localStorage.setItem('shopowner_user', JSON.stringify(this.user));
+                }
+                if (this.token) {
+                    const fd = new FormData();
+                    fd.append('language', lang);
+                    fetch('/api/v1/shopowner/profile', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Authorization': 'Bearer ' + this.token },
+                        body: fd
+                    }).catch(() => {});
+                }
+                window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }));
             },
 
             formatDate(dateVal) {
@@ -443,6 +457,7 @@
             showInvoiceModal: false,
             sendingSaleEmail: false,
             sendingWhatsApp: false,
+            sendingWhatsAppKey: null,
             sendingPurchaseEmail: false,
             showReturnModal: false,
             returnForm: { saleId: null, sale_number: '', payment_type: '', discount: 0, items: [] },
@@ -3739,22 +3754,26 @@
             // Sends the invoice from the DukanHisab WhatsApp number using the shop's message credits.
             sendViaWhatsApp(kind, id) {
                 if (!id) return;
-                this._postWhatsApp(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`);
+                const key = `${kind}_${id}`;
+                this._postWhatsApp(`/api/v1/${kind === 'purchase' ? 'purchases' : 'sales'}/${id}/whatsapp`, key);
             },
 
             // Due reminder (with Pay Now) to a customer, or due statement to a supplier.
             sendWhatsAppReminder(type, id) {
                 if (!id) return;
-                this._postWhatsApp(`/api/v1/whatsapp/reminders/${type}/${id}`);
+                const key = `${type}_${id}`;
+                this._postWhatsApp(`/api/v1/whatsapp/reminders/${type}/${id}`, key);
             },
 
-            _postWhatsApp(url) {
+            _postWhatsApp(url, key = null) {
                 if (this.sendingWhatsApp) return;
                 this.sendingWhatsApp = true;
+                this.sendingWhatsAppKey = key;
                 fetch(url, { method: 'POST', headers: this.getHeaders() })
                     .then(r => r.json().then(d => ({ status: r.status, body: d })))
                     .then(({ status, body }) => {
                         this.sendingWhatsApp = false;
+                        this.sendingWhatsAppKey = null;
                         if (status === 202) {
                             this.showToast(body.message || 'Sent on WhatsApp.');
                         } else if (status === 402) {
@@ -3766,7 +3785,11 @@
                         } else {
                             this.showToast(body.message || 'Could not send on WhatsApp.', 'error');
                         }
-                    }).catch(() => { this.sendingWhatsApp = false; this.showToast('Could not send on WhatsApp.', 'error'); });
+                    }).catch(() => {
+                        this.sendingWhatsApp = false;
+                        this.sendingWhatsAppKey = null;
+                        this.showToast('Could not send on WhatsApp.', 'error');
+                    });
             },
 
             sendSaleInvoiceEmail() {
@@ -4088,8 +4111,14 @@
                     });
             },
 
+            customerNetDue(cust) {
+                if (!cust) return 0;
+                const val = parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0));
+                return isNaN(val) ? 0 : Math.max(0, val);
+            },
+
             openCollectCustomerPaymentModal(cust) {
-                const netDue = Math.max(0, parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0)) || 0);
+                const netDue = this.customerNetDue(cust);
                 this.collectCustomerForm = {
                     customer_id: cust.id,
                     customer_name: cust.name,

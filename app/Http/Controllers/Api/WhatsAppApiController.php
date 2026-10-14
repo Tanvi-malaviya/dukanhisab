@@ -63,11 +63,12 @@ class WhatsAppApiController extends Controller
         $shop = Shop::findOrFail($request->attributes->get('shop_id'));
         $saved = WhatsAppShopSetting::where('shop_id', $shop->id)->get()->keyBy('event');
         $sample = array_merge(WhatsAppTemplate::sampleValues(), ['shop_name' => $shop->name, 'shop_mobile' => (string) $shop->mobile]);
+        $locale = $request->header('X-Locale') ?: $request->query('locale') ?: $request->input('locale') ?: app()->getLocale();
 
         $events = [];
         foreach (WhatsAppTemplate::EVENTS as $key => $meta) {
             $setting = $saved->get($key);
-            $template = $messenger->templateFor($shop, $key);
+            $template = $messenger->templateFor($shop, $key, $locale);
             $scheduled = WhatsAppShopSetting::isScheduled($key);
 
             $events[] = [
@@ -203,8 +204,9 @@ class WhatsAppApiController extends Controller
         if (!$sale->customer_id || !($customer = Customer::find($sale->customer_id))) {
             return response()->json(['message' => 'This sale has no customer to send it to.'], 422);
         }
+        $locale = $request->header('X-Locale') ?: $request->query('locale') ?: $request->input('locale') ?: app()->getLocale();
 
-        return $this->sendNow(fn () => $messenger->send($shop, 'sale_invoice', $customer, ['sale' => $sale]), $shop);
+        return $this->sendNow(fn () => $messenger->send($shop, 'sale_invoice', $customer, ['sale' => $sale, 'language' => $locale]), $shop);
     }
 
     public function sendPurchaseInvoice(Request $request, WhatsAppMessenger $messenger, $id)
@@ -214,22 +216,24 @@ class WhatsAppApiController extends Controller
         if (!$purchase->supplier_id || !($supplier = Supplier::find($purchase->supplier_id))) {
             return response()->json(['message' => 'This purchase has no supplier to send it to.'], 422);
         }
+        $locale = $request->header('X-Locale') ?: $request->query('locale') ?: $request->input('locale') ?: app()->getLocale();
 
-        return $this->sendNow(fn () => $messenger->send($shop, 'purchase_record', $supplier, ['purchase' => $purchase]), $shop);
+        return $this->sendNow(fn () => $messenger->send($shop, 'purchase_record', $supplier, ['purchase' => $purchase, 'language' => $locale]), $shop);
     }
 
     /** "Send reminder" from the Reminders screen: a due reminder (with Pay Now) or supplier due statement. */
     public function sendReminder(Request $request, WhatsAppReminderSender $reminders, string $type, $id)
     {
         $shop = Shop::findOrFail($request->attributes->get('shop_id'));
+        $locale = $request->header('X-Locale') ?: $request->query('locale') ?: $request->input('locale') ?: app()->getLocale();
 
         if ($type === 'customer') {
             $customer = Customer::where('shop_id', $shop->id)->findOrFail($id);
-            return $this->sendNow(fn () => $reminders->remindCustomer($shop, $customer), $shop);
+            return $this->sendNow(fn () => $reminders->remindCustomer($shop, $customer, $locale), $shop);
         }
 
         $supplier = Supplier::where('shop_id', $shop->id)->findOrFail($id);
-        return $this->sendNow(fn () => $reminders->remindSupplier($shop, $supplier), $shop);
+        return $this->sendNow(fn () => $reminders->remindSupplier($shop, $supplier, $locale), $shop);
     }
 
     /** Customers' "I have paid" reports from the Pay Now page: pending first, then recent ones. */
