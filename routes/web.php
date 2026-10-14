@@ -183,6 +183,14 @@ Route::get('/shop/shop-setup', function () {
     return view('shopowner');
 });
 
+// WhatsApp "Pay Now" page for due reminders (public; the random token is the key)
+Route::get('/pay/{token?}', [\App\Http\Controllers\PaymentLinkController::class, 'show'])->name('pay.show');
+Route::post('/pay/{token}/claim', [\App\Http\Controllers\PaymentLinkController::class, 'claim'])
+    ->middleware('throttle:10,1')->name('pay.claim');
+Route::get('/shop/pay/{token?}', [\App\Http\Controllers\PaymentLinkController::class, 'show'])->name('shop.pay.show');
+Route::post('/shop/pay/{token}/claim', [\App\Http\Controllers\PaymentLinkController::class, 'claim'])
+    ->middleware('throttle:10,1')->name('shop.pay.claim');
+
 // Shop Owner Main App Panel SPA Route (Dashboard, Sales, Inventory, etc.)
 Route::get('/shop/{any?}', function () {
     return view('app');
@@ -203,11 +211,6 @@ Route::get('/shopowner/{any?}', function () {
     $any = request()->route('any');
     return redirect('/shop' . ($any ? '/' . $any : ''));
 })->where('any', '.*');
-
-// WhatsApp "Pay Now" page for due reminders (public; the random token is the key)
-Route::get('/pay/{token?}', [\App\Http\Controllers\PaymentLinkController::class, 'show'])->name('pay.show');
-Route::post('/pay/{token}/claim', [\App\Http\Controllers\PaymentLinkController::class, 'claim'])
-    ->middleware('throttle:10,1')->name('pay.claim');
 
 // Public Storefront routes
 Route::get('/store/{subdomain}', [\App\Http\Controllers\PublicStoreController::class, 'show'])->name('store.public');
