@@ -335,9 +335,13 @@ class WhatsAppTemplateSync
     /** Meta needs an uploaded sample PDF for a document header; this one is generated on the fly. */
     private function sampleDocumentHandle(): string
     {
-        $appId = (string) AppSetting::get('whatsapp_app_id', '');
+        $appId = trim((string) AppSetting::get('whatsapp_app_id', ''));
         if ($appId === '') {
-            throw new WhatsAppException('Templates with a PDF header need the Meta App ID (Setup tab) to upload a sample PDF.');
+            $appId = trim((string) $this->client->getAppId());
+        }
+
+        if ($appId === '') {
+            throw new WhatsAppException('PDF header templates (Sale invoice & Purchase record) require Meta App ID. Please enter your Meta App ID in the "1. WhatsApp Setup" tab (found in Meta Developers -> App Settings -> Basic).');
         }
 
         $pdf = Pdf::loadHTML('<h2>Invoice INV-1024</h2><p>Sample invoice from Shree Traders — Amount ₹2,450.00</p>')->output();

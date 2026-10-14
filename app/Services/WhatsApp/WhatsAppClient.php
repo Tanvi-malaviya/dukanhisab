@@ -58,6 +58,36 @@ class WhatsAppClient
         return $this->accessToken !== '' && $this->phoneNumberId !== '';
     }
 
+    /**
+     * Returns the Meta App ID from settings, or auto-discovers it from Meta API using the access token.
+     */
+    public function getAppId(): ?string
+    {
+        $appId = trim((string) AppSetting::get('whatsapp_app_id', ''));
+        if ($appId !== '') {
+            return $appId;
+        }
+
+        if ($this->accessToken === '') {
+            return null;
+        }
+
+        try {
+            $resp = Http::withToken($this->accessToken)
+                ->timeout(10)
+                ->get($this->url('app'));
+            if ($resp->successful() && !empty($resp->json('id'))) {
+                $discovered = (string) $resp->json('id');
+                AppSetting::set('whatsapp_app_id', $discovered);
+                return $discovered;
+            }
+        } catch (\Throwable) {
+            // fallback if app inspection fails
+        }
+
+        return null;
+    }
+
     /** Details of the sending number — used to verify the credentials from the admin panel. */
     public function phoneNumberInfo(): array
     {
