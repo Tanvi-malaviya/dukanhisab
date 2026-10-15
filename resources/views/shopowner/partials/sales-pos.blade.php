@@ -230,19 +230,37 @@
                     </template>
                 </div>
                 <div class="grid gap-1.5" :class="getSelectedPosCustomer() && parseFloat(getSelectedPosCustomer().credit_balance || 0) > 0 ? 'grid-cols-5' : 'grid-cols-4'">
-                    <button @click="pos.paymentType = 'Cash'; posContainers.settlement_method = 'cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('cash')">Cash</button>
-                    <button @click="pos.paymentType = 'UPI'; posContainers.settlement_method = 'upi'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('upi')">UPI</button>
-                    <button @click="pos.paymentType = 'Bank'; posContainers.settlement_method = 'bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
-                    <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit')">Credit</button>
+                    <button @click="setPosPaymentType('Cash')" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('cash')">Cash</button>
+                    <button @click="setPosPaymentType('UPI')"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('upi')">UPI</button>
+                    <button @click="setPosPaymentType('Bank')" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank')">Bank</button>
+                    <button @click="setPosPaymentType('Credit')" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit')">Credit</button>
                     <template x-if="getSelectedPosCustomer() && parseFloat(getSelectedPosCustomer().credit_balance || 0) > 0">
-                        <button @click="pos.paymentType = 'Store Credit'" :class="pos.paymentType === 'Store Credit' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'" class="py-2 text-center text-[10px] font-bold rounded-lg transition-all truncate" title="Use Store Credit">Store Credit</button>
+                        <button @click="setPosPaymentType('Store Credit')" :class="pos.paymentType === 'Store Credit' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'" class="py-2 text-center text-[10px] font-bold rounded-lg transition-all truncate" title="Use Store Credit">Store Credit</button>
                     </template>
                 </div>
             </div>
 
+            {{-- Paid Amount Input for Partial Sale --}}
+            <div class="pt-1">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Paid Amount (ચૂકવેલ રકમ):</label>
+                    <span class="text-[10px] text-slate-400 font-mono">Max: ₹<span x-text="calculateGrandTotal().toFixed(2)"></span></span>
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₹</span>
+                    <input type="number" step="0.01" x-model.number="pos.paid_amount" placeholder="0.00"
+                        class="block w-full pl-7 pr-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-semibold dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
+                </div>
+                <div class="flex justify-between items-center text-xs mt-1.5 px-1 font-semibold"
+                    x-show="getPosDueAmount() > 0">
+                    <span class="text-emerald-600">Paid: ₹<span x-text="getPosPaidAmount().toFixed(2)"></span></span>
+                    <span class="text-rose-600">Receivable Due: ₹<span x-text="getPosDueAmount().toFixed(2)"></span></span>
+                </div>
+            </div>
+
             <button @click="saveSale()" :disabled="pos.items.length === 0"
-                class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50"
-                x-text="t('save_and_print_bill')">
+                class="w-full mt-2 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50 font-sans cursor-pointer"
+                x-text="getSaleSaveButtonLabel()">
                 Save & Print Bill
             </button>
         </div>

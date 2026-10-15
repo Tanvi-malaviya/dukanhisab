@@ -435,7 +435,7 @@
             lowStockPage: 1, lowStockPerPage: 6,
 
             // POS
-            pos: { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', items: [] },
+            pos: { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', paid_amount: null, items: [] },
             posCustomerSearchQuery: '',
             posFilteredCustomers: [],
             purchaseSupplierSearchQuery: '',
@@ -3156,7 +3156,7 @@
 
             // ── POS ───────────────────────────────────────────────────
             resetPOS() {
-                this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', items: [] };
+                this.pos = { barcodeInput: '', selectedCustomer: '', searchQuery: '', discount: 0, paymentType: 'Cash', paid_amount: null, items: [] };
                 this.resetPosContainers();
                 this.posCustomerSearchQuery = '';
                 this.posFilteredCustomers = this.customers;
@@ -3342,6 +3342,38 @@
             decreaseQty(idx) { if (this.pos.items[idx].quantity > 1) this.pos.items[idx].quantity--; },
             calculateSubtotal() { return this.pos.items.reduce((sum, item) => sum + Math.max(0, (item.selling_price * item.quantity) - (parseFloat(item.discount) || 0)), 0); },
             calculateGrandTotal() { return Math.max(0, this.calculateSubtotal() - (this.pos.discount || 0)); },
+            getPosPaidAmount() {
+                const total = this.calculateGrandTotal();
+                if (this.pos.paid_amount !== null && this.pos.paid_amount !== undefined && this.pos.paid_amount !== '') {
+                    return Math.min(total, Math.max(0, parseFloat(this.pos.paid_amount) || 0));
+                }
+                return this.pos.paymentType === 'Credit' ? 0 : total;
+            },
+            getPosDueAmount() {
+                return Math.max(0, this.calculateGrandTotal() - this.getPosPaidAmount());
+            },
+            setPosPaymentType(type) {
+                this.pos.paymentType = type;
+                if (this.posContainers) {
+                    if (type === 'Cash') this.posContainers.settlement_method = 'cash';
+                    else if (type === 'UPI') this.posContainers.settlement_method = 'upi';
+                    else if (type === 'Bank') this.posContainers.settlement_method = 'bank';
+                }
+                if (type === 'Credit') {
+                    this.pos.paid_amount = 0;
+                } else {
+                    this.pos.paid_amount = this.calculateGrandTotal();
+                }
+            },
+            getSaleSaveButtonLabel() {
+                const total = this.calculateGrandTotal();
+                const paid = this.getPosPaidAmount();
+                const due = total - paid;
+                if (total <= 0) return this.t('save_and_print_bill') || 'Save & Print Bill';
+                if (due <= 0) return `Pay ₹${paid.toFixed(2)} & Save`;
+                if (paid <= 0) return `Save as Due (₹${due.toFixed(2)})`;
+                return `Pay ₹${paid.toFixed(2)} (Due: ₹${due.toFixed(2)})`;
+            },
 
             handleBarcodeScan() {
                 const code = this.pos.barcodeInput.trim();
@@ -3358,9 +3390,11 @@
             saveSale() {
                 if (this.pos.items.length === 0) return;
                 const grandTotal = this.calculateGrandTotal();
+                const paid = this.getPosPaidAmount();
+                const due = this.getPosDueAmount();
 
-                if (this.pos.paymentType === 'Credit' && !this.pos.selectedCustomer) {
-                    this.showConfirm('Validation Error', 'Customer selection is required for Credit (udhaar) transactions.', () => { });
+                if (due > 0 && !this.pos.selectedCustomer) {
+                    this.showConfirm('Validation Error', 'Customer selection is required for sales with unpaid due balance.', () => { });
                     return;
                 }
 
@@ -3386,6 +3420,7 @@
                 const body = {
                     customer_id: this.pos.selectedCustomer || null,
                     subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: grandTotal,
+                    paid_amount: paid,
                     payment_type: this.pos.paymentType,
                     items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
@@ -3574,6 +3609,7 @@
                 this.pos.selectedCustomer = sale.customer_id || '';
                 this.pos.discount = parseFloat(sale.discount) || 0;
                 this.pos.paymentType = sale.payment_type;
+                this.pos.paid_amount = sale.paid_amount !== null && sale.paid_amount !== undefined ? parseFloat(sale.paid_amount) : (sale.payment_type === 'Credit' ? 0 : parseFloat(sale.grand_total));
                 this.pos.searchQuery = '';
                 this.pos.barcodeInput = '';
                 this.posCustomerSearchQuery = '';
@@ -3584,14 +3620,19 @@
 
             saveEditedSale() {
                 if (this.pos.items.length === 0) return;
-                if (this.pos.paymentType === 'Credit' && !this.pos.selectedCustomer) {
-                    this.showConfirm('Validation Error', 'Customer selection is required for Credit (udhaar) transactions.', () => { });
+                const grandTotal = this.calculateGrandTotal();
+                const paid = this.getPosPaidAmount();
+                const due = this.getPosDueAmount();
+
+                if (due > 0 && !this.pos.selectedCustomer) {
+                    this.showConfirm('Validation Error', 'Customer selection is required for sales with unpaid due balance.', () => { });
                     return;
                 }
                 this.loading = true;
                 const body = {
                     customer_id: this.pos.selectedCustomer || null,
-                    subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: this.calculateGrandTotal(),
+                    subtotal: this.calculateSubtotal(), discount: this.pos.discount || 0, grand_total: grandTotal,
+                    paid_amount: paid,
                     payment_type: this.pos.paymentType,
                     items: this.pos.items.map(item => ({ product_id: item.product_id, quantity: item.quantity, selling_price: item.selling_price, discount: parseFloat(item.discount) || 0 }))
                 };
@@ -3762,6 +3803,10 @@
                 if (storeCredit > 0) {
                     const netPaid = Math.max(0, parseFloat(this.selectedSale.grand_total) - storeCredit);
                     paymentInfo += ` (Store Credit: -₹${storeCredit.toFixed(2)}, Paid: ₹${netPaid.toFixed(2)})`;
+                } else if (this.selectedSale.status === 'Partially Paid' || this.selectedSale.status === 'Unpaid' || (this.selectedSale.paid_amount !== null && this.selectedSale.paid_amount !== undefined && parseFloat(this.selectedSale.paid_amount) < parseFloat(this.selectedSale.grand_total))) {
+                    const paid = parseFloat(this.selectedSale.paid_amount || 0);
+                    const due = Math.max(0, parseFloat(this.selectedSale.grand_total) - paid);
+                    paymentInfo += ` (Paid: ₹${paid.toFixed(2)}, Due: ₹${due.toFixed(2)})`;
                 }
                 const msg = `Hello ${custName}, thank you! Invoice: ${this.selectedSale.sale_number}, ${paymentInfo}. - DukanHisab`;
                 return `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;

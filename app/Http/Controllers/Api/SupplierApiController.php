@@ -150,8 +150,8 @@ class SupplierApiController extends Controller
             'transaction_date' => Carbon::now(),
         ]);
 
-        // 3. Sync Purchase Statuses based on Supplier Due Balance
-        static::syncSupplierPurchaseStatuses($supplier->id, $shopId);
+        // 3. Apply repayment to oldest unpaid purchases
+        static::applySupplierPayment($supplier->id, $shopId, $amount);
 
         app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->supplierPaid($supplier, $amount);
 
@@ -163,72 +163,79 @@ class SupplierApiController extends Controller
         ], 200);
     }
 
+    public static function applySupplierPayment($supplierId, $shopId, float $amount)
+    {
+        if (!$supplierId || $amount <= 0) return;
+
+        $supplier = Supplier::where('shop_id', $shopId)->find($supplierId);
+        if ($supplier && (float)$supplier->due_amount <= 0) {
+            \App\Models\Purchase::where('shop_id', $shopId)
+                ->where('supplier_id', $supplierId)
+                ->whereIn('status', ['Unpaid', 'Partially Paid'])
+                ->get()
+                ->each(function ($p) {
+                    $p->update([
+                        'status' => 'Completed',
+                        'paid_amount' => $p->total_amount,
+                        'paid_date' => $p->paid_date ?? Carbon::now(),
+                    ]);
+                });
+            return;
+        }
+
+        $unpaidPurchases = \App\Models\Purchase::where('shop_id', $shopId)
+            ->where('supplier_id', $supplierId)
+            ->whereIn('status', ['Unpaid', 'Partially Paid'])
+            ->orderBy('purchase_date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $rem = $amount;
+        foreach ($unpaidPurchases as $purchase) {
+            if ($rem <= 0) break;
+            $dueOnPurchase = max(0, (float)$purchase->total_amount - (float)($purchase->paid_amount ?? 0));
+            if ($dueOnPurchase <= 0) continue;
+
+            $payThis = min($rem, $dueOnPurchase);
+            $newPaid = (float)($purchase->paid_amount ?? 0) + $payThis;
+            $rem -= $payThis;
+
+            if ($newPaid >= (float)$purchase->total_amount) {
+                $purchase->update([
+                    'status' => 'Completed',
+                    'paid_amount' => (float)$purchase->total_amount,
+                    'paid_date' => Carbon::now(),
+                ]);
+            } else {
+                $purchase->update([
+                    'status' => 'Partially Paid',
+                    'paid_amount' => $newPaid,
+                ]);
+            }
+        }
+    }
+
     public static function syncSupplierPurchaseStatuses($supplierId, $shopId)
     {
+        if (!$supplierId) return;
+
         $supplier = Supplier::where('shop_id', $shopId)->find($supplierId);
         if (!$supplier) return;
 
         $due = (float) $supplier->due_amount;
 
-        $creditPurchases = \App\Models\Purchase::where('shop_id', $shopId)
-            ->where('supplier_id', $supplierId)
-            ->whereIn('status', ['Unpaid', 'Partially Paid', 'Completed'])
-            ->orderBy('purchase_date', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
-
         if ($due <= 0) {
-            foreach ($creditPurchases as $purchase) {
-                if ($purchase->status === 'Unpaid' || $purchase->status === 'Partially Paid') {
-                    $purchase->update([
+            \App\Models\Purchase::where('shop_id', $shopId)
+                ->where('supplier_id', $supplierId)
+                ->whereIn('status', ['Unpaid', 'Partially Paid'])
+                ->get()
+                ->each(function ($p) {
+                    $p->update([
                         'status' => 'Completed',
-                        'paid_amount' => $purchase->total_amount,
+                        'paid_amount' => $p->total_amount,
+                        'paid_date' => $p->paid_date ?? Carbon::now(),
                     ]);
-                }
-            }
-            return;
-        }
-
-        $eligiblePurchases = $creditPurchases->filter(function($p) {
-            return $p->payment_type === 'Credit' || ($p->paid_amount < $p->total_amount);
-        });
-
-        $totalBillAmount = $eligiblePurchases->sum('total_amount');
-        $totalPaid = max(0, $totalBillAmount - $due);
-
-        $rem = $totalPaid;
-        foreach ($eligiblePurchases as $purchase) {
-            $total = (float) $purchase->total_amount;
-            if ($rem >= $total) {
-                if ($purchase->status !== 'Completed') {
-                    $purchase->update([
-                        'status' => 'Completed',
-                        'paid_amount' => $total,
-                        'paid_date' => $purchase->paid_date ?? Carbon::now(),
-                    ]);
-                } else {
-                    $purchase->update([
-                        'paid_date' => $purchase->paid_date ?? Carbon::now(),
-                    ]);
-                }
-                $rem -= $total;
-            } elseif ($rem > 0) {
-                if ($purchase->status !== 'Partially Paid' || (float)$purchase->paid_amount !== $rem) {
-                    $purchase->update([
-                        'status' => 'Partially Paid',
-                        'paid_amount' => $rem,
-                    ]);
-                }
-                $rem = 0;
-            } else {
-                if ($purchase->status !== 'Unpaid') {
-                    $purchase->update([
-                        'status' => 'Unpaid',
-                        'paid_amount' => 0,
-                        'paid_date' => null,
-                    ]);
-                }
-            }
+                });
         }
     }
 }
