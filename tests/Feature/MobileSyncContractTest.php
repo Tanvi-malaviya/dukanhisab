@@ -64,7 +64,7 @@ class MobileSyncContractTest extends TestCase
 
     private function ids(array $rows): array
     {
-        return array_map(fn ($r) => $r['id'], $rows);
+        return array_map(fn($r) => $r['id'], $rows);
     }
 
     private function product(array $o = []): Product
@@ -76,7 +76,10 @@ class MobileSyncContractTest extends TestCase
     {
         $total = $qty * 100;
         return $this->withHeaders($this->h())->postJson('/api/v1/sales', [
-            'customer_id' => $c?->id, 'subtotal' => $total, 'grand_total' => $total, 'payment_type' => $type,
+            'customer_id' => $c?->id,
+            'subtotal' => $total,
+            'grand_total' => $total,
+            'payment_type' => $type,
             'items' => [['product_id' => $p->id, 'quantity' => $qty, 'selling_price' => 100]],
         ])->assertStatus(201);
     }
@@ -151,7 +154,9 @@ class MobileSyncContractTest extends TestCase
         $cursor = $this->later();
 
         $purId = $this->withHeaders($this->h())->postJson('/api/v1/purchases', [
-            'supplier_id' => $s->id, 'total_amount' => 500, 'payment_type' => 'Credit',
+            'supplier_id' => $s->id,
+            'total_amount' => 500,
+            'payment_type' => 'Credit',
             'items' => [['product_id' => $p->id, 'quantity' => 5, 'purchase_price' => 100]],
         ])->assertStatus(201)->json('id');
 
@@ -171,7 +176,8 @@ class MobileSyncContractTest extends TestCase
 
         // Swap product A for product B at the same price/qty -> identical totals.
         $this->withHeaders($this->h())->putJson("/api/v1/sales/{$saleId}", [
-            'subtotal' => 200, 'grand_total' => 200,
+            'subtotal' => 200,
+            'grand_total' => 200,
             'items' => [['product_id' => $b->id, 'quantity' => 2, 'selling_price' => 100]],
         ])->assertStatus(200);
 
@@ -185,7 +191,8 @@ class MobileSyncContractTest extends TestCase
         $a = $this->product(['name' => 'A']);
         $b = $this->product(['name' => 'B']);
         $purId = $this->withHeaders($this->h())->postJson('/api/v1/purchases', [
-            'total_amount' => 300, 'payment_type' => 'Cash',
+            'total_amount' => 300,
+            'payment_type' => 'Cash',
             'items' => [['product_id' => $a->id, 'quantity' => 3, 'purchase_price' => 100]],
         ])->assertStatus(201)->json('id');
         $cursor = $this->later();
@@ -259,7 +266,9 @@ class MobileSyncContractTest extends TestCase
         $s = Supplier::create(['shop_id' => $this->shop->id, 'name' => 'S', 'mobile' => '8000000003', 'due_amount' => 0]);
         $this->saleVia($p, 1, 'Credit', $c);
         $this->withHeaders($this->h())->postJson('/api/v1/purchases', [
-            'supplier_id' => $s->id, 'total_amount' => 100, 'payment_type' => 'Credit',
+            'supplier_id' => $s->id,
+            'total_amount' => 100,
+            'payment_type' => 'Credit',
             'items' => [['product_id' => $p->id, 'quantity' => 1, 'purchase_price' => 100]],
         ])->assertStatus(201);
         $this->withHeaders($this->h())->postJson('/api/v1/cashbooks', ['type' => 'cash_in', 'amount' => 10, 'description' => 'Capital'])->assertStatus(201);
@@ -314,13 +323,21 @@ class MobileSyncContractTest extends TestCase
     {
         // What the app does after a request whose response was lost: send the same batch again.
         $p = $this->product();
-        $batch = ['operations' => [[
-            'resource' => 'sales', 'action' => 'create', 'op_id' => '1',
-            'data' => [
-                'subtotal' => 100, 'grand_total' => 100, 'payment_type' => 'Cash',
-                'items' => [['product_id' => $p->id, 'quantity' => 1, 'selling_price' => 100]],
-            ],
-        ]]];
+        $batch = [
+            'operations' => [
+                [
+                    'resource' => 'sales',
+                    'action' => 'create',
+                    'op_id' => '1',
+                    'data' => [
+                        'subtotal' => 100,
+                        'grand_total' => 100,
+                        'payment_type' => 'Cash',
+                        'items' => [['product_id' => $p->id, 'quantity' => 1, 'selling_price' => 100]],
+                    ],
+                ]
+            ]
+        ];
         $hdr = $this->h() + ['Idempotency-Key' => 'batch-key-1'];
 
         $first = $this->withHeaders($hdr)->postJson('/api/v1/sync/batch', $batch)->assertStatus(200);
@@ -336,11 +353,13 @@ class MobileSyncContractTest extends TestCase
     public function test_batch_reports_per_operation_results_and_isolates_failures(): void
     {
         $p = $this->product();
-        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', ['operations' => [
-            ['resource' => 'customers', 'action' => 'create', 'op_id' => 'a', 'data' => ['name' => 'Offline Cust']],
-            ['resource' => 'sales', 'action' => 'create', 'op_id' => 'b', 'data' => ['subtotal' => 1]], // invalid
-            ['resource' => 'products', 'action' => 'update', 'op_id' => 'c', 'id' => $p->id, 'data' => ['selling_price' => 150]],
-        ]])->assertStatus(200);
+        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', [
+            'operations' => [
+                ['resource' => 'customers', 'action' => 'create', 'op_id' => 'a', 'data' => ['name' => 'Offline Cust']],
+                ['resource' => 'sales', 'action' => 'create', 'op_id' => 'b', 'data' => ['subtotal' => 1]], // invalid
+                ['resource' => 'products', 'action' => 'update', 'op_id' => 'c', 'id' => $p->id, 'data' => ['selling_price' => 150]],
+            ]
+        ])->assertStatus(200);
 
         $res = collect($r->json('results'))->keyBy('op_id');
         $this->assertTrue($res['a']['success']);
@@ -368,10 +387,18 @@ class MobileSyncContractTest extends TestCase
 
     private function batchSale(Product $p, string $opId, ?string $uuid): array
     {
-        return ['resource' => 'sales', 'action' => 'create', 'op_id' => $opId, 'client_uuid' => $uuid, 'data' => [
-            'subtotal' => 100, 'grand_total' => 100, 'payment_type' => 'Cash',
-            'items' => [['product_id' => $p->id, 'quantity' => 1, 'selling_price' => 100]],
-        ]];
+        return [
+            'resource' => 'sales',
+            'action' => 'create',
+            'op_id' => $opId,
+            'client_uuid' => $uuid,
+            'data' => [
+                'subtotal' => 100,
+                'grand_total' => 100,
+                'payment_type' => 'Cash',
+                'items' => [['product_id' => $p->id, 'quantity' => 1, 'selling_price' => 100]],
+            ]
+        ];
     }
 
     public function test_a_retried_create_with_a_different_request_shape_is_still_not_duplicated(): void
@@ -381,10 +408,12 @@ class MobileSyncContractTest extends TestCase
         $first = $this->withHeaders($this->h() + ['Idempotency-Key' => 'k1'])
             ->postJson('/api/v1/sync/batch', ['operations' => [$this->batchSale($p, '1', 'uuid-sale-1')]])->assertStatus(200);
         $again = $this->withHeaders($this->h() + ['Idempotency-Key' => 'k2'])
-            ->postJson('/api/v1/sync/batch', ['operations' => [
-                ['resource' => 'customers', 'action' => 'create', 'op_id' => '9', 'client_uuid' => 'uuid-cust-1', 'data' => ['name' => 'Extra']],
-                $this->batchSale($p, '7', 'uuid-sale-1'),
-            ]])->assertStatus(200);
+            ->postJson('/api/v1/sync/batch', [
+                'operations' => [
+                    ['resource' => 'customers', 'action' => 'create', 'op_id' => '9', 'client_uuid' => 'uuid-cust-1', 'data' => ['name' => 'Extra']],
+                    $this->batchSale($p, '7', 'uuid-sale-1'),
+                ]
+            ])->assertStatus(200);
 
         $this->assertTrue($first->json('results.0.success'));
         $this->assertTrue($again->json('results.1.success'));
@@ -428,10 +457,12 @@ class MobileSyncContractTest extends TestCase
     public function test_batch_with_an_offline_expense_no_longer_blocks_the_rest_of_the_queue(): void
     {
         $p = $this->product();
-        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', ['operations' => [
-            ['resource' => 'expenses', 'action' => 'create', 'op_id' => '1', 'data' => ['amount' => 40, 'payment_method' => 'cash', 'description' => 'Tea', 'transaction_date' => '2026-08-30T09:00:00Z']],
-            $this->batchSale($p, '2', null),
-        ]])->assertStatus(200);
+        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', [
+            'operations' => [
+                ['resource' => 'expenses', 'action' => 'create', 'op_id' => '1', 'data' => ['amount' => 40, 'payment_method' => 'cash', 'description' => 'Tea', 'transaction_date' => '2026-08-30T09:00:00Z']],
+                $this->batchSale($p, '2', null),
+            ]
+        ])->assertStatus(200);
         $this->assertTrue($r->json('results.0.success'));
         $this->assertTrue($r->json('results.1.success'));
         $this->assertSame('2026-08-30', CashBook::where('reference_type', 'expense')->first()->transaction_date->toDateString(), 'offline entry keeps its real date');
@@ -448,7 +479,7 @@ class MobileSyncContractTest extends TestCase
         Carbon::setTestNow($this->t0->copy()->addHour());
         \Illuminate\Support\Facades\DB::enableQueryLog();
         $this->withHeaders($this->h())->getJson('/api/v1/sales')->assertStatus(200);
-        $writes = collect(\Illuminate\Support\Facades\DB::getQueryLog())->filter(fn ($q) => preg_match('/^(update|insert|delete)/i', $q['query']))->count();
+        $writes = collect(\Illuminate\Support\Facades\DB::getQueryLog())->filter(fn($q) => preg_match('/^(update|insert|delete)/i', $q['query']))->count();
         $this->assertSame(0, $writes, 'GET /sales must be read-only');
         $this->assertTrue(\App\Models\Sale::first()->updated_at->equalTo($before));
     }
@@ -459,7 +490,7 @@ class MobileSyncContractTest extends TestCase
         $c = Customer::create(['shop_id' => $this->shop->id, 'name' => 'C', 'mobile' => '9000000007', 'due_amount' => 0]);
         $a = $this->saleVia($p, 2, 'Credit', $c)->json('id'); // 200
         $b = $this->saleVia($p, 3, 'Credit', $c)->json('id'); // 300
-        $status = fn ($id) => \App\Models\Sale::find($id)->status;
+        $status = fn($id) => \App\Models\Sale::find($id)->status;
         $this->assertSame('Unpaid', $status($a));
 
         $this->withHeaders($this->h())->postJson("/api/v1/customers/{$c->id}/collect-payment", ['amount' => 250, 'payment_method' => 'Cash'])->assertStatus(200);
@@ -479,7 +510,9 @@ class MobileSyncContractTest extends TestCase
         $p = $this->product();
         $s = Supplier::create(['shop_id' => $this->shop->id, 'name' => 'S', 'mobile' => '8000000004', 'due_amount' => 0]);
         $id = $this->withHeaders($this->h())->postJson('/api/v1/purchases', [
-            'supplier_id' => $s->id, 'total_amount' => 500, 'payment_type' => 'Credit',
+            'supplier_id' => $s->id,
+            'total_amount' => 500,
+            'payment_type' => 'Credit',
             'items' => [['product_id' => $p->id, 'quantity' => 5, 'purchase_price' => 100]],
         ])->assertStatus(201)->assertJsonPath('status', 'Unpaid')->json('id');
         $this->withHeaders($this->h())->postJson("/api/v1/suppliers/{$s->id}/pay-due", ['amount' => 500, 'payment_method' => 'Cash'])->assertStatus(200);
@@ -501,7 +534,10 @@ class MobileSyncContractTest extends TestCase
         $this->withHeaders($this->h())->postJson("/api/v1/sales/{$gone}/cancel", ['cancellation_reason' => 'cancelled'])->assertStatus(200); // -100 cash
         $this->saleVia($p, 3, 'Credit', $c);                            // 300 due, no cash
         $this->withHeaders($this->h())->postJson('/api/v1/purchases', [
-            'supplier_id' => $s->id, 'total_amount' => 500, 'paid_amount' => 200, 'payment_type' => 'Cash',
+            'supplier_id' => $s->id,
+            'total_amount' => 500,
+            'paid_amount' => 200,
+            'payment_type' => 'Cash',
             'items' => [['product_id' => $p->id, 'quantity' => 5, 'purchase_price' => 100]],
         ])->assertStatus(201);                                          // -200 cash, supplier due 300
         $this->withHeaders($this->h())->postJson('/api/v1/expenses', ['amount' => 30, 'payment_method' => 'cash', 'description' => 'Tea'])->assertStatus(201); // -30 cash
@@ -530,12 +566,14 @@ class MobileSyncContractTest extends TestCase
         $s = Supplier::create(['shop_id' => $this->shop->id, 'name' => 'S', 'mobile' => '8000000006', 'due_amount' => 0]);
         $this->withHeaders($this->h())->postJson('/api/v1/cashbooks', ['type' => 'cash_in', 'amount' => 500, 'description' => 'Float'])->assertStatus(201);
 
-        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', ['operations' => [
-            ['resource' => 'customer_prices', 'action' => 'update', 'op_id' => '1', 'id' => $c->id, 'data' => ['prices' => [['product_id' => $p->id, 'custom_price' => 80]]]],
-            ['resource' => 'supplier_prices', 'action' => 'update', 'op_id' => '2', 'id' => $s->id, 'data' => ['prices' => [['product_id' => $p->id, 'custom_price' => 40]]]],
-            ['resource' => 'register_closures', 'action' => 'create', 'op_id' => '3', 'data' => ['actual_cash' => 500]],
-            ['resource' => 'bank_transfers', 'action' => 'create', 'op_id' => '4', 'data' => ['type' => 'deposit', 'amount' => 100]],
-        ]])->assertStatus(200);
+        $r = $this->withHeaders($this->h())->postJson('/api/v1/sync/batch', [
+            'operations' => [
+                ['resource' => 'customer_prices', 'action' => 'update', 'op_id' => '1', 'id' => $c->id, 'data' => ['prices' => [['product_id' => $p->id, 'custom_price' => 80]]]],
+                ['resource' => 'supplier_prices', 'action' => 'update', 'op_id' => '2', 'id' => $s->id, 'data' => ['prices' => [['product_id' => $p->id, 'custom_price' => 40]]]],
+                ['resource' => 'register_closures', 'action' => 'create', 'op_id' => '3', 'data' => ['actual_cash' => 500]],
+                ['resource' => 'bank_transfers', 'action' => 'create', 'op_id' => '4', 'data' => ['type' => 'deposit', 'amount' => 100]],
+            ]
+        ])->assertStatus(200);
 
         foreach ($r->json('results') as $res) {
             $this->assertTrue($res['success'], $res['resource'] . ': ' . json_encode($res['error'] ?? null));

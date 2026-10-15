@@ -3,8 +3,8 @@
 {{-- 1. INVOICE MODAL --}}
 <div x-show="showInvoiceModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="if (!confirmModal.show) showInvoiceModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        @click.outside="if (!confirmModal.show) showInvoiceModal = false">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('sale_invoice')">Sale Invoice</h3>
@@ -16,18 +16,28 @@
         </div>
         <!-- WhatsApp Auto-shared confirmation banner -->
         <template x-if="selectedSale && selectedSale.whatsapp_shared">
-            <div class="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
+            <div
+                class="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
                 <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+                    <span
+                        class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                            <path
+                                d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
                         </svg>
                     </span>
-                    <span class="text-xs font-bold leading-tight" x-text="t('your_invoice_shared_to_customer')">Your Invoice Shared to Customer</span>
-                    <span class="text-[11px] opacity-75 hidden sm:inline">• <span x-text="t('wa_auto_sent_desc_customer')">Invoice shared automatically via official WhatsApp</span></span>
+                    <span class="text-xs font-bold leading-tight" x-text="t('your_invoice_shared_to_customer')">Your
+                        Invoice Shared to Customer</span>
+                    <span class="text-[11px] opacity-75 hidden sm:inline">• <span
+                            x-text="t('wa_auto_sent_desc_customer')">Invoice shared automatically via official
+                            WhatsApp</span></span>
                 </div>
-                <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-sm">
-                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                <span
+                    class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-sm">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7">
+                        </path>
+                    </svg>
                     <span x-text="t('sent') || 'Sent'">Sent</span>
                 </span>
             </div>
@@ -36,56 +46,80 @@
             <template x-if="selectedSale">
                 <div>
                     <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all mb-4 invoice-theme-header"
-                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E') + '; color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
+                        :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E') + '; color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                         <!-- Left Side: Logo & Shop Name -->
                         <div class="flex items-start gap-2">
-                            <div x-show="shop && shop.logo" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
-                                <img :src="shop && shop.logo ? '/storage/' + shop.logo : ''" class="w-full h-full object-cover">
+                            <div x-show="shop && shop.logo"
+                                class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                                <img :src="shop && shop.logo ? '/storage/' + shop.logo : ''"
+                                    class="w-full h-full object-cover">
                             </div>
                             <div class="flex flex-col items-start gap-0.5">
-                                <span class="text-xs font-bold leading-tight" x-text="shop ? shop.name : 'DukanHisab'"></span>
-                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="(t('mobile') || 'Mobile') + ': ' + (shop ? (shop.mobile || '') : '')"></p>
-                                <p x-show="shop && shop.address" class="text-[9px] opacity-90" x-text="shop ? shop.address : ''"></p>
-                                <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90" x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
+                                <span class="text-xs font-bold leading-tight"
+                                    x-text="shop ? shop.name : 'DukanHisab'"></span>
+                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90"
+                                    x-text="(t('mobile') || 'Mobile') + ': ' + (shop ? (shop.mobile || '') : '')"></p>
+                                <p x-show="shop && shop.address" class="text-[9px] opacity-90"
+                                    x-text="shop ? shop.address : ''"></p>
+                                <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90"
+                                    x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
                             </div>
                         </div>
-                        
+
                         <!-- Right Side: Invoice Meta -->
                         <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]"
-                             :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
+                            :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                             <h3 class="font-bold text-sm flex items-center justify-end gap-2"
                                 :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
-                                <span x-text="t('invoice')">INVOICE</span>
-                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned' || selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid'">
-                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
+                                <span x-text="(t('sale_invoice') || 'Sale Invoice').toUpperCase()">SALE INVOICE</span>
+                                <template
+                                    x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned' || selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid'">
+                                    <span
+                                        class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
                                         x-text="t(selectedSale.status.toLowerCase().replace(/ /g, '_')) || selectedSale.status"></span>
                                 </template>
                             </h3>
-                            <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedSale.sale_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="formatDateTime(selectedSale.sale_date)"></span></p>
-                            <template x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && (selectedSale.paid_date || selectedSale.updated_at)">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="formatDateTime(selectedSale.paid_date || selectedSale.updated_at)"></span></p>
+                            <p class="font-bold"><span class="font-normal opacity-80"
+                                    x-text="t('invoice_no') + ':'">Invoice No:</span> <span
+                                    x-text="selectedSale.sale_number"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80"
+                                    x-text="t('date') + ':'">Date:</span> <span
+                                    x-text="formatDateTime(selectedSale.sale_date)"></span></p>
+                            <template
+                                x-if="selectedSale.status === 'Completed' && selectedSale.payment_type === 'Credit' && (selectedSale.paid_date || selectedSale.updated_at)">
+                                <p class="opacity-90"><span class="font-normal opacity-80"
+                                        x-text="t('paid_date') + ':'">Paid Date:</span> <span
+                                        x-text="formatDateTime(selectedSale.paid_date || selectedSale.updated_at)"></span>
+                                </p>
                             </template>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
                         <div>
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('bill_to')">Bill To</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider"
+                                x-text="t('bill_to')">Bill To</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white"
                                 x-text="selectedSale.customer ? selectedSale.customer.name : t('walk_in_customer')"></p>
-                            <template x-if="(!invoiceSettings || invoiceSettings.show_customer_address) && selectedSale.customer && selectedSale.customer.mobile">
-                                <p class="text-slate-500" x-text="(t('mobile') || 'Mobile') + ': ' + selectedSale.customer.mobile"></p>
+                            <template
+                                x-if="(!invoiceSettings || invoiceSettings.show_customer_address) && selectedSale.customer && selectedSale.customer.mobile">
+                                <p class="text-slate-500"
+                                    x-text="(t('mobile') || 'Mobile') + ': ' + selectedSale.customer.mobile"></p>
                             </template>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('payment_info')">Payment Info</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider"
+                                x-text="t('payment_info')">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
-                                <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment Status:</span>
-                                <span :class="selectedSale.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedSale.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')" x-text="t(selectedSale.status ? selectedSale.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedSale.status"></span>
+                                <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment
+                                    Status:</span>
+                                <span
+                                    :class="selectedSale.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedSale.status === 'Unpaid' ? 'text-amber-600 font-bold' : 'text-emerald-600 font-bold')"
+                                    x-text="t(selectedSale.status ? selectedSale.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedSale.status"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal" x-text="t('payment_type') + ':'">Method:</span>
-                                <span x-text="t(selectedSale.payment_type ? selectedSale.payment_type.toLowerCase() : '') || selectedSale.payment_type"></span>
+                                <span
+                                    x-text="t(selectedSale.payment_type ? selectedSale.payment_type.toLowerCase() : '') || selectedSale.payment_type"></span>
                             </p>
                         </div>
                     </div>
@@ -94,15 +128,22 @@
                             <tr class="bg-slate-50 dark:bg-gray-700">
                                 <th class="px-4 py-2 text-left font-bold text-slate-500" x-text="t('product')">Item</th>
                                 <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('price')">Price</th>
-                                <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty</th>
-                                <template x-if="selectedSale.items && selectedSale.items.some(i => (parseFloat(i.discount) || 0) > 0)">
-                                    <th class="px-4 py-2 text-right font-bold text-amber-600" x-text="t('discount') || 'Disc.'">Disc.</th>
+                                <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty
+                                </th>
+                                <template
+                                    x-if="selectedSale.items && selectedSale.items.some(i => (parseFloat(i.discount) || 0) > 0)">
+                                    <th class="px-4 py-2 text-right font-bold text-amber-600"
+                                        x-text="t('discount') || 'Disc.'">Disc.</th>
                                 </template>
-                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">Returned</th>
+                                <template
+                                    x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">
+                                        Returned</th>
                                 </template>
-                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('net_qty')">Net Qty</th>
+                                <template
+                                    x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('net_qty')">Net
+                                        Qty</th>
                                 </template>
                                 <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('total')">Total</th>
                             </tr>
@@ -110,16 +151,21 @@
                         <tbody>
                             <template x-for="item in selectedSale.items" :key="item.id">
                                 <tr>
-                                    <td class="px-4 py-2.5 font-semibold" x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></td>
-                                    <td class="px-4 py-2.5 text-right" x-text="'₹' + parseFloat(item.selling_price).toFixed(2)"></td>
+                                    <td class="px-4 py-2.5 font-semibold"
+                                        x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')">
+                                    </td>
+                                    <td class="px-4 py-2.5 text-right"
+                                        x-text="'₹' + parseFloat(item.selling_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
-                                    <template x-if="selectedSale.items && selectedSale.items.some(i => (parseFloat(i.discount) || 0) > 0)">
+                                    <template
+                                        x-if="selectedSale.items && selectedSale.items.some(i => (parseFloat(i.discount) || 0) > 0)">
                                         <td class="px-4 py-2.5 text-right font-semibold text-amber-600"
-                                            x-text="(parseFloat(item.discount) || 0) > 0 ? ('-₹' + parseFloat(item.discount).toFixed(2)) : '-'"></td>
+                                            x-text="(parseFloat(item.discount) || 0) > 0 ? ('-₹' + parseFloat(item.discount).toFixed(2)) : '-'">
+                                        </td>
                                     </template>
-                                    <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                        <td class="px-4 py-2.5 text-center text-rose-600 font-bold" 
-                                            x-text="
+                                    <template
+                                        x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                        <td class="px-4 py-2.5 text-center text-rose-600 font-bold" x-text="
                                                 (() => {
                                                     if (item.returned_quantity > 0) return item.returned_quantity;
                                                     const hasReturnedQty = selectedSale.items.some(i => i.returned_quantity > 0);
@@ -128,8 +174,9 @@
                                                 })()
                                             "></td>
                                     </template>
-                                    <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
-                                        <td class="px-4 py-2.5 text-center font-semibold text-slate-600 dark:text-slate-400" 
+                                    <template
+                                        x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                        <td class="px-4 py-2.5 text-center font-semibold text-slate-600 dark:text-slate-400"
                                             x-text="
                                                 (() => {
                                                     if (item.returned_quantity > 0) return item.quantity - item.returned_quantity;
@@ -139,8 +186,7 @@
                                                 })()
                                             "></td>
                                     </template>
-                                    <td class="px-4 py-2.5 text-right font-bold"
-                                        x-text="'₹' + Math.max(0, (item.selling_price * (
+                                    <td class="px-4 py-2.5 text-right font-bold" x-text="'₹' + Math.max(0, (item.selling_price * (
                                             (() => {
                                                 if (item.returned_quantity > 0) return item.quantity - item.returned_quantity;
                                                 const hasReturnedQty = selectedSale.items.some(i => i.returned_quantity > 0);
@@ -152,52 +198,69 @@
                             </template>
                         </tbody>
                     </table>
-                    <div class="border-t border-slate-200 dark:border-gray-700 pt-4 flex justify-between items-start gap-4 text-xs">
+                    <div
+                        class="border-t border-slate-200 dark:border-gray-700 pt-4 flex justify-between items-start gap-4 text-xs">
                         <!-- Left Side: UPI QR Code & Bank Details -->
                         <div class="flex flex-col items-start gap-2 max-w-[50%]">
                             <template x-if="invoiceSettings && invoiceSettings.show_upi_qr && shop && shop.upi_id">
                                 <div class="flex flex-col items-center gap-1">
-                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shop.upi_id + '&pn=' + (shop.name || 'Shop') + '&am=' + parseFloat(selectedSale.grand_total).toFixed(2) + '&cu=INR')" class="w-20 h-20 p-1 bg-white rounded border border-slate-200 shadow-sm">
+                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shop.upi_id + '&pn=' + (shop.name || 'Shop') + '&am=' + parseFloat(selectedSale.grand_total).toFixed(2) + '&cu=INR')"
+                                        class="w-20 h-20 p-1 bg-white rounded border border-slate-200 shadow-sm">
                                     <span class="text-[8px] text-slate-400 font-semibold" x-text="shop.upi_id"></span>
                                 </div>
                             </template>
-                            <template x-if="invoiceSettings && invoiceSettings.show_bank_details && shop && shop.bank_details">
-                                <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full" x-text="shop.bank_details"></p>
+                            <template
+                                x-if="invoiceSettings && invoiceSettings.show_bank_details && shop && shop.bank_details">
+                                <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full"
+                                    x-text="shop.bank_details"></p>
                             </template>
                         </div>
-                        
+
                         <!-- Right Side: Totals -->
                         <div class="flex flex-col items-end gap-1 w-52">
-                            <div class="flex justify-between w-full"><span class="text-slate-500" x-text="t('subtotal') + ':'">Subtotal:</span><span
-                                    class="font-semibold">₹<span x-text="selectedSale.subtotal"></span></span></div>
-                            <div class="flex justify-between w-full"><span class="text-slate-500" x-text="t('discount') + ':'">Discount:</span><span
-                                    class="font-semibold">-₹<span x-text="selectedSale.discount"></span></span></div>
+                            <div class="flex justify-between w-full"><span class="text-slate-500"
+                                    x-text="t('subtotal') + ':'">Subtotal:</span><span class="font-semibold">₹<span
+                                        x-text="selectedSale.subtotal"></span></span></div>
+                            <div class="flex justify-between w-full"><span class="text-slate-500"
+                                    x-text="t('discount') + ':'">Discount:</span><span class="font-semibold">-₹<span
+                                        x-text="selectedSale.discount"></span></span></div>
                             <div
                                 class="flex justify-between w-full text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
-                                <span x-text="t('grand_total') + ':'">Grand Total:</span><span class="text-primary font-extrabold">₹<span
+                                <span x-text="t('grand_total') + ':'">Grand Total:</span><span
+                                    class="text-primary font-extrabold">₹<span
                                         x-text="selectedSale.grand_total"></span></span>
                             </div>
-                            <template x-if="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0">
-                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5">
+                            <template
+                                x-if="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0">
+                                <div
+                                    class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5">
                                     <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
                                         <span x-text="(t('store_credit') || 'Store Credit') + ':'">Store Credit:</span>
-                                        <span>-₹<span x-text="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance).toFixed(2)"></span></span>
+                                        <span>-₹<span
+                                                x-text="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance).toFixed(2)"></span></span>
                                     </div>
-                                    <div class="flex justify-between w-full text-xs font-bold" :class="selectedSale.payment_type === 'Credit' ? 'text-rose-600' : 'text-slate-800 dark:text-white'">
-                                        <span x-text="selectedSale.payment_type === 'Credit' ? (t('balance_due') || 'Balance Due') + ':' : ((t('net_paid') || 'Paid') + ' (' + (selectedSale.payment_type || 'Cash') + '):')"></span>
-                                        <span>₹<span x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance)).toFixed(2)"></span></span>
+                                    <div class="flex justify-between w-full text-xs font-bold"
+                                        :class="selectedSale.payment_type === 'Credit' ? 'text-rose-600' : 'text-slate-800 dark:text-white'">
+                                        <span
+                                            x-text="selectedSale.payment_type === 'Credit' ? (t('balance_due') || 'Balance Due') + ':' : ((t('net_paid') || 'Paid') + ' (' + (selectedSale.payment_type || 'Cash') + '):')"></span>
+                                        <span>₹<span
+                                                x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance)).toFixed(2)"></span></span>
                                     </div>
                                 </div>
                             </template>
-                            <template x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && (parseFloat(selectedSale.paid_amount) + parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)) < parseFloat(selectedSale.grand_total))">
-                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5" x-show="!(parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0 && selectedSale.status === 'Completed')">
+                            <template
+                                x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && (parseFloat(selectedSale.paid_amount) + parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)) < parseFloat(selectedSale.grand_total))">
+                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5"
+                                    x-show="!(parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0 && selectedSale.status === 'Completed')">
                                     <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
                                         <span x-text="(t('paid_amount') || 'Paid Amount') + ':'">Paid Amount:</span>
-                                        <span>₹<span x-text="parseFloat(selectedSale.paid_amount || 0).toFixed(2)"></span></span>
+                                        <span>₹<span
+                                                x-text="parseFloat(selectedSale.paid_amount || 0).toFixed(2)"></span></span>
                                     </div>
                                     <div class="flex justify-between w-full text-xs font-bold text-rose-600">
                                         <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
-                                        <span>₹<span x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)).toFixed(2)"></span></span>
+                                        <span>₹<span
+                                                x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)).toFixed(2)"></span></span>
                                     </div>
                                 </div>
                             </template>
@@ -205,21 +268,29 @@
                     </div>
                     <!-- Containers still with the customer from this sale (deposit is outside the bill total) -->
                     <template x-if="hasContainers() && saleContainerRows(selectedSale).length > 0">
-                        <div class="mt-3 p-2.5 border border-dashed border-slate-300 dark:border-gray-600 rounded-lg text-xs">
-                            <p class="font-bold text-slate-700 dark:text-slate-200 mb-1" x-text="t('containers_with_customer')">Containers with Customer (Refundable Deposit)</p>
+                        <div
+                            class="mt-3 p-2.5 border border-dashed border-slate-300 dark:border-gray-600 rounded-lg text-xs">
+                            <p class="font-bold text-slate-700 dark:text-slate-200 mb-1"
+                                x-text="t('containers_with_customer')">Containers with Customer (Refundable Deposit)</p>
                             <table class="w-full">
-                                <thead><tr class="text-slate-500">
-                                    <th class="text-left font-semibold" x-text="t('container')">Container</th>
-                                    <th class="text-center font-semibold" x-text="t('pending_qty')">Pending Qty</th>
-                                    <th class="text-right font-semibold" x-text="t('deposit_per_unit')">Deposit / Unit</th>
-                                    <th class="text-right font-semibold" x-text="t('deposit_held')">Deposit Held</th>
-                                </tr></thead>
+                                <thead>
+                                    <tr class="text-slate-500">
+                                        <th class="text-left font-semibold" x-text="t('container')">Container</th>
+                                        <th class="text-center font-semibold" x-text="t('pending_qty')">Pending Qty</th>
+                                        <th class="text-right font-semibold" x-text="t('deposit_per_unit')">Deposit /
+                                            Unit</th>
+                                        <th class="text-right font-semibold" x-text="t('deposit_held')">Deposit Held
+                                        </th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     <template x-for="row in saleContainerRows(selectedSale)" :key="row.name + row.rate">
                                         <tr>
                                             <td x-text="row.name"></td>
                                             <td class="text-center" x-text="row.qty"></td>
-                                            <td class="text-right" x-text="row.rate > 0 ? money(row.rate) : t('deposit_not_collected')"></td>
+                                            <td class="text-right"
+                                                x-text="row.rate > 0 ? money(row.rate) : t('deposit_not_collected')">
+                                            </td>
                                             <td class="text-right font-semibold" x-text="money(row.deposit)"></td>
                                         </tr>
                                     </template>
@@ -228,7 +299,9 @@
                             <p class="text-[10px] text-slate-400 mt-1" x-text="t('container_deposit_invoice_note')"></p>
                         </div>
                     </template>
-                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
+                    <p class="text-center text-[10px] text-slate-400 mt-3"
+                        x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')">
+                    </p>
                     <template x-if="shop && shop.signature">
                         <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
                     </template>
@@ -250,29 +323,39 @@
             <div class="flex gap-2">
                 {{-- Sent from the DukanHisab number using the shop's WhatsApp message credits --}}
                 <template x-if="selectedSale && selectedSale.whatsapp_shared">
-                    <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)" :disabled="sendingWhatsApp"
+                    <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)"
+                        :disabled="sendingWhatsApp"
                         class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 disabled:opacity-60 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors">
-                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
                         </svg>
                         <span x-show="!sendingWhatsApp" x-text="t('wa_resend_via_whatsapp')">Resend via WhatsApp</span>
                         <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
                     </button>
                 </template>
                 <template x-if="!selectedSale || !selectedSale.whatsapp_shared">
-                    <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)" :disabled="sendingWhatsApp"
+                    <button type="button" @click="sendViaWhatsApp('sale', selectedSale && selectedSale.id)"
+                        :disabled="sendingWhatsApp"
                         class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                         <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
                         <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
                     </button>
                 </template>
-                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })" :disabled="sendingSaleEmail"
+                <button type="button"
+                    @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendSaleInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showInvoiceModal = false; })"
+                    :disabled="sendingSaleEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     <span x-show="!sendingSaleEmail">Share Email</span>
                     <span x-show="sendingSaleEmail">Sending...</span>
                     <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z">
+                            </path>
+                        </svg>
                     </span>
                 </button>
             </div>
@@ -283,7 +366,8 @@
 {{-- 2. ADD CUSTOMER MODAL --}}
 <div x-show="showCustomerModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showCustomerModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+        @click.outside="if (!confirmModal.show) showCustomerModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
                 x-text="newCustomer.id ? t('edit') : t('add_customer')"></h3>
@@ -295,12 +379,15 @@
         </div>
         <form @submit.prevent="saveCustomer()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('customer_name')">Customer Name</label>
-                <input type="text" required x-model="newCustomer.name" :placeholder="t('enter_customer_name') || 'Enter Customer Name'"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('customer_name')">Customer
+                    Name</label>
+                <input type="text" required x-model="newCustomer.name"
+                    :placeholder="t('enter_customer_name') || 'Enter Customer Name'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('mobile')">Mobile Number</label>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('mobile')">Mobile
+                    Number</label>
                 <input type="text" x-model="newCustomer.mobile" maxlength="10"
                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                     :placeholder="t('enter_mobile') || 'Enter 10-digit mobile'"
@@ -321,10 +408,12 @@
 {{-- 3. ADD/EDIT PRODUCT MODAL --}}
 <div x-show="showProductModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md my-auto overflow-hidden flex flex-col max-h-[92vh]" @click.outside="if (!confirmModal.show) showProductModal = false">
-        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center shrink-0">
-            <h3 class="font-bold text-slate-800 dark:text-white"
-                x-text="newProduct.id ? t('edit') : t('add_product')"></h3>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md my-auto overflow-hidden flex flex-col max-h-[92vh]"
+        @click.outside="if (!confirmModal.show) showProductModal = false">
+        <div
+            class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center shrink-0">
+            <h3 class="font-bold text-slate-800 dark:text-white" x-text="newProduct.id ? t('edit') : t('add_product')">
+            </h3>
             <button @click="showProductModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-5 h-5"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -333,19 +422,23 @@
         </div>
         <form @submit.prevent="saveProduct()" class="p-5 space-y-3 overflow-y-auto">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('product_name')">Product Name</label>
-                <input type="text" required x-model="newProduct.name" :placeholder="t('enter_product_name') || 'Enter Product Name'"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('product_name')">Product
+                    Name</label>
+                <input type="text" required x-model="newProduct.name"
+                    :placeholder="t('enter_product_name') || 'Enter Product Name'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('selling_price')">Selling Price</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('selling_price')">Selling
+                        Price</label>
                     <input type="number" step="0.01" required x-model.number="newProduct.selling_price"
                         :placeholder="t('enter_selling_price') || 'Enter Selling Price'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('purchase_price')">Purchase Price</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('purchase_price')">Purchase
+                        Price</label>
                     <input type="number" step="0.01" x-model.number="newProduct.purchase_price"
                         :placeholder="t('enter_purchase_price') || 'Enter Purchase Price'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
@@ -353,18 +446,21 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-400 mb-1" x-text="t('barcode')">Barcode</label>
-                <input type="text" x-model="newProduct.barcode" :placeholder="t('enter_barcode') || 'Enter Barcode'" class="block w-full px-3 py-2 border border-slate-300
+                <input type="text" x-model="newProduct.barcode" :placeholder="t('enter_barcode') || 'Enter Barcode'"
+                    class="block w-full px-3 py-2 border border-slate-300
                      dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 mb-1"
                         x-text="newProduct.id ? t('stock') : t('initial_stock')"></label>
-                    <input type="number" required x-model.number="newProduct.stock" :placeholder="t('enter_stock') || 'Enter Stock'"
+                    <input type="number" required x-model.number="newProduct.stock"
+                        :placeholder="t('enter_stock') || 'Enter Stock'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('low_stock')">Alert Limit</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('low_stock')">Alert
+                        Limit</label>
                     <input type="number" required x-model.number="newProduct.low_stock_threshold"
                         :placeholder="t('enter_alert_limit') || 'Enter Alert Limit'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
@@ -372,8 +468,10 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-100 dark:border-gray-700/60">
                 <!-- Available for Sale Switch -->
-                <label class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-gray-700/40 hover:bg-slate-100/80 dark:hover:bg-gray-700/70 rounded-xl border border-slate-200 dark:border-gray-600/70 transition-all cursor-pointer select-none">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-white pr-2" x-text="t('available_for_sale') || 'Available for Sale'">Available for Sale</span>
+                <label
+                    class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-gray-700/40 hover:bg-slate-100/80 dark:hover:bg-gray-700/70 rounded-xl border border-slate-200 dark:border-gray-600/70 transition-all cursor-pointer select-none">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-white pr-2"
+                        x-text="t('available_for_sale') || 'Available for Sale'">Available for Sale</span>
                     <span class="app-toggle app-toggle-sm shrink-0">
                         <input type="checkbox" x-model="newProduct.available_for_sale">
                         <span class="app-toggle-slider"></span>
@@ -381,8 +479,10 @@
                 </label>
 
                 <!-- Available for Purchase Switch -->
-                <label class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-gray-700/40 hover:bg-slate-100/80 dark:hover:bg-gray-700/70 rounded-xl border border-slate-200 dark:border-gray-600/70 transition-all cursor-pointer select-none">
-                    <span class="text-xs font-semibold text-slate-700 dark:text-white pr-2" x-text="t('available_for_purchase') || 'Available for Purchase'">Available for Purchase</span>
+                <label
+                    class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-gray-700/40 hover:bg-slate-100/80 dark:hover:bg-gray-700/70 rounded-xl border border-slate-200 dark:border-gray-600/70 transition-all cursor-pointer select-none">
+                    <span class="text-xs font-semibold text-slate-700 dark:text-white pr-2"
+                        x-text="t('available_for_purchase') || 'Available for Purchase'">Available for Purchase</span>
                     <span class="app-toggle app-toggle-sm shrink-0">
                         <input type="checkbox" x-model="newProduct.available_for_purchase">
                         <span class="app-toggle-slider"></span>
@@ -393,18 +493,23 @@
             <template x-if="hasContainers()">
                 <div class="grid grid-cols-3 gap-3 pt-1 border-t border-slate-100 dark:border-gray-700/60">
                     <div class="col-span-2">
-                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('returnable_container')">Returnable Container</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1"
+                            x-text="t('returnable_container')">Returnable Container</label>
                         <select x-model="newProduct.container_type_id"
                             class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                             <option value="" x-text="t('none')">None</option>
                             <template x-for="type in containerTypes" :key="type.id">
-                                <option :value="String(type.id)" :selected="String(newProduct.container_type_id) === String(type.id)" x-text="type.name + ' (' + money(type.deposit_amount) + ')'"></option>
+                                <option :value="String(type.id)"
+                                    :selected="String(newProduct.container_type_id) === String(type.id)"
+                                    x-text="type.name + ' (' + money(type.deposit_amount) + ')'"></option>
                             </template>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('per_unit')">Per Unit</label>
-                        <input type="number" min="1" x-model.number="newProduct.containers_per_unit" :disabled="!newProduct.container_type_id"
+                        <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('per_unit')">Per
+                            Unit</label>
+                        <input type="number" min="1" x-model.number="newProduct.containers_per_unit"
+                            :disabled="!newProduct.container_type_id"
                             class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white disabled:opacity-50">
                     </div>
                 </div>
@@ -419,9 +524,11 @@
 {{-- 4. ADD EXPENSE MODAL --}}
 <div x-show="showExpenseModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show && !manageExpenseCategoriesModalOpen) showExpenseModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+        @click.outside="if (!confirmModal.show && !manageExpenseCategoriesModalOpen) showExpenseModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
-            <h3 class="font-bold text-slate-800 dark:text-white" x-text="newExpense.id ? 'Edit Expense' : t('add_expense')">Add Expense</h3>
+            <h3 class="font-bold text-slate-800 dark:text-white"
+                x-text="newExpense.id ? 'Edit Expense' : t('add_expense')">Add Expense</h3>
             <button @click="showExpenseModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
@@ -430,14 +537,17 @@
         </div>
         <form @submit.prevent="saveExpense()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('expense_description')">Expense Description</label>
-                <input type="text" required :placeholder="t('expense_desc_placeholder') || 'Electricity, Tea, Rent...'" x-model="newExpense.description"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('expense_description')">Expense
+                    Description</label>
+                <input type="text" required :placeholder="t('expense_desc_placeholder') || 'Electricity, Tea, Rent...'"
+                    x-model="newExpense.description"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
                 <div class="flex justify-between items-center mb-1">
                     <label class="block text-xs font-semibold text-slate-500">Category</label>
-                    <button type="button" @click="openManageExpenseCategoriesModal()" class="text-[11px] text-primary hover:underline font-semibold">+ Add / Manage</button>
+                    <button type="button" @click="openManageExpenseCategoriesModal()"
+                        class="text-[11px] text-primary hover:underline font-semibold">+ Add / Manage</button>
                 </div>
                 <select x-model="newExpense.expense_category_id"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
@@ -449,12 +559,14 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('amount_rs')">Amount (₹)</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('amount_rs')">Amount
+                        (₹)</label>
                     <input type="number" step="0.01" required x-model.number="newExpense.amount"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('payment_type')">Payment Method</label>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('payment_type')">Payment
+                        Method</label>
                     <select x-model="newExpense.payment_method"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                         <option value="cash" x-text="t('cash')">Cash</option>
@@ -469,7 +581,8 @@
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <button type="submit"
-                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all" x-text="newExpense.id ? 'Update Expense' : t('save_expense')">Save Expense</button>
+                class="w-full py-2.5 bg-primary hover:bg-primary-hover text-white text-sm font-semibold rounded-xl shadow-md transition-all"
+                x-text="newExpense.id ? 'Update Expense' : t('save_expense')">Save Expense</button>
         </form>
     </div>
 </div>
@@ -477,36 +590,53 @@
 {{-- 4.1 MANAGE EXPENSE CATEGORIES MODAL (Higher z-index so it overlays Add Expense modal cleanly) --}}
 <div x-show="manageExpenseCategoriesModalOpen" x-cloak style="z-index: 70;"
     class="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 md:p-8 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col my-auto max-h-[82vh] border border-slate-200 dark:border-gray-700" @click.outside="manageExpenseCategoriesModalOpen = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col my-auto max-h-[82vh] border border-slate-200 dark:border-gray-700"
+        @click.outside="manageExpenseCategoriesModalOpen = false">
         {{-- Modal Header --}}
-        <div class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
+        <div
+            class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
             <div>
                 <h3 class="font-bold text-sm sm:text-base text-slate-800 dark:text-white">Manage Expense Categories</h3>
                 <p class="text-xs text-slate-400">Create, edit, or delete categories for your shop expenses</p>
             </div>
-            <button @click="manageExpenseCategoriesModalOpen = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 cursor-pointer">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button @click="manageExpenseCategoriesModalOpen = false"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
         {{-- Pinned Create / Edit Form (DOES NOT SCROLL) --}}
         <div class="p-4 sm:p-5 border-b border-slate-100 dark:border-gray-700/60 bg-white dark:bg-gray-800 shrink-0">
-            <div class="p-3.5 bg-slate-50 dark:bg-gray-700/40 rounded-xl border border-slate-200 dark:border-gray-600 space-y-2.5">
+            <div
+                class="p-3.5 bg-slate-50 dark:bg-gray-700/40 rounded-xl border border-slate-200 dark:border-gray-600 space-y-2.5">
                 <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-sans">
-                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span
+                        class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-sans">
+                        <svg class="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
                         <span x-text="expenseCategoryForm.id ? 'Edit Category' : 'Add New Category'"></span>
                     </span>
                     <template x-if="expenseCategoryForm.id">
-                        <button type="button" @click="resetExpenseCategoryForm()" class="text-[11px] text-rose-500 hover:underline font-semibold cursor-pointer">Cancel Edit</button>
+                        <button type="button" @click="resetExpenseCategoryForm()"
+                            class="text-[11px] text-rose-500 hover:underline font-semibold cursor-pointer">Cancel
+                            Edit</button>
                     </template>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="text" placeholder="Category name (e.g. Rent, Electricity, Tea/Snacks...)" x-model="expenseCategoryForm.name"
-                        @keydown.enter.prevent="saveExpenseCategory()"
+                    <input type="text" placeholder="Category name (e.g. Rent, Electricity, Tea/Snacks...)"
+                        x-model="expenseCategoryForm.name" @keydown.enter.prevent="saveExpenseCategory()"
                         class="block flex-1 px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary">
-                    <button type="button" @click="saveExpenseCategory()" class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <button type="button" @click="saveExpenseCategory()"
+                        class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
                         <span x-text="expenseCategoryForm.id ? 'Update Category' : 'Create Category'"></span>
                     </button>
                 </div>
@@ -516,40 +646,61 @@
         {{-- Existing Categories (ONLY THIS SECTION SCROLLS WITH CARD STYLE) --}}
         <div class="flex-1 flex flex-col min-h-0 p-4 sm:p-5 overflow-hidden">
             <div class="flex justify-between items-center mb-2.5 shrink-0">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-sans">Existing Categories (<span x-text="expenseCategories.length"></span>)</h4>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 font-sans">Existing Categories
+                    (<span x-text="expenseCategories.length"></span>)</h4>
                 <span class="text-[10px] text-slate-400 font-medium">Scrollable Cards</span>
             </div>
-            
+
             <div class="flex-1 overflow-y-auto pr-1">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <template x-for="cat in expenseCategories" :key="cat.id">
-                        <div class="p-3 bg-slate-50/80 hover:bg-white dark:bg-gray-700/30 dark:hover:bg-gray-700/60 rounded-xl border border-slate-200/90 dark:border-gray-600/70 hover:border-primary/40 dark:hover:border-primary/40 transition-all flex flex-col justify-between hover:shadow-xs group">
+                        <div
+                            class="p-3 bg-slate-50/80 hover:bg-white dark:bg-gray-700/30 dark:hover:bg-gray-700/60 rounded-xl border border-slate-200/90 dark:border-gray-600/70 hover:border-primary/40 dark:hover:border-primary/40 transition-all flex flex-col justify-between hover:shadow-xs group">
                             <div class="flex justify-between items-center gap-1.5">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="w-2 h-2 rounded-full bg-primary shrink-0"></span>
-                                    <h5 class="text-xs font-bold text-slate-800 dark:text-white truncate font-sans" x-text="cat.name"></h5>
+                                    <h5 class="text-xs font-bold text-slate-800 dark:text-white truncate font-sans"
+                                        x-text="cat.name"></h5>
                                 </div>
                                 <div class="flex items-center gap-0.5 shrink-0">
-                                    <button type="button" @click="editExpenseCategory(cat)" title="Edit Category" class="p-1 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-all cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    <button type="button" @click="editExpenseCategory(cat)" title="Edit Category"
+                                        class="p-1 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-md transition-all cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                            </path>
+                                        </svg>
                                     </button>
-                                    <button type="button" @click="deleteExpenseCategory(cat)" title="Delete Category" class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-all cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <button type="button" @click="deleteExpenseCategory(cat)" title="Delete Category"
+                                        class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-all cursor-pointer">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
                                     </button>
                                 </div>
                             </div>
-                            <div class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-gray-600/50 flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+                            <div
+                                class="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-gray-600/50 flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 font-sans">
                                 <span>Used in:</span>
-                                <button type="button" @click="filterExpensesByCategory(cat.id); manageExpenseCategoriesModalOpen = false;" title="Click to filter transactions" class="font-bold text-primary hover:underline font-mono cursor-pointer flex items-center gap-1">
+                                <button type="button"
+                                    @click="filterExpensesByCategory(cat.id); manageExpenseCategoriesModalOpen = false;"
+                                    title="Click to filter transactions"
+                                    class="font-bold text-primary hover:underline font-mono cursor-pointer flex items-center gap-1">
                                     <span x-text="(cat.cash_books_count || 0) + ' expenses'"></span>
-                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7"></path>
+                                    </svg>
                                 </button>
                             </div>
                         </div>
                     </template>
                 </div>
                 <template x-if="expenseCategories.length === 0">
-                    <div class="p-8 text-center text-xs text-slate-400 bg-slate-50 dark:bg-gray-700/20 rounded-xl border border-dashed border-slate-200 dark:border-gray-700">
+                    <div
+                        class="p-8 text-center text-xs text-slate-400 bg-slate-50 dark:bg-gray-700/20 rounded-xl border border-dashed border-slate-200 dark:border-gray-700">
                         No custom expense categories created yet. Use the form above to add your first category!
                     </div>
                 </template>
@@ -557,8 +708,10 @@
         </div>
 
         {{-- Modal Footer --}}
-        <div class="px-5 py-3 border-t border-slate-200 dark:border-gray-700 flex justify-end bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
-            <button type="button" @click="manageExpenseCategoriesModalOpen = false" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer transition-all">Close</button>
+        <div
+            class="px-5 py-3 border-t border-slate-200 dark:border-gray-700 flex justify-end bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
+            <button type="button" @click="manageExpenseCategoriesModalOpen = false"
+                class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold cursor-pointer transition-all">Close</button>
         </div>
     </div>
 </div>
@@ -566,7 +719,8 @@
 {{-- 5. ADD SUPPLIER MODAL --}}
 <div x-show="showSupplierModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) showSupplierModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+        @click.outside="if (!confirmModal.show) showSupplierModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <h3 class="font-bold text-slate-800 dark:text-white"
                 x-text="newSupplier.id ? t('edit') : t('add_supplier')"></h3>
@@ -578,12 +732,15 @@
         </div>
         <form @submit.prevent="saveSupplier()" class="p-6 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('supplier_name')">Supplier Name</label>
-                <input type="text" required x-model="newSupplier.name" :placeholder="t('enter_supplier_name') || 'Enter Supplier Name'"
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('supplier_name')">Supplier
+                    Name</label>
+                <input type="text" required x-model="newSupplier.name"
+                    :placeholder="t('enter_supplier_name') || 'Enter Supplier Name'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <div>
-                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('mobile')">Mobile Number</label>
+                <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('mobile')">Mobile
+                    Number</label>
                 <input type="text" x-model="newSupplier.mobile" maxlength="10"
                     oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                     :placeholder="t('enter_supplier_mobile') || 'Enter Supplier Mobile'"
@@ -591,7 +748,8 @@
             </div>
             <div>
                 <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('email')">Email Address</label>
-                <input type="email" x-model="newSupplier.email" :placeholder="t('enter_supplier_email') || 'Enter Supplier Email'"
+                <input type="email" x-model="newSupplier.email"
+                    :placeholder="t('enter_supplier_email') || 'Enter Supplier Email'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
             </div>
             <button type="submit"
@@ -604,8 +762,8 @@
 {{-- 8. PURCHASE DETAILS MODAL --}}
 <div x-show="showPurchaseDetailsModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]" @click.outside="if (!confirmModal.show) showPurchaseDetailsModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        @click.outside="if (!confirmModal.show) showPurchaseDetailsModal = false">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('purchase_details')">Purchase Details</h3>
@@ -617,61 +775,89 @@
         </div>
         <!-- WhatsApp Auto-shared confirmation banner -->
         <template x-if="selectedPurchase && selectedPurchase.whatsapp_shared">
-            <div class="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
+            <div
+                class="px-6 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between gap-3 text-emerald-800 dark:text-emerald-300">
                 <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
+                    <span
+                        class="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-400">
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                            <path
+                                d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
                         </svg>
                     </span>
-                    <span class="text-xs font-bold leading-tight" x-text="t('your_invoice_shared_to_supplier')">Your Invoice Shared to Supplier</span>
-                    <span class="text-[11px] opacity-75 hidden sm:inline">• <span x-text="t('wa_auto_sent_desc_supplier')">Bill shared automatically via official WhatsApp</span></span>
+                    <span class="text-xs font-bold leading-tight" x-text="t('your_invoice_shared_to_supplier')">Your
+                        Invoice Shared to Supplier</span>
+                    <span class="text-[11px] opacity-75 hidden sm:inline">• <span
+                            x-text="t('wa_auto_sent_desc_supplier')">Bill shared automatically via official
+                            WhatsApp</span></span>
                 </div>
-                <span class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-sm">
-                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                <span
+                    class="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-full shadow-sm">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7">
+                        </path>
+                    </svg>
                     <span x-text="t('sent') || 'Sent'">Sent</span>
                 </span>
             </div>
         </template>
-        <div id="purchase-print-area" class="flex-1 overflow-y-auto px-6 pt-4 pb-6 space-y-4 text-slate-800 dark:text-slate-200">
+        <div id="purchase-print-area"
+            class="flex-1 overflow-y-auto px-6 pt-4 pb-6 space-y-4 text-slate-800 dark:text-slate-200">
             <template x-if="selectedPurchase">
                 <div>
                     <div class="rounded-lg p-3.5 flex items-start justify-between gap-4 transition-all mb-4 invoice-theme-header"
-                         :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E') + '; color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
+                        :style="'background-color: ' + (invoiceSettings ? invoiceSettings.theme_color : '#0F766E') + '; color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                         <!-- Left Side: Logo & Shop Name -->
                         <div class="flex items-start gap-2">
-                            <div x-show="shop && shop.logo" class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
-                                <img :src="shop && shop.logo ? '/storage/' + shop.logo : ''" class="w-full h-full object-cover">
+                            <div x-show="shop && shop.logo"
+                                class="w-9 h-9 rounded overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
+                                <img :src="shop && shop.logo ? '/storage/' + shop.logo : ''"
+                                    class="w-full h-full object-cover">
                             </div>
                             <div class="flex flex-col items-start gap-0.5">
-                                <span class="text-xs font-bold leading-tight" x-text="shop ? shop.name : 'DukanHisab'"></span>
-                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90" x-text="(t('mobile') || 'Mobile') + ': ' + (shop ? (shop.mobile || '') : '')"></p>
-                                <p x-show="shop && shop.address" class="text-[9px] opacity-90" x-text="shop ? shop.address : ''"></p>
-                                <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90" x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
+                                <span class="text-xs font-bold leading-tight"
+                                    x-text="shop ? shop.name : 'DukanHisab'"></span>
+                                <p x-show="shop && shop.mobile" class="text-[9px] opacity-90"
+                                    x-text="(t('mobile') || 'Mobile') + ': ' + (shop ? (shop.mobile || '') : '')"></p>
+                                <p x-show="shop && shop.address" class="text-[9px] opacity-90"
+                                    x-text="shop ? shop.address : ''"></p>
+                                <p x-show="shop && shop.gst_number" class="text-[9px] opacity-90"
+                                    x-text="shop && shop.gst_number ? 'GSTIN: ' + shop.gst_number : ''"></p>
                             </div>
                         </div>
 
                         <!-- Right Side: Invoice Meta -->
                         <div class="text-[9px] text-right space-y-0.5 leading-tight font-medium opacity-90 max-w-[60%]"
-                             :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
+                            :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                             <h3 class="font-bold text-sm flex items-center justify-end gap-2"
                                 :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                                 <span x-text="t('purchase_invoice')">PURCHASE INVOICE</span>
-                                <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                    <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
+                                <template
+                                    x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
+                                    <span
+                                        class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
                                         x-text="t(selectedPurchase.status.toLowerCase().replace(/ /g, '_')) || selectedPurchase.status"></span>
                                 </template>
                             </h3>
-                            <p class="font-bold"><span class="font-normal opacity-80" x-text="t('invoice_no') + ':'">Invoice No:</span> <span x-text="selectedPurchase.purchase_number"></span></p>
-                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80" x-text="t('date') + ':'">Date:</span> <span x-text="formatDateTime(selectedPurchase.purchase_date)"></span></p>
-                            <template x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && (selectedPurchase.paid_date || selectedPurchase.updated_at)">
-                                <p class="opacity-90"><span class="font-normal opacity-80" x-text="t('paid_date') + ':'">Paid Date:</span> <span x-text="formatDateTime(selectedPurchase.paid_date || selectedPurchase.updated_at)"></span></p>
+                            <p class="font-bold"><span class="font-normal opacity-80"
+                                    x-text="t('invoice_no') + ':'">Invoice No:</span> <span
+                                    x-text="selectedPurchase.purchase_number"></span></p>
+                            <p class="opacity-90 mt-1"><span class="font-normal opacity-80"
+                                    x-text="t('date') + ':'">Date:</span> <span
+                                    x-text="formatDateTime(selectedPurchase.purchase_date)"></span></p>
+                            <template
+                                x-if="selectedPurchase.status === 'Completed' && selectedPurchase.payment_type === 'Credit' && (selectedPurchase.paid_date || selectedPurchase.updated_at)">
+                                <p class="opacity-90"><span class="font-normal opacity-80"
+                                        x-text="t('paid_date') + ':'">Paid Date:</span> <span
+                                        x-text="formatDateTime(selectedPurchase.paid_date || selectedPurchase.updated_at)"></span>
+                                </p>
                             </template>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 py-4 text-xs">
                         <div>
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('supplier_details')">Supplier Details
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider"
+                                x-text="t('supplier_details')">Supplier Details
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white"
                                 x-text="selectedPurchase.supplier ? selectedPurchase.supplier.name : t('walk_in_supplier')">
@@ -681,28 +867,40 @@
                             </p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider" x-text="t('payment_info')">Payment Info</p>
+                            <p class="text-[10px] uppercase font-bold text-slate-400 tracking-wider"
+                                x-text="t('payment_info')">Payment Info</p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
-                                <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment Status:</span>
-                                <span :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : (selectedPurchase.status === 'Partially Paid' ? 'text-blue-600 font-bold' : 'text-emerald-600 font-bold'))" x-text="t(selectedPurchase.status ? selectedPurchase.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedPurchase.status"></span>
+                                <span class="text-slate-500 font-normal" x-text="t('payment_status') + ':'">Payment
+                                    Status:</span>
+                                <span
+                                    :class="selectedPurchase.status === 'Returned' ? 'text-rose-600 font-bold' : (selectedPurchase.status === 'Unpaid' ? 'text-amber-600 font-bold' : (selectedPurchase.status === 'Partially Paid' ? 'text-blue-600 font-bold' : 'text-emerald-600 font-bold'))"
+                                    x-text="t(selectedPurchase.status ? selectedPurchase.status.toLowerCase().replace(/ /g, '_') : 'paid') || selectedPurchase.status"></span>
                             </p>
                             <p class="text-sm font-bold text-slate-800 dark:text-white">
                                 <span class="text-slate-500 font-normal" x-text="t('payment_type') + ':'">Method:</span>
-                                <span x-text="t(selectedPurchase.payment_type ? selectedPurchase.payment_type.toLowerCase() : '') || selectedPurchase.payment_type"></span>
+                                <span
+                                    x-text="t(selectedPurchase.payment_type ? selectedPurchase.payment_type.toLowerCase() : '') || selectedPurchase.payment_type"></span>
                             </p>
                         </div>
                     </div>
                     <table class="min-w-full divide-y divide-slate-200 dark:divide-gray-700 text-xs">
                         <thead>
                             <tr class="bg-slate-50 dark:bg-gray-700">
-                                <th class="px-4 py-2 text-left font-bold text-slate-500" x-text="t('product')">Product</th>
-                                <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('price')">Unit Price</th>
-                                <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty</th>
-                                <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">Returned</th>
+                                <th class="px-4 py-2 text-left font-bold text-slate-500" x-text="t('product')">Product
+                                </th>
+                                <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('price')">Unit Price
+                                </th>
+                                <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('quantity')">Qty
+                                </th>
+                                <template
+                                    x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('returned')">
+                                        Returned</th>
                                 </template>
-                                <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('net_qty')">Net Qty</th>
+                                <template
+                                    x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
+                                    <th class="px-4 py-2 text-center font-bold text-slate-500" x-text="t('net_qty')">Net
+                                        Qty</th>
                                 </template>
                                 <th class="px-4 py-2 text-right font-bold text-slate-500" x-text="t('total')">Total</th>
                             </tr>
@@ -711,37 +909,48 @@
                             <template x-for="item in selectedPurchase.items" :key="item.id">
                                 <tr>
                                     <td class="px-4 py-2.5 font-semibold">
-                                        <span x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></span>
+                                        <span
+                                            x-text="item.product ? item.product.name : (t('deleted_product') || 'Deleted Product')"></span>
                                         <template x-if="parseFloat(item.discount || 0) > 0">
-                                            <div class="text-[10px] text-emerald-600 font-medium">Scheme Disc: -₹<span x-text="parseFloat(item.discount).toFixed(2)"></span></div>
+                                            <div class="text-[10px] text-emerald-600 font-medium">Scheme Disc: -₹<span
+                                                    x-text="parseFloat(item.discount).toFixed(2)"></span></div>
                                         </template>
                                     </td>
                                     <td class="px-4 py-2.5 text-right"
                                         x-text="'₹' + parseFloat(item.purchase_price).toFixed(2)"></td>
                                     <td class="px-4 py-2.5 text-center" x-text="item.quantity"></td>
-                                    <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                        <td class="px-4 py-2.5 text-center text-rose-600 font-bold" x-text="item.returned_quantity || 0"></td>
+                                    <template
+                                        x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
+                                        <td class="px-4 py-2.5 text-center text-rose-600 font-bold"
+                                            x-text="item.returned_quantity || 0"></td>
                                     </template>
-                                    <template x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
-                                        <td class="px-4 py-2.5 text-center font-semibold text-slate-600 dark:text-slate-400" x-text="item.quantity - (item.returned_quantity || 0)"></td>
+                                    <template
+                                        x-if="selectedPurchase.status === 'Returned' || selectedPurchase.status === 'Partially Returned'">
+                                        <td class="px-4 py-2.5 text-center font-semibold text-slate-600 dark:text-slate-400"
+                                            x-text="item.quantity - (item.returned_quantity || 0)"></td>
                                     </template>
                                     <td class="px-4 py-2.5 text-right font-bold"
-                                        x-text="'₹' + Math.max(0, (item.purchase_price * (item.quantity - (item.returned_quantity || 0))) - parseFloat(item.discount || 0)).toFixed(2)"></td>
+                                        x-text="'₹' + Math.max(0, (item.purchase_price * (item.quantity - (item.returned_quantity || 0))) - parseFloat(item.discount || 0)).toFixed(2)">
+                                    </td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
-                    <div class="border-t border-slate-200 dark:border-gray-700 pt-4 flex justify-between items-start gap-4 text-xs">
+                    <div
+                        class="border-t border-slate-200 dark:border-gray-700 pt-4 flex justify-between items-start gap-4 text-xs">
                         <!-- Left Side: UPI QR Code & Bank Details -->
                         <div class="flex flex-col items-start gap-2 max-w-[50%]">
                             <template x-if="invoiceSettings && invoiceSettings.show_upi_qr && shop && shop.upi_id">
                                 <div class="flex flex-col items-center gap-1">
-                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shop.upi_id + '&pn=' + (shop.name || 'Shop') + '&am=' + parseFloat(selectedPurchase.total_amount).toFixed(2) + '&cu=INR')" class="w-20 h-20 p-1 bg-white rounded border border-slate-200 shadow-sm">
+                                    <img :src="'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent('upi://pay?pa=' + shop.upi_id + '&pn=' + (shop.name || 'Shop') + '&am=' + parseFloat(selectedPurchase.total_amount).toFixed(2) + '&cu=INR')"
+                                        class="w-20 h-20 p-1 bg-white rounded border border-slate-200 shadow-sm">
                                     <span class="text-[8px] text-slate-400 font-semibold" x-text="shop.upi_id"></span>
                                 </div>
                             </template>
-                            <template x-if="invoiceSettings && invoiceSettings.show_bank_details && shop && shop.bank_details">
-                                <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full" x-text="shop.bank_details"></p>
+                            <template
+                                x-if="invoiceSettings && invoiceSettings.show_bank_details && shop && shop.bank_details">
+                                <p class="text-[8px] text-slate-500 whitespace-pre-line leading-tight border-t border-dashed border-slate-200 dark:border-gray-700 pt-1 mt-1 w-full"
+                                    x-text="shop.bank_details"></p>
                             </template>
                         </div>
 
@@ -750,13 +959,15 @@
                             <template x-if="parseFloat(selectedPurchase.discount || 0) > 0">
                                 <div class="flex justify-between w-full text-xs text-slate-500">
                                     <span x-text="t('subtotal') + ':'">Subtotal:</span>
-                                    <span>₹<span x-text="(parseFloat(selectedPurchase.total_amount) + parseFloat(selectedPurchase.discount)).toFixed(2)"></span></span>
+                                    <span>₹<span
+                                            x-text="(parseFloat(selectedPurchase.total_amount) + parseFloat(selectedPurchase.discount)).toFixed(2)"></span></span>
                                 </div>
                             </template>
                             <template x-if="parseFloat(selectedPurchase.discount || 0) > 0">
                                 <div class="flex justify-between w-full text-xs text-emerald-600 font-medium">
                                     <span>Scheme Discount:</span>
-                                    <span>-₹<span x-text="parseFloat(selectedPurchase.discount).toFixed(2)"></span></span>
+                                    <span>-₹<span
+                                            x-text="parseFloat(selectedPurchase.discount).toFixed(2)"></span></span>
                                 </div>
                             </template>
                             <div
@@ -765,21 +976,27 @@
                                 <span class="text-primary font-extrabold">₹<span
                                         x-text="parseFloat(selectedPurchase.total_amount).toFixed(2)"></span></span>
                             </div>
-                            <template x-if="parseFloat(selectedPurchase.paid_amount || 0) > 0 || selectedPurchase.status === 'Partially Paid' || selectedPurchase.status === 'Unpaid'">
-                                <div class="w-full pt-1 border-t border-slate-100 dark:border-gray-700/60 flex flex-col gap-0.5">
+                            <template
+                                x-if="parseFloat(selectedPurchase.paid_amount || 0) > 0 || selectedPurchase.status === 'Partially Paid' || selectedPurchase.status === 'Unpaid'">
+                                <div
+                                    class="w-full pt-1 border-t border-slate-100 dark:border-gray-700/60 flex flex-col gap-0.5">
                                     <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
                                         <span x-text="(t('paid_amount') || 'Paid Amount') + ':'">Paid Amount:</span>
-                                        <span>₹<span x-text="parseFloat(selectedPurchase.paid_amount || 0).toFixed(2)"></span></span>
+                                        <span>₹<span
+                                                x-text="parseFloat(selectedPurchase.paid_amount || 0).toFixed(2)"></span></span>
                                     </div>
                                     <div class="flex justify-between w-full text-xs font-bold text-rose-600">
                                         <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
-                                        <span>₹<span x-text="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)).toFixed(2)"></span></span>
+                                        <span>₹<span
+                                                x-text="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)).toFixed(2)"></span></span>
                                     </div>
                                 </div>
                             </template>
                         </div>
                     </div>
-                    <p class="text-center text-[10px] text-slate-400 mt-3" x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')"></p>
+                    <p class="text-center text-[10px] text-slate-400 mt-3"
+                        x-text="shop && shop.invoice_footer ? shop.invoice_footer : (t('invoice_footer_default') || 'Thank you for your business!')">
+                    </p>
                     <template x-if="shop && shop.signature">
                         <img :src="'/storage/' + shop.signature" class="h-10 ml-auto object-contain mt-2">
                     </template>
@@ -801,29 +1018,39 @@
             <div class="flex gap-2">
                 {{-- Sent from the DukanHisab number using the shop's WhatsApp message credits --}}
                 <template x-if="selectedPurchase && selectedPurchase.whatsapp_shared">
-                    <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)" :disabled="sendingWhatsApp"
+                    <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)"
+                        :disabled="sendingWhatsApp"
                         class="px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 disabled:opacity-60 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors">
-                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/>
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24"
+                            fill="currentColor">
+                            <path
+                                d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
                         </svg>
                         <span x-show="!sendingWhatsApp" x-text="t('wa_resend_via_whatsapp')">Resend via WhatsApp</span>
                         <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
                     </button>
                 </template>
                 <template x-if="!selectedPurchase || !selectedPurchase.whatsapp_shared">
-                    <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)" :disabled="sendingWhatsApp"
+                    <button type="button" @click="sendViaWhatsApp('purchase', selectedPurchase && selectedPurchase.id)"
+                        :disabled="sendingWhatsApp"
                         class="px-4 py-2 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                         <span x-show="!sendingWhatsApp" x-text="t('wa_send_via_whatsapp')">Send via WhatsApp</span>
                         <span x-show="sendingWhatsApp" x-text="t('sending')">Sending...</span>
                     </button>
                 </template>
-                <button type="button" @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })" :disabled="sendingPurchaseEmail"
+                <button type="button"
+                    @click="if (user && user.active_plan && user.active_plan.slug !== 'free') sendPurchaseInvoiceEmail(); else showConfirm('Upgrade Plan Required', 'Email Invoice sharing is only available on Premium and Business plans. Please upgrade your plan to unlock.', () => { navigateTo('subscription'); showPurchaseDetailsModal = false; })"
+                    :disabled="sendingPurchaseEmail"
                     :class="user && user.active_plan && user.active_plan.slug === 'free' ? 'opacity-50 cursor-not-allowed' : ''"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                     <span x-show="!sendingPurchaseEmail">Share Email</span>
                     <span x-show="sendingPurchaseEmail">Sending...</span>
                     <span x-show="user && user.active_plan && user.active_plan.slug === 'free'" class="text-amber-500">
-                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg>
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z">
+                            </path>
+                        </svg>
                     </span>
                 </button>
             </div>
@@ -843,14 +1070,18 @@
                     </path>
                 </svg>
             </div>
-            <h3 class="font-bold text-lg text-slate-800 dark:text-white" x-text="t(confirmModal.title) || confirmModal.title"></h3>
+            <h3 class="font-bold text-lg text-slate-800 dark:text-white"
+                x-text="t(confirmModal.title) || confirmModal.title"></h3>
         </div>
-        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="t(confirmModal.message) || confirmModal.message"></p>
+        <p class="text-sm text-slate-500 dark:text-slate-400" x-text="t(confirmModal.message) || confirmModal.message">
+        </p>
         <div class="flex justify-end gap-3 pt-2">
             <button @click="confirmModal.show = false"
-                class="px-4 py-2 border border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all" x-text="t('cancel')">Cancel</button>
+                class="px-4 py-2 border border-slate-300 dark:border-gray-600 hover:bg-slate-50 dark:hover:bg-gray-700 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all"
+                x-text="t('cancel')">Cancel</button>
             <button @click="triggerConfirm()"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all" x-text="t('confirm')">Confirm</button>
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all"
+                x-text="t('confirm')">Confirm</button>
         </div>
     </div>
 </div>
@@ -858,7 +1089,8 @@
 {{-- 8. RETURN ITEMS MODAL --}}
 <div x-show="showReturnModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="if (!confirmModal.show) showReturnModal = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+        @click.outside="if (!confirmModal.show) showReturnModal = false">
         <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center">
             <div>
                 <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_items')">Return Items</h3>
@@ -878,7 +1110,8 @@
                         <th class="py-2 font-semibold text-slate-400" x-text="t('product')">Product</th>
                         <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('price')">Price</th>
                         <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('purchased')">Purchased</th>
-                        <th class="py-2 font-semibold text-slate-400 text-right w-24" x-text="t('return_qty')">Return Qty</th>
+                        <th class="py-2 font-semibold text-slate-400 text-right w-24" x-text="t('return_qty')">Return
+                            Qty</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -889,15 +1122,20 @@
                             <td class="py-3 text-center">
                                 <template x-if="item.unit_discount && item.unit_discount > 0">
                                     <div class="flex flex-col items-center">
-                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">₹<span x-text="item.effective_price.toFixed(2)"></span></span>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">₹<span
+                                                x-text="item.effective_price.toFixed(2)"></span></span>
                                         <div class="flex items-center gap-1 text-[10px]">
-                                            <span class="line-through text-slate-400 font-mono">₹<span x-text="item.selling_price.toFixed(2)"></span></span>
-                                            <span class="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-950/60 px-1 rounded text-[9px]">-₹<span x-text="item.unit_discount.toFixed(2)"></span></span>
+                                            <span class="line-through text-slate-400 font-mono">₹<span
+                                                    x-text="item.selling_price.toFixed(2)"></span></span>
+                                            <span
+                                                class="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-950/60 px-1 rounded text-[9px]">-₹<span
+                                                    x-text="item.unit_discount.toFixed(2)"></span></span>
                                         </div>
                                     </div>
                                 </template>
                                 <template x-if="!item.unit_discount || item.unit_discount <= 0">
-                                    <span class="text-slate-600 dark:text-slate-300 font-semibold font-mono">₹<span x-text="parseFloat(item.selling_price).toFixed(2)"></span></span>
+                                    <span class="text-slate-600 dark:text-slate-300 font-semibold font-mono">₹<span
+                                            x-text="parseFloat(item.selling_price).toFixed(2)"></span></span>
                                 </template>
                             </td>
                             <td class="py-3 text-slate-500 text-center font-mono" x-text="item.purchasedQty"></td>
@@ -912,7 +1150,8 @@
 
             <div class="bg-slate-50 dark:bg-gray-900/50 rounded-xl p-4 space-y-3">
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm">
-                    <label class="text-slate-600 dark:text-slate-300 font-semibold" x-text="t('refund_method') + ':'">Refund Method:</label>
+                    <label class="text-slate-600 dark:text-slate-300 font-semibold"
+                        x-text="t('refund_method') + ':'">Refund Method:</label>
                     <select x-model="returnForm.refund_method"
                         class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-800 dark:text-white font-medium focus:outline-none focus:border-primary">
                         <option value="cash">Cash Refund</option>
@@ -927,7 +1166,8 @@
                     </select>
                 </div>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
-                    <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
+                    <span class="font-bold text-slate-700 dark:text-white"
+                        x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
                     <span class="font-bold text-primary font-mono">₹<span x-text="
                         (() => {
                             const newSubtotal = returnForm.items.reduce((sum, item) => {
@@ -948,9 +1188,11 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-end gap-3">
             <button @click="showReturnModal = false"
-                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
+                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all"
+                x-text="t('cancel')">Cancel</button>
             <button @click="submitPartialReturn()"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md" x-text="t('process_return')">Process
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md"
+                x-text="t('process_return')">Process
                 Return</button>
         </div>
     </div>
@@ -959,11 +1201,15 @@
 {{-- 12. EDIT SALE ITEMS MODAL --}}
 <div x-show="showEditSaleItemsModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900 shrink-0">
-            <h3 class="font-bold text-slate-800 dark:text-white" x-text="'Edit Sale #' + (editingSaleId ? (selectedSale && selectedSale.id === editingSaleId ? selectedSale.sale_number : '') : '')"></h3>
-            <button @click="showEditSaleItemsModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900 shrink-0">
+            <h3 class="font-bold text-slate-800 dark:text-white"
+                x-text="'Edit Sale #' + (editingSaleId ? (selectedSale && selectedSale.id === editingSaleId ? selectedSale.sale_number : '') : '')">
+            </h3>
+            <button @click="showEditSaleItemsModal = false" class="text-slate-400 hover:text-slate-600"><svg
+                    class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
                 </svg></button>
@@ -971,14 +1217,18 @@
         <div class="flex-1 overflow-y-auto p-4">
             <div class="flex flex-col lg:flex-row gap-4">
                 {{-- Product Selection Side --}}
-                <div class="flex-1 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden min-h-[400px]">
+                <div
+                    class="flex-1 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden min-h-[400px]">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                         <div class="relative">
                             <input type="text" placeholder="Search product name..." x-model="pos.searchQuery"
                                 @input.debounce.300ms="loadProducts(pos.searchQuery)"
                                 class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
                             </span>
                         </div>
                         <div class="relative">
@@ -986,22 +1236,29 @@
                                 @keydown.enter.prevent="handleBarcodeScan()"
                                 class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-4V8m0 8l-4-4m4 4l4-4"></path></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-4V8m0 8l-4-4m4 4l4-4"></path>
+                                </svg>
                             </span>
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
+                    <div
+                        class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
                         <template x-for="prod in filteredSaleProducts()" :key="prod.id">
                             <div @click="prod.stock > 0 ? addToBill(prod) : showToast('Product is Out of Stock!', 'error')"
                                 :class="prod.stock <= 0 ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : 'bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary'"
                                 class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between">
                                 <div>
-                                    <p class="font-bold text-sm text-slate-800 dark:text-white truncate" x-text="prod.name"></p>
-                                    <p class="text-[10px] text-slate-400">Barcode: <span x-text="prod.barcode"></span></p>
+                                    <p class="font-bold text-sm text-slate-800 dark:text-white truncate"
+                                        x-text="prod.name"></p>
+                                    <p class="text-[10px] text-slate-400">Barcode: <span x-text="prod.barcode"></span>
+                                    </p>
                                 </div>
                                 <div class="flex justify-between items-center mt-3">
-                                    <span class="text-sm font-extrabold text-primary">₹<span x-text="prod.selling_price"></span></span>
+                                    <span class="text-sm font-extrabold text-primary">₹<span
+                                            x-text="prod.selling_price"></span></span>
                                     <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
                                         :class="prod.stock <= 0 ? 'bg-rose-100 text-rose-700' : (prod.stock <= prod.low_stock_threshold ? 'bg-amber-100 text-amber-700' : 'bg-slate-200 text-slate-700')"
                                         x-text="prod.stock <= 0 ? 'Out of Stock' : 'Qty: ' + prod.stock"></span>
@@ -1012,28 +1269,33 @@
                 </div>
 
                 {{-- Billing Side --}}
-                <div class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
+                <div
+                    class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
+                    <h3
+                        class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
                         Billing Cart
                         <button @click="pos.items = []" class="text-xs text-rose-500 hover:underline">Clear All</button>
                     </h3>
 
                     {{-- Customer Selector --}}
-                    <div class="flex items-center gap-2 mb-4 relative" x-data="{ open: false }" @click.away="open = false">
+                    <div class="flex items-center gap-2 mb-4 relative" x-data="{ open: false }"
+                        @click.away="open = false">
                         <div class="flex-1 relative">
                             <button type="button" @click="open = !open"
                                 class="w-full flex items-center justify-between px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white bg-white text-left focus:outline-none">
                                 <span class="truncate pr-2" x-text="getSelectedPosCustomerName()"></span>
-                                <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0"
+                                    :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
 
                             <div x-show="open" x-cloak
                                 class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
                                 <input type="text" placeholder="Search customer name or mobile..."
-                                    x-model="posCustomerSearchQuery"
-                                    @input.debounce.300ms="searchPosCustomers()"
+                                    x-model="posCustomerSearchQuery" @input.debounce.300ms="searchPosCustomers()"
                                     @click.stop
                                     class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-lg text-xs dark:bg-gray-900 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
 
@@ -1048,52 +1310,74 @@
                                         <button type="button" @click="selectPosCustomer(cust); open = false;"
                                             class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-all font-medium text-slate-700 dark:text-slate-300 flex justify-between items-center">
                                             <span x-text="cust.name"></span>
-                                            <span class="text-[10px] text-slate-400 font-mono" x-text="cust.mobile || 'No Mobile'"></span>
+                                            <span class="text-[10px] text-slate-400 font-mono"
+                                                x-text="cust.mobile || 'No Mobile'"></span>
                                         </button>
                                     </template>
 
                                     <template x-if="posFilteredCustomers.length === 0">
-                                        <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_customers_found')">No customers found.</div>
+                                        <div class="text-center py-4 text-xs text-slate-400"
+                                            x-text="t('no_customers_found')">No customers found.</div>
                                     </template>
                                 </div>
                             </div>
                         </div>
-                        <button @click="showCustomerModal = true" class="p-2 border border-slate-300 dark:border-gray-600 hover:border-primary rounded-xl text-slate-500 hover:text-primary transition-all shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <button @click="showCustomerModal = true"
+                            class="p-2 border border-slate-300 dark:border-gray-600 hover:border-primary rounded-xl text-slate-500 hover:text-primary transition-all shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
                         </button>
                     </div>
 
                     {{-- Cart Items (delete button top-right on each card) --}}
                     <div class="flex-1 overflow-y-auto space-y-2 pr-1 mb-4 max-h-[280px]">
                         <template x-for="(item, idx) in pos.items" :key="idx">
-                            <div class="p-2 bg-white dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
+                            <div
+                                class="p-2 bg-white dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
                                 <div class="flex justify-between items-start">
-                                    <span class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[180px]" x-text="item.name"></span>
-                                    <button @click="removeFromBill(idx)" title="Remove item" class="text-slate-400 hover:text-rose-500">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <span
+                                        class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[180px]"
+                                        x-text="item.name"></span>
+                                    <button @click="removeFromBill(idx)" title="Remove item"
+                                        class="text-slate-400 hover:text-rose-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
                                     </button>
                                 </div>
                                 <div class="flex justify-between items-center gap-1.5 flex-wrap">
-                                    <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
-                                        <button @click="decreaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
+                                    <div
+                                        class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden shrink-0">
+                                        <button @click="decreaseQty(idx)"
+                                            class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
                                         <span class="px-2 text-xs font-bold" x-text="item.quantity"></span>
-                                        <button @click="increaseQty(idx)" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
+                                        <button @click="increaseQty(idx)"
+                                            class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
                                     </div>
                                     <div class="flex items-center gap-0.5">
                                         <span class="text-[10px] text-slate-400">Rate:₹</span>
-                                        <input type="number" step="0.01" min="0" x-model.number="item.selling_price" @change="item.priceOverridden = true"
+                                        <input type="number" step="0.01" min="0" x-model.number="item.selling_price"
+                                            @change="item.priceOverridden = true"
                                             class="w-14 px-1 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
                                     </div>
                                     <div class="flex items-center gap-0.5">
                                         <span class="text-[10px] text-amber-500 font-medium">Disc:₹</span>
-                                        <input type="number" step="0.01" min="0" x-model.number="item.discount" placeholder="0" title="Item Discount (₹)" class="w-12 px-1 py-0.5 border border-amber-200 dark:border-amber-800/60 rounded text-center text-xs text-amber-600 dark:text-amber-400 dark:bg-gray-700">
+                                        <input type="number" step="0.01" min="0" x-model.number="item.discount"
+                                            placeholder="0" title="Item Discount (₹)"
+                                            class="w-12 px-1 py-0.5 border border-amber-200 dark:border-amber-800/60 rounded text-center text-xs text-amber-600 dark:text-amber-400 dark:bg-gray-700">
                                     </div>
-                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">₹<span x-text="Math.max(0, (item.selling_price * item.quantity) - (item.discount || 0)).toFixed(2)"></span></span>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">₹<span
+                                            x-text="Math.max(0, (item.selling_price * item.quantity) - (item.discount || 0)).toFixed(2)"></span></span>
                                 </div>
                             </div>
                         </template>
                         <template x-if="pos.items.length === 0">
-                            <div class="text-center py-10 text-slate-400 text-sm" x-text="t('cart_empty')">Cart is empty. Click products or scan barcodes to begin.</div>
+                            <div class="text-center py-10 text-slate-400 text-sm" x-text="t('cart_empty')">Cart is
+                                empty. Click products or scan barcodes to begin.</div>
                         </template>
                     </div>
 
@@ -1105,38 +1389,55 @@
                         </div>
                         <div class="flex justify-between items-center text-xs text-slate-600 dark:text-slate-400">
                             <span>Discount (₹)</span>
-                            <input type="number" x-model.number="pos.discount" class="w-20 px-2 py-1 border border-slate-300 dark:border-gray-600 rounded-lg text-right text-xs dark:bg-gray-700 dark:text-white">
+                            <input type="number" x-model.number="pos.discount"
+                                class="w-20 px-2 py-1 border border-slate-300 dark:border-gray-600 rounded-lg text-right text-xs dark:bg-gray-700 dark:text-white">
                         </div>
-                        <div class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                        <div
+                            class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
                             <span>Grand Total</span>
                             <span class="text-primary">₹<span x-text="calculateGrandTotal().toFixed(2)"></span></span>
                         </div>
 
                         <div class="pt-2">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Type</label>
+                            <label
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment
+                                Type</label>
                             <div class="grid grid-cols-4 gap-1.5">
-                                <button @click="setPosPaymentType('Cash')" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
-                                <button @click="setPosPaymentType('UPI')"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
-                                <button @click="setPosPaymentType('Bank')" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
-                                <button @click="setPosPaymentType('Credit')" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                                <button @click="setPosPaymentType('Cash')"
+                                    :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
+                                <button @click="setPosPaymentType('UPI')"
+                                    :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
+                                <button @click="setPosPaymentType('Bank')"
+                                    :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
+                                <button @click="setPosPaymentType('Credit')"
+                                    :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
                             </div>
                         </div>
 
                         {{-- Paid Amount Input for Partial Sale --}}
                         <div class="pt-1">
                             <div class="flex justify-between items-center mb-1">
-                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Paid Amount (ચૂકવેલ રકમ):</label>
-                                <span class="text-[10px] text-slate-400 font-mono">Max: ₹<span x-text="calculateGrandTotal().toFixed(2)"></span></span>
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Paid Amount
+                                    (ચૂકવેલ રકમ):</label>
+                                <span class="text-[10px] text-slate-400 font-mono">Max: ₹<span
+                                        x-text="calculateGrandTotal().toFixed(2)"></span></span>
                             </div>
                             <div class="relative">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₹</span>
+                                <span
+                                    class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₹</span>
                                 <input type="number" step="0.01" x-model.number="pos.paid_amount" placeholder="0.00"
                                     class="block w-full pl-7 pr-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-semibold dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
                             </div>
                             <div class="flex justify-between items-center text-xs mt-1.5 px-1 font-semibold"
                                 x-show="getPosDueAmount() > 0">
-                                <span class="text-emerald-600">Paid: ₹<span x-text="getPosPaidAmount().toFixed(2)"></span></span>
-                                <span class="text-rose-600">Receivable Due: ₹<span x-text="getPosDueAmount().toFixed(2)"></span></span>
+                                <span class="text-emerald-600">Paid: ₹<span
+                                        x-text="getPosPaidAmount().toFixed(2)"></span></span>
+                                <span class="text-rose-600">Receivable Due: ₹<span
+                                        x-text="getPosDueAmount().toFixed(2)"></span></span>
                             </div>
                         </div>
 
@@ -1155,11 +1456,15 @@
 {{-- 13. EDIT PURCHASE ITEMS MODAL --}}
 <div x-show="showEditPurchaseItemsModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900 shrink-0">
-            <h3 class="font-bold text-slate-800 dark:text-white" x-text="'Edit Purchase #' + (editingPurchaseId ? (selectedPurchase && selectedPurchase.id === editingPurchaseId ? selectedPurchase.purchase_number : '') : '')"></h3>
-            <button @click="showEditPurchaseItemsModal = false" class="text-slate-400 hover:text-slate-600"><svg class="w-6 h-6"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900 shrink-0">
+            <h3 class="font-bold text-slate-800 dark:text-white"
+                x-text="'Edit Purchase #' + (editingPurchaseId ? (selectedPurchase && selectedPurchase.id === editingPurchaseId ? selectedPurchase.purchase_number : '') : '')">
+            </h3>
+            <button @click="showEditPurchaseItemsModal = false" class="text-slate-400 hover:text-slate-600"><svg
+                    class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                     </path>
                 </svg></button>
@@ -1167,14 +1472,18 @@
         <div class="flex-1 overflow-y-auto p-4">
             <div class="flex flex-col lg:flex-row gap-4">
                 {{-- Product Selection Side --}}
-                <div class="flex-1 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden min-h-[400px]">
+                <div
+                    class="flex-1 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden min-h-[400px]">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                         <div class="relative">
                             <input type="text" placeholder="Search product name..." x-model="pos.searchQuery"
                                 @input.debounce.300ms="loadProducts(pos.searchQuery)"
                                 class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
                             </span>
                         </div>
                         <div class="relative">
@@ -1182,34 +1491,45 @@
                                 @keydown.enter.prevent="handlePurchaseBarcodeScan()"
                                 class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-4V8m0 8l-4-4m4 4l4-4"></path></svg>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-4V8m0 8l-4-4m4 4l4-4"></path>
+                                </svg>
                             </span>
                         </div>
                     </div>
 
-                    <div class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
+                    <div
+                        class="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 gap-3 pr-1 max-h-[420px] content-start">
                         <template x-for="prod in filteredPurchaseProducts()" :key="prod.id">
                             <div @click="addPurchaseItemById(prod.id)"
                                 class="p-3 border border-slate-200 dark:border-gray-700 rounded-xl transition-all flex flex-col justify-between bg-white dark:bg-gray-700/50 hover:bg-primary/5 cursor-pointer hover:border-primary">
                                 <div>
                                     <div class="flex items-start justify-between gap-1.5">
-                                        <p class="font-bold text-sm text-slate-800 dark:text-white truncate" :title="prod.name" x-text="prod.name"></p>
+                                        <p class="font-bold text-sm text-slate-800 dark:text-white truncate"
+                                            :title="prod.name" x-text="prod.name"></p>
                                         <template x-if="hasPurchaseSupplierCustomPrice(prod)">
-                                            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">Supp</span>
+                                            <span
+                                                class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">Supp</span>
                                         </template>
                                     </div>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">Barcode: <span x-text="prod.barcode"></span></p>
+                                    <p class="text-[10px] text-slate-400 mt-0.5">Barcode: <span
+                                            x-text="prod.barcode"></span></p>
                                 </div>
-                                <div class="flex justify-between items-end mt-3 pt-2 border-t border-slate-100 dark:border-gray-700/60">
+                                <div
+                                    class="flex justify-between items-end mt-3 pt-2 border-t border-slate-100 dark:border-gray-700/60">
                                     <div class="flex flex-col">
                                         <template x-if="hasPurchaseSupplierCustomPrice(prod)">
-                                            <span class="line-through text-[10px] text-slate-400 font-medium">₹<span x-text="parseFloat(prod.purchase_price).toFixed(2)"></span></span>
+                                            <span class="line-through text-[10px] text-slate-400 font-medium">₹<span
+                                                    x-text="parseFloat(prod.purchase_price).toFixed(2)"></span></span>
                                         </template>
-                                        <span class="text-sm font-extrabold" :class="hasPurchaseSupplierCustomPrice(prod) ? 'text-indigo-600 dark:text-indigo-400' : 'text-primary'">
+                                        <span class="text-sm font-extrabold"
+                                            :class="hasPurchaseSupplierCustomPrice(prod) ? 'text-indigo-600 dark:text-indigo-400' : 'text-primary'">
                                             ₹<span x-text="parseFloat(getPurchaseProductPrice(prod)).toFixed(2)"></span>
                                         </span>
                                     </div>
-                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 bg-slate-200 text-slate-700"
+                                    <span
+                                        class="text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 bg-slate-200 text-slate-700"
                                         x-text="'Stock: ' + prod.stock"></span>
                                 </div>
                             </div>
@@ -1218,20 +1538,27 @@
                 </div>
 
                 {{-- Purchase Billing Side --}}
-                <div class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
-                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
+                <div
+                    class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
+                    <h3
+                        class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
                         Purchase Cart
-                        <button @click="newPurchase.items = []" class="text-xs text-rose-500 hover:underline">Clear All</button>
+                        <button @click="newPurchase.items = []" class="text-xs text-rose-500 hover:underline">Clear
+                            All</button>
                     </h3>
 
                     {{-- Supplier Selector --}}
-                    <div class="flex items-center gap-2 mb-4 relative" x-data="{ open: false }" @click.away="open = false">
+                    <div class="flex items-center gap-2 mb-4 relative" x-data="{ open: false }"
+                        @click.away="open = false">
                         <div class="flex-1 relative">
                             <button type="button" @click="open = !open"
                                 class="w-full flex items-center justify-between px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white bg-white text-left focus:outline-none">
                                 <span class="truncate pr-2" x-text="getSelectedPurchaseSupplierName()"></span>
-                                <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <svg class="w-4 h-4 text-slate-400 transition-transform shrink-0"
+                                    :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
                                 </svg>
                             </button>
 
@@ -1239,8 +1566,7 @@
                                 class="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto p-2 space-y-2">
                                 <input type="text" placeholder="Search supplier..."
                                     x-model="purchaseSupplierSearchQuery"
-                                    @input.debounce.300ms="searchPurchaseSuppliers()"
-                                    @click.stop
+                                    @input.debounce.300ms="searchPurchaseSuppliers()" @click.stop
                                     class="block w-full px-3 py-1.5 border border-slate-200 dark:border-gray-700 rounded-lg text-xs dark:bg-gray-900 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
 
                                 <div class="space-y-1">
@@ -1254,64 +1580,96 @@
                                         <button type="button" @click="selectPurchaseSupplier(sup); open = false;"
                                             class="w-full text-left px-3 py-2 rounded-lg text-xs hover:bg-primary/10 dark:hover:bg-primary/20 hover:text-primary transition-all font-medium text-slate-700 dark:text-slate-300 flex justify-between items-center">
                                             <span x-text="sup.name"></span>
-                                            <span class="text-[10px] text-slate-400 font-mono" x-text="sup.mobile || 'No Mobile'"></span>
+                                            <span class="text-[10px] text-slate-400 font-mono"
+                                                x-text="sup.mobile || 'No Mobile'"></span>
                                         </button>
                                     </template>
 
                                     <template x-if="purchaseFilteredSuppliers.length === 0">
-                                        <div class="text-center py-4 text-xs text-slate-400" x-text="t('no_suppliers_found')">No suppliers found.</div>
+                                        <div class="text-center py-4 text-xs text-slate-400"
+                                            x-text="t('no_suppliers_found')">No suppliers found.</div>
                                     </template>
                                 </div>
                             </div>
                         </div>
-                        <button @click="showSupplierModal = true" class="p-2 border border-slate-300 dark:border-gray-600 hover:border-primary rounded-xl text-slate-500 hover:text-primary transition-all shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <button @click="showSupplierModal = true"
+                            class="p-2 border border-slate-300 dark:border-gray-600 hover:border-primary rounded-xl text-slate-500 hover:text-primary transition-all shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
                         </button>
                     </div>
 
                     {{-- Cart Items (delete button top-right on each card) --}}
                     <div class="flex-1 overflow-y-auto space-y-2 pr-1 mb-4 max-h-[280px]">
                         <template x-for="(item, idx) in newPurchase.items" :key="idx">
-                            <div class="p-2 bg-white dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
+                            <div
+                                class="p-2 bg-white dark:bg-gray-700/50 rounded-xl border border-slate-100 dark:border-gray-700 flex flex-col gap-1.5">
                                 <div class="flex justify-between items-start">
-                                    <span class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[180px]" x-text="item.name"></span>
-                                    <button @click="newPurchase.items.splice(idx, 1)" title="Remove item" class="text-slate-400 hover:text-rose-500">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <span
+                                        class="text-xs font-bold text-slate-800 dark:text-white truncate max-w-[180px]"
+                                        x-text="item.name"></span>
+                                    <button @click="newPurchase.items.splice(idx, 1)" title="Remove item"
+                                        class="text-slate-400 hover:text-rose-500">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
                                     </button>
                                 </div>
                                 <div class="flex justify-between items-center gap-2">
-                                    <div class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                                        <button @click="if (item.quantity > 1) item.quantity--" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
+                                    <div
+                                        class="flex items-center border border-slate-200 dark:border-gray-600 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                                        <button @click="if (item.quantity > 1) item.quantity--"
+                                            class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">-</button>
                                         <span class="px-2.5 text-xs font-bold" x-text="item.quantity"></span>
-                                        <button @click="item.quantity++" class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
+                                        <button @click="item.quantity++"
+                                            class="px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300">+</button>
                                     </div>
                                     <div class="flex items-center gap-1">
                                         <span class="text-xs text-slate-400">₹</span>
-                                        <input type="number" step="0.01" x-model.number="item.purchase_price" class="w-16 px-1.5 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
+                                        <input type="number" step="0.01" x-model.number="item.purchase_price"
+                                            class="w-16 px-1.5 py-0.5 border border-slate-200 dark:border-gray-600 rounded text-center text-xs dark:bg-gray-700 dark:text-white">
                                     </div>
-                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">₹<span x-text="(item.purchase_price * item.quantity).toFixed(2)"></span></span>
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300">₹<span
+                                            x-text="(item.purchase_price * item.quantity).toFixed(2)"></span></span>
                                 </div>
                             </div>
                         </template>
                         <template x-if="newPurchase.items.length === 0">
-                            <div class="text-center py-10 text-slate-400 text-sm">Cart is empty. Click products above to add.</div>
+                            <div class="text-center py-10 text-slate-400 text-sm">Cart is empty. Click products above to
+                                add.</div>
                         </template>
                     </div>
 
                     {{-- Totals & Payment --}}
                     <div class="border-t border-slate-200 dark:border-gray-700 pt-3 space-y-2">
-                        <div class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
+                        <div
+                            class="flex justify-between text-sm font-bold border-t border-dashed border-slate-200 dark:border-gray-700 pt-2">
                             <span>Grand Total</span>
-                            <span class="text-primary">₹<span x-text="calculatePurchaseTotal().toFixed(2)"></span></span>
+                            <span class="text-primary">₹<span
+                                    x-text="calculatePurchaseTotal().toFixed(2)"></span></span>
                         </div>
 
                         <div class="pt-2">
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Type</label>
+                            <label
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment
+                                Type</label>
                             <div class="grid grid-cols-4 gap-1.5">
-                                <button @click="newPurchase.payment_type = 'Cash'" :class="newPurchase.payment_type === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
-                                <button @click="newPurchase.payment_type = 'UPI'"  :class="newPurchase.payment_type === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
-                                <button @click="newPurchase.payment_type = 'Bank'" :class="newPurchase.payment_type === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
-                                <button @click="newPurchase.payment_type = 'Credit'" :class="newPurchase.payment_type === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                                <button @click="newPurchase.payment_type = 'Cash'"
+                                    :class="newPurchase.payment_type === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
+                                <button @click="newPurchase.payment_type = 'UPI'"
+                                    :class="newPurchase.payment_type === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
+                                <button @click="newPurchase.payment_type = 'Bank'"
+                                    :class="newPurchase.payment_type === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
+                                <button @click="newPurchase.payment_type = 'Credit'"
+                                    :class="newPurchase.payment_type === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
                             </div>
                         </div>
 
@@ -1329,11 +1687,15 @@
 {{-- 13. PURCHASE RETURN ITEMS MODAL --}}
 <div x-show="showPurchaseReturnModal" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden" @click.outside="if (!confirmModal.show) showPurchaseReturnModal = false">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden"
+        @click.outside="if (!confirmModal.show) showPurchaseReturnModal = false">
+        <div
+            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_purchase_items')">Return Purchase Items</h3>
-                <p class="text-xs text-slate-400 mt-0.5" x-text="t('purchase_number') + ': ' + purchaseReturnForm.purchase_number"></p>
+                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('return_purchase_items')">Return Purchase
+                    Items</h3>
+                <p class="text-xs text-slate-400 mt-0.5"
+                    x-text="t('purchase_number') + ': ' + purchaseReturnForm.purchase_number"></p>
             </div>
             <button @click="showPurchaseReturnModal = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1349,7 +1711,8 @@
                         <th class="py-2 font-semibold text-slate-400" x-text="t('product')">Product</th>
                         <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('price')">Price</th>
                         <th class="py-2 font-semibold text-slate-400 text-center" x-text="t('purchased')">Purchased</th>
-                        <th class="py-2 font-semibold text-slate-400 text-right w-24" x-text="t('return_qty')">Return Qty</th>
+                        <th class="py-2 font-semibold text-slate-400 text-right w-24" x-text="t('return_qty')">Return
+                            Qty</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1360,15 +1723,20 @@
                             <td class="py-3 text-center">
                                 <template x-if="item.unit_discount && item.unit_discount > 0">
                                     <div class="flex flex-col items-center">
-                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">₹<span x-text="item.effective_price.toFixed(2)"></span></span>
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono">₹<span
+                                                x-text="item.effective_price.toFixed(2)"></span></span>
                                         <div class="flex items-center gap-1 text-[10px]">
-                                            <span class="line-through text-slate-400 font-mono">₹<span x-text="item.purchase_price.toFixed(2)"></span></span>
-                                            <span class="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-950/60 px-1 rounded text-[9px]">-₹<span x-text="item.unit_discount.toFixed(2)"></span></span>
+                                            <span class="line-through text-slate-400 font-mono">₹<span
+                                                    x-text="item.purchase_price.toFixed(2)"></span></span>
+                                            <span
+                                                class="text-emerald-700 dark:text-emerald-300 font-semibold bg-emerald-100 dark:bg-emerald-950/60 px-1 rounded text-[9px]">-₹<span
+                                                    x-text="item.unit_discount.toFixed(2)"></span></span>
                                         </div>
                                     </div>
                                 </template>
                                 <template x-if="!item.unit_discount || item.unit_discount <= 0">
-                                    <span class="text-slate-600 dark:text-slate-300 font-semibold font-mono">₹<span x-text="parseFloat(item.purchase_price).toFixed(2)"></span></span>
+                                    <span class="text-slate-600 dark:text-slate-300 font-semibold font-mono">₹<span
+                                            x-text="parseFloat(item.purchase_price).toFixed(2)"></span></span>
                                 </template>
                             </td>
                             <td class="py-3 text-slate-500 text-center font-mono" x-text="item.purchasedQty"></td>
@@ -1388,7 +1756,8 @@
                         x-text="purchaseReturnForm.payment_type === 'Credit' ? t('reduce_supplier_due') : (t('refund') + ' (' + (t(purchaseReturnForm.payment_type ? purchaseReturnForm.payment_type.toLowerCase() : '') || purchaseReturnForm.payment_type) + ')')"></span>
                 </div>
                 <div class="flex justify-between text-sm border-t border-slate-200/50 dark:border-gray-700/50 pt-2">
-                    <span class="font-bold text-slate-700 dark:text-white" x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
+                    <span class="font-bold text-slate-700 dark:text-white"
+                        x-text="t('estimated_refund') + ':'">Estimated Refund:</span>
                     <span class="font-bold text-primary font-mono">₹<span x-text="
                         (() => {
                             const newSubtotal = purchaseReturnForm.items.reduce((sum, item) => {
@@ -1409,9 +1778,11 @@
         <div
             class="px-6 py-4 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex justify-end gap-3">
             <button @click="showPurchaseReturnModal = false"
-                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
+                class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all"
+                x-text="t('cancel')">Cancel</button>
             <button @click="submitPurchasePartialReturn()"
-                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md" x-text="t('process_return')">Process
+                class="px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-md"
+                x-text="t('process_return')">Process
                 Return</button>
         </div>
     </div>
@@ -1420,10 +1791,13 @@
 {{-- 14. COLLECT CUSTOMER PAYMENT MODAL --}}
 <div x-show="collectCustomerModalOpen" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) collectCustomerModalOpen = false">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+        @click.outside="if (!confirmModal.show) collectCustomerModalOpen = false">
+        <div
+            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
-                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('collect_payment')">Collect Customer Payment</h3>
+                <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('collect_payment')">Collect Customer
+                    Payment</h3>
             </div>
             <button @click="collectCustomerModalOpen = false" class="text-slate-400 hover:text-slate-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1433,25 +1807,33 @@
             </button>
         </div>
         <form @submit.prevent="submitCollectCustomerPayment()" class="p-6 space-y-4">
-            <div class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-3.5 flex justify-between items-center">
+            <div
+                class="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40 rounded-xl p-3.5 flex justify-between items-center">
                 <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('customer_name')">Customer Name</span>
-                    <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="collectCustomerForm.customer_name"></h4>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('customer_name')">Customer
+                        Name</span>
+                    <h4 class="font-bold text-slate-800 dark:text-white text-sm"
+                        x-text="collectCustomerForm.customer_name"></h4>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('due_balance')">Outstanding Due</span>
-                    <p class="font-black text-rose-600 text-base">₹<span x-text="collectCustomerForm.current_due.toFixed(2)"></span></p>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('due_balance')">Outstanding
+                        Due</span>
+                    <p class="font-black text-rose-600 text-base">₹<span
+                            x-text="collectCustomerForm.current_due.toFixed(2)"></span></p>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('amount')">Amount Received (₹)</label>
-                <input type="number" step="0.01" min="0.01" :max="collectCustomerForm.current_due" x-model.number="collectCustomerForm.amount" required
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('amount')">Amount
+                    Received (₹)</label>
+                <input type="number" step="0.01" min="0.01" :max="collectCustomerForm.current_due"
+                    x-model.number="collectCustomerForm.amount" required
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white font-bold text-lg focus:outline-none focus:border-emerald-500">
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('payment_type')">Payment Method</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('payment_type')">Payment
+                    Method</label>
                 <select x-model="collectCustomerForm.payment_method" required
                     class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500">
                     <option value="Cash" x-text="t('cash')">Cash</option>
@@ -1461,16 +1843,20 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('notes')">Remarks / Note</label>
-                <input type="text" x-model="collectCustomerForm.note" :placeholder="t('notes') || 'e.g. Received partial payment via Google Pay'"
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('notes')">Remarks /
+                    Note</label>
+                <input type="text" x-model="collectCustomerForm.note"
+                    :placeholder="t('notes') || 'e.g. Received partial payment via Google Pay'"
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-emerald-500">
             </div>
 
             <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
                 <button type="button" @click="collectCustomerModalOpen = false"
-                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all"
+                    x-text="t('cancel')">Cancel</button>
                 <button type="submit"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md" x-text="t('collect_payment')">
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md"
+                    x-text="t('collect_payment')">
                     Collect Payment
                 </button>
             </div>
@@ -1481,8 +1867,10 @@
 {{-- 15. PAY SUPPLIER DUE MODAL --}}
 <div x-show="paySupplierModalOpen" x-cloak
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden" @click.outside="if (!confirmModal.show) paySupplierModalOpen = false">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+        @click.outside="if (!confirmModal.show) paySupplierModalOpen = false">
+        <div
+            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900">
             <div>
                 <h3 class="font-bold text-slate-800 dark:text-white" x-text="t('pay_supplier')">Pay Supplier Due</h3>
             </div>
@@ -1494,25 +1882,33 @@
             </button>
         </div>
         <form @submit.prevent="submitPaySupplierDue()" class="p-6 space-y-4">
-            <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3.5 flex justify-between items-center">
+            <div
+                class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3.5 flex justify-between items-center">
                 <div>
-                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('supplier_name')">Supplier Name</span>
-                    <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="paySupplierForm.supplier_name"></h4>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('supplier_name')">Supplier
+                        Name</span>
+                    <h4 class="font-bold text-slate-800 dark:text-white text-sm" x-text="paySupplierForm.supplier_name">
+                    </h4>
                 </div>
                 <div class="text-right">
-                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('due_balance')">Total Owed</span>
-                    <p class="font-black text-rose-600 text-base">₹<span x-text="paySupplierForm.current_due.toFixed(2)"></span></p>
+                    <span class="text-[10px] uppercase font-bold text-slate-400" x-text="t('due_balance')">Total
+                        Owed</span>
+                    <p class="font-black text-rose-600 text-base">₹<span
+                            x-text="paySupplierForm.current_due.toFixed(2)"></span></p>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('amount')">Amount Paid (₹)</label>
-                <input type="number" step="0.01" min="0.01" :max="paySupplierForm.current_due" x-model.number="paySupplierForm.amount" required
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('amount')">Amount Paid
+                    (₹)</label>
+                <input type="number" step="0.01" min="0.01" :max="paySupplierForm.current_due"
+                    x-model.number="paySupplierForm.amount" required
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white font-bold text-lg focus:outline-none focus:border-amber-500">
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('payment_type')">Payment Method</label>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('payment_type')">Payment
+                    Method</label>
                 <select x-model="paySupplierForm.payment_method" required
                     class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-500">
                     <option value="Cash" x-text="t('cash')">Cash</option>
@@ -1522,16 +1918,20 @@
             </div>
 
             <div>
-                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('notes')">Remarks / Note</label>
-                <input type="text" x-model="paySupplierForm.note" :placeholder="t('notes') || 'e.g. Paid balance via Net Banking'"
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1" x-text="t('notes')">Remarks /
+                    Note</label>
+                <input type="text" x-model="paySupplierForm.note"
+                    :placeholder="t('notes') || 'e.g. Paid balance via Net Banking'"
                     class="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-amber-500">
             </div>
 
             <div class="pt-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-3">
                 <button type="button" @click="paySupplierModalOpen = false"
-                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all" x-text="t('cancel')">Cancel</button>
+                    class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 transition-all"
+                    x-text="t('cancel')">Cancel</button>
                 <button type="submit"
-                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md" x-text="t('pay_supplier')">
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-md"
+                    x-text="t('pay_supplier')">
                     Pay Supplier
                 </button>
             </div>
@@ -1542,26 +1942,38 @@
 {{-- ADD NEW SHOP MODAL --}}
 <div x-show="addShopModal.show" x-cloak
     class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
-        <div class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900/40">
+    <div
+        class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+        <div
+            class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900/40">
             <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Add New Shop</h3>
-            <button @click="addShopModal.show = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button @click="addShopModal.show = false"
+                class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
-        
+
         <form @submit.prevent="handleAddShopSubmit()" class="p-6 space-y-4 overflow-y-auto">
             {{-- Logo Upload --}}
             <div class="flex flex-col items-center gap-3">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500">Shop Logo</label>
-                <div class="relative w-24 h-24 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-gray-700">
+                <div
+                    class="relative w-24 h-24 rounded-full border-2 border-dashed border-slate-300 dark:border-gray-600 flex items-center justify-center overflow-hidden bg-slate-50 dark:bg-gray-700">
                     <template x-if="addShopModal.logoPreview">
                         <img :src="addShopModal.logoPreview" class="w-full h-full object-cover">
                     </template>
                     <template x-if="!addShopModal.logoPreview">
-                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                            </path>
+                        </svg>
                     </template>
-                    <input type="file" accept="image/*" @change="onAddShopLogoChange($event)" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <input type="file" accept="image/*" @change="onAddShopLogoChange($event)"
+                        class="absolute inset-0 opacity-0 cursor-pointer">
                 </div>
             </div>
 
@@ -1579,7 +1991,7 @@
 
             <div>
                 <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Mobile Number (Optional)</label>
-                <input type="text" placeholder="Mobile" x-model="addShopModal.mobile" maxlength="10" 
+                <input type="text" placeholder="Mobile" x-model="addShopModal.mobile" maxlength="10"
                     x-on:input="addShopModal.mobile = addShopModal.mobile.replace(/\D/g, '').slice(0, 10)"
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-slate-800 dark:text-white text-sm focus:outline-none focus:border-primary">
             </div>
@@ -1609,28 +2021,35 @@
     class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div @click.away="showCustomerPricingModal = false"
         class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-slate-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
-        
+
         {{-- Header --}}
         <div class="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-gray-700 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <span>Customer Product Pricing</span>
-                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold"
+                        <span
+                            class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold"
                             x-text="customerPricingTarget ? customerPricingTarget.name : ''"></span>
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        Set custom selling prices for this customer. When billing in POS, these prices will automatically apply.
+                        Set custom selling prices for this customer. When billing in POS, these prices will
+                        automatically apply.
                     </p>
                 </div>
             </div>
-            <button @click="showCustomerPricingModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button @click="showCustomerPricingModal = false"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
@@ -1640,16 +2059,22 @@
                 <input type="text" placeholder="Search product name or barcode..." x-model="customerPricingSearch"
                     class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </span>
             </div>
         </div>
 
         {{-- Products List Table --}}
-        <div class="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] border border-slate-200 dark:border-gray-700 rounded-xl">
+        <div
+            class="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] border border-slate-200 dark:border-gray-700 rounded-xl">
             <template x-if="customerPricingLoading">
                 <div class="text-center py-12">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <div
+                        class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent">
+                    </div>
                     <p class="text-xs text-slate-400 mt-2 font-medium">Loading products...</p>
                 </div>
             </template>
@@ -1660,7 +2085,8 @@
                             <th class="px-4 py-2.5 font-bold text-slate-400 uppercase">Product Name</th>
                             <th class="px-3 py-2.5 font-bold text-slate-400 uppercase">Barcode</th>
                             <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Price</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Customer Price (₹)</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Customer Price
+                                (₹)</th>
                             <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20">Reset</th>
                         </tr>
                     </thead>
@@ -1671,7 +2097,8 @@
                                 <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">
                                     <span x-text="item.name"></span>
                                     <template x-if="item.custom_price && parseFloat(item.custom_price) > 0">
-                                        <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">Custom</span>
+                                        <span
+                                            class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">Custom</span>
                                     </template>
                                 </td>
                                 <td class="px-3 py-3 text-slate-400 font-mono" x-text="item.barcode || '-'"></td>
@@ -1691,7 +2118,8 @@
                                     <button type="button" @click="item.custom_price = null"
                                         :disabled="!item.custom_price"
                                         :class="item.custom_price ? 'text-rose-500 hover:text-rose-700' : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'"
-                                        class="p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-700 text-xs font-medium" title="Revert to default price">
+                                        class="p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-700 text-xs font-medium"
+                                        title="Revert to default price">
                                         Clear
                                     </button>
                                 </td>
@@ -1710,19 +2138,22 @@
         </div>
 
         {{-- Footer --}}
-        <div class="pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-between items-center mt-3 shrink-0">
+        <div
+            class="pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-between items-center mt-3 shrink-0">
             <div class="text-[11px] text-slate-400">
-                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="customerPricingList.filter(p => p.custom_price && parseFloat(p.custom_price) > 0).length"></span> product(s) with custom pricing
+                <span class="font-bold text-slate-600 dark:text-slate-300"
+                    x-text="customerPricingList.filter(p => p.custom_price && parseFloat(p.custom_price) > 0).length"></span>
+                product(s) with custom pricing
             </div>
             <div class="flex gap-2">
                 <button type="button" @click="showCustomerPricingModal = false"
                     class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 transition-all">
                     Cancel
                 </button>
-                <button type="button" @click="saveCustomerPricing()"
-                    :disabled="customerPricingSaving"
+                <button type="button" @click="saveCustomerPricing()" :disabled="customerPricingSaving"
                     class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50">
-                    <span x-show="customerPricingSaving" class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
+                    <span x-show="customerPricingSaving"
+                        class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
                     <span x-text="customerPricingSaving ? 'Saving...' : 'Save Prices'">Save Prices</span>
                 </button>
             </div>
@@ -1735,28 +2166,35 @@
     class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
     <div @click.away="showSupplierPricingModal = false"
         class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-slate-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
-        
+
         {{-- Header --}}
         <div class="flex justify-between items-start pb-4 border-b border-slate-100 dark:border-gray-700 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="p-2.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                 </div>
                 <div>
                     <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <span>Supplier Product Pricing</span>
-                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold"
+                        <span
+                            class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold"
                             x-text="supplierPricingTarget ? supplierPricingTarget.name : ''"></span>
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">
-                        Set custom purchase prices for this supplier. When creating purchases, these prices will automatically apply.
+                        Set custom purchase prices for this supplier. When creating purchases, these prices will
+                        automatically apply.
                     </p>
                 </div>
             </div>
-            <button @click="showSupplierPricingModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button @click="showSupplierPricingModal = false"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
@@ -1766,16 +2204,22 @@
                 <input type="text" placeholder="Search product name or barcode..." x-model="supplierPricingSearch"
                     class="w-full pl-9 pr-4 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white bg-slate-50 focus:outline-none focus:border-primary">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
                 </span>
             </div>
         </div>
 
         {{-- Products List Table --}}
-        <div class="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] border border-slate-200 dark:border-gray-700 rounded-xl">
+        <div
+            class="flex-1 overflow-y-auto min-h-[250px] max-h-[420px] border border-slate-200 dark:border-gray-700 rounded-xl">
             <template x-if="supplierPricingLoading">
                 <div class="text-center py-12">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                    <div
+                        class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent">
+                    </div>
                     <p class="text-xs text-slate-400 mt-2 font-medium">Loading products...</p>
                 </div>
             </template>
@@ -1785,8 +2229,10 @@
                         <tr>
                             <th class="px-4 py-2.5 font-bold text-slate-400 uppercase">Product Name</th>
                             <th class="px-3 py-2.5 font-bold text-slate-400 uppercase">Barcode</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Purchase Price</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Supplier Price (₹)</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Purchase Price
+                            </th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Supplier Price
+                                (₹)</th>
                             <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20">Reset</th>
                         </tr>
                     </thead>
@@ -1797,7 +2243,8 @@
                                 <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">
                                     <span x-text="item.name"></span>
                                     <template x-if="item.custom_price && parseFloat(item.custom_price) > 0">
-                                        <span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">Custom</span>
+                                        <span
+                                            class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold">Custom</span>
                                     </template>
                                 </td>
                                 <td class="px-3 py-3 text-slate-400 font-mono" x-text="item.barcode || '-'"></td>
@@ -1817,7 +2264,8 @@
                                     <button type="button" @click="item.custom_price = null"
                                         :disabled="!item.custom_price"
                                         :class="item.custom_price ? 'text-rose-500 hover:text-rose-700' : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'"
-                                        class="p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-700 text-xs font-medium" title="Revert to default purchase price">
+                                        class="p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-700 text-xs font-medium"
+                                        title="Revert to default purchase price">
                                         Clear
                                     </button>
                                 </td>
@@ -1836,19 +2284,22 @@
         </div>
 
         {{-- Footer --}}
-        <div class="pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-between items-center mt-3 shrink-0">
+        <div
+            class="pt-4 border-t border-slate-200 dark:border-gray-700 flex justify-between items-center mt-3 shrink-0">
             <div class="text-[11px] text-slate-400">
-                <span class="font-bold text-slate-600 dark:text-slate-300" x-text="supplierPricingList.filter(p => p.custom_price && parseFloat(p.custom_price) > 0).length"></span> product(s) with custom pricing
+                <span class="font-bold text-slate-600 dark:text-slate-300"
+                    x-text="supplierPricingList.filter(p => p.custom_price && parseFloat(p.custom_price) > 0).length"></span>
+                product(s) with custom pricing
             </div>
             <div class="flex gap-2">
                 <button type="button" @click="showSupplierPricingModal = false"
                     class="px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl hover:bg-slate-100 dark:hover:bg-gray-700 transition-all">
                     Cancel
                 </button>
-                <button type="button" @click="saveSupplierPricing()"
-                    :disabled="supplierPricingSaving"
+                <button type="button" @click="saveSupplierPricing()" :disabled="supplierPricingSaving"
                     class="px-5 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 disabled:opacity-50">
-                    <span x-show="supplierPricingSaving" class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
+                    <span x-show="supplierPricingSaving"
+                        class="inline-block animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></span>
                     <span x-text="supplierPricingSaving ? 'Saving...' : 'Save Prices'">Save Prices</span>
                 </button>
             </div>
@@ -1859,33 +2310,44 @@
 {{-- 17. LIFETIME OFFER POPUP MODAL --}}
 <div x-show="showLifetimeOfferPopup" x-cloak
     class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-    <div class="bg-white dark:bg-gray-800 text-slate-800 dark:text-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-slate-200 dark:border-gray-700" @click.outside="closeLifetimeOfferPopup()">
+    <div class="bg-white dark:bg-gray-800 text-slate-800 dark:text-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative border border-slate-200 dark:border-gray-700"
+        @click.outside="closeLifetimeOfferPopup()">
         <!-- Decorative Glow -->
-        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl pointer-events-none"></div>
-        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-teal-500/10 rounded-full blur-xl pointer-events-none"></div>
+        <div class="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-xl pointer-events-none">
+        </div>
+        <div class="absolute -bottom-12 -left-12 w-32 h-32 bg-teal-500/10 rounded-full blur-xl pointer-events-none">
+        </div>
 
         <div class="p-6 text-center space-y-6">
             <!-- Icon -->
             <div class="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto shadow-lg rotate-3 hover:rotate-6 transition-all duration-300"
                 style="background: linear-gradient(135deg, #f59e0b, #fbbf24); box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);">
                 <svg class="w-9 h-9" style="color: #0f172a;" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                    <path
+                        d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                    </path>
                 </svg>
             </div>
 
             <!-- Content -->
             <div class="space-y-2">
-                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase">Limited Time Offer</h3>
+                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase">Limited
+                    Time Offer</h3>
                 <h4 class="text-base font-bold text-slate-800 dark:text-white">Business (Lifetime) Plan</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-xs mx-auto">
-                    Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup & restore. No monthly or yearly charges, ever!
+                    Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup &
+                    restore. No monthly or yearly charges, ever!
                 </p>
             </div>
 
             <!-- Days Remaining Badge -->
-            <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl py-3 px-6 inline-block">
-                <span class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5">Time Remaining</span>
-                <span class="text-lg font-black text-amber-600 dark:text-amber-500" x-text="Math.ceil(lifetimeOfferDaysLeft) + ' Days Left'"></span>
+            <div
+                class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl py-3 px-6 inline-block">
+                <span
+                    class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5">Time
+                    Remaining</span>
+                <span class="text-lg font-black text-amber-600 dark:text-amber-500"
+                    x-text="Math.ceil(lifetimeOfferDaysLeft) + ' Days Left'"></span>
             </div>
 
             <!-- Action Button -->
@@ -1893,18 +2355,20 @@
                 <button type="button" @click="navigateTo('subscription'); closeLifetimeOfferPopup();"
                     class="w-full py-3 text-sm font-bold rounded-xl transition-all shadow-lg"
                     style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #0f172a; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);"
-                    onmouseover="this.style.filter='brightness(0.9)'"
-                    onmouseout="this.style.filter='brightness(1)'">
+                    onmouseover="this.style.filter='brightness(0.9)'" onmouseout="this.style.filter='brightness(1)'">
                     Upgrade Now & Save
                 </button>
 
                 <!-- Checkbox and Close -->
-                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700 text-slate-500 dark:text-slate-400 text-xs">
+                <div
+                    class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700 text-slate-500 dark:text-slate-400 text-xs">
                     <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" x-model="lifetimeOfferDontShowAgain" class="rounded border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-4 h-4">
+                        <input type="checkbox" x-model="lifetimeOfferDontShowAgain"
+                            class="rounded border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-4 h-4">
                         <span>Don't show again</span>
                     </label>
-                    <button type="button" @click="closeLifetimeOfferPopup()" class="hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium">
+                    <button type="button" @click="closeLifetimeOfferPopup()"
+                        class="hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium">
                         Close
                     </button>
                 </div>
@@ -1915,58 +2379,91 @@
 
 {{-- 24. SUPPORT TICKET MODALS --}}
 {{-- MODAL: Create New Support Ticket --}}
-<div x-show="newTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
-    <div @click.outside="newTicketModal = false" class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+<div x-show="newTicketModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" x-cloak>
+    <div @click.outside="newTicketModal = false"
+        class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         <div class="px-6 py-4 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
             <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <div
+                    class="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
                 </div>
-                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="ticketForm.id ? (t('edit_support_ticket') || 'Edit Support Ticket') : (t('new_support_ticket') || 'Create New Support Ticket')">Create New Support Ticket</h4>
+                <h4 class="text-sm font-extrabold text-slate-800 dark:text-white"
+                    x-text="ticketForm.id ? (t('edit_support_ticket') || 'Edit Support Ticket') : (t('new_support_ticket') || 'Create New Support Ticket')">
+                    Create New Support Ticket</h4>
             </div>
-            <button type="button" @click="newTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" @click="newTicketModal = false"
+                class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
         <form @submit.prevent="submitNewTicket()" class="p-6 space-y-4">
             {{-- Subject --}}
             <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_subject') || 'Subject'">Subject</label>
-                <input type="text" required x-model="ticketForm.subject" :placeholder="t('ticket_subject_placeholder') || 'Brief summary of issue...'"
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
+                    x-text="t('ticket_subject') || 'Subject'">Subject</label>
+                <input type="text" required x-model="ticketForm.subject"
+                    :placeholder="t('ticket_subject_placeholder') || 'Brief summary of issue...'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
             </div>
 
             {{-- Message --}}
             <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_message') || 'Issue Details'">Issue Details</label>
-                <textarea required rows="4" x-model="ticketForm.message" :placeholder="t('ticket_message_placeholder') || 'Describe your problem in detail...'"
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
+                    x-text="t('ticket_message') || 'Issue Details'">Issue Details</label>
+                <textarea required rows="4" x-model="ticketForm.message"
+                    :placeholder="t('ticket_message_placeholder') || 'Describe your problem in detail...'"
                     class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-xs dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all"></textarea>
             </div>
 
             {{-- Screenshot / Attachment --}}
             <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" x-text="t('ticket_screenshot') || 'Screenshot or Attachment (Optional)'">Screenshot (Optional)</label>
-                <div class="relative border-2 border-dashed border-slate-200 dark:border-gray-600 rounded-2xl p-4 text-center hover:border-primary transition-all">
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1"
+                    x-text="t('ticket_screenshot') || 'Screenshot or Attachment (Optional)'">Screenshot
+                    (Optional)</label>
+                <div
+                    class="relative border-2 border-dashed border-slate-200 dark:border-gray-600 rounded-2xl p-4 text-center hover:border-primary transition-all">
                     <template x-if="!ticketForm.screenshotPreview">
                         <label class="cursor-pointer flex flex-col items-center justify-center">
-                            <svg class="w-8 h-8 text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <svg class="w-8 h-8 text-slate-400 mb-1" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
                             <span class="text-xs font-semibold text-primary">Click to upload screenshot</span>
                             <span class="text-[10px] text-slate-400 mt-0.5">JPG, PNG, WEBP up to 10MB</span>
-                            <input type="file" accept="image/*,.pdf" @change="onTicketScreenshotChange($event)" class="sr-only">
+                            <input type="file" accept="image/*,.pdf" @change="onTicketScreenshotChange($event)"
+                                class="sr-only">
                         </label>
                     </template>
                     <template x-if="ticketForm.screenshotPreview">
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-2">
-                                <img :src="ticketForm.screenshotPreview" class="w-12 h-12 object-cover rounded-xl border border-slate-200 dark:border-gray-700">
+                                <img :src="ticketForm.screenshotPreview"
+                                    class="w-12 h-12 object-cover rounded-xl border border-slate-200 dark:border-gray-700">
                                 <div class="text-left">
-                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[200px]" x-text="ticketForm.screenshot ? ticketForm.screenshot.name : 'Selected file'"></p>
+                                    <p class="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[200px]"
+                                        x-text="ticketForm.screenshot ? ticketForm.screenshot.name : 'Selected file'">
+                                    </p>
                                     <span class="text-[10px] text-emerald-600 font-semibold">Ready to upload</span>
                                 </div>
                             </div>
-                            <button type="button" @click="ticketForm.screenshot = null; ticketForm.screenshotPreview = null" class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <button type="button"
+                                @click="ticketForm.screenshot = null; ticketForm.screenshotPreview = null"
+                                class="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                    </path>
+                                </svg>
                             </button>
                         </div>
                     </template>
@@ -1975,14 +2472,20 @@
 
             {{-- Action Buttons --}}
             <div class="pt-4 border-t border-slate-100 dark:border-gray-700/50 flex items-center justify-end gap-2">
-                <button type="button" @click="newTicketModal = false" class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all">
+                <button type="button" @click="newTicketModal = false"
+                    class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all">
                     Cancel
                 </button>
-                <button type="submit" :disabled="submittingTicket" class="px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer">
+                <button type="submit" :disabled="submittingTicket"
+                    class="px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:bg-primary/50 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer">
                     <template x-if="submittingTicket">
-                        <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                        <div
+                            class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent">
+                        </div>
                     </template>
-                    <span x-text="submittingTicket ? 'Submitting...' : (ticketForm.id ? (t('save_changes') || 'Save Changes') : (t('create_ticket') || 'Submit Ticket'))">Submit Ticket</span>
+                    <span
+                        x-text="submittingTicket ? 'Submitting...' : (ticketForm.id ? (t('save_changes') || 'Save Changes') : (t('create_ticket') || 'Submit Ticket'))">Submit
+                        Ticket</span>
                 </button>
             </div>
         </form>
@@ -1990,24 +2493,31 @@
 </div>
 
 {{-- MODAL: View Ticket Details & Multi-Message Conversation Thread --}}
-<div x-show="viewTicketModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/55 backdrop-blur-sm" x-cloak>
-    <div @click.outside="viewTicketModal = false" class="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[92vh]">
+<div x-show="viewTicketModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/55 backdrop-blur-sm" x-cloak>
+    <div @click.outside="viewTicketModal = false"
+        class="bg-white dark:bg-gray-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-gray-700 shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[92vh]">
         <template x-if="selectedTicket">
             <div class="flex flex-col h-full min-h-0">
                 {{-- Header --}}
-                <div class="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between shrink-0">
+                <div
+                    class="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs font-extrabold text-slate-400" x-text="'Ticket #' + selectedTicket.id"></span>
+                        <span class="text-xs font-extrabold text-slate-400"
+                            x-text="'Ticket #' + selectedTicket.id"></span>
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
                             :class="{
                                 'bg-amber-100 text-amber-700': selectedTicket.status === 'open',
                                 'bg-blue-100 text-blue-700': ['inProgress', 'pending'].includes(selectedTicket.status),
                                 'bg-emerald-100 text-emerald-700': ['resolved', 'closed'].includes(selectedTicket.status)
-                            }"
-                            x-text="selectedTicket.status"></span>
+                            }" x-text="selectedTicket.status"></span>
                     </div>
-                    <button type="button" @click="viewTicketModal = false" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button type="button" @click="viewTicketModal = false"
+                        class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
                     </button>
                 </div>
 
@@ -2015,26 +2525,37 @@
                 <div class="p-4 space-y-2.5 overflow-y-auto flex-1">
                     {{-- Ticket Subject --}}
                     <div class="pb-2 border-b border-slate-100 dark:border-gray-700/50">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" x-text="t('ticket_subject') || 'Subject'">Subject</span>
-                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5" x-text="selectedTicket.subject"></h4>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                            x-text="t('ticket_subject') || 'Subject'">Subject</span>
+                        <h4 class="text-sm font-extrabold text-slate-800 dark:text-white mt-0.5"
+                            x-text="selectedTicket.subject"></h4>
                     </div>
 
                     {{-- Original User Issue --}}
-                    <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-gray-700/40 border border-slate-100 dark:border-gray-700 space-y-1">
+                    <div
+                        class="p-2.5 rounded-xl bg-slate-50 dark:bg-gray-700/40 border border-slate-100 dark:border-gray-700 space-y-1">
                         <div class="flex items-center justify-between text-xs">
                             <span class="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
-                                <span class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">You</span>
-                                <span x-text="t('your_message') || 'Initial Issue Description'">Initial Issue Description</span>
+                                <span
+                                    class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">You</span>
+                                <span x-text="t('your_message') || 'Initial Issue Description'">Initial Issue
+                                    Description</span>
                             </span>
-                            <span class="text-[10px] text-slate-400" x-text="formatDateTime(selectedTicket.created_at)"></span>
+                            <span class="text-[10px] text-slate-400"
+                                x-text="formatDateTime(selectedTicket.created_at)"></span>
                         </div>
-                        <p class="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed" x-text="selectedTicket.message"></p>
+                        <p class="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line leading-relaxed"
+                            x-text="selectedTicket.message"></p>
 
                         <template x-if="selectedTicket.screenshot">
                             <div class="mt-2 pt-2 border-t border-slate-200 dark:border-gray-600">
-                                <span class="block text-[10px] font-semibold text-slate-400 mb-1.5">Attached Image / Screenshot:</span>
-                                <a :href="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" target="_blank" class="inline-block rounded-xl overflow-hidden border border-slate-200 dark:border-gray-600 max-h-48 hover:opacity-95 transition-opacity">
-                                    <img :src="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)" class="max-h-48 max-w-full object-contain bg-black/5 dark:bg-white/5">
+                                <span class="block text-[10px] font-semibold text-slate-400 mb-1.5">Attached Image /
+                                    Screenshot:</span>
+                                <a :href="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)"
+                                    target="_blank"
+                                    class="inline-block rounded-xl overflow-hidden border border-slate-200 dark:border-gray-600 max-h-48 hover:opacity-95 transition-opacity">
+                                    <img :src="selectedTicket.screenshot_url || ('/storage/' + selectedTicket.screenshot)"
+                                        class="max-h-48 max-w-full object-contain bg-black/5 dark:bg-white/5">
                                 </a>
                             </div>
                         </template>
@@ -2047,29 +2568,48 @@
                                 <div>
                                     {{-- Admin Message Bubble --}}
                                     <template x-if="msg.sender_type === 'admin'">
-                                        <div class="p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
+                                        <div
+                                            class="p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
                                             <div class="flex items-center justify-between text-xs">
-                                                <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
-                                                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                <div
+                                                    class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
+                                                    <svg class="w-4 h-4 text-emerald-600" fill="none"
+                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
                                                     <span x-text="msg.sender_name || 'Support Team'">Support Team</span>
                                                 </div>
-                                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-mono" x-text="formatDateTime(msg.created_at)"></span>
+                                                <span
+                                                    class="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-mono"
+                                                    x-text="formatDateTime(msg.created_at)"></span>
                                             </div>
-                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="msg.message"></p>
+                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed"
+                                                x-text="msg.message"></p>
                                             <template x-if="msg.attachment">
-                                                <div class="mt-1.5 pt-1.5 border-t border-emerald-200/60 dark:border-emerald-800/50 space-y-1.5">
+                                                <div
+                                                    class="mt-1.5 pt-1.5 border-t border-emerald-200/60 dark:border-emerald-800/50 space-y-1.5">
                                                     {{-- PDF chip --}}
                                                     <template x-if="msg.attachment.toLowerCase().endsWith('.pdf')">
-                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank"
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)"
+                                                            target="_blank"
                                                             class="inline-flex items-center gap-1.5 text-[11px] text-emerald-800 dark:text-emerald-300 hover:underline font-semibold bg-white/80 dark:bg-gray-800/80 border border-emerald-200 dark:border-emerald-700/80 px-2.5 py-1 rounded-lg">
-                                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+                                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor"
+                                                                viewBox="0 0 20 20">
+                                                                <path
+                                                                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                                            </svg>
                                                             <span>View Attached PDF</span>
                                                         </a>
                                                     </template>
                                                     {{-- Image thumbnail --}}
                                                     <template x-if="!msg.attachment.toLowerCase().endsWith('.pdf')">
-                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank" class="inline-block">
-                                                            <img :src="msg.attachment_url || ('/storage/' + msg.attachment)" class="h-14 w-auto rounded-lg border border-emerald-200 dark:border-emerald-700 object-cover shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in" title="Click to view full image">
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)"
+                                                            target="_blank" class="inline-block">
+                                                            <img :src="msg.attachment_url || ('/storage/' + msg.attachment)"
+                                                                class="h-14 w-auto rounded-lg border border-emerald-200 dark:border-emerald-700 object-cover shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in"
+                                                                title="Click to view full image">
                                                         </a>
                                                     </template>
                                                 </div>
@@ -2079,29 +2619,42 @@
 
                                     {{-- User Follow-up Message Bubble --}}
                                     <template x-if="msg.sender_type === 'user'">
-                                        <div class="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1">
+                                        <div
+                                            class="p-2.5 rounded-xl bg-primary/5 dark:bg-primary/10 border border-primary/20 space-y-1">
                                             <div class="flex items-center justify-between text-xs">
-                                                <span class="font-bold text-primary dark:text-primary-light flex items-center gap-1.5">
-                                                    <span class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">You</span>
+                                                <span
+                                                    class="font-bold text-primary dark:text-primary-light flex items-center gap-1.5">
+                                                    <span
+                                                        class="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold">You</span>
                                                     <span>Follow-up Reply</span>
                                                 </span>
-                                                <span class="text-[10px] text-slate-400 font-mono" x-text="formatDateTime(msg.created_at)"></span>
+                                                <span class="text-[10px] text-slate-400 font-mono"
+                                                    x-text="formatDateTime(msg.created_at)"></span>
                                             </div>
-                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="msg.message"></p>
+                                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed"
+                                                x-text="msg.message"></p>
                                             <template x-if="msg.attachment">
                                                 <div class="mt-1.5 pt-1.5 border-t border-primary/10 space-y-1.5">
                                                     {{-- PDF chip --}}
                                                     <template x-if="msg.attachment.toLowerCase().endsWith('.pdf')">
-                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank"
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)"
+                                                            target="_blank"
                                                             class="inline-flex items-center gap-1.5 text-[11px] text-primary hover:underline font-semibold bg-white/80 dark:bg-gray-800/80 border border-primary/20 px-2.5 py-1 rounded-lg">
-                                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
+                                                            <svg class="w-3.5 h-3.5 text-rose-500" fill="currentColor"
+                                                                viewBox="0 0 20 20">
+                                                                <path
+                                                                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                                            </svg>
                                                             <span>View Attached PDF</span>
                                                         </a>
                                                     </template>
                                                     {{-- Image thumbnail --}}
                                                     <template x-if="!msg.attachment.toLowerCase().endsWith('.pdf')">
-                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)" target="_blank" class="inline-block">
-                                                            <img :src="msg.attachment_url || ('/storage/' + msg.attachment)" class="h-14 w-auto rounded-lg border border-primary/20 object-cover shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in" title="Click to view full image">
+                                                        <a :href="msg.attachment_url || ('/storage/' + msg.attachment)"
+                                                            target="_blank" class="inline-block">
+                                                            <img :src="msg.attachment_url || ('/storage/' + msg.attachment)"
+                                                                class="h-14 w-auto rounded-lg border border-primary/20 object-cover shadow-sm hover:opacity-90 transition-opacity cursor-zoom-in"
+                                                                title="Click to view full image">
                                                         </a>
                                                     </template>
                                                 </div>
@@ -2114,32 +2667,48 @@
                     </template>
 
                     {{-- Legacy Admin Reply Fallback (for older tickets without messages table rows) --}}
-                    <template x-if="(!selectedTicket.messages || selectedTicket.messages.length === 0) && selectedTicket.admin_reply">
-                        <div class="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
+                    <template
+                        x-if="(!selectedTicket.messages || selectedTicket.messages.length === 0) && selectedTicket.admin_reply">
+                        <div
+                            class="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-1">
                             <div class="flex items-center justify-between text-xs">
                                 <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    <span x-text="t('admin_reply') || 'Support Team Response'">Support Team Response</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span x-text="t('admin_reply') || 'Support Team Response'">Support Team
+                                        Response</span>
                                 </div>
-                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-mono" x-text="selectedTicket.replied_at ? formatDateTime(selectedTicket.replied_at) : ''"></span>
+                                <span class="text-[10px] text-emerald-600/80 dark:text-emerald-400 font-mono"
+                                    x-text="selectedTicket.replied_at ? formatDateTime(selectedTicket.replied_at) : ''"></span>
                             </div>
-                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed" x-text="selectedTicket.admin_reply"></p>
+                            <p class="text-xs text-slate-700 dark:text-slate-200 whitespace-pre-line leading-relaxed"
+                                x-text="selectedTicket.admin_reply"></p>
                         </div>
                     </template>
 
                     {{-- Waiting Indicator (if no admin reply yet) --}}
-                    <template x-if="(!selectedTicket.messages || selectedTicket.messages.filter(m => m.sender_type === 'admin').length === 0) && !selectedTicket.admin_reply">
-                        <div class="py-2.5 px-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2">
+                    <template
+                        x-if="(!selectedTicket.messages || selectedTicket.messages.filter(m => m.sender_type === 'admin').length === 0) && !selectedTicket.admin_reply">
+                        <div
+                            class="py-2.5 px-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2">
                             <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0"></span>
-                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300" x-text="t('waiting_for_reply') || 'Waiting for support team response...'">Waiting for support team response...</span>
+                            <span class="text-xs font-semibold text-amber-800 dark:text-amber-300"
+                                x-text="t('waiting_for_reply') || 'Waiting for support team response...'">Waiting for
+                                support team response...</span>
                         </div>
                     </template>
 
                     {{-- Send Follow-up Message Section (Active if ticket is not closed) --}}
                     <template x-if="selectedTicket.status !== 'closed'">
                         <div class="mt-2 pt-2.5 border-t border-slate-200 dark:border-gray-700 space-y-1.5">
-                            <label class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                                <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
+                            <label
+                                class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                <svg class="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                                </svg>
                                 <span>Send Follow-up</span>
                             </label>
 
@@ -2152,32 +2721,58 @@
                                 <div class="flex items-center gap-2">
                                     <template x-if="ticketReplyForm.attachmentPreview">
                                         <div class="relative inline-block">
-                                            <img :src="ticketReplyForm.attachmentPreview" class="h-12 w-auto rounded-lg border border-slate-200 object-cover shadow-sm">
-                                            <button type="button" @click="ticketReplyForm.attachment = null; ticketReplyForm.attachmentPreview = null; document.getElementById('ticketReplyFileInput').value=''" class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold hover:bg-rose-600 leading-none">&times;</button>
+                                            <img :src="ticketReplyForm.attachmentPreview"
+                                                class="h-12 w-auto rounded-lg border border-slate-200 object-cover shadow-sm">
+                                            <button type="button"
+                                                @click="ticketReplyForm.attachment = null; ticketReplyForm.attachmentPreview = null; document.getElementById('ticketReplyFileInput').value=''"
+                                                class="absolute -top-1.5 -right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full flex items-center justify-center text-[10px] font-bold hover:bg-rose-600 leading-none">&times;</button>
                                         </div>
                                     </template>
                                     <template x-if="!ticketReplyForm.attachmentPreview">
-                                        <div class="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-lg px-2 py-1">
-                                            <svg class="w-3.5 h-3.5 text-rose-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
-                                            <span class="text-[11px] text-rose-700 font-medium truncate max-w-[120px]" x-text="ticketReplyForm.attachment.name"></span>
-                                            <button type="button" @click="ticketReplyForm.attachment = null; document.getElementById('ticketReplyFileInput').value=''" class="text-rose-400 hover:text-rose-600 font-bold ml-0.5">&times;</button>
+                                        <div
+                                            class="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-lg px-2 py-1">
+                                            <svg class="w-3.5 h-3.5 text-rose-500 shrink-0" fill="currentColor"
+                                                viewBox="0 0 20 20">
+                                                <path
+                                                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                                            </svg>
+                                            <span class="text-[11px] text-rose-700 font-medium truncate max-w-[120px]"
+                                                x-text="ticketReplyForm.attachment.name"></span>
+                                            <button type="button"
+                                                @click="ticketReplyForm.attachment = null; document.getElementById('ticketReplyFileInput').value=''"
+                                                class="text-rose-400 hover:text-rose-600 font-bold ml-0.5">&times;</button>
                                         </div>
                                     </template>
                                 </div>
                             </template>
 
                             <div class="flex items-center justify-between gap-2">
-                                <label class="px-2.5 py-1.5 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium cursor-pointer flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-gray-600">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                <label
+                                    class="px-2.5 py-1.5 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-medium cursor-pointer flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-gray-600">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                                        </path>
+                                    </svg>
                                     <span>Attach</span>
-                                    <input type="file" id="ticketReplyFileInput" @change="handleTicketReplyFile($event)" accept="image/*,application/pdf" class="hidden">
+                                    <input type="file" id="ticketReplyFileInput" @change="handleTicketReplyFile($event)"
+                                        accept="image/*,application/pdf" class="hidden">
                                 </label>
 
                                 <button type="button" @click="sendTicketReply(selectedTicket.id)"
                                     :disabled="sendingTicketReply || !ticketReplyForm.message || !ticketReplyForm.message.trim()"
                                     class="px-4 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all flex items-center gap-1.5">
-                                    <svg x-show="sendingTicketReply" class="w-3.5 h-3.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                    <svg x-show="!sendingTicketReply" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                    <svg x-show="sendingTicketReply" class="w-3.5 h-3.5 animate-spin" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                        </path>
+                                    </svg>
+                                    <svg x-show="!sendingTicketReply" class="w-3.5 h-3.5" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
                                     <span x-text="sendingTicketReply ? 'Sending...' : 'Send'">Send</span>
                                 </button>
                             </div>
@@ -2186,16 +2781,25 @@
 
                     {{-- Closed Notice (if ticket is closed) --}}
                     <template x-if="selectedTicket.status === 'closed'">
-                        <div class="mt-2 p-2.5 rounded-xl bg-slate-100 dark:bg-gray-700/60 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-2">
-                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                            <span>This ticket has been closed. If you have any further questions or new issues, please create a new ticket.</span>
+                        <div
+                            class="mt-2 p-2.5 rounded-xl bg-slate-100 dark:bg-gray-700/60 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                </path>
+                            </svg>
+                            <span>This ticket has been closed. If you have any further questions or new issues, please
+                                create a new ticket.</span>
                         </div>
                     </template>
                 </div>
 
                 {{-- Footer --}}
-                <div class="px-4 py-2.5 border-t border-slate-100 dark:border-gray-700 flex justify-end shrink-0 bg-slate-50/50 dark:bg-gray-800">
-                    <button type="button" @click="viewTicketModal = false" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all">
+                <div
+                    class="px-4 py-2.5 border-t border-slate-100 dark:border-gray-700 flex justify-end shrink-0 bg-slate-50/50 dark:bg-gray-800">
+                    <button type="button" @click="viewTicketModal = false"
+                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-all">
                         Close
                     </button>
                 </div>
@@ -2212,28 +2816,37 @@
     x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
     <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 dark:border-gray-700 relative max-h-[90vh] flex flex-col"
         @click.away="showCustomerCreditNotesModal = false">
-        
+
         <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-gray-700">
             <div>
                 <h3 class="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
                     <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
                     </svg>
                     <span>Store Credit & Credit Notes</span>
                 </h3>
-                <p class="text-xs text-slate-500 mt-0.5" x-text="customerCreditNotesTarget ? customerCreditNotesTarget.name : ''"></p>
+                <p class="text-xs text-slate-500 mt-0.5"
+                    x-text="customerCreditNotesTarget ? customerCreditNotesTarget.name : ''"></p>
             </div>
-            <button @click="showCustomerCreditNotesModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button @click="showCustomerCreditNotesModal = false"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
         <div class="py-4 overflow-y-auto flex-1 space-y-4">
-            <div class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-4 flex items-center justify-between">
+            <div
+                class="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl p-4 flex items-center justify-between">
                 <div>
-                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Available Store Credit</span>
+                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Available Store
+                        Credit</span>
                     <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        ₹<span x-text="parseFloat(customerCreditNotesTarget ? (customerCreditNotesTarget.credit_balance || 0) : 0).toFixed(2)"></span>
+                        ₹<span
+                            x-text="parseFloat(customerCreditNotesTarget ? (customerCreditNotesTarget.credit_balance || 0) : 0).toFixed(2)"></span>
                     </div>
                 </div>
                 <div class="text-right text-xs text-emerald-600/80 dark:text-emerald-400/80">
@@ -2254,33 +2867,39 @@
             <template x-if="!loadingCustomerCreditNotes && customerCreditNotesList.length > 0">
                 <div class="space-y-2.5">
                     <template x-for="cn in customerCreditNotesList" :key="cn.id">
-                        <div class="border border-slate-200 dark:border-gray-700 rounded-xl p-3.5 bg-slate-50/50 dark:bg-gray-800/60">
+                        <div
+                            class="border border-slate-200 dark:border-gray-700 rounded-xl p-3.5 bg-slate-50/50 dark:bg-gray-800/60">
                             <div class="flex items-center justify-between">
-                                <span class="font-bold text-xs text-slate-800 dark:text-white font-mono" x-text="cn.credit_note_number"></span>
-                                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                                    :class="{
+                                <span class="font-bold text-xs text-slate-800 dark:text-white font-mono"
+                                    x-text="cn.credit_note_number"></span>
+                                <span class="text-[11px] font-bold px-2 py-0.5 rounded-full" :class="{
                                         'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300': cn.status === 'Active',
                                         'bg-slate-200 text-slate-700 dark:bg-gray-700 dark:text-slate-300': cn.status === 'Redeemed',
                                         'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300': cn.status === 'Cancelled'
-                                    }"
-                                    x-text="cn.status"></span>
+                                    }" x-text="cn.status"></span>
                             </div>
                             <div class="flex items-center justify-between text-xs text-slate-500 mt-1">
-                                <span x-text="cn.sale ? ('From Return: ' + cn.sale.sale_number) : (cn.reason || 'Sales Return')"></span>
+                                <span
+                                    x-text="cn.sale ? ('From Return: ' + cn.sale.sale_number) : (cn.reason || 'Sales Return')"></span>
                                 <span x-text="new Date(cn.created_at).toLocaleDateString()"></span>
                             </div>
-                            <div class="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-gray-700/60 text-xs">
+                            <div
+                                class="grid grid-cols-3 gap-2 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-gray-700/60 text-xs">
                                 <div>
                                     <div class="text-[10px] text-slate-400">Total</div>
-                                    <div class="font-bold text-slate-700 dark:text-slate-300">₹<span x-text="parseFloat(cn.total_amount).toFixed(2)"></span></div>
+                                    <div class="font-bold text-slate-700 dark:text-slate-300">₹<span
+                                            x-text="parseFloat(cn.total_amount).toFixed(2)"></span></div>
                                 </div>
                                 <div>
                                     <div class="text-[10px] text-slate-400">Used</div>
-                                    <div class="font-bold text-slate-700 dark:text-slate-300">₹<span x-text="parseFloat(cn.used_amount).toFixed(2)"></span></div>
+                                    <div class="font-bold text-slate-700 dark:text-slate-300">₹<span
+                                            x-text="parseFloat(cn.used_amount).toFixed(2)"></span></div>
                                 </div>
                                 <div>
                                     <div class="text-[10px] text-slate-400">Remaining</div>
-                                    <div class="font-bold" :class="cn.status === 'Active' ? 'text-emerald-600' : 'text-slate-500'">₹<span x-text="parseFloat(cn.remaining_balance).toFixed(2)"></span></div>
+                                    <div class="font-bold"
+                                        :class="cn.status === 'Active' ? 'text-emerald-600' : 'text-slate-500'">₹<span
+                                            x-text="parseFloat(cn.remaining_balance).toFixed(2)"></span></div>
                                 </div>
                             </div>
                         </div>
@@ -2290,7 +2909,8 @@
         </div>
 
         <div class="pt-4 border-t border-slate-100 dark:border-gray-700 flex justify-end">
-            <button @click="showCustomerCreditNotesModal = false" class="px-4 py-2 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200">
+            <button @click="showCustomerCreditNotesModal = false"
+                class="px-4 py-2 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl hover:bg-slate-200">
                 Close
             </button>
         </div>
@@ -2302,38 +2922,49 @@
     class="fixed inset-0 z-[100] overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4"
     x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
     x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
-    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-    x-cloak>
-    <div @click.away="closeDeleteAccountModal()" 
+    x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak>
+    <div @click.away="closeDeleteAccountModal()"
         class="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-2xl w-full max-w-md shadow-2xl relative z-10 overflow-hidden"
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95"
         x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
-        
-        <div class="px-6 py-4 border-b border-rose-100 dark:border-rose-900/40 bg-rose-50/70 dark:bg-rose-950/40 flex items-center justify-between">
+
+        <div
+            class="px-6 py-4 border-b border-rose-100 dark:border-rose-900/40 bg-rose-50/70 dark:bg-rose-950/40 flex items-center justify-between">
             <div class="flex items-center gap-2 text-rose-600 dark:text-rose-400">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                    </path>
                 </svg>
-                <h3 class="text-sm font-bold" x-text="t('confirm_delete_account') || 'Delete Account Permanently'">Delete Account Permanently</h3>
+                <h3 class="text-sm font-bold" x-text="t('confirm_delete_account') || 'Delete Account Permanently'">
+                    Delete Account Permanently</h3>
             </div>
-            <button type="button" @click="closeDeleteAccountModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <button type="button" @click="closeDeleteAccountModal()"
+                class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
         </div>
 
         <form @submit.prevent="submitDeleteAccount()" class="p-6 space-y-4">
-            <div class="p-3.5 rounded-xl bg-rose-100/60 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 space-y-1.5">
+            <div
+                class="p-3.5 rounded-xl bg-rose-100/60 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 space-y-1.5">
                 <p class="font-bold flex items-center gap-1.5">
                     <span>⚠️ Irreversible Action</span>
                 </p>
                 <p class="text-[11px] leading-relaxed">
-                    This will permanently delete your account (<strong x-text="user ? (user.email || user.mobile) : ''"></strong>) and all your shops, invoices, customers, inventory, products, and WhatsApp message credits.
+                    This will permanently delete your account (<strong
+                        x-text="user ? (user.email || user.mobile) : ''"></strong>) and all your shops, invoices,
+                    customers, inventory, products, and WhatsApp message credits.
                 </p>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1" x-text="t('enter_password_to_delete') || 'Enter your password to confirm'">
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1"
+                    x-text="t('enter_password_to_delete') || 'Enter your password to confirm'">
                     Enter your password to confirm
                 </label>
                 <input type="password" required x-model="deleteAccountModal.password"
@@ -2343,10 +2974,10 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
-                    To confirm, please type <span class="font-mono font-bold text-rose-600 dark:text-rose-400">DELETE</span> below:
+                    To confirm, please type <span
+                        class="font-mono font-bold text-rose-600 dark:text-rose-400">DELETE</span> below:
                 </label>
-                <input type="text" required x-model="deleteAccountModal.confirmText"
-                    placeholder="Type DELETE"
+                <input type="text" required x-model="deleteAccountModal.confirmText" placeholder="Type DELETE"
                     class="block w-full px-3.5 py-2.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-mono uppercase dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-rose-500 focus:border-rose-500">
             </div>
 
@@ -2355,13 +2986,16 @@
                     class="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-xl transition-all cursor-pointer">
                     Cancel
                 </button>
-                <button type="submit" 
+                <button type="submit"
                     :disabled="deleteAccountModal.loading || !deleteAccountModal.password || deleteAccountModal.confirmText.trim().toUpperCase() !== 'DELETE'"
                     class="px-5 py-2 bg-rose-600 hover:bg-rose-700 disabled:bg-rose-400 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed">
                     <template x-if="deleteAccountModal.loading">
-                        <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
+                        <div
+                            class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent">
+                        </div>
                     </template>
-                    <span x-text="deleteAccountModal.loading ? 'Deleting...' : 'Permanently Delete'">Permanently Delete</span>
+                    <span x-text="deleteAccountModal.loading ? 'Deleting...' : 'Permanently Delete'">Permanently
+                        Delete</span>
                 </button>
             </div>
         </form>

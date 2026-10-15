@@ -584,7 +584,7 @@ class InvoiceApiController extends Controller
                             </tr></table>
                         </td>
                         <td class="invoice-title" style="vertical-align: middle;">
-                            <div>' . strtoupper(__('invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '</div>
+                            <div>' . strtoupper(__('sale_invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '</div>
                             <div class="invoice-meta">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->sale_date, $dateFormat, $timeFormat) . '
@@ -762,7 +762,11 @@ class InvoiceApiController extends Controller
                 ' . $this->buildContainerDepositHtml($sale, $shop);
 
                 $adminFooter = InvoiceSetting::get('footer_text');
-                if ($adminFooter === 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.') {
+                if ($adminFooter && (
+                    str_contains($adminFooter, 'Thank you for choosing DukanHisab') ||
+                    str_contains($adminFooter, 'support@dukanhisab') ||
+                    str_contains($adminFooter, 'contact support')
+                )) {
                     $adminFooter = null;
                 }
                 $footerMessage = $shop->invoice_footer ?: ($adminFooter ?: __('invoice_footer_default'));
@@ -1357,7 +1361,11 @@ class InvoiceApiController extends Controller
                 </table>';
 
                 $adminFooter = InvoiceSetting::get('footer_text');
-                if ($adminFooter === 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.') {
+                if ($adminFooter && (
+                    str_contains($adminFooter, 'Thank you for choosing DukanHisab') ||
+                    str_contains($adminFooter, 'support@dukanhisab') ||
+                    str_contains($adminFooter, 'contact support')
+                )) {
                     $adminFooter = null;
                 }
                 $footerMessage = $shop->invoice_footer ?: ($adminFooter ?: __('invoice_footer_default'));
