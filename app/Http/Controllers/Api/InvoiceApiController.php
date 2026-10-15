@@ -617,7 +617,7 @@ class InvoiceApiController extends Controller
                                                     ? '<span style="color:#2563eb;font-weight:bold;">' . __('partially_paid') . '</span>'
                                                     : '<span style="color:#16a34a;font-weight:bold;">' . __('paid') . '</span>')))
                                 ) . '<br>
-                                <strong>' . __('method') . ':</strong> ' . __(strtolower(str_replace(' ', '_', $sale->payment_type ?? 'cash'))) . '
+                                <strong>' . (__('payment_type') ?: __('method')) . ':</strong> ' . __(strtolower(str_replace(' ', '_', $sale->payment_type ?? 'cash'))) . '
                             </div>
                         </td>
                     </tr>
@@ -740,6 +740,18 @@ class InvoiceApiController extends Controller
                                         <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due') : __('net_paid') . ' (' . ucfirst($sale->payment_type ?? 'Cash') . ')') . ':</td>
                                         <td class="total-value" style="font-weight: bold;">&#8377;' . number_format($netPayment, 2) . '</td>
                                     </tr>';
+                                } elseif ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit')) {
+                                    $paidAmt = (float)($sale->paid_amount ?? 0);
+                                    $dueAmt = max(0, (float)$sale->grand_total - $paidAmt);
+                                    $html .= '
+                                    <tr>
+                                        <td class="total-label" style="color: #16a34a; font-weight: bold; padding-top: 6px;">' . __('paid_amount') . ':</td>
+                                        <td class="total-value" style="color: #16a34a; font-weight: bold; padding-top: 6px;">&#8377;' . number_format($paidAmt, 2) . '</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="total-label" style="color: #dc2626; font-weight: bold;">' . __('balance_due') . ':</td>
+                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377;' . number_format($dueAmt, 2) . '</td>
+                                    </tr>';
                                 }
                                 $html .= '
                             </table>
@@ -747,18 +759,22 @@ class InvoiceApiController extends Controller
                     </tr>
                 </table>
 
-                ' . $this->buildContainerDepositHtml($sale, $shop) . '
+                ' . $this->buildContainerDepositHtml($sale, $shop);
 
-                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: InvoiceSetting::get('footer_text') ?: __('invoice_footer_default')) . '</div>';
+                $adminFooter = InvoiceSetting::get('footer_text');
+                if ($adminFooter === 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.') {
+                    $adminFooter = null;
+                }
+                $footerMessage = $shop->invoice_footer ?: ($adminFooter ?: __('invoice_footer_default'));
+
+                $html .= '
+                <div class="invoice-footer-text">' . $this->renderMultilingualText($footerMessage) . '</div>';
 
                 if ($signatureBase64) {
                     $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
                 }
 
                 $html .= '
-                <div class="footer">
-                    ' . __('powered_by') . ' <span class="brand-highlight">DukanHisab</span>
-                </div>
             </div>
         </body>
         </html>
@@ -1243,7 +1259,7 @@ class InvoiceApiController extends Controller
                                             )
                                         )
                                 ) . '<br>
-                                <strong>' . __('method') . ':</strong> ' . __(strtolower(str_replace(' ', '_', $purchase->payment_type))) . '
+                                <strong>' . (__('payment_type') ?: __('method')) . ':</strong> ' . __(strtolower(str_replace(' ', '_', $purchase->payment_type))) . '
                             </div>
                         </td>
                     </tr>
@@ -1338,18 +1354,22 @@ class InvoiceApiController extends Controller
                             </table>
                         </td>
                     </tr>
-                </table>
+                </table>';
 
-                <div class="invoice-footer-text">' . $this->renderMultilingualText($shop->invoice_footer ?: InvoiceSetting::get('footer_text') ?: __('invoice_footer_default')) . '</div>';
+                $adminFooter = InvoiceSetting::get('footer_text');
+                if ($adminFooter === 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.') {
+                    $adminFooter = null;
+                }
+                $footerMessage = $shop->invoice_footer ?: ($adminFooter ?: __('invoice_footer_default'));
+
+                $html .= '
+                <div class="invoice-footer-text">' . $this->renderMultilingualText($footerMessage) . '</div>';
 
                 if ($signatureBase64) {
                     $html .= '<div class="signature-img"><img src="' . $signatureBase64 . '" /></div>';
                 }
 
                 $html .= '
-                <div class="footer">
-                    ' . __('powered_by') . ' <span class="brand-highlight">DukanHisab</span>
-                </div>
             </div>
         </body>
         </html>

@@ -94,6 +94,7 @@ class SaleApiController extends Controller
             'subtotal' => 'required|numeric|min:0',
             'discount' => 'nullable|numeric|min:0',
             'grand_total' => 'required|numeric|min:0',
+            'paid_amount' => 'nullable|numeric|min:0',
             'payment_type' => 'required|string|in:Cash,UPI,Bank,Credit,Store Credit',
             'used_credit_balance' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
@@ -150,17 +151,26 @@ class SaleApiController extends Controller
                 }
             }
 
-            $paidAmount = 0.00;
-            if ($request->payment_type !== 'Credit') {
-                $paidAmount = max(0, (float) $request->grand_total - $usedCredit);
+            $netAfterStoreCredit = max(0, (float) $request->grand_total - $usedCredit);
+
+            if ($request->has('paid_amount') && $request->paid_amount !== null && $request->paid_amount !== '') {
+                $paidAmount = min($netAfterStoreCredit, max(0, (float) $request->paid_amount));
             } else {
-                $paidAmount = 0.00;
+                $paidAmount = ($request->payment_type === 'Credit') ? 0.00 : $netAfterStoreCredit;
             }
 
-            $saleStatus = 'Completed';
-            if ($request->payment_type === 'Credit') {
-                $remDue = max(0, (float) $request->grand_total - $usedCredit);
-                $saleStatus = ($remDue <= 0) ? 'Completed' : (($usedCredit > 0) ? 'Partially Paid' : 'Unpaid');
+            $dueAmount = max(0, $netAfterStoreCredit - $paidAmount);
+
+            if ($dueAmount > 0 && empty($request->customer_id)) {
+                return response()->json(['errors' => ['customer_id' => ['Customer selection is required for sales with unpaid due balance.']]], 422);
+            }
+
+            if ($dueAmount <= 0) {
+                $saleStatus = 'Completed';
+            } elseif ($paidAmount > 0 || $usedCredit > 0) {
+                $saleStatus = 'Partially Paid';
+            } else {
+                $saleStatus = 'Unpaid';
             }
 
             $saleDate = $request->filled('sale_date') ? Carbon::parse($request->sale_date) : Carbon::now();
@@ -220,18 +230,14 @@ class SaleApiController extends Controller
                 }
             }
 
-            // Adjust Customer Dues if Credit sale (net after store credit)
-            if ($request->payment_type === 'Credit' && $request->customer_id) {
+            // Adjust Customer Dues for unpaid portion
+            if ($dueAmount > 0 && $request->customer_id) {
                 $customer = Customer::findOrFail($request->customer_id);
-                $netCreditDue = max(0, $request->grand_total - $usedCredit);
-                if ($netCreditDue > 0) {
-                    $customer->increment('due_amount', $netCreditDue);
-                }
+                $customer->increment('due_amount', $dueAmount);
             }
 
-            // Log in Cash Book for non-credit sales (net cash/bank/upi received after store credit)
-            $cashAmount = max(0, $request->grand_total - $usedCredit);
-            if ($request->payment_type !== 'Credit' && $cashAmount > 0) {
+            // Log in Cash Book for payments received (net cash/bank/upi received)
+            if ($paidAmount > 0 && $request->payment_type !== 'Store Credit') {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
@@ -239,10 +245,13 @@ class SaleApiController extends Controller
                     'cash' => 'cash',
                     'bank' => 'bank',
                     'upi' => 'upi',
-                    'Store Credit' => 'cash',
+                    'Credit' => 'cash',
                 ];
                 
                 $desc = 'Sale: ' . $saleNumber;
+                if ($dueAmount > 0) {
+                    $desc .= ' (Paid: ₹' . number_format($paidAmount, 2) . ', Due: ₹' . number_format($dueAmount, 2) . ')';
+                }
                 if ($usedCredit > 0) {
                     $desc .= ' (₹' . number_format($usedCredit, 2) . ' from Store Credit)';
                 }
@@ -250,7 +259,7 @@ class SaleApiController extends Controller
                 CashBook::create([
                     'shop_id' => $shopId,
                     'type' => 'cash_in',
-                    'amount' => $cashAmount,
+                    'amount' => $paidAmount,
                     'payment_method' => $methodMap[$request->payment_type] ?? 'cash',
                     'description' => $desc,
                     'reference_id' => $sale->id,
@@ -347,19 +356,16 @@ class SaleApiController extends Controller
                     }
                 }
 
-                // Revert old payment effects. Only the portion actually added to the customer's
-                // due at creation (grand_total net of any store credit used) comes back off —
-                // subtracting the full grand_total here would under-count for a sale that was
-                // partially or fully covered by store credit (Partially Paid/Completed credit sales).
-                if ($oldPaymentType === 'Credit' && $oldCustomerId) {
+                // Revert old payment effects
+                $oldPaidAmt = (float) ($sale->paid_amount ?? 0);
+                $oldDueAmt = max(0, (float) $sale->grand_total - $oldPaidAmt - (float) ($sale->store_credit ?? 0));
+                if ($oldDueAmt > 0 && $oldCustomerId) {
                     $oldCust = Customer::find($oldCustomerId);
                     if ($oldCust) {
-                        $oldNetDue = max(0, (float) $sale->grand_total - (float) ($sale->store_credit ?? 0));
-                        if ($oldNetDue > 0) {
-                            $oldCust->decrement('due_amount', $oldNetDue);
-                        }
+                        $oldCust->decrement('due_amount', min($oldDueAmt, (float) $oldCust->due_amount));
                     }
-                } else {
+                }
+                if ($oldPaidAmt > 0) {
                     CashBook::where('shop_id', $shopId)
                         ->where('reference_type', 'sale')
                         ->where('reference_id', $sale->id)
@@ -391,16 +397,24 @@ class SaleApiController extends Controller
                 $sale->discount = $request->input('discount', $sale->discount);
                 $sale->grand_total = $request->input('grand_total', $sale->grand_total);
 
-                // Re-derive the payment status against the (possibly changed) grand total and the
-                // store credit already applied to this sale, same rule as a brand-new sale — so an
-                // item edit doesn't leave a stale "Unpaid"/"Partially Paid" badge behind.
-                $newNetDue = max(0, (float) $sale->grand_total - (float) ($sale->store_credit ?? 0));
-                if ($sale->payment_type === 'Credit') {
-                    $sale->status = $newNetDue <= 0
-                        ? 'Completed'
-                        : (((float) ($sale->store_credit ?? 0) > 0) ? 'Partially Paid' : 'Unpaid');
+                $netAfterStoreCredit = max(0, (float) $sale->grand_total - (float) ($sale->store_credit ?? 0));
+                if ($request->has('paid_amount') && $request->paid_amount !== null && $request->paid_amount !== '') {
+                    $newPaidAmount = min($netAfterStoreCredit, max(0, (float) $request->paid_amount));
                 } else {
+                    $newPaidAmount = ($sale->payment_type === 'Credit') ? 0.00 : $netAfterStoreCredit;
+                }
+                $newDueAmount = max(0, $netAfterStoreCredit - $newPaidAmount);
+
+                $sale->paid_amount = $newPaidAmount;
+                if ($newDueAmount <= 0) {
                     $sale->status = 'Completed';
+                    $sale->paid_date = $sale->paid_date ?? Carbon::now();
+                } elseif ($newPaidAmount > 0 || (float) ($sale->store_credit ?? 0) > 0) {
+                    $sale->status = 'Partially Paid';
+                    $sale->paid_date = null;
+                } else {
+                    $sale->status = 'Unpaid';
+                    $sale->paid_date = null;
                 }
 
                 $sale->save();
@@ -410,24 +424,31 @@ class SaleApiController extends Controller
                 $newPaymentType = $sale->payment_type;
                 $newCustomerId = $sale->customer_id;
 
-                // Apply new payment effects (net of any store credit already used on this sale)
-                if ($newPaymentType === 'Credit' && $newCustomerId) {
+                // Apply new payment effects
+                if ($newDueAmount > 0 && $newCustomerId) {
                     $newCust = Customer::find($newCustomerId);
-                    if ($newCust && $newNetDue > 0) {
-                        $newCust->increment('due_amount', $newNetDue);
+                    if ($newCust) {
+                        $newCust->increment('due_amount', $newDueAmount);
                     }
-                } elseif ($newPaymentType !== 'Credit') {
+                }
+
+                if ($newPaidAmount > 0 && $newPaymentType !== 'Store Credit') {
                     $methodMap = [
                         'Cash' => 'cash',
                         'Bank' => 'bank',
-                        'UPI' => 'upi'
+                        'UPI' => 'upi',
+                        'Credit' => 'cash',
                     ];
+                    $desc = 'Sale updated: ' . $sale->sale_number;
+                    if ($newDueAmount > 0) {
+                        $desc .= ' (Paid: ₹' . number_format($newPaidAmount, 2) . ', Due: ₹' . number_format($newDueAmount, 2) . ')';
+                    }
                     CashBook::create([
                         'shop_id' => $shopId,
                         'type' => 'cash_in',
-                        'amount' => $sale->grand_total,
+                        'amount' => $newPaidAmount,
                         'payment_method' => $methodMap[$newPaymentType] ?? 'cash',
-                        'description' => 'Sale updated: ' . $sale->sale_number,
+                        'description' => $desc,
                         'reference_id' => $sale->id,
                         'reference_type' => 'sale',
                         'transaction_date' => $sale->sale_date,

@@ -56,7 +56,7 @@
                             <h3 class="font-bold text-sm flex items-center justify-end gap-2"
                                 :style="'color: ' + (invoiceSettings && invoiceSettings.text_color ? invoiceSettings.text_color : '#FFFFFF') + ' !important;'">
                                 <span x-text="t('invoice')">INVOICE</span>
-                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned'">
+                                <template x-if="selectedSale.status === 'Returned' || selectedSale.status === 'Partially Returned' || selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid'">
                                     <span class="px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full border border-white/20"
                                         x-text="t(selectedSale.status.toLowerCase().replace(/ /g, '_')) || selectedSale.status"></span>
                                 </template>
@@ -186,6 +186,18 @@
                                     <div class="flex justify-between w-full text-xs font-bold" :class="selectedSale.payment_type === 'Credit' ? 'text-rose-600' : 'text-slate-800 dark:text-white'">
                                         <span x-text="selectedSale.payment_type === 'Credit' ? (t('balance_due') || 'Balance Due') + ':' : ((t('net_paid') || 'Paid') + ' (' + (selectedSale.payment_type || 'Cash') + '):')"></span>
                                         <span>₹<span x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance)).toFixed(2)"></span></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <template x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && (parseFloat(selectedSale.paid_amount) + parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)) < parseFloat(selectedSale.grand_total))">
+                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5" x-show="!(parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0 && selectedSale.status === 'Completed')">
+                                    <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
+                                        <span x-text="(t('paid_amount') || 'Paid Amount') + ':'">Paid Amount:</span>
+                                        <span>₹<span x-text="parseFloat(selectedSale.paid_amount || 0).toFixed(2)"></span></span>
+                                    </div>
+                                    <div class="flex justify-between w-full text-xs font-bold text-rose-600">
+                                        <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
+                                        <span>₹<span x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)).toFixed(2)"></span></span>
                                     </div>
                                 </div>
                             </template>
@@ -1103,15 +1115,34 @@
                         <div class="pt-2">
                             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment Type</label>
                             <div class="grid grid-cols-4 gap-1.5">
-                                <button @click="pos.paymentType = 'Cash'" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
-                                <button @click="pos.paymentType = 'UPI'"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
-                                <button @click="pos.paymentType = 'Bank'" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
-                                <button @click="pos.paymentType = 'Credit'" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                                <button @click="setPosPaymentType('Cash')" :class="pos.paymentType === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
+                                <button @click="setPosPaymentType('UPI')"  :class="pos.paymentType === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
+                                <button @click="setPosPaymentType('Bank')" :class="pos.paymentType === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
+                                <button @click="setPosPaymentType('Credit')" :class="pos.paymentType === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'" class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                            </div>
+                        </div>
+
+                        {{-- Paid Amount Input for Partial Sale --}}
+                        <div class="pt-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <label class="text-xs font-semibold text-slate-600 dark:text-slate-300">Paid Amount (ચૂકવેલ રકમ):</label>
+                                <span class="text-[10px] text-slate-400 font-mono">Max: ₹<span x-text="calculateGrandTotal().toFixed(2)"></span></span>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">₹</span>
+                                <input type="number" step="0.01" x-model.number="pos.paid_amount" placeholder="0.00"
+                                    class="block w-full pl-7 pr-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-semibold dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
+                            </div>
+                            <div class="flex justify-between items-center text-xs mt-1.5 px-1 font-semibold"
+                                x-show="getPosDueAmount() > 0">
+                                <span class="text-emerald-600">Paid: ₹<span x-text="getPosPaidAmount().toFixed(2)"></span></span>
+                                <span class="text-rose-600">Receivable Due: ₹<span x-text="getPosDueAmount().toFixed(2)"></span></span>
                             </div>
                         </div>
 
                         <button @click="saveEditedSale()" :disabled="pos.items.length === 0"
-                            class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50">
+                            class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50 font-sans cursor-pointer"
+                            x-text="getSaleSaveButtonLabel()">
                             Save & Print Bill
                         </button>
                     </div>

@@ -173,8 +173,8 @@ class CustomerApiController extends Controller
             'transaction_date' => Carbon::now(),
         ]);
 
-        // 3. Sync Sale Statuses based on Customer Due Balance
-        static::syncCustomerSaleStatuses($customer->id, $shopId);
+        // 3. Apply repayment to oldest unpaid sales
+        static::applyCustomerPayment($customer->id, $shopId, $amount);
 
         app(\App\Services\WhatsApp\WhatsAppAutoSender::class)->customerPaid($customer, $amount);
 
@@ -186,54 +186,79 @@ class CustomerApiController extends Controller
         ], 200);
     }
 
-    public static function syncCustomerSaleStatuses($customerId, $shopId)
+    public static function applyCustomerPayment($customerId, $shopId, float $amount)
     {
-        $customer = Customer::where('shop_id', $shopId)->find($customerId);
-        if (!$customer) return;
+        if (!$customerId || $amount <= 0) return;
 
-        $creditSales = \App\Models\Sale::where('shop_id', $shopId)
+        $customer = Customer::where('shop_id', $shopId)->find($customerId);
+        if ($customer && (float)$customer->due_amount <= 0) {
+            \App\Models\Sale::where('shop_id', $shopId)
+                ->where('customer_id', $customerId)
+                ->whereIn('status', ['Unpaid', 'Partially Paid'])
+                ->get()
+                ->each(function ($s) {
+                    $s->update([
+                        'status' => 'Completed',
+                        'paid_amount' => $s->grand_total,
+                        'paid_date' => $s->paid_date ?? Carbon::now(),
+                    ]);
+                });
+            return;
+        }
+
+        $unpaidSales = \App\Models\Sale::where('shop_id', $shopId)
             ->where('customer_id', $customerId)
-            ->whereIn('status', ['Unpaid', 'Partially Paid', 'Completed'])
-            ->where('payment_type', 'Credit')
+            ->whereIn('status', ['Unpaid', 'Partially Paid'])
             ->orderBy('sale_date', 'asc')
             ->orderBy('id', 'asc')
             ->get();
 
-        $totalCredit = $creditSales->sum('grand_total');
-        $due = (float) $customer->due_amount;
-        $paidAmount = max(0, $totalCredit - $due);
+        $rem = $amount;
+        foreach ($unpaidSales as $sale) {
+            if ($rem <= 0) break;
+            $dueOnSale = max(0, (float)$sale->grand_total - (float)($sale->paid_amount ?? 0));
+            if ($dueOnSale <= 0) continue;
 
-        $rem = $paidAmount;
-        foreach ($creditSales as $sale) {
-            $total = (float) $sale->grand_total;
-            if ($rem >= $total) {
-                if ($sale->status !== 'Completed') {
-                    $sale->update([
-                        'status' => 'Completed',
-                        'paid_amount' => $total,
-                        'paid_date' => Carbon::now(),
-                    ]);
-                } else {
-                    $sale->update([
-                        'paid_amount' => $total,
-                        'paid_date' => $sale->paid_date ?? Carbon::now(),
-                    ]);
-                }
-                $rem -= $total;
-            } elseif ($rem > 0) {
+            $payThis = min($rem, $dueOnSale);
+            $newPaid = (float)($sale->paid_amount ?? 0) + $payThis;
+            $rem -= $payThis;
+
+            if ($newPaid >= (float)$sale->grand_total) {
                 $sale->update([
-                    'status' => 'Partially Paid',
-                    'paid_amount' => $rem,
-                    'paid_date' => null,
+                    'status' => 'Completed',
+                    'paid_amount' => (float)$sale->grand_total,
+                    'paid_date' => Carbon::now(),
                 ]);
-                $rem = 0;
             } else {
                 $sale->update([
-                    'status' => 'Unpaid',
-                    'paid_amount' => 0.00,
-                    'paid_date' => null,
+                    'status' => 'Partially Paid',
+                    'paid_amount' => $newPaid,
                 ]);
             }
+        }
+    }
+
+    public static function syncCustomerSaleStatuses($customerId, $shopId)
+    {
+        if (!$customerId) return;
+
+        $customer = Customer::where('shop_id', $shopId)->find($customerId);
+        if (!$customer) return;
+
+        $due = (float) $customer->due_amount;
+
+        if ($due <= 0) {
+            \App\Models\Sale::where('shop_id', $shopId)
+                ->where('customer_id', $customerId)
+                ->whereIn('status', ['Unpaid', 'Partially Paid'])
+                ->get()
+                ->each(function ($s) {
+                    $s->update([
+                        'status' => 'Completed',
+                        'paid_amount' => $s->grand_total,
+                        'paid_date' => $s->paid_date ?? Carbon::now(),
+                    ]);
+                });
         }
     }
 }

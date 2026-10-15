@@ -42,7 +42,7 @@ class SaaSDataSeeder extends Seeder
         // 2. Invoice default settings
         InvoiceSetting::set('default_logo', '');
         InvoiceSetting::set('watermark', 'yes');
-        InvoiceSetting::set('footer_text', 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.');
+        InvoiceSetting::set('footer_text', 'Thank you for your business!');
         InvoiceSetting::set('invoice_prefix', 'DH-2026-');
         InvoiceSetting::set('tax_settings', '18');
 
