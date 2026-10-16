@@ -231,27 +231,8 @@
                                         x-text="selectedSale.grand_total"></span></span>
                             </div>
                             <template
-                                x-if="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0">
-                                <div
-                                    class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5">
-                                    <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
-                                        <span x-text="(t('store_credit') || 'Store Credit') + ':'">Store Credit:</span>
-                                        <span>-₹<span
-                                                x-text="parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance).toFixed(2)"></span></span>
-                                    </div>
-                                    <div class="flex justify-between w-full text-xs font-bold"
-                                        :class="selectedSale.payment_type === 'Credit' ? 'text-rose-600' : 'text-slate-800 dark:text-white'">
-                                        <span
-                                            x-text="selectedSale.payment_type === 'Credit' ? (t('balance_due') || 'Balance Due') + ':' : ((t('net_paid') || 'Paid') + ' (' + (selectedSale.payment_type || 'Cash') + '):')"></span>
-                                        <span>₹<span
-                                                x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance)).toFixed(2)"></span></span>
-                                    </div>
-                                </div>
-                            </template>
-                            <template
-                                x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && (parseFloat(selectedSale.paid_amount) + parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)) < parseFloat(selectedSale.grand_total))">
-                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5"
-                                    x-show="!(parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0) > 0 && selectedSale.status === 'Completed')">
+                                x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && parseFloat(selectedSale.paid_amount) < parseFloat(selectedSale.grand_total))">
+                                <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5">
                                     <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
                                         <span x-text="(t('paid_amount') || 'Paid Amount') + ':'">Paid Amount:</span>
                                         <span>₹<span
@@ -260,7 +241,7 @@
                                     <div class="flex justify-between w-full text-xs font-bold text-rose-600">
                                         <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
                                         <span>₹<span
-                                                x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0) - parseFloat(selectedSale.store_credit || selectedSale.used_credit_balance || 0)).toFixed(2)"></span></span>
+                                                x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0)).toFixed(2)"></span></span>
                                     </div>
                                 </div>
                             </template>
@@ -1157,9 +1138,6 @@
                         <option value="cash">Cash Refund</option>
                         <option value="bank">Bank Refund</option>
                         <option value="upi">UPI Refund</option>
-                        <template x-if="returnForm.customer_id">
-                            <option value="credit_note">Credit Note (Store Credit)</option>
-                        </template>
                         <template x-if="returnForm.payment_type === 'Credit' && returnForm.customer_id">
                             <option value="due_adjustment">Reduce Customer Khata Due</option>
                         </template>
@@ -2082,12 +2060,11 @@
                 <table class="w-full divide-y divide-slate-200 dark:divide-gray-700 text-left text-xs">
                     <thead class="bg-slate-50 dark:bg-gray-700/50 sticky top-0 z-10">
                         <tr>
-                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase">Product Name</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase">Barcode</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Price</th>
-                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Customer Price
-                                (₹)</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20">Reset</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase" x-text="t('product_name')">Product Name</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase" x-text="t('barcode')">Barcode</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right" x-text="t('default_price') || 'Default Price'">Default Price</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44" x-text="(t('customer_price') || 'Customer Price') + ' (₹)'">Customer Price (₹)</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20" x-text="t('reset')">Reset</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
@@ -2227,13 +2204,11 @@
                 <table class="w-full divide-y divide-slate-200 dark:divide-gray-700 text-left text-xs">
                     <thead class="bg-slate-50 dark:bg-gray-700/50 sticky top-0 z-10">
                         <tr>
-                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase">Product Name</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase">Barcode</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right">Default Purchase Price
-                            </th>
-                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44">Supplier Price
-                                (₹)</th>
-                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20">Reset</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase" x-text="t('product_name')">Product Name</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase" x-text="t('barcode')">Barcode</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-right" x-text="t('default_purchase_price') || 'Default Purchase Price'">Default Purchase Price</th>
+                            <th class="px-4 py-2.5 font-bold text-slate-400 uppercase text-right w-44" x-text="(t('supplier_price') || 'Supplier Price') + ' (₹)'">Supplier Price (₹)</th>
+                            <th class="px-3 py-2.5 font-bold text-slate-400 uppercase text-center w-20" x-text="t('reset')">Reset</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-gray-700">
@@ -2824,7 +2799,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
                     </svg>
-                    <span>Store Credit & Credit Notes</span>
+                    <span>Credit Notes</span>
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5"
                     x-text="customerCreditNotesTarget ? customerCreditNotesTarget.name : ''"></p>

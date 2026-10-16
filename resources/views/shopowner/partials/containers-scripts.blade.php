@@ -39,7 +39,12 @@
             posContainerDetail: null,
 
             hasContainers() {
-                return !!(this.shop && Array.isArray(this.shop.features) && this.shop.features.includes('containers'));
+                if (!this.shop || !this.shop.features) return false;
+                let feat = this.shop.features;
+                if (typeof feat === 'string') {
+                    try { feat = JSON.parse(feat); } catch (_) { feat = [feat]; }
+                }
+                return Array.isArray(feat) && feat.includes('containers');
             },
 
             // ── Loaders ───────────────────────────────────────────────

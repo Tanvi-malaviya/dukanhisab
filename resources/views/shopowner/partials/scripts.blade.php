@@ -142,6 +142,61 @@
                 hi: @json(json_decode(file_get_contents(base_path('lang/hi.json')), true) ?? [])
             },
 
+            supportedLanguages: [
+                { code: 'en', name: 'English', native: 'English' },
+                { code: 'gu', name: 'Gujarati', native: 'ગુજરાતી' },
+                { code: 'hi', name: 'Hindi', native: 'हिन्दी' },
+                { code: 'bn', name: 'Bengali', native: 'বাংলা' },
+                { code: 'brx', name: 'Bodo', native: 'बर\'' },
+                { code: 'doi', name: 'Dogri', native: 'डोगरी' },
+                { code: 'kn', name: 'Kannada', native: 'ಕನ್ನಡ' },
+                { code: 'ks', name: 'Kashmiri', native: 'کٲشُر' },
+                { code: 'kok', name: 'Konkani', native: 'कोंकणी' },
+                { code: 'mai', name: 'Maithili', native: 'मैथिली' },
+                { code: 'ml', name: 'Malayalam', native: 'മലയാളം' },
+                { code: 'mni', name: 'Manipuri', native: 'মৈতৈলোন্' },
+                { code: 'mr', name: 'Marathi', native: 'मराठी' },
+                { code: 'ne', name: 'Nepali', native: 'नेपाली' },
+                { code: 'or', name: 'Odia', native: 'ଓଡ଼ିଆ' },
+                { code: 'pa', name: 'Punjabi', native: 'ਪੰਜਾਬੀ' },
+                { code: 'sa', name: 'Sanskrit', native: 'संस्कृतम्' },
+                { code: 'sat', name: 'Santali', native: 'ᱥᱟᱱᱛᱟᱲᱤ' },
+                { code: 'sd', name: 'Sindhi', native: 'سنڌي' },
+                { code: 'ta', name: 'Tamil', native: 'தமிழ்' },
+                { code: 'te', name: 'Telugu', native: 'తెలుగు' },
+                { code: 'ur', name: 'Urdu', native: 'اردو' }
+            ],
+
+            async loadLanguage(lang) {
+                if (!lang || (this.translations && this.translations[lang] && Object.keys(this.translations[lang]).length > 10)) {
+                    return true;
+                }
+                try {
+                    const cacheKey = 'dukanhisab_trans_v2_' + lang;
+                    const cached = sessionStorage.getItem(cacheKey);
+                    if (cached) {
+                        try {
+                            const parsed = JSON.parse(cached);
+                            this.translations = Object.assign({}, this.translations, { [lang]: parsed });
+                            return true;
+                        } catch (_) {}
+                    }
+                    let res = await fetch('/v1/translations/' + lang + '?v=' + Date.now());
+                    if (!res.ok) {
+                        res = await fetch('/api/v1/translations/' + lang + '?v=' + Date.now());
+                    }
+                    if (res.ok) {
+                        const data = await res.json();
+                        try { sessionStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+                        this.translations = Object.assign({}, this.translations, { [lang]: data });
+                        return true;
+                    }
+                } catch (e) {
+                    console.warn('Failed to load translations for ' + lang, e);
+                }
+                return false;
+            },
+
             t(key) {
                 const lang = this.currentLang || 'en';
                 if (this.translations && this.translations[lang] && this.translations[lang][key]) {
@@ -153,10 +208,15 @@
                 return key;
             },
 
-            setLanguage(lang) {
+            async setLanguage(lang) {
+                if (!this.translations[lang]) {
+                    await this.loadLanguage(lang);
+                }
                 this.currentLang = lang;
                 localStorage.setItem('dukanhisab_lang', lang);
                 localStorage.setItem('locale', lang);
+                document.cookie = `locale=${lang}; path=/; max-age=31536000`;
+                document.cookie = `dukanhisab_lang=${lang}; path=/; max-age=31536000`;
                 if (this.user) {
                     this.user.language = lang;
                     localStorage.setItem('shopowner_user', JSON.stringify(this.user));
@@ -171,6 +231,12 @@
                     }).catch(() => {});
                 }
                 window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }));
+            },
+
+            async init() {
+                if (this.currentLang && !this.translations[this.currentLang]) {
+                    await this.loadLanguage(this.currentLang);
+                }
             },
 
             formatDate(dateVal) {
@@ -3404,18 +3470,6 @@
                     return;
                 }
 
-                if (this.pos.paymentType === 'Store Credit') {
-                    const cust = this.getSelectedPosCustomer();
-                    if (!cust) {
-                        this.showConfirm('Validation Error', 'Customer selection is required to use Store Credit.', () => { });
-                        return;
-                    }
-                    if (parseFloat(cust.credit_balance || 0) < grandTotal) {
-                        this.showConfirm('Validation Error', 'Insufficient store credit balance (Available: ₹' + parseFloat(cust.credit_balance || 0).toFixed(2) + ').', () => { });
-                        return;
-                    }
-                }
-
                 this.loading = true;
                 const body = {
                     customer_id: this.pos.selectedCustomer || null,
@@ -3595,6 +3649,7 @@
             },
 
             openEditSaleModal(sale) {
+                this.selectedSale = sale;
                 this.pos.items = sale.items.map(item => {
                     const liveProduct = this.products.find(p => p.id === item.product_id);
                     return {
@@ -3798,12 +3853,9 @@
                 if (!this.selectedSale) return '#';
                 const custName = this.selectedSale.customer ? this.selectedSale.customer.name : 'Customer';
                 const mobile = this.selectedSale.customer ? this.selectedSale.customer.mobile : '';
-                const storeCredit = parseFloat(this.selectedSale.store_credit || this.selectedSale.used_credit_balance || 0);
+                const storeCredit = 0;
                 let paymentInfo = `Total: ₹${parseFloat(this.selectedSale.grand_total).toFixed(2)}`;
-                if (storeCredit > 0) {
-                    const netPaid = Math.max(0, parseFloat(this.selectedSale.grand_total) - storeCredit);
-                    paymentInfo += ` (Store Credit: -₹${storeCredit.toFixed(2)}, Paid: ₹${netPaid.toFixed(2)})`;
-                } else if (this.selectedSale.status === 'Partially Paid' || this.selectedSale.status === 'Unpaid' || (this.selectedSale.paid_amount !== null && this.selectedSale.paid_amount !== undefined && parseFloat(this.selectedSale.paid_amount) < parseFloat(this.selectedSale.grand_total))) {
+                if (this.selectedSale.status === 'Partially Paid' || this.selectedSale.status === 'Unpaid' || (this.selectedSale.paid_amount !== null && this.selectedSale.paid_amount !== undefined && parseFloat(this.selectedSale.paid_amount) < parseFloat(this.selectedSale.grand_total))) {
                     const paid = parseFloat(this.selectedSale.paid_amount || 0);
                     const due = Math.max(0, parseFloat(this.selectedSale.grand_total) - paid);
                     paymentInfo += ` (Paid: ₹${paid.toFixed(2)}, Due: ₹${due.toFixed(2)})`;

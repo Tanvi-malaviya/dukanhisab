@@ -436,8 +436,8 @@
                         class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700/50 gap-2 w-full">
                         <!-- Edit Button -->
                         <button @click="openEditPurchaseModal(pur)" :title="t('edit')"
-                            :disabled="pur.status && pur.status !== 'Completed'"
-                            :class="(pur.status && pur.status !== 'Completed') ? 'opacity-40 cursor-not-allowed' : 'hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white cursor-pointer'"
+                            :disabled="pur.status === 'Cancelled' || pur.status === 'Returned'"
+                            :class="(pur.status === 'Cancelled' || pur.status === 'Returned') ? 'opacity-40 cursor-not-allowed' : 'hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white cursor-pointer'"
                             class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
