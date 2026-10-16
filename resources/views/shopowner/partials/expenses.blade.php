@@ -85,7 +85,7 @@
             <thead>
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('description')">Description</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('category') || 'Category'">Category</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('amount')">Amount</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('payment_type')">Method</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('date')">Date</th>

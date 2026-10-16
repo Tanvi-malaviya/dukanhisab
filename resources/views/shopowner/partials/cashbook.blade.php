@@ -200,8 +200,8 @@
                     <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('expected_cash') || 'Expected Cash'">Expected Cash</th>
                     <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('physical_cash_count') || 'Physical Count'">Physical Count</th>
                     <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('difference') || 'Difference / Status'">Difference / Status</th>
-                    <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Closed By & Notes</th>
-                    <th class="px-4 py-3 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Breakdown</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('closed_by_notes') || 'Closed By & Notes'">Closed By & Notes</th>
+                    <th class="px-4 py-3 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('breakdown') || 'Breakdown'">Breakdown</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-gray-700/60">

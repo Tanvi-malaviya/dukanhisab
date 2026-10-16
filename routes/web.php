@@ -26,6 +26,34 @@ Route::get('/', function () {
     return view('app');
 });
 
+// Direct translation delivery routes for web panel
+Route::get('/v1/translations/{lang}', function (string $lang) {
+    if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
+        abort(404);
+    }
+    $path = base_path("lang/{$lang}.json");
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/json',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+});
+Route::get('/translations/{lang}', function (string $lang) {
+    if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
+        abort(404);
+    }
+    $path = base_path("lang/{$lang}.json");
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/json',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+});
+
 // Admin Auth Routes
 Route::get('admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
 Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');

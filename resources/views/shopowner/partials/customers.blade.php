@@ -61,7 +61,7 @@
                             <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) > 0">
                                 <span class="text-rose-600 font-bold">
                                     ₹<span x-text="parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0)).toFixed(2)"></span>
-                                    <span class="text-[11px] font-medium text-rose-500 ml-1">(Due)</span>
+                                    <span class="text-[11px] font-medium text-rose-500 ml-1" x-text="'(' + (t('due') || 'Due') + ')'">(Due)</span>
                                 </span>
                             </template>
                             <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) < 0">
@@ -77,20 +77,30 @@
                         <td class="px-4 py-3 text-right text-sm whitespace-nowrap space-x-1.5">
                             <button @click="openCustomerPricingModal(cust)" 
                                 class="px-2 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white dark:bg-indigo-900/30 dark:hover:bg-indigo-600 dark:text-indigo-300 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1"
-                                title="Customer Product Pricing (ઇન્વેન્ટરી ભાવ)">
+                                :title="t('customer_pricing') || 'Customer Product Pricing'">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                 </svg>
-                                <span>Pricing</span>
+                                <span x-text="t('pricing') || 'Pricing'">Pricing</span>
                             </button>
+                            <template x-if="hasContainers()">
+                                <button @click="openContainerCustomer(cust.id)" 
+                                    class="px-2 py-1 bg-amber-50 hover:bg-amber-600 text-amber-700 hover:text-white dark:bg-amber-900/30 dark:hover:bg-amber-600 dark:text-amber-300 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1"
+                                    :title="t('containers') || 'Containers'">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                    </svg>
+                                    <span x-text="t('containers') || 'Containers'">Containers</span>
+                                </button>
+                            </template>
                             <template x-if="parseFloat(cust.credit_balance || 0) > 0 || (parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) < 0">
                                 <button @click="openCustomerCreditNotesModal(cust)"
                                     class="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white dark:bg-emerald-900/30 dark:hover:bg-emerald-600 dark:text-emerald-300 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1"
-                                    title="View Store Credit & Credit Notes">
+                                    :title="t('credit_notes') || 'Credit Notes'">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
                                     </svg>
-                                    <span>Credit Notes</span>
+                                    <span x-text="t('credit_notes') || 'Credit Notes'">Credit Notes</span>
                                 </button>
                             </template>
                             <template x-if="(parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0) - (cust.credit_balance || 0))) > 0">

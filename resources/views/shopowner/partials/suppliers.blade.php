@@ -35,7 +35,7 @@
                             <template x-if="parseFloat(sup.due_amount || 0) > 0">
                                 <span class="text-rose-600 font-bold">
                                     ₹<span x-text="parseFloat(sup.due_amount).toFixed(2)"></span>
-                                    <span class="text-[11px] font-medium text-rose-500 ml-1">(Due)</span>
+                                    <span class="text-[11px] font-medium text-rose-500 ml-1" x-text="'(' + (t('due') || 'Due') + ')'">(Due)</span>
                                 </span>
                             </template>
                             <template x-if="parseFloat(sup.due_amount || 0) < 0">
@@ -51,11 +51,11 @@
                         <td class="px-4 py-3 text-right text-sm whitespace-nowrap space-x-1.5">
                             <button @click="openSupplierPricingModal(sup)" 
                                 class="px-2 py-1 bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white dark:bg-indigo-900/30 dark:hover:bg-indigo-600 dark:text-indigo-300 rounded-lg text-xs font-semibold transition-all inline-flex items-center gap-1"
-                                title="Supplier Product Pricing (સપ્લાયર ખરીદ ભાવ)">
+                                :title="t('supplier_pricing') || 'Supplier Product Pricing'">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
                                 </svg>
-                                <span>Pricing</span>
+                                <span x-text="t('pricing') || 'Pricing'">Pricing</span>
                             </button>
                             <template x-if="parseFloat(sup.due_amount) > 0">
                                 <button @click="openPaySupplierDueModal(sup)"

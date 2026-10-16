@@ -182,8 +182,8 @@
                         class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700/50 gap-2 w-full">
                         <!-- Edit Button -->
                         <button @click="openEditSaleModal(sale)" :title="t('edit')"
-                            :disabled="sale.status !== 'Completed'"
-                            :class="sale.status !== 'Completed' ? 'opacity-40 cursor-not-allowed' : 'hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white cursor-pointer'"
+                            :disabled="sale.status === 'Cancelled' || sale.status === 'Returned' || sale.status === 'Partially Returned'"
+                            :class="(sale.status === 'Cancelled' || sale.status === 'Returned' || sale.status === 'Partially Returned') ? 'opacity-40 cursor-not-allowed' : 'hover:bg-primary hover:text-white dark:hover:bg-primary dark:hover:text-white cursor-pointer'"
                             class="flex-1 flex justify-center items-center py-1.5 bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-slate-300 rounded-lg transition-all">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -277,7 +277,7 @@
                         <div
                             class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                             ⚠️ <strong x-text="(t('reversal_notice') || 'Reversal Notice') + ':'">Reversal Notice:</strong>
-                            <span x-text="t('cancel_sale_reversal_notice') || 'Cancelling will restore product inventory, adjust customer due/store credit, post a CashBook reversal entry, and keep this invoice marked as Cancelled.'"></span>
+                            <span x-text="t('cancel_sale_reversal_notice') || 'Cancelling will restore product inventory, adjust customer due balance, post a CashBook reversal entry, and keep this invoice marked as Cancelled.'"></span>
                         </div>
 
                         <div>

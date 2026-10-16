@@ -18,7 +18,6 @@ class Sale extends Model
         'discount',
         'grand_total',
         'paid_amount',
-        'store_credit',
         'payment_type',
         'status',
         'cancellation_reason',

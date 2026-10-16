@@ -247,7 +247,8 @@ class InvoiceApiController extends Controller
         if (str_contains($locale, '_')) {
             $locale = explode('_', $locale)[0];
         }
-        if (!in_array($locale, ['en', 'gu', 'hi'], true)) {
+        $supportedLocales = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
+        if (!in_array($locale, $supportedLocales, true)) {
             $locale = 'en';
         }
 
@@ -729,18 +730,7 @@ class InvoiceApiController extends Controller
                                     <td class="grand-total-label">' . __('grand_total') . ':</td>
                                     <td class="grand-total-value">&#8377;' . number_format($sale->grand_total, 2) . '</td>
                                 </tr>';
-                                if ((float)($sale->store_credit ?? 0) > 0) {
-                                    $netPayment = max(0, (float)$sale->grand_total - (float)$sale->store_credit);
-                                    $html .= '
-                                    <tr>
-                                        <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit') . ':</td>
-                                        <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377;' . number_format($sale->store_credit, 2) . '</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due') : __('net_paid') . ' (' . ucfirst($sale->payment_type ?? 'Cash') . ')') . ':</td>
-                                        <td class="total-value" style="font-weight: bold;">&#8377;' . number_format($netPayment, 2) . '</td>
-                                    </tr>';
-                                } elseif ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit')) {
+                                if ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit')) {
                                     $paidAmt = (float)($sale->paid_amount ?? 0);
                                     $dueAmt = max(0, (float)$sale->grand_total - $paidAmt);
                                     $html .= '
@@ -876,7 +866,8 @@ class InvoiceApiController extends Controller
         if (str_contains($locale, '_')) {
             $locale = explode('_', $locale)[0];
         }
-        if (!in_array($locale, ['en', 'gu', 'hi'], true)) {
+        $supportedLocales = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
+        if (!in_array($locale, $supportedLocales, true)) {
             $locale = 'en';
         }
 

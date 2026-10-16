@@ -443,10 +443,10 @@
                         <table class="w-full text-xs">
                             <thead>
                                 <tr class="text-left text-[10px] uppercase tracking-wider text-slate-400 border-b border-slate-100 dark:border-gray-700">
-                                    <th class="pb-2">Date</th>
-                                    <th class="pb-2 px-3">Description</th>
-                                    <th class="pb-2 text-right">Change</th>
-                                    <th class="pb-2 pl-3 text-right">Balance</th>
+                                    <th class="pb-2" x-text="t('date') || 'Date'">Date</th>
+                                    <th class="pb-2 px-3" x-text="t('description') || 'Description'">Description</th>
+                                    <th class="pb-2 text-right" x-text="t('change') || 'Change'">Change</th>
+                                    <th class="pb-2 pl-3 text-right" x-text="t('balance') || 'Balance'">Balance</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 dark:divide-gray-700/60">

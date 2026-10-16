@@ -73,30 +73,33 @@
         </div>
 
         {{-- Language Selector Dropdown --}}
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.outside="open = false" class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300 flex items-center gap-1.5 transition-all hover:bg-slate-200 dark:hover:bg-gray-600" title="Select Language">
+        <div class="relative" x-data="{ open: false, langSearch: '' }">
+            <button @click="open = !open; langSearch = ''" @click.outside="open = false"
+                class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300 flex items-center gap-1.5 transition-all hover:bg-slate-200 dark:hover:bg-gray-600"
+                title="Select Language">
                 <svg class="w-4 h-4 text-slate-500 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
                 <span class="text-[10px] font-extrabold uppercase tracking-wide" x-text="currentLang"></span>
             </button>
             <div x-show="open" x-cloak
-                class="absolute right-0 mt-1 w-28 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg z-50 py-1 overflow-hidden transition-all">
-                <button @click="setLanguage('en'); open = false;"
-                    class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between">
-                    <span>English</span>
-                    <span x-show="currentLang === 'en'" class="text-primary font-bold text-xs">✓</span>
-                </button>
-                <button @click="setLanguage('hi'); open = false;"
-                    class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between">
-                    <span>Hindi</span>
-                    <span x-show="currentLang === 'hi'" class="text-primary font-bold text-xs">✓</span>
-                </button>
-                <button @click="setLanguage('gu'); open = false;"
-                    class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between">
-                    <span>Gujarati</span>
-                    <span x-show="currentLang === 'gu'" class="text-primary font-bold text-xs">✓</span>
-                </button>
+                class="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden transition-all">
+                <div class="px-2 pb-1.5 border-b border-slate-100 dark:border-gray-700">
+                    <input type="text" x-model="langSearch" placeholder="Search language..."
+                        class="w-full px-2.5 py-1 text-xs bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary">
+                </div>
+                <div class="max-h-60 overflow-y-auto divide-y divide-slate-50 dark:divide-gray-700/50">
+                    <template x-for="l in (supportedLanguages || []).filter(item => !langSearch || item.name.toLowerCase().includes(langSearch.toLowerCase()) || item.native.toLowerCase().includes(langSearch.toLowerCase()) || item.code.toLowerCase().includes(langSearch.toLowerCase()))" :key="l.code">
+                        <button @click="setLanguage(l.code); open = false;"
+                            class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between transition-colors">
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-slate-800 dark:text-slate-100" x-text="l.native"></span>
+                                <span class="text-[10px] text-slate-400" x-text="l.name"></span>
+                            </div>
+                            <span x-show="currentLang === l.code" class="text-primary font-bold text-xs">✓</span>
+                        </button>
+                    </template>
+                </div>
             </div>
         </div>
 
