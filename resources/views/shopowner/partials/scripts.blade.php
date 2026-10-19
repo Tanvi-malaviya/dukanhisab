@@ -208,6 +208,16 @@
                 return key;
             },
 
+            sortByName(arr, targetLang = null) {
+                if (!Array.isArray(arr)) return [];
+                const lang = targetLang || this.currentLang || localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en';
+                return arr.sort((a, b) => {
+                    const nameA = (a.name || '').trim();
+                    const nameB = (b.name || '').trim();
+                    return nameA.localeCompare(nameB, [lang, 'gu-IN', 'hi-IN', 'en'], { sensitivity: 'base', numeric: true });
+                });
+            },
+
             async setLanguage(lang) {
                 if (!this.translations[lang]) {
                     await this.loadLanguage(lang);
@@ -230,6 +240,11 @@
                         body: fd
                     }).catch(() => {});
                 }
+                if (Array.isArray(this.products) && this.products.length > 0) this.products = this.sortByName(this.products, lang);
+                if (Array.isArray(this.customers) && this.customers.length > 0) this.customers = this.sortByName(this.customers, lang);
+                if (Array.isArray(this.suppliers) && this.suppliers.length > 0) this.suppliers = this.sortByName(this.suppliers, lang);
+                if (Array.isArray(this.expenseCategories) && this.expenseCategories.length > 0) this.expenseCategories = this.sortByName(this.expenseCategories, lang);
+                if (Array.isArray(this.containerTypes) && this.containerTypes.length > 0) this.containerTypes = this.sortByName(this.containerTypes, lang);
                 window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }));
             },
 
@@ -494,7 +509,7 @@
             returnedPurchasesPage: 1, returnedPurchasesTotal: 0,
             cashbookPage: 1, cashbookPerPage: 10,
             bankPage: 1, bankPerPage: 10,
-            stockStatusPage: 1, stockStatusPerPage: 10,
+            stockStatusPage: parseInt(new URLSearchParams(window.location.search).get('page') || sessionStorage.getItem('inventory_stock_status_page') || '1') || 1, stockStatusPerPage: 10,
             stockHistoryPage: 1, stockHistoryPerPage: 10,
             customerDuesPage: 1, customerDuesPerPage: 5,
             supplierDuesPage: 1, supplierDuesPerPage: 5,
@@ -516,7 +531,7 @@
             showCustomerModal: false,
             newCustomer: { name: '', mobile: '', email: '' },
             showProductModal: false,
-            newProduct: { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true },
+            newProduct: { name: '', selling_price: '', purchase_price: 0, barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true },
             showExpenseModal: false,
             newExpense: { description: '', amount: '', payment_method: 'cash' },
             showSupplierModal: false,
@@ -708,6 +723,15 @@
                     // Notification inbox: initial unread count + poll every 2 minutes for new broadcasts
                     this.loadUnreadNotificationsCount();
                     setInterval(() => this.loadUnreadNotificationsCount(), 120000);
+
+                    // WhatsApp Settings & Credits sync
+                    window.addEventListener('whatsapp-settings-updated', (e) => {
+                        if (e && e.detail && e.detail.balance !== undefined) {
+                            if (!this.waSettings) this.waSettings = {};
+                            this.waSettings.balance = e.detail.balance;
+                        }
+                        this.loadWhatsAppSettingsSummary();
+                    });
                 }
 
                 this.$watch('customersPage', () => {
@@ -717,8 +741,21 @@
                 });
 
                 this.$watch('productsPage', () => {
-                    if (this.page === 'products' || this.page === 'inventory') {
+                    if (this.page === 'products') {
                         this.loadProducts('', true);
+                    }
+                });
+
+                this.$watch('stockStatusPage', (val) => {
+                    sessionStorage.setItem('inventory_stock_status_page', val);
+                    if (this.page === 'inventory') {
+                        const url = new URL(window.location.href);
+                        if (val > 1) {
+                            url.searchParams.set('page', val);
+                        } else {
+                            url.searchParams.delete('page');
+                        }
+                        window.history.replaceState({ page: 'inventory' }, '', url.pathname + url.search);
                     }
                 });
 
@@ -741,6 +778,12 @@
                 // Extract segment: /shop/sales-history → 'sales-history'
                 const segment = path.replace(/^\/(shop|web|dukanhisab)\/?/, '').replace(/\/$/, '') || '';
                 this.page = this.routeMap[segment] || 'dashboard';
+
+                if (this.page === 'inventory') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const p = parseInt(urlParams.get('page') || sessionStorage.getItem('inventory_stock_status_page') || '1');
+                    if (p > 0) this.stockStatusPage = p;
+                }
             },
 
             setPageLoading(pageName, state) {
@@ -760,6 +803,10 @@
             navigateTo(pageName, extraFn = null) {
                 this.setPageLoading(pageName, true);
                 this.page = pageName;
+                if (pageName === 'inventory') {
+                    this.stockStatusPage = 1;
+                    sessionStorage.setItem('inventory_stock_status_page', '1');
+                }
                 const url = '/shop/' + (pageName === 'dashboard' ? 'dashboard' : pageName);
                 history.pushState({ page: pageName }, '', url);
                 if (extraFn) extraFn();
@@ -782,7 +829,7 @@
                 else if (pageName === 'purchases') { this.resetNewPurchase(); return Promise.allSettled([this.loadProducts(), this.loadSuppliers()]); }
                 else if (pageName === 'purchase-history') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
                 else if (pageName === 'purchase-returned') return Promise.allSettled([this.loadPurchases(true), this.loadSuppliers()]);
-                else if (pageName === 'inventory') { this.loadStockHistory(); return this.loadProducts('', true); }
+                else if (pageName === 'inventory') { this.loadStockHistory(); return this.loadProducts(); }
                 else if (pageName === 'cashbook') return Promise.allSettled([this.loadCashBook('', 'cash'), this.loadRegisterClosures()]);
                 else if (pageName === 'bank-accounts') return Promise.allSettled([this.loadBankAccounts(), this.loadCashBook('', 'all')]);
                 else if (pageName === 'transactions') return this.loadCashBook('', 'all');
@@ -851,7 +898,8 @@
                     this.loadExpenseCategories(),
                     this.loadInvoiceSettings(),
                     this.loadSubscriptionPlans(),
-                    this.loadAddOnStatus()
+                    this.loadAddOnStatus(),
+                    this.loadWhatsAppSettingsSummary()
                 ]);
             },
 
@@ -869,7 +917,9 @@
             loadProducts(search = '', paginate = false) {
                 if (!paginate) {
                     this.productsPage = 1;
-                    this.stockStatusPage = 1;
+                    if (search) {
+                        this.stockStatusPage = 1;
+                    }
                     this.lowStockPage = 1;
                 }
                 this.productsLoading = true;
@@ -883,11 +933,15 @@
                     .then(d => {
                         this.productsLoading = false;
                         if (paginate && d && d.data !== undefined) {
-                            this.products = d.data;
+                            this.products = this.sortByName(d.data);
                             this.productsTotal = d.total;
                         } else if (Array.isArray(d)) {
-                            this.products = d;
+                            this.products = this.sortByName(d);
                             this.productsTotal = d.length;
+                            const maxPage = Math.max(1, Math.ceil(this.products.length / this.stockStatusPerPage));
+                            if (this.stockStatusPage > maxPage) {
+                                this.stockStatusPage = maxPage;
+                            }
                         }
                     })
                     .catch(() => { this.productsLoading = false; });
@@ -911,30 +965,31 @@
                     .then(d => {
                         this.customersLoading = false;
                         if (paginate && d && d.data !== undefined) {
-                            this.customers = d.data;
+                            this.customers = this.sortByName(d.data);
                             this.customersTotal = d.total;
                         } else if (Array.isArray(d)) {
-                            this.customers = d;
+                            this.customers = this.sortByName(d);
                             this.customersTotal = d.length;
-                            this.posFilteredCustomers = d;
-                            this.salesFilteredCustomers = d;
-                            this.returnedFilteredCustomers = d;
+                            this.posFilteredCustomers = this.customers;
+                            this.salesFilteredCustomers = this.customers;
+                            this.returnedFilteredCustomers = this.customers;
                         }
                     })
                     .catch(() => { this.customersLoading = false; });
             },
 
             filteredCustomersList() {
-                if (!this.customerSearchQuery || !this.customerSearchQuery.trim()) {
-                    return this.customers;
+                let list = this.customers;
+                if (this.customerSearchQuery && this.customerSearchQuery.trim()) {
+                    const q = this.customerSearchQuery.toLowerCase().trim();
+                    list = this.customers.filter(c => {
+                        const name = (c.name || '').toLowerCase();
+                        const mobile = (c.mobile || '').toLowerCase();
+                        const email = (c.email || '').toLowerCase();
+                        return name.includes(q) || mobile.includes(q) || email.includes(q);
+                    });
                 }
-                const q = this.customerSearchQuery.toLowerCase().trim();
-                return this.customers.filter(c => {
-                    const name = (c.name || '').toLowerCase();
-                    const mobile = (c.mobile || '').toLowerCase();
-                    const email = (c.email || '').toLowerCase();
-                    return name.includes(q) || mobile.includes(q) || email.includes(q);
-                });
+                return this.sortByName(list);
             },
 
             loadSuppliers() {
@@ -946,10 +1001,10 @@
                     .then(d => {
                         this.suppliersLoading = false;
                         if (Array.isArray(d)) {
-                            this.suppliers = d;
-                            this.purchaseFilteredSuppliers = d;
-                            this.purchaseHistoryFilteredSuppliers = d;
-                            this.purchaseReturnedFilteredSuppliers = d;
+                            this.suppliers = this.sortByName(d);
+                            this.purchaseFilteredSuppliers = this.suppliers;
+                            this.purchaseHistoryFilteredSuppliers = this.suppliers;
+                            this.purchaseReturnedFilteredSuppliers = this.suppliers;
                         }
                     })
                     .catch(() => { this.suppliersLoading = false; });
@@ -1074,8 +1129,8 @@
                     .then(r => r.json())
                     .then(d => {
                         this.expenseCategoriesLoading = false;
-                        if (Array.isArray(d)) this.expenseCategories = d;
-                        else if (d && Array.isArray(d.data)) this.expenseCategories = d.data;
+                        if (Array.isArray(d)) this.expenseCategories = this.sortByName(d);
+                        else if (d && Array.isArray(d.data)) this.expenseCategories = this.sortByName(d.data);
                     })
                     .catch(() => { this.expenseCategoriesLoading = false; });
             },
@@ -3236,7 +3291,7 @@
                     .then(r => r.json())
                     .then(d => {
                         if (Array.isArray(d)) {
-                            this.posFilteredCustomers = d;
+                            this.posFilteredCustomers = this.sortByName(d);
                         }
                     });
             },
@@ -3317,7 +3372,7 @@
                     .then(r => r.json())
                     .then(d => {
                         if (Array.isArray(d)) {
-                            this.salesFilteredCustomers = d;
+                            this.salesFilteredCustomers = this.sortByName(d);
                         }
                     });
             },
@@ -3345,7 +3400,7 @@
                     .then(r => r.json())
                     .then(d => {
                         if (Array.isArray(d)) {
-                            this.returnedFilteredCustomers = d;
+                            this.returnedFilteredCustomers = this.sortByName(d);
                         }
                     });
             },
@@ -3447,7 +3502,7 @@
                 const product = this.products.find(p => p.barcode === code);
                 if (product) { this.addToBill(product); this.pos.barcodeInput = ''; }
                 else {
-                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true };
+                    this.newProduct = { name: '', selling_price: '', purchase_price: 0, barcode: code, stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true };
                     this.showProductModal = true; this.pos.barcodeInput = '';
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');
                 }
@@ -3885,7 +3940,7 @@
                     .then(r => r.json())
                     .then(data => {
                         this.waSettingsLoading = false;
-                        if (data && data.events) {
+                        if (data && (data.events || data.balance !== undefined)) {
                             this.waSettings = data;
                         }
                     })
@@ -4114,13 +4169,13 @@
                     });
             },
 
-            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true, container_type_id: '', containers_per_unit: 1 }; this.showProductModal = true; },
+            openNewProductModal() { this.newProduct = { name: '', selling_price: '', purchase_price: 0, barcode: '', stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true, container_type_id: '', containers_per_unit: 1 }; this.showProductModal = true; },
             openEditProductModal(product) {
                 this.newProduct = {
                     id: product.id,
                     name: product.name,
                     selling_price: parseFloat(product.selling_price),
-                    purchase_price: parseFloat(product.purchase_price) || '',
+                    purchase_price: product.purchase_price !== null && product.purchase_price !== undefined && product.purchase_price !== '' ? parseFloat(product.purchase_price) : 0,
                     barcode: product.barcode || '',
                     stock: product.stock,
                     // Stock shown when the form opened; an edit sends only the difference from this.
@@ -4168,6 +4223,9 @@
                 // An edit never sends an absolute stock figure (it could overwrite sales made on another
                 // device since this page loaded). A changed stock becomes a logged adjustment of the difference.
                 const { initial_stock, ...payload } = this.newProduct;
+                if (payload.purchase_price === '' || payload.purchase_price === null || isNaN(payload.purchase_price)) {
+                    payload.purchase_price = 0;
+                }
                 const stockChange = isEdit ? (parseInt(this.newProduct.stock) || 0) - (initial_stock || 0) : 0;
                 if (isEdit) delete payload.stock;
                 fetch(url, { method: method, headers: this.getHeaders(), body: JSON.stringify(payload) })
@@ -4614,7 +4672,7 @@
                     .then(r => r.json())
                     .then(d => {
                         if (Array.isArray(d)) {
-                            this.purchaseFilteredSuppliers = d;
+                            this.purchaseFilteredSuppliers = this.sortByName(d);
                         }
                     });
             },
@@ -4683,7 +4741,7 @@
                     .then(r => r.json())
                     .then(d => {
                         if (Array.isArray(d)) {
-                            this.purchaseHistoryFilteredSuppliers = d;
+                            this.purchaseHistoryFilteredSuppliers = this.sortByName(d);
                         }
                     });
             },
@@ -4708,7 +4766,7 @@
                     .then(r => r.json())
                     .then(d => {
                         if (Array.isArray(d)) {
-                            this.purchaseReturnedFilteredSuppliers = d;
+                            this.purchaseReturnedFilteredSuppliers = this.sortByName(d);
                         }
                     });
             },
@@ -4760,7 +4818,7 @@
                     this.addPurchaseItemById(product.id);
                     this.pos.barcodeInput = '';
                 } else {
-                    this.newProduct = { name: '', selling_price: '', purchase_price: '', barcode: code, stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true };
+                    this.newProduct = { name: '', selling_price: '', purchase_price: 0, barcode: code, stock: 10, low_stock_threshold: 5, available_for_sale: true, available_for_purchase: true };
                     this.showProductModal = true;
                     this.pos.barcodeInput = '';
                     this.showToast(this.t('product_not_found_create') || 'Product not found! Create a new product.', 'warning');

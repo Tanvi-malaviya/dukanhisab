@@ -421,7 +421,7 @@
                     <label class="block text-xs font-semibold text-slate-500 mb-1" x-text="t('purchase_price')">Purchase
                         Price</label>
                     <input type="number" step="0.01" x-model.number="newProduct.purchase_price"
-                        :placeholder="t('enter_purchase_price') || 'Enter Purchase Price'"
+                        :placeholder="t('enter_purchase_price') || '0.00'"
                         class="block w-full px-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white">
                 </div>
             </div>

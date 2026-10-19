@@ -748,6 +748,7 @@
                     this.wa.packs = wallet.packs || [];
                     this.wa.ledger = wallet.ledger || [];
                     this.wa.loaded = true;
+                    window.dispatchEvent(new CustomEvent('whatsapp-settings-updated', { detail: { balance: this.wa.balance } }));
                 } catch (e) {
                     this.showToast(this.wt('wa_load_failed', 'Could not load WhatsApp settings.'), 'error');
                 } finally {
@@ -855,6 +856,7 @@
                     if (d.mock) {
                         this.wa.balance = d.balance;
                         this.wa.lowBalance = false;
+                        window.dispatchEvent(new CustomEvent('whatsapp-settings-updated', { detail: { balance: d.balance } }));
                         const w = await fetch('/api/v1/whatsapp/wallet', { headers: this.getHeaders() }).then(r => r.json());
                         this.wa.ledger = w.ledger || [];
                         this.showToast(`Purchased ${pack.credits} credits successfully!`);
@@ -936,6 +938,7 @@
                     if (verify.ok) {
                         this.wa.balance = v.balance;
                         this.wa.lowBalance = false;
+                        window.dispatchEvent(new CustomEvent('whatsapp-settings-updated', { detail: { balance: v.balance } }));
                         const w = await fetch('/api/v1/whatsapp/wallet', { headers: this.getHeaders() }).then(r => r.json());
                         this.wa.ledger = w.ledger || [];
                         this.showToast(v.message || `Purchased ${pack.credits} credits successfully!`);

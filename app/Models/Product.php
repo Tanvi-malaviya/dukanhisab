@@ -37,6 +37,12 @@ class Product extends Model
         $this->attributes['container_type_id'] = !empty($value) ? (int) $value : null;
     }
 
+    /** Forms send empty string/null for purchase_price; ensure it defaults to 0. */
+    public function setPurchasePriceAttribute($value): void
+    {
+        $this->attributes['purchase_price'] = ($value !== null && $value !== '') ? (float) $value : 0;
+    }
+
     /** Forms send null when no container is linked; the column is NOT NULL with a default of 1. */
     public function setContainersPerUnitAttribute($value): void
     {
