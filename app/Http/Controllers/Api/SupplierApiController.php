@@ -33,6 +33,8 @@ class SupplierApiController extends Controller
             });
         }
 
+        $query->orderBy('name', 'asc');
+
         if ($request->has('page') || $request->boolean('paginate')) {
             $perPage = $request->input('per_page', 10);
             $suppliers = $query->paginate($perPage);

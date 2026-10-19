@@ -71,7 +71,7 @@
             loadContainerTypes() {
                 if (!this.hasContainers()) return Promise.resolve();
                 return this.containerFetch('/api/v1/container-types').then(({ ok, body }) => {
-                    if (ok && Array.isArray(body)) this.containerTypes = body;
+                    if (ok && Array.isArray(body)) this.containerTypes = this.sortByName(body);
                 });
             },
             loadContainerSummary() {
@@ -81,7 +81,7 @@
             },
             loadContainerCustomers() {
                 return this.containerFetch('/api/v1/containers/customers').then(({ ok, body }) => {
-                    if (ok && Array.isArray(body)) this.containerCustomers = body;
+                    if (ok && Array.isArray(body)) this.containerCustomers = this.sortByName(body);
                 });
             },
             loadContainerEntries(page = 1) {

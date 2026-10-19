@@ -37,6 +37,8 @@ class ProductApiController extends Controller
             });
         }
 
+        $query->orderBy('name', 'asc');
+
         if ($request->has('page') || $request->boolean('paginate')) {
             $perPage = $request->input('per_page', 10);
             $products = $query->paginate($perPage);
@@ -79,6 +81,7 @@ class ProductApiController extends Controller
 
         $data = $request->all();
         $data['shop_id'] = $shopId;
+        $data['purchase_price'] = (isset($data['purchase_price']) && $data['purchase_price'] !== '') ? (float) $data['purchase_price'] : 0;
 
         // Auto-generate unique barcode if missing and not walk-in
         if (empty($data['barcode'])) {
@@ -138,7 +141,11 @@ class ProductApiController extends Controller
         }
 
         $oldStock = (int) $product->stock;
-        $product->update($request->all());
+        $updateData = $request->all();
+        if (array_key_exists('purchase_price', $updateData)) {
+            $updateData['purchase_price'] = ($updateData['purchase_price'] !== null && $updateData['purchase_price'] !== '') ? (float) $updateData['purchase_price'] : 0;
+        }
+        $product->update($updateData);
 
         // A stock number typed into the product form is a manual correction too — log it so the
         // web and app history (both read stock_movements) always explain the current stock.

@@ -7,6 +7,7 @@
     stockFilter: 'all',
     
     filteredStockProducts() {
+        const lang = this.currentLang || localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en';
         return this.products.filter(prod => {
             const isOutOfStock = prod.stock <= 0;
             const isLowStock = prod.stock > 0 && prod.stock <= prod.low_stock_threshold;
@@ -18,6 +19,10 @@
             else if (this.stockFilter === 'in') matchesStatus = isInStock;
             
             return matchesStatus;
+        }).sort((a, b) => {
+            const nameA = (a.name || '').trim();
+            const nameB = (b.name || '').trim();
+            return nameA.localeCompare(nameB, [lang, 'gu-IN', 'hi-IN', 'en'], { sensitivity: 'base', numeric: true });
         });
     }
 }">
@@ -30,7 +35,7 @@
     {{-- Stats Row --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {{-- Card 1: Total SKUs --}}
-        <div @click="stockFilter = 'all'; subTab = 'stock'" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-teal-400 transition-all flex items-center gap-4">
+        <div @click="stockFilter = 'all'; subTab = 'stock'; stockStatusPage = 1" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-teal-400 transition-all flex items-center gap-4">
             <div class="p-3 bg-teal-50 dark:bg-teal-950/30 text-teal-600 dark:text-teal-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
             </div>
@@ -41,7 +46,7 @@
         </div>
 
         {{-- Card 2: Total Items Qty --}}
-        <div @click="stockFilter = 'in'; subTab = 'stock'" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-blue-400 transition-all flex items-center gap-4">
+        <div @click="stockFilter = 'in'; subTab = 'stock'; stockStatusPage = 1" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-blue-400 transition-all flex items-center gap-4">
             <div class="p-3 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
             </div>
@@ -52,7 +57,7 @@
         </div>
 
         {{-- Card 3: Low Stock --}}
-        <div @click="stockFilter = 'low'; subTab = 'stock'" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-amber-400 transition-all flex items-center gap-4">
+        <div @click="stockFilter = 'low'; subTab = 'stock'; stockStatusPage = 1" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-amber-400 transition-all flex items-center gap-4">
             <div class="p-3 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
             </div>
@@ -63,7 +68,7 @@
         </div>
 
         {{-- Card 4: Out of Stock --}}
-        <div @click="stockFilter = 'out'; subTab = 'stock'" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-rose-400 transition-all flex items-center gap-4">
+        <div @click="stockFilter = 'out'; subTab = 'stock'; stockStatusPage = 1" class="cursor-pointer bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-sm hover:border-rose-400 transition-all flex items-center gap-4">
             <div class="p-3 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
             </div>
@@ -106,10 +111,10 @@
                 
                 {{-- Status Pills --}}
                 <div class="flex gap-1.5 p-1 bg-slate-100 dark:bg-gray-700 rounded-xl w-full sm:w-auto">
-                    <button @click="stockFilter = 'all'" :class="stockFilter === 'all' ? 'bg-white dark:bg-gray-600 text-slate-800 dark:text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('all')">All</button>
-                    <button @click="stockFilter = 'in'" :class="stockFilter === 'in' ? 'bg-emerald-500 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('in_stock')">In Stock</button>
-                    <button @click="stockFilter = 'low'" :class="stockFilter === 'low' ? 'bg-amber-500 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('low_stock')">Low Stock</button>
-                    <button @click="stockFilter = 'out'" :class="stockFilter === 'out' ? 'bg-rose-500 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('out_of_stock')">Out of Stock</button>
+                    <button @click="stockFilter = 'all'; stockStatusPage = 1" :class="stockFilter === 'all' ? 'bg-white dark:bg-gray-600 text-slate-800 dark:text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('all')">All</button>
+                    <button @click="stockFilter = 'in'; stockStatusPage = 1" :class="stockFilter === 'in' ? 'bg-emerald-500 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('in_stock')">In Stock</button>
+                    <button @click="stockFilter = 'low'; stockStatusPage = 1" :class="stockFilter === 'low' ? 'bg-amber-500 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('low_stock')">Low Stock</button>
+                    <button @click="stockFilter = 'out'; stockStatusPage = 1" :class="stockFilter === 'out' ? 'bg-rose-500 text-white shadow-sm font-semibold' : 'text-slate-600 dark:text-slate-300 hover:text-slate-800'" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs transition-all" x-text="t('out_of_stock')">Out of Stock</button>
                 </div>
             </div>
 

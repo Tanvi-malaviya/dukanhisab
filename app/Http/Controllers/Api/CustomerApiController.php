@@ -34,6 +34,8 @@ class CustomerApiController extends Controller
             });
         }
 
+        $query->orderBy('name', 'asc');
+
         if ($request->has('page') || $request->boolean('paginate')) {
             $perPage = $request->input('per_page', 10);
             $customers = $query->paginate($perPage);
