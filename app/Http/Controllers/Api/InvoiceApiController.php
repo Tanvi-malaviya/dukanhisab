@@ -141,18 +141,24 @@ class InvoiceApiController extends Controller
      */
     private function mpdfFontFamily(string $locale): string
     {
+        // Every face here was individually load-tested against mPDF (fonts
+        // like Noto Sans Bengali/Kannada/etc. have GSUB/GPOS tables too heavy
+        // for mPDF's OTL parser and exhaust PHP's memory limit — confirmed by
+        // reproduction, even at a 2GB limit). These are all the lighter ITF
+        // Lohit/Hind-family faces (or mPDF's own bundled fonts for
+        // kn/te/ur), the same class of fix already used for Gujarati/Hindi.
         return match ($locale) {
             'en' => 'DejaVu Sans', // only path DomPDF (not mPDF) ever actually renders
             'gu' => 'muktavaani',
             'hi', 'mr', 'ne', 'sa' => 'hind', // Devanagari, same script as Hindi
-            'bn' => 'notosansbengali',
-            'kn' => 'notosanskannada',
-            'ml' => 'notosansmalayalam',
-            'or' => 'notosansoriya',
-            'pa' => 'notosansgurmukhi',
-            'ta' => 'notosanstamil',
-            'te' => 'notosanstelugu',
-            'ur' => 'notosansarabic',
+            'bn' => 'hindsiliguri',
+            'kn' => 'lohitkannada', // bundled with mPDF itself
+            'ml' => 'hindkochi',
+            'or' => 'manjari',
+            'pa' => 'muktamahee',
+            'ta' => 'hindmadurai',
+            'te' => 'pothana2000', // bundled with mPDF itself
+            'ur' => 'lateef', // bundled with mPDF itself, built for Urdu/Sindhi/Pashto
             default => 'hind',
         };
     }
@@ -245,11 +251,13 @@ class InvoiceApiController extends Controller
             'margin_bottom' => 8,
             'tempDir' => $tempDir,
             'fontDir' => array_merge($defaultConfig['fontDir'], [public_path('fonts')]),
-            // Noto Sans Gujarati/Devanagari use GSUB/GPOS lookups mPDF cannot parse,
-            // so Gujarati/Devanagari use Mukta Vaani / Hind (OFL) instead, which
-            // mPDF shapes correctly. The other scripts' own Noto Sans faces shape
-            // fine under mPDF's OTL engine (useOTL), including Arabic/Urdu's
-            // contextual joining forms.
+            // Noto Sans's faces use GSUB/GPOS lookups mPDF's OTL parser can't
+            // handle (confirmed by reproduction: exhausts PHP's memory limit
+            // even at 2GB) — every script below uses the lighter ITF
+            // Lohit/Hind-family face instead, which mPDF shapes correctly.
+            // Kannada/Telugu/Urdu use mPDF's own bundled fonts (lohitkannada,
+            // pothana2000, lateef — already in $defaultFontConfig['fontdata'],
+            // no extra registration needed) instead of registering a duplicate.
             'fontdata' => $defaultFontConfig['fontdata'] + [
                 'muktavaani' => [
                     'R' => 'MuktaVaani-Regular.ttf',
@@ -261,44 +269,29 @@ class InvoiceApiController extends Controller
                     'B' => 'Hind-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
-                'notosansbengali' => [
-                    'R' => 'NotoSansBengali-Regular.ttf',
-                    'B' => 'NotoSansBengali-Bold.ttf',
+                'hindsiliguri' => [
+                    'R' => 'HindSiliguri-Regular.ttf',
+                    'B' => 'HindSiliguri-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
-                'notosanskannada' => [
-                    'R' => 'NotoSansKannada-Regular.ttf',
-                    'B' => 'NotoSansKannada-Bold.ttf',
+                'hindkochi' => [
+                    'R' => 'HindKochi-Regular.ttf',
+                    'B' => 'HindKochi-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
-                'notosansmalayalam' => [
-                    'R' => 'NotoSansMalayalam-Regular.ttf',
-                    'B' => 'NotoSansMalayalam-Bold.ttf',
+                'manjari' => [
+                    'R' => 'Manjari-Regular.ttf',
+                    'B' => 'Manjari-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
-                'notosansoriya' => [
-                    'R' => 'NotoSansOriya-Regular.ttf',
-                    'B' => 'NotoSansOriya-Bold.ttf',
+                'muktamahee' => [
+                    'R' => 'MuktaMahee-Regular.ttf',
+                    'B' => 'MuktaMahee-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
-                'notosansgurmukhi' => [
-                    'R' => 'NotoSansGurmukhi-Regular.ttf',
-                    'B' => 'NotoSansGurmukhi-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-                'notosanstamil' => [
-                    'R' => 'NotoSansTamil-Regular.ttf',
-                    'B' => 'NotoSansTamil-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-                'notosanstelugu' => [
-                    'R' => 'NotoSansTelugu-Regular.ttf',
-                    'B' => 'NotoSansTelugu-Bold.ttf',
-                    'useOTL' => 0xFF,
-                ],
-                'notosansarabic' => [
-                    'R' => 'NotoSansArabic-Regular.ttf',
-                    'B' => 'NotoSansArabic-Bold.ttf',
+                'hindmadurai' => [
+                    'R' => 'HindMadurai-Regular.ttf',
+                    'B' => 'HindMadurai-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
             ],
@@ -371,14 +364,14 @@ class InvoiceApiController extends Controller
                 ' . $rtlStyle . '
                 .font-gujarati { font-family: muktavaani, sans-serif; }
                 .font-devanagari { font-family: hind, sans-serif; }
-                .font-bengali { font-family: notosansbengali, sans-serif; }
-                .font-kannada { font-family: notosanskannada, sans-serif; }
-                .font-malayalam { font-family: notosansmalayalam, sans-serif; }
-                .font-oriya { font-family: notosansoriya, sans-serif; }
-                .font-gurmukhi { font-family: notosansgurmukhi, sans-serif; }
-                .font-tamil { font-family: notosanstamil, sans-serif; }
-                .font-telugu { font-family: notosanstelugu, sans-serif; }
-                .font-arabic { font-family: notosansarabic, sans-serif; direction: rtl; unicode-bidi: embed; }
+                .font-bengali { font-family: hindsiliguri, sans-serif; }
+                .font-kannada { font-family: lohitkannada, sans-serif; }
+                .font-malayalam { font-family: hindkochi, sans-serif; }
+                .font-oriya { font-family: manjari, sans-serif; }
+                .font-gurmukhi { font-family: muktamahee, sans-serif; }
+                .font-tamil { font-family: hindmadurai, sans-serif; }
+                .font-telugu { font-family: pothana2000, sans-serif; }
+                .font-arabic { font-family: lateef, sans-serif; direction: rtl; unicode-bidi: embed; }
                 * {
                     box-sizing: border-box;
                 }
@@ -959,14 +952,14 @@ class InvoiceApiController extends Controller
                 ' . $rtlStyle . '
                 .font-gujarati { font-family: muktavaani, sans-serif; }
                 .font-devanagari { font-family: hind, sans-serif; }
-                .font-bengali { font-family: notosansbengali, sans-serif; }
-                .font-kannada { font-family: notosanskannada, sans-serif; }
-                .font-malayalam { font-family: notosansmalayalam, sans-serif; }
-                .font-oriya { font-family: notosansoriya, sans-serif; }
-                .font-gurmukhi { font-family: notosansgurmukhi, sans-serif; }
-                .font-tamil { font-family: notosanstamil, sans-serif; }
-                .font-telugu { font-family: notosanstelugu, sans-serif; }
-                .font-arabic { font-family: notosansarabic, sans-serif; direction: rtl; unicode-bidi: embed; }
+                .font-bengali { font-family: hindsiliguri, sans-serif; }
+                .font-kannada { font-family: lohitkannada, sans-serif; }
+                .font-malayalam { font-family: hindkochi, sans-serif; }
+                .font-oriya { font-family: manjari, sans-serif; }
+                .font-gurmukhi { font-family: muktamahee, sans-serif; }
+                .font-tamil { font-family: hindmadurai, sans-serif; }
+                .font-telugu { font-family: pothana2000, sans-serif; }
+                .font-arabic { font-family: lateef, sans-serif; direction: rtl; unicode-bidi: embed; }
                 * {
                     box-sizing: border-box;
                 }
