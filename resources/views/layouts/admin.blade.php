@@ -487,6 +487,39 @@
                     method: 'DELETE'
                 });
             }
+
+            function confirmSuspend(actionUrl, name) {
+                confirmAction({
+                    actionUrl: actionUrl,
+                    title: 'Suspend User Account',
+                    message: `Are you sure you want to suspend account for "${name}"? All their devices will be signed out immediately.`,
+                    buttonText: 'Suspend Account',
+                    variant: 'warning',
+                    method: 'POST'
+                });
+            }
+
+            function confirmActivate(actionUrl, name) {
+                confirmAction({
+                    actionUrl: actionUrl,
+                    title: 'Activate User Account',
+                    message: `Are you sure you want to activate account for "${name}"? They will be able to log in again.`,
+                    buttonText: 'Activate Account',
+                    variant: 'primary',
+                    method: 'POST'
+                });
+            }
+
+            function confirmRecover(actionUrl, name) {
+                confirmAction({
+                    actionUrl: actionUrl,
+                    title: 'Recover User Account',
+                    message: `Are you sure you want to restore and recover "${name}"? The user will be reactivated and will be able to log in again.`,
+                    buttonText: 'Recover Account',
+                    variant: 'info',
+                    method: 'POST'
+                });
+            }
         </script>
 
         <!-- Global Action Confirmation Modal -->
@@ -495,7 +528,7 @@
             <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeConfirmModal()"></div>
 
             <div
-                class="bg-card-dark border border-border-dark rounded-2xl w-full max-w-sm shadow-2xl relative z-10 overflow-hidden">
+                class="bg-white border border-slate-200 rounded-2xl w-full max-w-sm shadow-2xl relative z-10 overflow-hidden">
                 <div class="p-6 text-center">
                     <!-- Icon Container -->
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-warning/10 text-warning mb-4"
@@ -506,8 +539,8 @@
                         </svg>
                     </div>
 
-                    <h3 class="text-base font-semibold text-white mb-2" id="globalConfirmTitle">Confirm Action</h3>
-                    <p class="text-xs text-slate-400 mb-6" id="globalConfirmMessage">Are you sure you want to proceed?
+                    <h3 class="text-base font-bold text-slate-800 mb-2" id="globalConfirmTitle">Confirm Action</h3>
+                    <p class="text-xs text-slate-600 mb-6 leading-relaxed" id="globalConfirmMessage">Are you sure you want to proceed?
                     </p>
 
                     <form id="globalConfirmForm" method="POST">
@@ -554,8 +587,15 @@
                 btn.style.pointerEvents = 'none';
                 btn.style.opacity = '0.75';
 
-                if (!btn.querySelector('.animate-spin')) {
-                    const spinner = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline-block text-current shrink-0 align-text-bottom" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                if (btn.querySelector('.animate-spin')) return;
+
+                const textContent = (btn.textContent || '').trim();
+                if (textContent.length === 0) {
+                    // Icon-only button (e.g. shop toggle, small action): cleanly replace content with a centered spinner
+                    btn.innerHTML = `<svg class="animate-spin w-3.5 h-3.5 text-current m-auto shrink-0 block" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+                } else {
+                    // Text button: prepend neat spinner
+                    const spinner = `<svg class="animate-spin -ml-0.5 mr-1.5 h-3.5 w-3.5 inline-block text-current shrink-0 align-text-bottom" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
                     btn.innerHTML = spinner + btn.innerHTML;
                 }
             };
@@ -574,15 +614,29 @@
                 }
             };
 
-            window.showGlobalLoader = function(autoHideDelay = 0) {
-                // Kept for backward compatibility if explicitly invoked
+            window.showGlobalLoader = function(text = 'Processing request...', autoHideDelay = 0) {
+                const loader = document.getElementById('global-page-loader');
+                if (!loader) return;
+                const textEl = loader.querySelector('span.font-bold');
+                if (textEl && text) {
+                    textEl.textContent = text;
+                }
+                loader.classList.remove('opacity-0', 'pointer-events-none');
+                loader.classList.add('opacity-100', 'pointer-events-auto');
+
+                if (autoHideDelay > 0) {
+                    setTimeout(() => window.hideGlobalLoader(), autoHideDelay);
+                }
             };
 
             window.hideGlobalLoader = function() {
-                // Kept for backward compatibility if explicitly invoked
+                const loader = document.getElementById('global-page-loader');
+                if (!loader) return;
+                loader.classList.remove('opacity-100', 'pointer-events-auto');
+                loader.classList.add('opacity-0', 'pointer-events-none');
             };
 
-            // Intercept Form Submissions -> Show loader on submit button inside the form
+            // Intercept Form Submissions -> Show loader on submit button inside the form & global loader
             document.addEventListener('submit', function (e) {
                 const form = e.target;
                 if (form) {
@@ -590,6 +644,16 @@
                     if (submitBtn) {
                         showButtonLoader(submitBtn);
                     }
+                    if (!form.dataset.noLoader && !form.classList.contains('no-loader') && !form.classList.contains('ajax-form')) {
+                        showGlobalLoader('Processing request...');
+                    }
+                }
+            });
+
+            window.addEventListener('pageshow', function() {
+                hideGlobalLoader();
+                if (lastClickedBtn) {
+                    hideButtonLoader(lastClickedBtn);
                 }
             });
 

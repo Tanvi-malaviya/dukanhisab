@@ -554,7 +554,7 @@
                             class="block w-full px-3 py-1.5 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                             <option value="active" {{ old('status') === 'active' || !old('status') ? 'selected' : '' }}>Active
                             </option>
-                            <option value="suspended" {{ old('status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                            <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
                 </div>
@@ -684,7 +684,7 @@
                         <select name="status" id="edit_shop_status" required
                             class="block w-full px-3 py-1.5 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                             <option value="active">Active</option>
-                            <option value="suspended">Suspended</option>
+                            <option value="inactive">Inactive</option>
                         </select>
                     </div>
                 </div>

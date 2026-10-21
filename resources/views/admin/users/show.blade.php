@@ -30,13 +30,12 @@
                         <p class="text-xs text-rose-600">This user account is currently marked as deleted. Login and API access are suspended. You can recover this account at any time.</p>
                     </div>
                 </div>
-                <form action="{{ route('admin.users.recover', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to restore and recover this user account?');">
-                    @csrf
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        <span>Recover Account</span>
-                    </button>
-                </form>
+                <button type="button"
+                    onclick="confirmRecover('{{ route('admin.users.recover', $user->id) }}', '{{ addslashes($user->name ?: 'User') }}')"
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>Recover Account</span>
+                </button>
             </div>
         @endif
 
@@ -184,17 +183,35 @@
                     <span>Password</span>
                 </button>
 
+                <!-- Suspend / Activate User Account -->
+                <!-- Suspend / Activate User Account -->
+                @if($user->status === 'suspended')
+                    <button type="button"
+                        onclick="confirmActivate('{{ route('admin.users.suspend', $user->id) }}', '{{ addslashes($user->name ?: 'User') }}')"
+                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                        title="Activate User Account">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Activate User</span>
+                    </button>
+                @elseif($user->status === 'active')
+                    <button type="button"
+                        onclick="confirmSuspend('{{ route('admin.users.suspend', $user->id) }}', '{{ addslashes($user->name ?: 'User') }}')"
+                        class="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
+                        title="Suspend User Account">
+                        <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                        <span>Suspend User</span>
+                    </button>
+                @endif
+
                 @if($user->status === 'deleted')
                     <!-- Recover -->
-                    <form action="{{ route('admin.users.recover', $user->id) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to recover and restore this account?');">
-                        @csrf
-                        <button type="submit"
-                            class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
-                            title="Recover User">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                            <span>Recover</span>
-                        </button>
-                    </form>
+                    <button type="button"
+                        onclick="confirmRecover('{{ route('admin.users.recover', $user->id) }}', '{{ addslashes($user->name ?: 'User') }}')"
+                        class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                        title="Recover User">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Recover</span>
+                    </button>
 
                     <!-- Force Delete / Purge -->
                     <button type="button"
@@ -400,7 +417,7 @@
                                     <!-- Edit Shop -->
                                     <button onclick="openEditShopModal(this)"
                                         data-shop="{{ json_encode($shop->only(['id', 'owner_id', 'name', 'email', 'mobile', 'address', 'gst_number', 'status', 'logo'])) }}"
-                                        class="p-1 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors cursor-pointer"
+                                        class="w-6 h-6 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                                         title="Edit Shop">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -410,21 +427,21 @@
                                     </button>
 
                                     <!-- Toggle Status -->
-                                    <form action="{{ route('admin.shops.toggle', $shop->id) }}" method="POST" class="inline">
+                                    <form action="{{ route('admin.shops.toggle', $shop->id) }}" method="POST" class="inline-flex">
                                         @csrf
                                         <button type="submit"
-                                            class="p-1 rounded-lg {{ $shop->status === 'suspended' ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-600' : 'bg-rose-100 text-rose-700 hover:bg-rose-600' }} hover:text-white transition-colors cursor-pointer"
-                                            title="{{ $shop->status === 'suspended' ? 'Activate Shop' : 'Suspend Shop' }}">
-                                            @if($shop->status === 'suspended')
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                            @else
+                                            class="w-6 h-6 rounded-lg {{ $shop->status === 'active' ? 'bg-amber-100 text-amber-700 hover:bg-amber-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-600' }} hover:text-white transition-colors flex items-center justify-center shrink-0 cursor-pointer"
+                                            title="{{ $shop->status === 'active' ? 'Deactivate Shop' : 'Activate Shop' }}">
+                                            @if($shop->status === 'active')
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                         d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636">
                                                     </path>
+                                                </svg>
+                                            @else
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                                 </svg>
                                             @endif
                                         </button>
@@ -691,7 +708,7 @@
                             class="block w-full px-3 py-1.5 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                             <option value="active" {{ old('status') === 'active' || !old('status') ? 'selected' : '' }}>Active
                             </option>
-                            <option value="suspended" {{ old('status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                            <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                         </select>
                     </div>
                 </div>
@@ -803,7 +820,7 @@
                         <select name="status" id="edit_shop_status" required
                             class="block w-full px-3 py-1.5 bg-secondary/40 border border-border-dark focus:border-primary focus:outline-none rounded-xl text-sm text-slate-300">
                             <option value="active">Active</option>
-                            <option value="suspended">Suspended</option>
+                            <option value="inactive">Inactive</option>
                         </select>
                     </div>
                 </div>

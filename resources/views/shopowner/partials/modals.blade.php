@@ -577,8 +577,8 @@
         <div
             class="px-5 py-3.5 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50/60 dark:bg-gray-800/60 shrink-0">
             <div>
-                <h3 class="font-bold text-sm sm:text-base text-slate-800 dark:text-white">Manage Expense Categories</h3>
-                <p class="text-xs text-slate-400">Create, edit, or delete categories for your shop expenses</p>
+                <h3 class="font-bold text-sm sm:text-base text-slate-800 dark:text-white" x-text="t('manage_expense_categories') || 'Manage Expense Categories'">Manage Expense Categories</h3>
+                <p class="text-xs text-slate-400" x-text="t('manage_expense_categories_desc') || 'Create, edit, or delete categories for your shop expenses'">Create, edit, or delete categories for your shop expenses</p>
             </div>
             <button @click="manageExpenseCategoriesModalOpen = false"
                 class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 cursor-pointer">
@@ -1135,11 +1135,11 @@
                         x-text="t('refund_method') + ':'">Refund Method:</label>
                     <select x-model="returnForm.refund_method"
                         class="px-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-lg text-xs dark:bg-gray-800 dark:text-white font-medium focus:outline-none focus:border-primary">
-                        <option value="cash">Cash Refund</option>
-                        <option value="bank">Bank Refund</option>
-                        <option value="upi">UPI Refund</option>
+                        <option value="cash" x-text="t('cash_refund') || 'Cash Refund'">Cash Refund</option>
+                        <option value="bank" x-text="t('bank_refund') || 'Bank Refund'">Bank Refund</option>
+                        <option value="upi" x-text="t('upi_refund') || 'UPI Refund'">UPI Refund</option>
                         <template x-if="returnForm.payment_type === 'Credit' && returnForm.customer_id">
-                            <option value="due_adjustment">Reduce Customer Khata Due</option>
+                            <option value="due_adjustment" x-text="t('reduce_customer_khata_due') || 'Reduce Customer Khata Due'">Reduce Customer Khata Due</option>
                         </template>
                     </select>
                 </div>
@@ -1251,8 +1251,8 @@
                     class="w-full lg:w-96 flex flex-col bg-slate-50/50 dark:bg-gray-900/20 rounded-2xl border border-slate-200 dark:border-gray-700 p-4 overflow-hidden shrink-0">
                     <h3
                         class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center justify-between">
-                        Billing Cart
-                        <button @click="pos.items = []" class="text-xs text-rose-500 hover:underline">Clear All</button>
+                        <span x-text="t('billing_cart') || 'Billing Cart'">Billing Cart</span>
+                        <button @click="pos.items = []" class="text-xs text-rose-500 hover:underline" x-text="t('clear_all') || 'Clear All'">Clear All</button>
                     </h3>
 
                     {{-- Customer Selector --}}
@@ -1633,26 +1633,27 @@
 
                         <div class="pt-2">
                             <label
-                                class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Payment
+                                class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1" x-text="t('payment_type') || 'Payment Type'">Payment
                                 Type</label>
                             <div class="grid grid-cols-4 gap-1.5">
                                 <button @click="newPurchase.payment_type = 'Cash'"
                                     :class="newPurchase.payment_type === 'Cash' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
-                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Cash</button>
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('cash') || 'Cash'">Cash</button>
                                 <button @click="newPurchase.payment_type = 'UPI'"
                                     :class="newPurchase.payment_type === 'UPI'  ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
-                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">UPI</button>
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('upi') || 'UPI'">UPI</button>
                                 <button @click="newPurchase.payment_type = 'Bank'"
                                     :class="newPurchase.payment_type === 'Bank' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
-                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Bank</button>
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('bank') || 'Bank'">Bank</button>
                                 <button @click="newPurchase.payment_type = 'Credit'"
                                     :class="newPurchase.payment_type === 'Credit' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-slate-600 dark:text-slate-300'"
-                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all">Credit</button>
+                                    class="py-2 text-center text-xs font-bold rounded-lg transition-all" x-text="t('credit') || 'Credit'">Credit</button>
                             </div>
                         </div>
 
                         <button @click="saveEditedPurchase()" :disabled="newPurchase.items.length === 0"
-                            class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50">
+                            class="w-full mt-3 py-3 bg-primary hover:bg-primary-hover text-white text-sm font-bold rounded-xl shadow-md transition-all disabled:opacity-50"
+                            x-text="t('save_and_purchase') || 'Save & Purchase'">
                             Save & Purchase
                         </button>
                     </div>
@@ -1924,7 +1925,7 @@
         class="bg-white dark:bg-gray-800 rounded-3xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
         <div
             class="px-6 py-4 border-b border-slate-200 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900/40">
-            <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Add New Shop</h3>
+            <h3 class="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider" x-text="t('add_new_shop') || 'Add New Shop'">Add New Shop</h3>
             <button @click="addShopModal.show = false"
                 class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2306,9 +2307,8 @@
 
             <!-- Content -->
             <div class="space-y-2">
-                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase">Limited
-                    Time Offer</h3>
-                <h4 class="text-base font-bold text-slate-800 dark:text-white">Business (Lifetime) Plan</h4>
+                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase" x-text="t('limited_time_offer') || 'Limited Time Offer'">Limited Time Offer</h3>
+                <h4 class="text-base font-bold text-slate-800 dark:text-white" x-text="t('business_lifetime_plan') || 'Business (Lifetime) Plan'">Business (Lifetime) Plan</h4>
                 <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-xs mx-auto">
                     Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup &
                     restore. No monthly or yearly charges, ever!
@@ -2319,7 +2319,7 @@
             <div
                 class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl py-3 px-6 inline-block">
                 <span
-                    class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5">Time
+                    class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5" x-text="t('time_remaining') || 'Time Remaining'">Time
                     Remaining</span>
                 <span class="text-lg font-black text-amber-600 dark:text-amber-500"
                     x-text="Math.ceil(lifetimeOfferDaysLeft) + ' Days Left'"></span>
@@ -2330,7 +2330,8 @@
                 <button type="button" @click="navigateTo('subscription'); closeLifetimeOfferPopup();"
                     class="w-full py-3 text-sm font-bold rounded-xl transition-all shadow-lg"
                     style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #0f172a; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);"
-                    onmouseover="this.style.filter='brightness(0.9)'" onmouseout="this.style.filter='brightness(1)'">
+                    onmouseover="this.style.filter='brightness(0.9)'" onmouseout="this.style.filter='brightness(1)'"
+                    x-text="t('upgrade_now_and_save') || 'Upgrade Now & Save'">
                     Upgrade Now & Save
                 </button>
 

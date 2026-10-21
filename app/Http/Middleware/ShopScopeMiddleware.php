@@ -39,6 +39,13 @@ class ShopScopeMiddleware
                 'message' => 'This shop is locked because your Shop Add-on has expired. Renew the Shop Add-on to use it again.',
             ], 403);
         }
+        $shop = $user ? $user->shops()->whereKey((int) $shopId)->first() : null;
+        if ($shop && in_array($shop->status, ['inactive', 'suspended'], true)) {
+            return response()->json([
+                'error' => 'shop_inactive',
+                'message' => 'This shop is inactive. Please switch to an active shop or contact support.',
+            ], 403);
+        }
         // Store on request for later use in controllers
         $request->attributes->set('shop_id', (int) $shopId);
         // Also bind in the container for any class that may resolve it via app('shop_id')

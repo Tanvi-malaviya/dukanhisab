@@ -9,27 +9,53 @@ use App\Models\AuditLog;
 
 class TranslationSettingController extends Controller
 {
-    protected string $enPath;
-    protected string $guPath;
-    protected string $hiPath;
+    /**
+     * All 22 official languages supported by DukanHisab platform.
+     */
+    public const LANGUAGES = [
+        'en'  => ['name' => 'English',    'native' => 'English'],
+        'gu'  => ['name' => 'Gujarati',   'native' => 'ગુજરાતી'],
+        'hi'  => ['name' => 'Hindi',      'native' => 'हिन्दी'],
+        'mr'  => ['name' => 'Marathi',    'native' => 'मराठी'],
+        'bn'  => ['name' => 'Bengali',    'native' => 'বাংলা'],
+        'ta'  => ['name' => 'Tamil',      'native' => 'தமிழ்'],
+        'te'  => ['name' => 'Telugu',     'native' => 'తెలుగు'],
+        'kn'  => ['name' => 'Kannada',    'native' => 'ಕನ್ನಡ'],
+        'ml'  => ['name' => 'Malayalam',  'native' => 'മലയാളം'],
+        'pa'  => ['name' => 'Punjabi',    'native' => 'ਪੰਜਾਬੀ'],
+        'or'  => ['name' => 'Odia',       'native' => 'ଓଡ଼ିଆ'],
+        'ur'  => ['name' => 'Urdu',       'native' => 'اردو'],
+        'ne'  => ['name' => 'Nepali',     'native' => 'नेपाली'],
+        'sa'  => ['name' => 'Sanskrit',   'native' => 'संस्कृतम्'],
+        'sd'  => ['name' => 'Sindhi',     'native' => 'سنڌي'],
+        'kok' => ['name' => 'Konkani',    'native' => 'कोंकणी'],
+        'mai' => ['name' => 'Maithili',   'native' => 'मैथिली'],
+        'ks'  => ['name' => 'Kashmiri',   'native' => 'کٲشُر'],
+        'doi' => ['name' => 'Dogri',      'native' => 'डोगरी'],
+        'mni' => ['name' => 'Manipuri',   'native' => 'মৈতৈলোন্'],
+        'sat' => ['name' => 'Santali',    'native' => 'ᱥᱟᱱᱛᱟᱲᱤ'],
+        'brx' => ['name' => 'Bodo',       'native' => 'बर\''],
+    ];
 
-    public function __construct()
+    /**
+     * Get path for a specific language file.
+     */
+    protected function getLangPath(string $code): string
     {
-        $this->enPath = base_path('lang/en.json');
-        $this->guPath = base_path('lang/gu.json');
-        $this->hiPath = base_path('lang/hi.json');
+        return base_path("lang/{$code}.json");
     }
 
     /**
-     * Read all translations from JSON files.
+     * Read all translations from JSON files across all supported languages.
      */
-    protected function loadTranslations(): array
+    protected function loadAllTranslations(): array
     {
-        $en = file_exists($this->enPath) ? json_decode(file_get_contents($this->enPath), true) ?? [] : [];
-        $gu = file_exists($this->guPath) ? json_decode(file_get_contents($this->guPath), true) ?? [] : [];
-        $hi = file_exists($this->hiPath) ? json_decode(file_get_contents($this->hiPath), true) ?? [] : [];
-
-        return [$en, $gu, $hi];
+        $all = [];
+        foreach (self::LANGUAGES as $code => $meta) {
+            $path = $this->getLangPath($code);
+            $all[$code] = file_exists($path) ? json_decode(file_get_contents($path), true) ?? [] : [];
+        }
+        return $all;
     }
 
     /**
@@ -38,7 +64,7 @@ class TranslationSettingController extends Controller
     protected function saveJsonFile(string $filePath, array $data): bool
     {
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        
+
         // Convert 4-space to 2-space indentation to match repository conventions
         $json = preg_replace_callback('/^( +)/m', function ($matches) {
             return str_repeat(' ', (int) (strlen($matches[1]) / 2));
@@ -48,14 +74,22 @@ class TranslationSettingController extends Controller
     }
 
     /**
-     * Return the translation files the web server cannot write to.
+     * Return any translation files the web server cannot write to.
      */
-    protected function unwritableFiles(): array
+    protected function unwritableFiles(array $codes = []): array
     {
-        return array_values(array_map('basename', array_filter(
-            [$this->enPath, $this->guPath, $this->hiPath],
-            fn ($path) => file_exists($path) ? !is_writable($path) : !is_writable(dirname($path))
-        )));
+        $targetCodes = empty($codes) ? array_keys(self::LANGUAGES) : $codes;
+        $unwritable = [];
+
+        foreach ($targetCodes as $code) {
+            $path = $this->getLangPath($code);
+            $writable = file_exists($path) ? is_writable($path) : is_writable(dirname($path));
+            if (!$writable) {
+                $unwritable[] = basename($path);
+            }
+        }
+
+        return $unwritable;
     }
 
     protected function unwritableMessage(array $files): string
@@ -64,15 +98,42 @@ class TranslationSettingController extends Controller
     }
 
     /**
-     * Display list of translations with search, pagination and stats.
+     * Display list of translations with search, language selector, pagination and stats.
      */
     public function index(Request $request)
     {
-        [$en, $gu, $hi] = $this->loadTranslations();
+        $allTranslations = $this->loadAllTranslations();
 
-        // Get union of all keys
-        $allKeys = array_unique(array_merge(array_keys($en), array_keys($gu), array_keys($hi)));
+        // Get union of all keys across all languages
+        $allKeys = [];
+        foreach ($allTranslations as $code => $trans) {
+            $allKeys = array_merge($allKeys, array_keys($trans));
+        }
+        $allKeys = array_unique($allKeys);
         sort($allKeys);
+
+        // Determine active languages to display in table columns (beside English base)
+        // Default: ['gu', 'hi'] to keep familiar view, but easily switchable or expandable
+        $langsInput = $request->input('langs');
+        if ($langsInput === 'all') {
+            $activeLangs = array_values(array_filter(array_keys(self::LANGUAGES), fn($c) => $c !== 'en'));
+        } elseif (is_string($langsInput) && !empty(trim($langsInput))) {
+            $parts = array_filter(array_map('trim', explode(',', $langsInput)));
+            $activeLangs = array_values(array_intersect($parts, array_keys(self::LANGUAGES)));
+            if (empty($activeLangs)) {
+                $activeLangs = ['gu', 'hi'];
+            }
+        } elseif (is_array($langsInput)) {
+            $activeLangs = array_values(array_intersect($langsInput, array_keys(self::LANGUAGES)));
+            if (empty($activeLangs)) {
+                $activeLangs = ['gu', 'hi'];
+            }
+        } else {
+            $activeLangs = ['gu', 'hi'];
+        }
+
+        // Always ensure English is available as reference
+        $en = $allTranslations['en'] ?? [];
 
         $search = trim($request->input('search', ''));
         $filter = $request->input('filter', 'all');
@@ -81,38 +142,69 @@ class TranslationSettingController extends Controller
             $perPage = 50;
         }
 
-        // Map into collection
+        // Build filtered rows
         $rows = [];
+        $searchLower = mb_strtolower($search);
+
         foreach ($allKeys as $k) {
             $enVal = $en[$k] ?? '';
-            $guVal = $gu[$k] ?? '';
-            $hiVal = $hi[$k] ?? '';
 
-            // Apply filter
+            // Values for active displayed languages
+            $vals = [];
+            foreach ($activeLangs as $langCode) {
+                $vals[$langCode] = $allTranslations[$langCode][$k] ?? '';
+            }
+
+            // Apply filter: missing in any active language
             if ($filter === 'missing') {
-                if ($enVal !== '' && $guVal !== '' && $hiVal !== '') {
+                $hasMissing = ($enVal === '');
+                if (!$hasMissing) {
+                    foreach ($vals as $v) {
+                        if (trim($v) === '') {
+                            $hasMissing = true;
+                            break;
+                        }
+                    }
+                }
+                if (!$hasMissing) {
                     continue;
                 }
             }
 
-            // Apply search filter
+            // Apply search filter (searches key, English, active languages, or all languages)
             if ($search !== '') {
-                $searchLower = mb_strtolower($search);
-                $kMatch = str_contains(mb_strtolower($k), $searchLower);
-                $enMatch = str_contains(mb_strtolower($enVal), $searchLower);
-                $guMatch = str_contains(mb_strtolower($guVal), $searchLower);
-                $hiMatch = str_contains(mb_strtolower($hiVal), $searchLower);
+                $match = str_contains(mb_strtolower($k), $searchLower)
+                    || str_contains(mb_strtolower($enVal), $searchLower);
 
-                if (!$kMatch && !$enMatch && !$guMatch && !$hiMatch) {
+                if (!$match) {
+                    // Check active languages first
+                    foreach ($vals as $v) {
+                        if (str_contains(mb_strtolower($v), $searchLower)) {
+                            $match = true;
+                            break;
+                        }
+                    }
+                }
+
+                // If still not matched, check all 22 languages so admin can find any word in any language
+                if (!$match) {
+                    foreach ($allTranslations as $code => $trans) {
+                        if (isset($trans[$k]) && str_contains(mb_strtolower($trans[$k]), $searchLower)) {
+                            $match = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$match) {
                     continue;
                 }
             }
 
             $rows[] = [
-                'key' => $k,
-                'en'  => $enVal,
-                'gu'  => $guVal,
-                'hi'  => $hiVal,
+                'key'    => $k,
+                'en'     => $enVal,
+                'values' => $vals,
             ];
         }
 
@@ -133,19 +225,40 @@ class TranslationSettingController extends Controller
             ]
         );
 
+        // Stats calculation for all 22 languages
+        $totalKeyCount = count($allKeys);
         $stats = [
-            'total_keys' => count($allKeys),
-            'en_count'   => count(array_filter($en, fn($v) => trim($v) !== '')),
-            'gu_count'   => count(array_filter($gu, fn($v) => trim($v) !== '')),
-            'hi_count'   => count(array_filter($hi, fn($v) => trim($v) !== '')),
+            'total_keys' => $totalKeyCount,
+            'languages'  => [],
         ];
+
+        foreach (self::LANGUAGES as $code => $meta) {
+            $trans = $allTranslations[$code] ?? [];
+            $count = count(array_filter($trans, fn($v) => trim((string)$v) !== ''));
+            $pct = $totalKeyCount > 0 ? round(($count / $totalKeyCount) * 100) : 0;
+
+            $stats['languages'][$code] = [
+                'name'    => $meta['name'],
+                'native'  => $meta['native'],
+                'count'   => $count,
+                'percent' => $pct,
+            ];
+        }
+
+        // Backward compatibility stats fields for EN, GU, HI
+        $stats['en_count'] = $stats['languages']['en']['count'] ?? 0;
+        $stats['gu_count'] = $stats['languages']['gu']['count'] ?? 0;
+        $stats['hi_count'] = $stats['languages']['hi']['count'] ?? 0;
 
         return view('admin.settings.translations', [
             'translations' => $paginated,
             'stats'        => $stats,
+            'languages'    => self::LANGUAGES,
+            'activeLangs'  => $activeLangs,
             'search'       => $search,
             'filter'       => $filter,
             'perPage'      => $perPage,
+            'currentLangsParam' => implode(',', $activeLangs),
         ]);
     }
 
@@ -157,76 +270,122 @@ class TranslationSettingController extends Controller
         $request->validate([
             'translations' => 'required|array',
             'translations.*.key' => 'required|string',
-            'translations.*.en' => 'nullable|string',
-            'translations.*.gu' => 'nullable|string',
-            'translations.*.hi' => 'nullable|string',
         ]);
 
-        if ($unwritable = $this->unwritableFiles()) {
+        $submitted = $request->input('translations', []);
+        if (empty($submitted)) {
+            return back()->with('info', 'No translations submitted.');
+        }
+
+        // Discover which languages are present in the submitted payload
+        $touchedLangs = [];
+        $sample = reset($submitted);
+        if (isset($sample['values']) && is_array($sample['values'])) {
+            $touchedLangs = array_keys($sample['values']);
+        } else {
+            foreach ($sample as $col => $val) {
+                if ($col !== 'key' && isset(self::LANGUAGES[$col])) {
+                    $touchedLangs[] = $col;
+                }
+            }
+        }
+        if (isset($sample['en'])) {
+            $touchedLangs[] = 'en';
+        }
+        $touchedLangs = array_unique(array_intersect($touchedLangs, array_keys(self::LANGUAGES)));
+
+        if ($unwritable = $this->unwritableFiles($touchedLangs)) {
             return back()->withInput()->with('error', $this->unwritableMessage($unwritable));
         }
 
-        [$en, $gu, $hi] = $this->loadTranslations();
-
-        $submitted = $request->input('translations', []);
+        $allTranslations = $this->loadAllTranslations();
         $updatedCount = 0;
 
         foreach ($submitted as $row) {
-            $key = trim($row['key']);
+            $key = trim($row['key'] ?? '');
             if ($key === '') continue;
 
-            $en[$key] = $row['en'] ?? '';
-            $gu[$key] = $row['gu'] ?? '';
-            $hi[$key] = $row['hi'] ?? '';
+            // Handle en if submitted
+            if (isset($row['en'])) {
+                $allTranslations['en'][$key] = $row['en'] ?? '';
+            }
+
+            // Handle values array format: row[values][gu] => ...
+            if (isset($row['values']) && is_array($row['values'])) {
+                foreach ($row['values'] as $langCode => $val) {
+                    if (isset(self::LANGUAGES[$langCode])) {
+                        $allTranslations[$langCode][$key] = $val ?? '';
+                    }
+                }
+            } else {
+                // Direct column format: row[gu] => ...
+                foreach ($touchedLangs as $langCode) {
+                    if (isset($row[$langCode])) {
+                        $allTranslations[$langCode][$key] = $row[$langCode] ?? '';
+                    }
+                }
+            }
+
             $updatedCount++;
         }
 
-        $this->saveJsonFile($this->enPath, $en);
-        $this->saveJsonFile($this->guPath, $gu);
-        $this->saveJsonFile($this->hiPath, $hi);
+        // Save only modified language files
+        foreach ($touchedLangs as $langCode) {
+            $this->saveJsonFile($this->getLangPath($langCode), $allTranslations[$langCode]);
+        }
 
-        AuditLog::log("Updated {$updatedCount} platform translation entries (Bulk)", [
-            'count' => $updatedCount
+        $langNames = implode(', ', array_map(fn($c) => self::LANGUAGES[$c]['name'], $touchedLangs));
+        AuditLog::log("Updated {$updatedCount} platform translation entries in [{$langNames}]", [
+            'count'     => $updatedCount,
+            'languages' => $touchedLangs,
         ]);
 
-        return back()->with('success', "Successfully saved {$updatedCount} translations.");
+        return back()->with('success', "Successfully saved {$updatedCount} translations across [{$langNames}].");
     }
 
     /**
-     * AJAX update for a single translation row.
+     * AJAX update for a single translation row across displayed languages.
      */
     public function updateSingle(Request $request)
     {
         $request->validate([
             'key' => 'required|string',
-            'en'  => 'nullable|string',
-            'gu'  => 'nullable|string',
-            'hi'  => 'nullable|string',
         ]);
 
-        if ($unwritable = $this->unwritableFiles()) {
+        $key = trim($request->input('key'));
+        $values = $request->input('values', []);
+
+        // Also check direct language inputs: en, gu, hi, mr, etc.
+        foreach (self::LANGUAGES as $code => $meta) {
+            if ($request->has($code) && !isset($values[$code])) {
+                $values[$code] = $request->input($code);
+            }
+        }
+
+        if (empty($values)) {
+            return response()->json(['status' => 'error', 'message' => 'No language values provided.'], 422);
+        }
+
+        $targetCodes = array_keys($values);
+        if ($unwritable = $this->unwritableFiles($targetCodes)) {
             return response()->json([
                 'status'  => 'error',
                 'message' => $this->unwritableMessage($unwritable),
             ], 500);
         }
 
-        $key = trim($request->input('key'));
-        [$en, $gu, $hi] = $this->loadTranslations();
+        $allTranslations = $this->loadAllTranslations();
 
-        $en[$key] = $request->input('en', '') ?? '';
-        $gu[$key] = $request->input('gu', '') ?? '';
-        $hi[$key] = $request->input('hi', '') ?? '';
-
-        $this->saveJsonFile($this->enPath, $en);
-        $this->saveJsonFile($this->guPath, $gu);
-        $this->saveJsonFile($this->hiPath, $hi);
+        foreach ($values as $code => $val) {
+            if (isset(self::LANGUAGES[$code])) {
+                $allTranslations[$code][$key] = $val ?? '';
+                $this->saveJsonFile($this->getLangPath($code), $allTranslations[$code]);
+            }
+        }
 
         AuditLog::log("Updated translation for key: {$key}", [
-            'key' => $key,
-            'en'  => $en[$key],
-            'gu'  => $gu[$key],
-            'hi'  => $hi[$key],
+            'key'       => $key,
+            'languages' => array_keys($values),
         ]);
 
         return response()->json([
@@ -237,34 +396,114 @@ class TranslationSettingController extends Controller
     }
 
     /**
-     * Add a brand new translation key.
+     * AJAX fetch all 22 translations for a specific key.
+     */
+    public function getKeyAll(Request $request)
+    {
+        $key = trim($request->input('key', ''));
+        if ($key === '') {
+            return response()->json(['status' => 'error', 'message' => 'Key is required.'], 400);
+        }
+
+        $allTranslations = $this->loadAllTranslations();
+        $translations = [];
+
+        foreach (self::LANGUAGES as $code => $meta) {
+            $translations[$code] = [
+                'code'   => $code,
+                'name'   => $meta['name'],
+                'native' => $meta['native'],
+                'value'  => $allTranslations[$code][$key] ?? '',
+            ];
+        }
+
+        return response()->json([
+            'status'       => 'success',
+            'key'          => $key,
+            'translations' => $translations,
+        ]);
+    }
+
+    /**
+     * AJAX update all 22 translations for a specific key.
+     */
+    public function updateKeyAll(Request $request)
+    {
+        $request->validate([
+            'key'          => 'required|string',
+            'translations' => 'required|array',
+        ]);
+
+        $key = trim($request->input('key'));
+        $submitted = $request->input('translations', []);
+        $targetCodes = array_keys($submitted);
+
+        if ($unwritable = $this->unwritableFiles($targetCodes)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => $this->unwritableMessage($unwritable),
+            ], 500);
+        }
+
+        $allTranslations = $this->loadAllTranslations();
+
+        foreach ($submitted as $code => $val) {
+            if (isset(self::LANGUAGES[$code])) {
+                $allTranslations[$code][$key] = $val ?? '';
+                $this->saveJsonFile($this->getLangPath($code), $allTranslations[$code]);
+            }
+        }
+
+        AuditLog::log("Updated all translations for key: {$key}", [
+            'key'       => $key,
+            'languages' => $targetCodes,
+        ]);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => "Successfully saved all translations for '{$key}'!",
+            'key'     => $key,
+        ]);
+    }
+
+    /**
+     * Add a brand new translation key across languages.
      */
     public function storeKey(Request $request)
     {
         $request->validate([
             'new_key' => 'required|string|regex:/^[a-zA-Z0-9_\-\.]+$/|max:100',
             'new_en'  => 'nullable|string',
-            'new_gu'  => 'nullable|string',
-            'new_hi'  => 'nullable|string',
         ]);
 
-        if ($unwritable = $this->unwritableFiles()) {
-            return back()->withInput()->with('error', $this->unwritableMessage($unwritable));
+        $key = trim($request->input('new_key'));
+        $enVal = $request->input('new_en', '') ?? '';
+
+        // Collect translations from new_translations array or direct inputs
+        $translationsInput = $request->input('new_translations', []);
+        if ($request->has('new_gu')) {
+            $translationsInput['gu'] = $request->input('new_gu');
+        }
+        if ($request->has('new_hi')) {
+            $translationsInput['hi'] = $request->input('new_hi');
         }
 
-        $key = trim($request->input('new_key'));
-        [$en, $gu, $hi] = $this->loadTranslations();
+        $allTranslations = $this->loadAllTranslations();
 
-        $en[$key] = $request->input('new_en', '') ?? '';
-        $gu[$key] = $request->input('new_gu', '') ?? '';
-        $hi[$key] = $request->input('new_hi', '') ?? '';
+        // Put into EN
+        $allTranslations['en'][$key] = $enVal;
+        $this->saveJsonFile($this->getLangPath('en'), $allTranslations['en']);
 
-        $this->saveJsonFile($this->enPath, $en);
-        $this->saveJsonFile($this->guPath, $gu);
-        $this->saveJsonFile($this->hiPath, $hi);
+        // Put into other languages (defaulting to English if not provided)
+        foreach (self::LANGUAGES as $code => $meta) {
+            if ($code === 'en') continue;
+            $val = $translationsInput[$code] ?? $enVal;
+            $allTranslations[$code][$key] = $val ?? '';
+            $this->saveJsonFile($this->getLangPath($code), $allTranslations[$code]);
+        }
 
-        AuditLog::log("Added new translation key: {$key}");
+        AuditLog::log("Added new translation key: {$key} across all 22 languages");
 
-        return back()->with('success', "New translation key '{$key}' created successfully.");
+        return back()->with('success', "New translation key '{$key}' created successfully across all 22 languages.");
     }
 }
