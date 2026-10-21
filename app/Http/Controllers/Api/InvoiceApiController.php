@@ -98,12 +98,79 @@ class InvoiceApiController extends Controller
         return $this->renderPdf($this->buildPurchaseInvoiceHtml($purchase), 'PurchaseInvoice-' . $purchase->purchase_number . '.pdf', true);
     }
 
+    /**
+     * Every locale the invoice PDF (and its __() labels in lang/*.json) supports.
+     * Must stay in sync with the Flutter app's supportedLocales.
+     */
+    private const SUPPORTED_INVOICE_LOCALES = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
+
+    /**
+     * Resolves and validates the invoice locale from the request/shop-owner,
+     * falling back to 'en' for anything not in SUPPORTED_INVOICE_LOCALES.
+     */
+    private function resolveInvoiceLocale(?object $shopOwner): string
+    {
+        $request = request();
+        $rawLocale = $request->input('locale')
+            ?? $request->header('X-Locale')
+            ?? $request->header('Accept-Language')
+            ?? $shopOwner?->language
+            ?? app()->getLocale()
+            ?? 'en';
+
+        $locale = strtolower(trim((string) $rawLocale));
+        if (str_contains($locale, ',')) {
+            $locale = explode(',', $locale)[0];
+        }
+        if (str_contains($locale, '-')) {
+            $locale = explode('-', $locale)[0];
+        }
+        if (str_contains($locale, '_')) {
+            $locale = explode('_', $locale)[0];
+        }
+
+        return in_array($locale, self::SUPPORTED_INVOICE_LOCALES, true) ? $locale : 'en';
+    }
+
+    /**
+     * The mPDF font family (lowercase keys registered in renderWithMpdf's
+     * 'fontdata') that correctly shapes this locale's script. Only reached
+     * when the locale's own text actually needs mPDF — see
+     * needsComplexScriptEngine() — so 'en' never resolves through here in
+     * practice; the fallback just keeps this total.
+     */
+    private function mpdfFontFamily(string $locale): string
+    {
+        return match ($locale) {
+            'en' => 'DejaVu Sans', // only path DomPDF (not mPDF) ever actually renders
+            'gu' => 'muktavaani',
+            'hi', 'mr', 'ne', 'sa' => 'hind', // Devanagari, same script as Hindi
+            'bn' => 'notosansbengali',
+            'kn' => 'notosanskannada',
+            'ml' => 'notosansmalayalam',
+            'or' => 'notosansoriya',
+            'pa' => 'notosansgurmukhi',
+            'ta' => 'notosanstamil',
+            'te' => 'notosanstelugu',
+            'ur' => 'notosansarabic',
+            default => 'hind',
+        };
+    }
+
+    private function isRtlLocale(string $locale): bool
+    {
+        return $locale === 'ur';
+    }
+
     private function renderPdf(string $html, string $filename, bool $stream = true)
     {
-        // DomPDF cannot shape Indic scripts (conjuncts/matras come out broken),
-        // so any invoice containing Gujarati/Devanagari text goes through mPDF,
-        // which applies OpenType layout. Everything else keeps using DomPDF.
-        $output = $this->containsIndicScript($html)
+        // DomPDF cannot shape any complex Indic/Arabic script (conjuncts,
+        // matras, or Arabic's contextual letterforms all come out broken),
+        // so any invoice whose rendered text contains one goes through
+        // mPDF, which applies real OpenType layout. Plain-Latin invoices
+        // (locale 'en' with no foreign-script names/content) keep using
+        // the lighter DomPDF path.
+        $output = $this->needsComplexScriptEngine($html)
             ? $this->renderWithMpdf($html)
             : $this->renderWithDompdf($html);
 
@@ -116,10 +183,15 @@ class InvoiceApiController extends Controller
         return $output;
     }
 
-    private function containsIndicScript(string $html): bool
+    private function needsComplexScriptEngine(string $html): bool
     {
-        // Devanagari: U+0900-097F, Gujarati: U+0A80-0AFF
-        return preg_match('/[\x{0900}-\x{097F}\x{0A80}-\x{0AFF}]/u', $html) === 1;
+        // Arabic (Urdu): U+0600-06FF, Devanagari: U+0900-097F, Gurmukhi (Punjabi): U+0A00-0A7F,
+        // Gujarati: U+0A80-0AFF, Oriya: U+0B00-0B7F, Tamil: U+0B80-0BFF, Telugu: U+0C00-0C7F,
+        // Kannada: U+0C80-0CFF, Malayalam: U+0D00-0D7F, Bengali: U+0980-09FF
+        return preg_match(
+            '/[\x{0600}-\x{06FF}\x{0900}-\x{097F}\x{0980}-\x{09FF}\x{0A00}-\x{0A7F}\x{0A80}-\x{0AFF}\x{0B00}-\x{0B7F}\x{0B80}-\x{0BFF}\x{0C00}-\x{0C7F}\x{0C80}-\x{0CFF}\x{0D00}-\x{0D7F}]/u',
+            $html
+        ) === 1;
     }
 
     private function renderWithDompdf(string $html): string
@@ -174,7 +246,10 @@ class InvoiceApiController extends Controller
             'tempDir' => $tempDir,
             'fontDir' => array_merge($defaultConfig['fontDir'], [public_path('fonts')]),
             // Noto Sans Gujarati/Devanagari use GSUB/GPOS lookups mPDF cannot parse,
-            // so use Hind Vadodara / Hind (OFL) which mPDF shapes correctly.
+            // so Gujarati/Devanagari use Mukta Vaani / Hind (OFL) instead, which
+            // mPDF shapes correctly. The other scripts' own Noto Sans faces shape
+            // fine under mPDF's OTL engine (useOTL), including Arabic/Urdu's
+            // contextual joining forms.
             'fontdata' => $defaultFontConfig['fontdata'] + [
                 'muktavaani' => [
                     'R' => 'MuktaVaani-Regular.ttf',
@@ -186,8 +261,48 @@ class InvoiceApiController extends Controller
                     'B' => 'Hind-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
+                'notosansbengali' => [
+                    'R' => 'NotoSansBengali-Regular.ttf',
+                    'B' => 'NotoSansBengali-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosanskannada' => [
+                    'R' => 'NotoSansKannada-Regular.ttf',
+                    'B' => 'NotoSansKannada-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosansmalayalam' => [
+                    'R' => 'NotoSansMalayalam-Regular.ttf',
+                    'B' => 'NotoSansMalayalam-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosansoriya' => [
+                    'R' => 'NotoSansOriya-Regular.ttf',
+                    'B' => 'NotoSansOriya-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosansgurmukhi' => [
+                    'R' => 'NotoSansGurmukhi-Regular.ttf',
+                    'B' => 'NotoSansGurmukhi-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosanstamil' => [
+                    'R' => 'NotoSansTamil-Regular.ttf',
+                    'B' => 'NotoSansTamil-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosanstelugu' => [
+                    'R' => 'NotoSansTelugu-Regular.ttf',
+                    'B' => 'NotoSansTelugu-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'notosansarabic' => [
+                    'R' => 'NotoSansArabic-Regular.ttf',
+                    'B' => 'NotoSansArabic-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
             ],
-            'default_font' => 'muktavaani',
+            'default_font' => 'hind',
         ]);
 
         if ($hasWatermark) {
@@ -195,15 +310,6 @@ class InvoiceApiController extends Controller
             $mpdf->showWatermarkText = true;
             $mpdf->watermarkTextAlpha = 0.07;
         }
-
-        // Point every font family the invoice HTML asks for at a face that has
-        // Gujarati/Latin/₹ glyphs, so no run falls back to a font without them.
-        $family = preg_match('/[\x{0A80}-\x{0AFF}]/u', $html) ? 'muktavaani' : 'hind';
-        $html = preg_replace(
-            '/"?(DejaVu Sans|NotoSansGujarati|NotoSansDevanagari)"?/',
-            $family,
-            $html
-        );
 
         // mPDF ignores white-space:nowrap, so give the invoice title/meta column
         // enough width to keep "Invoice No" and the date on one line each.
@@ -228,62 +334,12 @@ class InvoiceApiController extends Controller
         $headerTextColor = $invoiceConfig->text_color ?: '#FFFFFF';
 
         // Locale from request parameters/headers or shop owner to ensure correct translations in PDF generation
-        $request = request();
-        $rawLocale = $request->input('locale')
-            ?? $request->header('X-Locale')
-            ?? $request->header('Accept-Language')
-            ?? $shop->owner?->language
-            ?? app()->getLocale()
-            ?? 'en';
-
-        // Clean and validate locale
-        $locale = strtolower(trim((string) $rawLocale));
-        if (str_contains($locale, ',')) {
-            $locale = explode(',', $locale)[0];
-        }
-        if (str_contains($locale, '-')) {
-            $locale = explode('-', $locale)[0];
-        }
-        if (str_contains($locale, '_')) {
-            $locale = explode('_', $locale)[0];
-        }
-        $supportedLocales = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
-        if (!in_array($locale, $supportedLocales, true)) {
-            $locale = 'en';
-        }
-
+        $locale = $this->resolveInvoiceLocale($shop->owner);
         app()->setLocale($locale);
-
-        $fontFaceStyles = '';
-        if ($locale === 'gu') {
-            $fontFaceStyles = '
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
-                }';
-        } elseif ($locale === 'hi') {
-            $fontFaceStyles = '
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
-                }';
-        }
+        $bodyFontFamily = $this->mpdfFontFamily($locale);
+        $rtlStyle = $this->isRtlLocale($locale)
+            ? 'body, table, td, th, div, span, p, strong { direction: rtl; unicode-bidi: embed; }'
+            : '';
 
         $badgeHtml = '';
         if ($sale->status === 'Returned') {
@@ -312,12 +368,22 @@ class InvoiceApiController extends Controller
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
             <title>' . __('invoice') . ' - ' . $sale->sale_number . '</title>
             <style>
-                ' . $fontFaceStyles . '
+                ' . $rtlStyle . '
+                .font-gujarati { font-family: muktavaani, sans-serif; }
+                .font-devanagari { font-family: hind, sans-serif; }
+                .font-bengali { font-family: notosansbengali, sans-serif; }
+                .font-kannada { font-family: notosanskannada, sans-serif; }
+                .font-malayalam { font-family: notosansmalayalam, sans-serif; }
+                .font-oriya { font-family: notosansoriya, sans-serif; }
+                .font-gurmukhi { font-family: notosansgurmukhi, sans-serif; }
+                .font-tamil { font-family: notosanstamil, sans-serif; }
+                .font-telugu { font-family: notosanstelugu, sans-serif; }
+                .font-arabic { font-family: notosansarabic, sans-serif; direction: rtl; unicode-bidi: embed; }
                 * {
                     box-sizing: border-box;
                 }
                 body, table, td, th, div, span, p, strong {
-                    font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
+                    font-family: ' . $bodyFontFamily . ', DejaVu Sans, sans-serif;
                     -webkit-font-smoothing: antialiased;
                     -moz-osx-font-smoothing: grayscale;
                     text-rendering: geometricPrecision;
@@ -847,62 +913,12 @@ class InvoiceApiController extends Controller
         $headerTextColor = $invoiceConfig->text_color ?: '#FFFFFF';
 
         // Locale from request parameters/headers or shop owner to ensure correct translations in PDF generation
-        $request = request();
-        $rawLocale = $request->input('locale')
-            ?? $request->header('X-Locale')
-            ?? $request->header('Accept-Language')
-            ?? $shop->owner?->language
-            ?? app()->getLocale()
-            ?? 'en';
-
-        // Clean and validate locale
-        $locale = strtolower(trim((string) $rawLocale));
-        if (str_contains($locale, ',')) {
-            $locale = explode(',', $locale)[0];
-        }
-        if (str_contains($locale, '-')) {
-            $locale = explode('-', $locale)[0];
-        }
-        if (str_contains($locale, '_')) {
-            $locale = explode('_', $locale)[0];
-        }
-        $supportedLocales = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
-        if (!in_array($locale, $supportedLocales, true)) {
-            $locale = 'en';
-        }
-
+        $locale = $this->resolveInvoiceLocale($shop->owner);
         app()->setLocale($locale);
-
-        $fontFaceStyles = '';
-        if ($locale === 'gu') {
-            $fontFaceStyles = '
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansGujarati";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansGujarati-Bold.ttf') . '") format("truetype");
-                }';
-        } elseif ($locale === 'hi') {
-            $fontFaceStyles = '
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 400;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Regular.ttf') . '") format("truetype");
-                }
-                @font-face {
-                    font-family: "NotoSansDevanagari";
-                    font-style: normal;
-                    font-weight: 700;
-                    src: url("' . public_path('fonts/NotoSansDevanagari-Bold.ttf') . '") format("truetype");
-                }';
-        }
+        $bodyFontFamily = $this->mpdfFontFamily($locale);
+        $rtlStyle = $this->isRtlLocale($locale)
+            ? 'body, table, td, th, div, span, p, strong { direction: rtl; unicode-bidi: embed; }'
+            : '';
 
         $badgeHtml = '';
         if ($purchase->status === 'Returned') {
@@ -940,12 +956,22 @@ class InvoiceApiController extends Controller
             <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
             <title>' . __('purchase_invoice') . ' - ' . $purchase->purchase_number . '</title>
             <style>
-                ' . $fontFaceStyles . '
+                ' . $rtlStyle . '
+                .font-gujarati { font-family: muktavaani, sans-serif; }
+                .font-devanagari { font-family: hind, sans-serif; }
+                .font-bengali { font-family: notosansbengali, sans-serif; }
+                .font-kannada { font-family: notosanskannada, sans-serif; }
+                .font-malayalam { font-family: notosansmalayalam, sans-serif; }
+                .font-oriya { font-family: notosansoriya, sans-serif; }
+                .font-gurmukhi { font-family: notosansgurmukhi, sans-serif; }
+                .font-tamil { font-family: notosanstamil, sans-serif; }
+                .font-telugu { font-family: notosanstelugu, sans-serif; }
+                .font-arabic { font-family: notosansarabic, sans-serif; direction: rtl; unicode-bidi: embed; }
                 * {
                     box-sizing: border-box;
                 }
                 body, table, td, th, div, span, p, strong {
-                    font-family: ' . ($locale === 'gu' ? 'NotoSansGujarati' : ($locale === 'hi' ? 'NotoSansDevanagari' : 'DejaVu Sans')) . ', sans-serif;
+                    font-family: ' . $bodyFontFamily . ', DejaVu Sans, sans-serif;
                     -webkit-font-smoothing: antialiased;
                     -moz-osx-font-smoothing: grayscale;
                     text-rendering: geometricPrecision;
@@ -1415,14 +1441,27 @@ class InvoiceApiController extends Controller
         }
         $escaped = htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-        // Gujarati Unicode block: U+0A80 - U+0AFF
-        if (preg_match('/[\x{0A80}-\x{0AFF}]/u', $text)) {
-            return '<span class="font-gujarati">' . $escaped . '</span>';
-        }
+        // Each range maps to a script that needs its own font/shaping; checked
+        // in a fixed order since a string could contain more than one script
+        // (first match wins — good enough for a single name/address field).
+        $scripts = [
+            'font-arabic' => '/[\x{0600}-\x{06FF}]/u',     // Urdu
+            'font-devanagari' => '/[\x{0900}-\x{097F}]/u', // Hindi/Marathi/Nepali/Sanskrit
+            'font-bengali' => '/[\x{0980}-\x{09FF}]/u',
+            'font-gurmukhi' => '/[\x{0A00}-\x{0A7F}]/u',   // Punjabi
+            'font-gujarati' => '/[\x{0A80}-\x{0AFF}]/u',
+            'font-oriya' => '/[\x{0B00}-\x{0B7F}]/u',      // Odia
+            'font-tamil' => '/[\x{0B80}-\x{0BFF}]/u',
+            'font-telugu' => '/[\x{0C00}-\x{0C7F}]/u',
+            'font-kannada' => '/[\x{0C80}-\x{0CFF}]/u',
+            'font-malayalam' => '/[\x{0D00}-\x{0D7F}]/u',
+        ];
 
-        // Devanagari Unicode block: U+0900 - U+097F
-        if (preg_match('/[\x{0900}-\x{097F}]/u', $text)) {
-            return '<span class="font-devanagari">' . $escaped . '</span>';
+        foreach ($scripts as $class => $pattern) {
+            if (preg_match($pattern, $text)) {
+                $dir = $class === 'font-arabic' ? ' dir="rtl"' : '';
+                return '<span class="' . $class . '"' . $dir . '>' . $escaped . '</span>';
+            }
         }
 
         return '<span class="font-default">' . $escaped . '</span>';
