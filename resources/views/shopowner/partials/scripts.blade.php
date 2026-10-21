@@ -657,7 +657,19 @@
                         // plan's device limit) or account suspended. Same handling and message as the app.
                         let suspended = false;
                         if (response.status === 403) {
-                            try { suspended = (await response.clone().json()).error === 'account_suspended'; } catch (e) { }
+                            try {
+                                const errData = await response.clone().json();
+                                suspended = errData.error === 'account_suspended';
+                                if (errData.error === 'shop_suspended' || errData.error === 'shop_inactive') {
+                                    this.showToast(errData.message || 'This shop is inactive. Please contact administrator.', 'error');
+                                    if (this.user && this.user.shops) {
+                                        const usable = this.user.shops.find(s => s.status === 'active' && !this.isShopLocked(s));
+                                        if (usable && (!this.shop || usable.id !== this.shop.id)) {
+                                            this.switchShop(usable);
+                                        }
+                                    }
+                                }
+                            } catch (e) { }
                         }
                         if ((response.status === 401 || suspended) && this.token) {
                             ['shopowner_token', 'token', 'shopowner_user', 'shopowner_shop', 'shopowner_has_shop'].forEach(k => localStorage.removeItem(k));
@@ -2378,17 +2390,22 @@
                 this.lockedShopIds = d.locked_shop_ids || [];
                 localStorage.setItem('shopowner_locked_shop_ids', JSON.stringify(this.lockedShopIds));
 
-                // If the active shop got locked (Shop Add-on expired), move to the first usable shop.
-                if (this.shop && this.lockedShopIds.includes(this.shop.id) && this.user && this.user.shops) {
-                    const usable = this.user.shops.find(s => !this.lockedShopIds.includes(s.id));
+                // If the active shop got locked or inactive, move to the first usable shop.
+                if (this.shop && (this.lockedShopIds.includes(this.shop.id) || this.isShopInactive(this.shop)) && this.user && this.user.shops) {
+                    const usable = this.user.shops.find(s => s.status === 'active' && !this.lockedShopIds.includes(s.id));
                     if (usable) {
-                        this.showToast('Shop "' + this.shop.name + '" is locked. Renew the Shop Add-on to use it again.', 'error');
+                        const msg = this.isShopInactive(this.shop)
+                            ? 'Shop "' + this.shop.name + '" is inactive. Switched to ' + usable.name + '.'
+                            : 'Shop "' + this.shop.name + '" is locked. Renew the Shop Add-on to use it again.';
+                        this.showToast(msg, 'error');
                         this.switchShop(usable);
                     }
                 }
             },
 
             isShopLocked(s) { return this.lockedShopIds.includes(s.id); },
+            isShopInactive(s) { return s && s.status !== 'active'; },
+            isShopSuspended(s) { return this.isShopInactive(s); },
 
             // Billing type is set by the admin per add-on: 'lifetime' = one-time purchase, anything
             // else = yearly auto-renewing subscription. Never hard-code it per add-on type.
@@ -3146,6 +3163,10 @@
                 if (this.isShopLocked(targetShop)) {
                     this.showToast('This shop is locked. Renew the Shop Add-on to use it again.', 'error');
                     this.navigateTo('addons');
+                    return;
+                }
+                if (this.isShopInactive(targetShop)) {
+                    this.showToast('Shop "' + (targetShop.name || 'Shop') + '" is inactive. Contact administrator.', 'error');
                     return;
                 }
                 if (this.shop && this.shop.id === targetShop.id && !this.switchingShop) {

@@ -26,7 +26,7 @@ class ShopController extends Controller
             'mobile' => 'nullable|digits:10',
             'address' => 'nullable|string',
             'gst_number' => 'nullable|string|max:15',
-            'status' => 'required|in:active,suspended',
+            'status' => 'required|in:active,inactive',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
             'mobile.digits' => 'The mobile number must be exactly 10 digits.',
@@ -83,11 +83,6 @@ class ShopController extends Controller
             }
         }
 
-        // Sync owner status to match shop status
-        if ($shop->owner) {
-            $shop->owner->update(['status' => $shop->status]);
-        }
-
         AuditLog::log("Manually created shop #{$shop->id} ({$shop->name})", $validated);
 
         return back()->with('success', 'Shop created successfully.');
@@ -104,7 +99,7 @@ class ShopController extends Controller
             'mobile' => 'nullable|digits:10',
             'address' => 'nullable|string',
             'gst_number' => 'nullable|string|max:15',
-            'status' => 'required|in:active,suspended',
+            'status' => 'required|in:active,inactive',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
             'mobile.digits' => 'The mobile number must be exactly 10 digits.',
@@ -130,12 +125,6 @@ class ShopController extends Controller
 
         $shop->update($validated);
 
-        // Sync owner status to match shop status
-        if ($shop->owner) {
-            $shop->owner->update(['status' => $shop->status]);
-            AuditLog::log("Automatically synchronized status of owner #{$shop->owner->id} to {$shop->status} due to manually updated shop status.");
-        }
-
         AuditLog::log("Manually updated shop #{$shop->id} ({$shop->name})", $validated);
 
         return back()->with('success', 'Shop updated successfully.');
@@ -150,18 +139,12 @@ class ShopController extends Controller
     public function toggleStatus($id)
     {
         $shop = Shop::with('owner')->findOrFail($id);
-        $newStatus = $shop->status === 'suspended' ? 'active' : 'suspended';
+        $newStatus = $shop->status === 'active' ? 'inactive' : 'active';
         $shop->update(['status' => $newStatus]);
 
-        // Automatically sync status to the owner user
-        if ($shop->owner) {
-            $shop->owner->update(['status' => $newStatus]);
-            AuditLog::log("Automatically synchronized status of owner #{$shop->owner->id} to {$newStatus} due to shop status change.");
-        }
+        AuditLog::log("Toggled status of shop #{$shop->id} ({$shop->name}) to {$newStatus}", ['status' => $newStatus]);
 
-        AuditLog::log("Toggled status of shop #{$shop->id} to {$newStatus}", ['status' => $newStatus]);
-
-        return back()->with('success', "Shop status and owner account have been updated to {$newStatus}.");
+        return back()->with('success', "Shop \"{$shop->name}\" status has been updated to {$newStatus}.");
     }
 
     /** Switch an optional module (Shop::FEATURES) on or off for one shop — free, admin-only. */

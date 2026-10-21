@@ -79,6 +79,7 @@ Route::group([
     Route::get('users/{id}/backup', [UserController::class, 'backup'])->name('users.backup');
     Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::post('users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset_password');
+    Route::post('users/{id}/suspend', [UserController::class, 'suspend'])->name('users.suspend');
     Route::get('users/{id}/login-as', [UserController::class, 'loginAs'])->name('users.login_as');
     Route::delete('users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::post('users/{id}/recover', [UserController::class, 'recover'])->name('users.recover');
@@ -156,6 +157,8 @@ Route::group([
     Route::get('settings/translations', [TranslationSettingController::class, 'index'])->name('settings.translations');
     Route::post('settings/translations', [TranslationSettingController::class, 'update'])->name('settings.translations.update');
     Route::post('settings/translations/single', [TranslationSettingController::class, 'updateSingle'])->name('settings.translations.single');
+    Route::get('settings/translations/key-all', [TranslationSettingController::class, 'getKeyAll'])->name('settings.translations.key_all');
+    Route::post('settings/translations/update-all', [TranslationSettingController::class, 'updateKeyAll'])->name('settings.translations.update_all');
     Route::post('settings/translations/store-key', [TranslationSettingController::class, 'storeKey'])->name('settings.translations.store_key');
 
     // Advertisement Management

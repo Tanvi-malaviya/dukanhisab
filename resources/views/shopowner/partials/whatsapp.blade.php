@@ -79,10 +79,10 @@
                     <h3 class="text-base sm:text-lg font-extrabold text-slate-800 dark:text-white tracking-tight truncate" x-text="wt('whatsapp_messages', 'WhatsApp Messages')"></h3>
                     <span x-show="wa.available" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 dark:bg-teal-950/60 text-primary dark:text-teal-300 border border-teal-200/70 dark:border-teal-800/50">
                         <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        <span>Active</span>
+                        <span x-text="t('active') || 'Active'">Active</span>
                     </span>
                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-gray-600">
-                        <span>Language:</span>
+                        <span x-text="(t('language') || 'Language') + ':'">Language:</span>
                         <strong class="uppercase text-primary dark:text-teal-300" x-text="currentLang"></strong>
                     </span>
                 </div>
@@ -98,7 +98,8 @@
                     <p class="text-base sm:text-lg font-black text-slate-800 dark:text-white leading-tight mt-0.5" x-text="wa.balance.toLocaleString()"></p>
                 </div>
                 <button type="button" @click="activeTab = 'packs'"
-                    class="px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer">
+                    class="px-3 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-xs font-bold shadow-xs transition-all shrink-0 cursor-pointer"
+                    x-text="wt('wa_buy_packs', '+ Buy Packs')">
                     + Buy Packs
                 </button>
             </div>
@@ -120,7 +121,7 @@
             <div class="flex items-center gap-2.5 shrink-0">
                 <button type="button" @click="openUpiModal()" class="px-3.5 py-1.5 bg-primary hover:bg-primary-hover text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    <span>Add UPI ID</span>
+                    <span x-text="wt('wa_add_upi_btn', '+ Add UPI ID')">Add UPI ID</span>
                 </button>
                 <button type="button" @click="goToShopSettingsUpi()" class="text-xs font-bold underline text-primary dark:text-teal-300 hover:text-teal-950 dark:hover:text-white cursor-pointer" x-text="t('settings')"></button>
             </div>
@@ -129,9 +130,9 @@
         <div x-show="wa.upiId" class="px-3.5 py-2 rounded-xl bg-teal-50/40 dark:bg-teal-950/20 border border-teal-200/60 dark:border-teal-800/40 text-teal-900 dark:text-teal-200 text-xs flex items-center justify-between gap-2">
             <span class="flex items-center gap-2">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-                <span>Active UPI ID: <strong class="font-mono text-slate-800 dark:text-white" x-text="wa.upiId"></strong> ("Pay Now" button active on Due Reminders)</span>
+                <span><span x-text="wt('wa_active_upi_desc', 'Active UPI ID: ')">Active UPI ID: </span><strong class="font-mono text-slate-800 dark:text-white" x-text="wa.upiId"></strong><span class="opacity-80" x-text="wt('wa_active_upi_hint', ' (\"Pay Now\" button active on Due Reminders)')"></span></span>
             </span>
-            <button type="button" @click="openUpiModal()" class="text-[11px] font-bold text-primary dark:text-teal-300 hover:underline cursor-pointer">Change</button>
+            <button type="button" @click="openUpiModal()" class="text-[11px] font-bold text-primary dark:text-teal-300 hover:underline cursor-pointer" x-text="t('change') || 'Change'">Change</button>
         </div>
     </div>
 
@@ -141,14 +142,14 @@
             class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0"
             :class="activeTab === 'automations' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700'">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span>Automation Rules</span>
+            <span x-text="wt('wa_tab_automations', 'Automation Rules')">Automation Rules</span>
         </button>
 
         <button type="button" @click="activeTab = 'packs'"
             class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0"
             :class="activeTab === 'packs' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700'">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-            <span>Buy Packs & Wallet</span>
+            <span x-text="wt('wa_tab_packs', 'Buy Packs & Wallet')">Buy Packs & Wallet</span>
             <span class="px-1.5 py-0.2 rounded-md text-[10px] font-extrabold"
                   :class="activeTab === 'packs' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-400'"
                   x-text="wa.packs.length"></span>
@@ -158,14 +159,14 @@
             class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0"
             :class="activeTab === 'history' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700'">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>Delivery Logs</span>
+            <span x-text="wt('wa_tab_logs', 'Delivery Logs')">Delivery Logs</span>
         </button>
 
         <button type="button" @click="activeTab = 'claims'"
             class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0"
             :class="activeTab === 'claims' ? 'bg-primary text-white shadow-xs' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-gray-700'">
             <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>Payment Claims</span>
+            <span x-text="wt('wa_tab_claims', 'Payment Claims')">Payment Claims</span>
             <span x-show="wa.claims.length" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white animate-pulse" x-text="wa.claims.length"></span>
         </button>
     </div>
@@ -174,7 +175,7 @@
     <template x-if="wa.loading && !wa.loaded">
         <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-3 border-primary border-t-transparent"></div>
-            <p class="text-xs text-slate-400 mt-2 font-medium">Loading WhatsApp configurations...</p>
+            <p class="text-xs text-slate-400 mt-2 font-medium" x-text="wt('wa_loading_config', 'Loading WhatsApp configurations...')">Loading WhatsApp configurations...</p>
         </div>
     </template>
 
@@ -198,10 +199,11 @@
                                 </span>
                                 <div>
                                     <h4 class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="wt('wa_to_customers', 'Messages to Customers')"></h4>
-                                    <p class="text-[11px] text-slate-400">Automatic messages sent on sale & payment</p>
+                                    <p class="text-[11px] text-slate-400" x-text="wt('wa_customer_auto_desc', 'Automatic messages sent on sale & payment')">Automatic messages sent on sale & payment</p>
                                 </div>
                             </div>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-primary dark:text-teal-300 border border-teal-100 dark:border-teal-800/50">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-primary dark:text-teal-300 border border-teal-100 dark:border-teal-800/50"
+                                x-text="wa.events.filter(e => e.recipient === 'customer').length + ' ' + (t('events') || 'Events')">
                                 3 Events
                             </span>
                         </div>
@@ -216,7 +218,7 @@
                                             <div class="flex items-center gap-2 flex-wrap">
                                                 <p class="text-xs font-bold text-slate-800 dark:text-white" x-text="wt('wa_event_' + ev.key, ev.label)"></p>
                                                 <span x-show="ev.has_document" class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-teal-50 dark:bg-teal-950 text-primary dark:text-teal-300 border border-teal-200 dark:border-teal-800">PDF</span>
-                                                <span x-show="ev.has_pay_button" class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">Pay Now</span>
+                                                <span x-show="ev.has_pay_button" class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-sky-50 dark:bg-sky-950 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800" x-text="wt('pay_now', 'Pay Now')">Pay Now</span>
                                             </div>
                                             <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug"
                                                 x-text="!ev.template_available ? wt('wa_not_available', 'Template not configured yet') : (ev.scheduled ? wt('wa_scheduled_info', 'Sent automatically on chosen days & time') : wt('wa_sent_instantly', 'Sent automatically right after action'))"></p>
@@ -239,7 +241,7 @@
                                                 <template x-for="day in days" :key="day">
                                                     <button type="button" @click="toggleDay(ev, day)"
                                                         :class="(ev.schedule_days || []).includes(day) ? 'bg-primary text-white border-primary shadow-2xs' : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700'"
-                                                        class="px-2 py-1 rounded-lg border text-[11px] font-bold capitalize transition-all cursor-pointer" x-text="day"></button>
+                                                        class="px-2 py-1 rounded-lg border text-[11px] font-bold capitalize transition-all cursor-pointer" x-text="t('day_' + day) || day"></button>
                                                 </template>
                                             </div>
                                         </div>
@@ -290,10 +292,11 @@
                                 </span>
                                 <div>
                                     <h4 class="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="wt('wa_to_suppliers', 'Messages to Suppliers')"></h4>
-                                    <p class="text-[11px] text-slate-400">Automatic updates sent on purchase & payout</p>
+                                    <p class="text-[11px] text-slate-400" x-text="wt('wa_supplier_auto_desc', 'Automatic updates sent on purchase & payout')">Automatic updates sent on purchase & payout</p>
                                 </div>
                             </div>
-                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-primary dark:text-teal-300 border border-teal-100 dark:border-teal-800/50">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 dark:bg-teal-900/30 text-primary dark:text-teal-300 border border-teal-100 dark:border-teal-800/50"
+                                x-text="wa.events.filter(e => e.recipient === 'supplier').length + ' ' + (t('events') || 'Events')">
                                 3 Events
                             </span>
                         </div>
@@ -330,7 +333,7 @@
                                                 <template x-for="day in days" :key="day">
                                                     <button type="button" @click="toggleDay(ev, day)"
                                                         :class="(ev.schedule_days || []).includes(day) ? 'bg-primary text-white border-primary shadow-2xs' : 'bg-white dark:bg-gray-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700'"
-                                                        class="px-2 py-1 rounded-lg border text-[11px] font-bold capitalize transition-all cursor-pointer" x-text="day"></button>
+                                                        class="px-2 py-1 rounded-lg border text-[11px] font-bold capitalize transition-all cursor-pointer" x-text="t('day_' + day) || day"></button>
                                                 </template>
                                             </div>
                                         </div>
@@ -375,8 +378,8 @@
 
                 {{-- Bottom Action Bar: ONLY SINGLE SAVE BUTTON ON THE PAGE --}}
                 <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <p class="text-xs text-slate-500 dark:text-slate-400">
-                        <span class="font-bold text-slate-800 dark:text-slate-200">Ready?</span> Changes apply immediately once saved.
+                    <p class="text-xs text-slate-500 dark:text-slate-400" x-text="wt('wa_ready_apply_hint', 'Ready? Changes apply immediately once saved.')">
+                        Ready? Changes apply immediately once saved.
                     </p>
                     <button type="button" @click="save()" :disabled="wa.saving"
                         class="px-6 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-black shadow-md hover:shadow-lg transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
@@ -401,8 +404,8 @@
                             <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="wt('wa_buy_messages', 'Buy WhatsApp Message Credits')"></h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400" x-text="wt('wa_one_credit', '1 credit = 1 WhatsApp message. Credits never expire. Failed messages are auto-refunded.')"></p>
                         </div>
-                        <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950 text-primary dark:text-teal-300 border border-teal-200 dark:border-teal-800 shrink-0">
-                            Current: <strong x-text="wa.balance.toLocaleString()"></strong> Credits
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 dark:bg-teal-950 text-primary dark:text-teal-300 border border-teal-200 dark:border-teal-800 shrink-0"
+                            x-text="(t('current') || 'Current') + ': ' + wa.balance.toLocaleString() + ' ' + (t('credits') || 'Credits')">
                         </span>
                     </div>
 
@@ -414,10 +417,10 @@
                                 <div class="space-y-1">
                                     <div class="flex items-center justify-between">
                                         <p class="text-xs font-extrabold text-slate-800 dark:text-white" x-text="pack.name"></p>
-                                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400" x-text="'₹' + (pack.price / pack.credits).toFixed(2) + '/msg'"></span>
+                                        <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400" x-text="'₹' + (pack.price / pack.credits).toFixed(2) + '/' + wt('wa_msg_short', 'msg')"></span>
                                     </div>
                                     <p class="text-2xl font-black text-primary dark:text-teal-300" x-text="Number(pack.credits).toLocaleString() + ' ' + wt('wa_messages', 'messages')"></p>
-                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium" x-text="'One-time payment of ₹' + Number(pack.price).toFixed(2)"></p>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium" x-text="wt('wa_onetime_payment', 'One-time payment of ₹') + Number(pack.price).toFixed(2)"></p>
                                 </div>
 
                                 <button type="button" @click="buyPack(pack)" :disabled="wa.buyingId !== null"
@@ -425,7 +428,7 @@
                                     <template x-if="wa.buyingId === pack.id">
                                         <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
                                     </template>
-                                    <span x-text="wa.buyingId === pack.id ? wt('processing', 'Processing...') : ('Buy for ₹' + Number(pack.price).toFixed(0))"></span>
+                                    <span x-text="wa.buyingId === pack.id ? wt('processing', 'Processing...') : (wt('wa_buy_for', 'Buy for ₹') + Number(pack.price).toFixed(0))"></span>
                                 </button>
                             </div>
                         </template>
@@ -436,7 +439,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-sm p-4.5 space-y-3" x-show="wa.ledger.length">
                     <div class="flex items-center justify-between">
                         <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400" x-text="wt('wa_credit_history', 'Recent Credit Activity')"></h4>
-                        <span class="text-[11px] text-slate-400 font-medium">Last 15 records</span>
+                        <span class="text-[11px] text-slate-400 font-medium" x-text="wt('wa_last_15_records', 'Last 15 records')">Last 15 records</span>
                     </div>
 
                     <div class="overflow-x-auto">
@@ -472,11 +475,11 @@
                 <div class="flex items-center justify-between gap-3 border-b border-slate-100 dark:border-gray-700 pb-3">
                     <div>
                         <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="wt('wa_message_history', 'WhatsApp Delivery Logs')"></h4>
-                        <p class="text-xs text-slate-400">Live delivery status reported via Meta Webhooks</p>
+                        <p class="text-xs text-slate-400" x-text="wt('wa_delivery_logs_desc', 'Live delivery status reported via Meta Webhooks')"></p>
                     </div>
 
                     <div class="flex items-center gap-2">
-                        <label class="text-[11px] font-bold text-slate-500">Filter:</label>
+                        <label class="text-[11px] font-bold text-slate-500" x-text="(t('filter') || 'Filter') + ':'">Filter:</label>
                         <select x-model="wa.historyStatus" @change="loadMessages(1)"
                             class="px-2.5 py-1 bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-xl text-xs dark:text-white font-medium focus:ring-1 focus:ring-primary">
                             <option value="" x-text="wt('all', 'All Statuses')"></option>
@@ -527,12 +530,12 @@
 
                 {{-- Pagination Controls --}}
                 <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-gray-700" x-show="wa.historyLastPage > 1">
-                    <span class="text-xs text-slate-500" x-text="'Page ' + wa.historyPage + ' of ' + wa.historyLastPage"></span>
+                    <span class="text-xs text-slate-500" x-text="(t('page') || 'Page') + ' ' + wa.historyPage + ' ' + (t('of') || 'of') + ' ' + wa.historyLastPage"></span>
                     <div class="flex gap-1.5">
                         <button type="button" @click="loadMessages(wa.historyPage - 1)" :disabled="wa.historyPage <= 1"
-                            class="px-3 py-1 rounded-lg border border-slate-200 dark:border-gray-600 text-xs font-bold disabled:opacity-40 cursor-pointer dark:text-slate-300">Previous</button>
+                            class="px-3 py-1 rounded-lg border border-slate-200 dark:border-gray-600 text-xs font-bold disabled:opacity-40 cursor-pointer dark:text-slate-300" x-text="t('previous') || 'Previous'">Previous</button>
                         <button type="button" @click="loadMessages(wa.historyPage + 1)" :disabled="wa.historyPage >= wa.historyLastPage"
-                            class="px-3 py-1 rounded-lg border border-slate-200 dark:border-gray-600 text-xs font-bold disabled:opacity-40 cursor-pointer dark:text-slate-300">Next</button>
+                            class="px-3 py-1 rounded-lg border border-slate-200 dark:border-gray-600 text-xs font-bold disabled:opacity-40 cursor-pointer dark:text-slate-300" x-text="t('next') || 'Next'">Next</button>
                     </div>
                 </div>
             </div>
@@ -546,7 +549,7 @@
                         <h4 class="text-sm font-extrabold text-slate-800 dark:text-slate-100" x-text="wt('wa_payment_claims', 'Customer Payment Claims')"></h4>
                         <p class="text-xs text-slate-400" x-text="wt('wa_payment_claims_desc', 'Customers who clicked Pay Now and submitted UTR transaction numbers.')"></p>
                     </div>
-                    <span x-show="wa.claims.length" class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-black" x-text="wa.claims.length + ' Pending'"></span>
+                    <span x-show="wa.claims.length" class="px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-black" x-text="wa.claims.length + ' ' + (t('pending') || 'Pending')"></span>
                 </div>
 
                 <div x-show="!wa.claims.length" class="py-8 text-center text-xs text-slate-400">
@@ -597,8 +600,8 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         </span>
                         <div>
-                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-white">Shop UPI ID Setup</h4>
-                            <p class="text-[11px] text-slate-400">Receive instant customer payments via WhatsApp</p>
+                            <h4 class="text-sm font-extrabold text-slate-800 dark:text-white" x-text="wt('wa_upi_modal_title', 'Shop UPI ID Setup')">Shop UPI ID Setup</h4>
+                            <p class="text-[11px] text-slate-400" x-text="wt('wa_upi_modal_desc', 'Receive instant customer payments via WhatsApp')">Receive instant customer payments via WhatsApp</p>
                         </div>
                     </div>
                     <button type="button" @click="showUpiModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg">
@@ -609,19 +612,19 @@
                 {{-- Modal Body --}}
                 <form @submit.prevent="saveUpiFromModal()" class="p-5 space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5" for="modal-upi-input">
+                        <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5" for="modal-upi-input" x-text="wt('wa_upi_id_label', 'UPI ID (VPA Address)')">
                             UPI ID (VPA Address)
                         </label>
                         <div class="relative">
                             <input type="text" id="modal-upi-input" x-model="upiForm.upi_id"
-                                placeholder="e.g. mobile@upi, shop@okhdfcbank"
+                                :placeholder="wt('wa_upi_placeholder', 'e.g. mobile@upi, shop@okhdfcbank')"
                                 required
                                 class="block w-full pl-9 pr-3 py-2 border border-slate-300 dark:border-gray-600 rounded-xl text-sm dark:bg-gray-700 dark:text-white focus:ring-1 focus:ring-primary focus:border-primary transition-all">
                             <span class="absolute left-3 top-2.5 text-slate-400 pointer-events-none">
                                 <svg class="w-4 h-4 text-primary dark:text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed">
+                        <p class="text-[11px] text-slate-400 mt-2 leading-relaxed" x-text="wt('wa_upi_info_box', 'When you send due reminders on WhatsApp, customers receive a direct \"💳 Pay Now\" payment link that allows them to pay directly to this UPI ID via Google Pay, PhonePe, Paytm, or BHIM.')">
                             When you send due reminders on WhatsApp, customers receive a direct <strong>"💳 Pay Now"</strong> payment link that allows them to pay directly to this UPI ID via Google Pay, PhonePe, Paytm, or BHIM.
                         </p>
                     </div>
@@ -629,7 +632,8 @@
                     {{-- Modal Footer --}}
                     <div class="pt-3 border-t border-slate-100 dark:border-gray-700 flex items-center justify-end gap-2.5">
                         <button type="button" @click="showUpiModal = false"
-                            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-600 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700 cursor-pointer">
+                            class="px-4 py-2 rounded-xl border border-slate-200 dark:border-gray-600 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-gray-700 cursor-pointer"
+                            x-text="t('cancel') || 'Cancel'">
                             Cancel
                         </button>
                         <button type="submit" :disabled="upiForm.saving"
@@ -637,7 +641,7 @@
                             <template x-if="upiForm.saving">
                                 <div class="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
                             </template>
-                            <span x-text="upiForm.saving ? 'Saving...' : 'Save UPI ID'"></span>
+                            <span x-text="upiForm.saving ? wt('saving', 'Saving...') : wt('wa_save_upi', 'Save UPI ID')"></span>
                         </button>
                     </div>
                 </form>
