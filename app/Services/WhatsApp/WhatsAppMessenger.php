@@ -109,8 +109,9 @@ class WhatsAppMessenger
             ?: $shop->owner?->language
             ?: 'en';
 
-        $language = strtolower(substr(trim((string) $language), 0, 2));
-        if (!in_array($language, ['en', 'gu', 'hi'], true)) {
+        $language = strtolower(trim((string) $language));
+        $supportedLanguages = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
+        if (!in_array($language, $supportedLanguages, true)) {
             $language = 'en';
         }
 

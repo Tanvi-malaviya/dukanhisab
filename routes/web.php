@@ -26,6 +26,34 @@ Route::get('/', function () {
     return view('app');
 });
 
+// Direct translation delivery routes for web panel
+Route::get('/v1/translations/{lang}', function (string $lang) {
+    if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
+        abort(404);
+    }
+    $path = base_path("lang/{$lang}.json");
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/json',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+});
+Route::get('/translations/{lang}', function (string $lang) {
+    if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
+        abort(404);
+    }
+    $path = base_path("lang/{$lang}.json");
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/json',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+});
+
 // Admin Auth Routes
 Route::get('admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
 Route::post('admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
@@ -51,6 +79,7 @@ Route::group([
     Route::get('users/{id}/backup', [UserController::class, 'backup'])->name('users.backup');
     Route::post('users/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
     Route::post('users/{id}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset_password');
+    Route::post('users/{id}/suspend', [UserController::class, 'suspend'])->name('users.suspend');
     Route::get('users/{id}/login-as', [UserController::class, 'loginAs'])->name('users.login_as');
     Route::delete('users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
     Route::post('users/{id}/recover', [UserController::class, 'recover'])->name('users.recover');
@@ -128,6 +157,8 @@ Route::group([
     Route::get('settings/translations', [TranslationSettingController::class, 'index'])->name('settings.translations');
     Route::post('settings/translations', [TranslationSettingController::class, 'update'])->name('settings.translations.update');
     Route::post('settings/translations/single', [TranslationSettingController::class, 'updateSingle'])->name('settings.translations.single');
+    Route::get('settings/translations/key-all', [TranslationSettingController::class, 'getKeyAll'])->name('settings.translations.key_all');
+    Route::post('settings/translations/update-all', [TranslationSettingController::class, 'updateKeyAll'])->name('settings.translations.update_all');
     Route::post('settings/translations/store-key', [TranslationSettingController::class, 'storeKey'])->name('settings.translations.store_key');
 
     // Advertisement Management

@@ -102,7 +102,7 @@ class InvoiceApiController extends Controller
      * Every locale the invoice PDF (and its __() labels in lang/*.json) supports.
      * Must stay in sync with the Flutter app's supportedLocales.
      */
-    private const SUPPORTED_INVOICE_LOCALES = ['en', 'gu', 'hi', 'bn', 'kn', 'ml', 'mr', 'ne', 'or', 'pa', 'sa', 'ta', 'te', 'ur'];
+    private const SUPPORTED_INVOICE_LOCALES = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
 
     /**
      * Resolves and validates the invoice locale from the request/shop-owner,
@@ -651,7 +651,7 @@ class InvoiceApiController extends Controller
                             </tr></table>
                         </td>
                         <td class="invoice-title" style="vertical-align: middle;">
-                            <div>' . strtoupper(__('invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '</div>
+                            <div>' . strtoupper(__('sale_invoice')) . ($badgeHtml ? ' ' . $badgeHtml : '') . '</div>
                             <div class="invoice-meta">
                                 <strong>' . __('invoice_no') . ':</strong> ' . htmlspecialchars($sale->sale_number) . '<br>
                                 <strong>' . __('date') . ':</strong> ' . $this->formatInvoiceDateTime($sale->sale_date, $dateFormat, $timeFormat) . '
@@ -796,18 +796,7 @@ class InvoiceApiController extends Controller
                                     <td class="grand-total-label">' . __('grand_total') . ':</td>
                                     <td class="grand-total-value">&#8377;' . number_format($sale->grand_total, 2) . '</td>
                                 </tr>';
-                                if ((float)($sale->store_credit ?? 0) > 0) {
-                                    $netPayment = max(0, (float)$sale->grand_total - (float)$sale->store_credit);
-                                    $html .= '
-                                    <tr>
-                                        <td class="total-label" style="color: #059669; font-weight: bold;">' . __('store_credit') . ':</td>
-                                        <td class="total-value" style="color: #059669; font-weight: bold;">-&#8377;' . number_format($sale->store_credit, 2) . '</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="total-label" style="font-weight: bold;">' . ($sale->payment_type === 'Credit' ? __('balance_due') : __('net_paid') . ' (' . ucfirst($sale->payment_type ?? 'Cash') . ')') . ':</td>
-                                        <td class="total-value" style="font-weight: bold;">&#8377;' . number_format($netPayment, 2) . '</td>
-                                    </tr>';
-                                } elseif ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit')) {
+                                if ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit')) {
                                     $paidAmt = (float)($sale->paid_amount ?? 0);
                                     $dueAmt = max(0, (float)$sale->grand_total - $paidAmt);
                                     $html .= '
@@ -829,7 +818,11 @@ class InvoiceApiController extends Controller
                 ' . $this->buildContainerDepositHtml($sale, $shop);
 
                 $adminFooter = InvoiceSetting::get('footer_text');
-                if ($adminFooter === 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.') {
+                if ($adminFooter && (
+                    str_contains($adminFooter, 'Thank you for choosing DukanHisab') ||
+                    str_contains($adminFooter, 'support@dukanhisab') ||
+                    str_contains($adminFooter, 'contact support')
+                )) {
                     $adminFooter = null;
                 }
                 $footerMessage = $shop->invoice_footer ?: ($adminFooter ?: __('invoice_footer_default'));
@@ -1385,7 +1378,11 @@ class InvoiceApiController extends Controller
                 </table>';
 
                 $adminFooter = InvoiceSetting::get('footer_text');
-                if ($adminFooter === 'Thank you for choosing DukanHisab. For assistance, contact support@dukanhisab.com.') {
+                if ($adminFooter && (
+                    str_contains($adminFooter, 'Thank you for choosing DukanHisab') ||
+                    str_contains($adminFooter, 'support@dukanhisab') ||
+                    str_contains($adminFooter, 'contact support')
+                )) {
                     $adminFooter = null;
                 }
                 $footerMessage = $shop->invoice_footer ?: ($adminFooter ?: __('invoice_footer_default'));

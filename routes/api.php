@@ -13,6 +13,21 @@ use App\Http\Controllers\Admin\AppSettingController;
 // Public mobile client system API configuration endpoint
 Route::get('/v1/app-config', [AppSettingController::class, 'getPublicConfig']);
 
+// Public translation endpoint for multilingual web and app support
+Route::get('/v1/translations/{lang}', function (string $lang) {
+    if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
+        abort(404);
+    }
+    $path = base_path("lang/{$lang}.json");
+    if (!file_exists($path)) {
+        abort(404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/json',
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+});
+
 // Sanctum authenticated user info route
 Route::get('/user', function (Request $request) {
     return $request->user();

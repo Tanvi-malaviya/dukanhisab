@@ -39,7 +39,8 @@ class SetUserLocale
             'app_locale_before' => App::getLocale(),
         ]);
 
-        if (in_array($locale, ['en', 'gu', 'hi'])) {
+        $supportedLocales = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
+        if (in_array($locale, $supportedLocales, true)) {
             App::setLocale($locale);
         } else {
             App::setLocale('en');

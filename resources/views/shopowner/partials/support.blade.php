@@ -68,11 +68,11 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50 dark:bg-gray-700/50 border-b border-slate-100 dark:border-gray-700 text-[11px] font-bold uppercase text-slate-400 tracking-wider">
-                        <th class="px-6 py-3.5">Ticket ID</th>
-                        <th class="px-6 py-3.5">Subject & Details</th>
-                        <th class="px-6 py-3.5">Status</th>
-                        <th class="px-6 py-3.5">Reply Status</th>
-                        <th class="px-6 py-3.5 text-right">Actions</th>
+                        <th class="px-6 py-3.5" x-text="t('ticket_id') || 'Ticket ID'">Ticket ID</th>
+                        <th class="px-6 py-3.5" x-text="t('subject_details') || 'Subject & Details'">Subject & Details</th>
+                        <th class="px-6 py-3.5" x-text="t('status') || 'Status'">Status</th>
+                        <th class="px-6 py-3.5" x-text="t('reply_status') || 'Reply Status'">Reply Status</th>
+                        <th class="px-6 py-3.5 text-right" x-text="t('actions') || 'Actions'">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-gray-700/50 text-xs">

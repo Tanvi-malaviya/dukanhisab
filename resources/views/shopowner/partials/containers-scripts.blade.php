@@ -39,7 +39,12 @@
             posContainerDetail: null,
 
             hasContainers() {
-                return !!(this.shop && Array.isArray(this.shop.features) && this.shop.features.includes('containers'));
+                if (!this.shop || !this.shop.features) return false;
+                let feat = this.shop.features;
+                if (typeof feat === 'string') {
+                    try { feat = JSON.parse(feat); } catch (_) { feat = [feat]; }
+                }
+                return Array.isArray(feat) && feat.includes('containers');
             },
 
             // ── Loaders ───────────────────────────────────────────────
@@ -66,7 +71,7 @@
             loadContainerTypes() {
                 if (!this.hasContainers()) return Promise.resolve();
                 return this.containerFetch('/api/v1/container-types').then(({ ok, body }) => {
-                    if (ok && Array.isArray(body)) this.containerTypes = body;
+                    if (ok && Array.isArray(body)) this.containerTypes = this.sortByName(body);
                 });
             },
             loadContainerSummary() {
@@ -76,7 +81,7 @@
             },
             loadContainerCustomers() {
                 return this.containerFetch('/api/v1/containers/customers').then(({ ok, body }) => {
-                    if (ok && Array.isArray(body)) this.containerCustomers = body;
+                    if (ok && Array.isArray(body)) this.containerCustomers = this.sortByName(body);
                 });
             },
             loadContainerEntries(page = 1) {

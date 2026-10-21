@@ -200,8 +200,8 @@
                     <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('expected_cash') || 'Expected Cash'">Expected Cash</th>
                     <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('physical_cash_count') || 'Physical Count'">Physical Count</th>
                     <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('difference') || 'Difference / Status'">Difference / Status</th>
-                    <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Closed By & Notes</th>
-                    <th class="px-4 py-3 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Breakdown</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('closed_by_notes') || 'Closed By & Notes'">Closed By & Notes</th>
+                    <th class="px-4 py-3 text-right text-[11px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap" x-text="t('breakdown') || 'Breakdown'">Breakdown</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 dark:divide-gray-700/60">
@@ -593,12 +593,12 @@
                         {{-- Remarks if any --}}
                         <template x-if="selectedClosure?.note">
                             <div class="p-3 bg-slate-50 dark:bg-gray-700/30 rounded-xl border border-slate-200 dark:border-gray-700 text-xs">
-                                <span class="font-bold text-slate-500 block mb-0.5">Note:</span>
+                                <span class="font-bold text-slate-500 block mb-0.5" x-text="(t('note') || 'Note') + ':'">Note:</span>
                                 <p class="text-slate-700 dark:text-slate-300 italic" x-text="selectedClosure.note"></p>
                             </div>
                         </template>
 
-                        <button type="button" @click="showDenominationModal = false" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-all cursor-pointer">Close</button>
+                        <button type="button" @click="showDenominationModal = false" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-all cursor-pointer" x-text="t('close') || 'Close'">Close</button>
                     </div>
                 </template>
             </div>

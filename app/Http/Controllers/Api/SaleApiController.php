@@ -95,8 +95,7 @@ class SaleApiController extends Controller
             'discount' => 'nullable|numeric|min:0',
             'grand_total' => 'required|numeric|min:0',
             'paid_amount' => 'nullable|numeric|min:0',
-            'payment_type' => 'required|string|in:Cash,UPI,Bank,Credit,Store Credit',
-            'used_credit_balance' => 'nullable|numeric|min:0',
+            'payment_type' => 'required|string|in:Cash,UPI,Bank,Credit',
             'items' => 'required|array|min:1',
             'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('shop_id', $shopId)],
             'items.*.quantity' => 'required|integer|min:1',
@@ -137,29 +136,20 @@ class SaleApiController extends Controller
                 $saleNumber = 'INV-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
             } while (Sale::withTrashed()->where('shop_id', $shopId)->where('sale_number', $saleNumber)->exists());
 
-            // Handle Store Credit / Credit Balance calculation
-            $usedCredit = 0.00;
             $customer = null;
             if ($request->customer_id) {
                 $customer = Customer::find($request->customer_id);
-                if ($customer) {
-                    if ($request->payment_type === 'Store Credit') {
-                        $usedCredit = min((float) $request->grand_total, (float) $customer->credit_balance);
-                    } elseif ($request->filled('used_credit_balance') && (float) $request->used_credit_balance > 0) {
-                        $usedCredit = min((float) $request->used_credit_balance, (float) $customer->credit_balance);
-                    }
-                }
             }
 
-            $netAfterStoreCredit = max(0, (float) $request->grand_total - $usedCredit);
+            $grandTotal = (float) $request->grand_total;
 
             if ($request->has('paid_amount') && $request->paid_amount !== null && $request->paid_amount !== '') {
-                $paidAmount = min($netAfterStoreCredit, max(0, (float) $request->paid_amount));
+                $paidAmount = min($grandTotal, max(0, (float) $request->paid_amount));
             } else {
-                $paidAmount = ($request->payment_type === 'Credit') ? 0.00 : $netAfterStoreCredit;
+                $paidAmount = ($request->payment_type === 'Credit') ? 0.00 : $grandTotal;
             }
 
-            $dueAmount = max(0, $netAfterStoreCredit - $paidAmount);
+            $dueAmount = max(0, $grandTotal - $paidAmount);
 
             if ($dueAmount > 0 && empty($request->customer_id)) {
                 return response()->json(['errors' => ['customer_id' => ['Customer selection is required for sales with unpaid due balance.']]], 422);
@@ -167,7 +157,7 @@ class SaleApiController extends Controller
 
             if ($dueAmount <= 0) {
                 $saleStatus = 'Completed';
-            } elseif ($paidAmount > 0 || $usedCredit > 0) {
+            } elseif ($paidAmount > 0) {
                 $saleStatus = 'Partially Paid';
             } else {
                 $saleStatus = 'Unpaid';
@@ -182,7 +172,6 @@ class SaleApiController extends Controller
                 'discount' => $request->discount ?? 0,
                 'grand_total' => $request->grand_total,
                 'paid_amount' => $paidAmount,
-                'store_credit' => $usedCredit,
                 'payment_type' => $request->payment_type,
                 'status' => $saleStatus,
                 'sale_date' => $saleDate,
@@ -205,31 +194,6 @@ class SaleApiController extends Controller
                 $this->logStockMovement($shopId, $product->id, -$item['quantity'], $product->fresh()->stock, 'sale', 'sale', $sale->id);
             }
 
-            // Deduct Store Credit from Customer and redeem CreditNotes FIFO
-            if ($customer && $usedCredit > 0) {
-                $customer->decrement('credit_balance', $usedCredit);
-
-                $activeNotes = CreditNote::where('shop_id', $shopId)
-                    ->where('customer_id', $customer->id)
-                    ->where('status', 'Active')
-                    ->where('remaining_balance', '>', 0)
-                    ->orderBy('id', 'asc')
-                    ->get();
-
-                $remDeduct = $usedCredit;
-                foreach ($activeNotes as $cn) {
-                    if ($remDeduct <= 0) break;
-                    $d = min($remDeduct, (float) $cn->remaining_balance);
-                    $cn->used_amount += $d;
-                    $cn->remaining_balance -= $d;
-                    if ($cn->remaining_balance <= 0) {
-                        $cn->status = 'Redeemed';
-                    }
-                    $cn->save();
-                    $remDeduct -= $d;
-                }
-            }
-
             // Adjust Customer Dues for unpaid portion
             if ($dueAmount > 0 && $request->customer_id) {
                 $customer = Customer::findOrFail($request->customer_id);
@@ -237,7 +201,7 @@ class SaleApiController extends Controller
             }
 
             // Log in Cash Book for payments received (net cash/bank/upi received)
-            if ($paidAmount > 0 && $request->payment_type !== 'Store Credit') {
+            if ($paidAmount > 0) {
                 $methodMap = [
                     'Cash' => 'cash',
                     'Bank' => 'bank',
@@ -247,13 +211,10 @@ class SaleApiController extends Controller
                     'upi' => 'upi',
                     'Credit' => 'cash',
                 ];
-                
+
                 $desc = 'Sale: ' . $saleNumber;
                 if ($dueAmount > 0) {
                     $desc .= ' (Paid: ₹' . number_format($paidAmount, 2) . ', Due: ₹' . number_format($dueAmount, 2) . ')';
-                }
-                if ($usedCredit > 0) {
-                    $desc .= ' (₹' . number_format($usedCredit, 2) . ' from Store Credit)';
                 }
 
                 CashBook::create([
@@ -358,7 +319,7 @@ class SaleApiController extends Controller
 
                 // Revert old payment effects
                 $oldPaidAmt = (float) ($sale->paid_amount ?? 0);
-                $oldDueAmt = max(0, (float) $sale->grand_total - $oldPaidAmt - (float) ($sale->store_credit ?? 0));
+                $oldDueAmt = max(0, (float) $sale->grand_total - $oldPaidAmt);
                 if ($oldDueAmt > 0 && $oldCustomerId) {
                     $oldCust = Customer::find($oldCustomerId);
                     if ($oldCust) {
@@ -397,19 +358,19 @@ class SaleApiController extends Controller
                 $sale->discount = $request->input('discount', $sale->discount);
                 $sale->grand_total = $request->input('grand_total', $sale->grand_total);
 
-                $netAfterStoreCredit = max(0, (float) $sale->grand_total - (float) ($sale->store_credit ?? 0));
+                $grandTotal = (float) $sale->grand_total;
                 if ($request->has('paid_amount') && $request->paid_amount !== null && $request->paid_amount !== '') {
-                    $newPaidAmount = min($netAfterStoreCredit, max(0, (float) $request->paid_amount));
+                    $newPaidAmount = min($grandTotal, max(0, (float) $request->paid_amount));
                 } else {
-                    $newPaidAmount = ($sale->payment_type === 'Credit') ? 0.00 : $netAfterStoreCredit;
+                    $newPaidAmount = ($sale->payment_type === 'Credit') ? 0.00 : $grandTotal;
                 }
-                $newDueAmount = max(0, $netAfterStoreCredit - $newPaidAmount);
+                $newDueAmount = max(0, $grandTotal - $newPaidAmount);
 
                 $sale->paid_amount = $newPaidAmount;
                 if ($newDueAmount <= 0) {
                     $sale->status = 'Completed';
                     $sale->paid_date = $sale->paid_date ?? Carbon::now();
-                } elseif ($newPaidAmount > 0 || (float) ($sale->store_credit ?? 0) > 0) {
+                } elseif ($newPaidAmount > 0) {
                     $sale->status = 'Partially Paid';
                     $sale->paid_date = null;
                 } else {
@@ -432,7 +393,7 @@ class SaleApiController extends Controller
                     }
                 }
 
-                if ($newPaidAmount > 0 && $newPaymentType !== 'Store Credit') {
+                if ($newPaidAmount > 0) {
                     $methodMap = [
                         'Cash' => 'cash',
                         'Bank' => 'bank',
@@ -530,7 +491,7 @@ class SaleApiController extends Controller
     }
 
     /**
-     * Cancel a posted sale invoice with full reversal of stock, dues, store credit, and cashbook audit trail.
+     * Cancel a posted sale invoice with full reversal of stock, dues, and cashbook audit trail.
      */
     public function cancel(Request $request, $id)
     {
@@ -569,39 +530,14 @@ class SaleApiController extends Controller
             if ($sale->customer_id) {
                 $customer = Customer::find($sale->customer_id);
                 if ($customer) {
-                    $unpaidDue = max(0, (float)$sale->grand_total - (float)($sale->paid_amount ?? 0) - (float)($sale->store_credit ?? 0));
+                    $unpaidDue = max(0, (float)$sale->grand_total - (float)($sale->paid_amount ?? 0));
                     if ($unpaidDue > 0) {
                         $customer->decrement('due_amount', min($unpaidDue, (float)$customer->due_amount));
-                    }
-
-                    // 3. Store Credit Reversal: restore store credit to customer and reactivate redeemed notes
-                    $redeemedCredit = (float)($sale->store_credit ?? 0);
-                    if ($redeemedCredit > 0) {
-                        $customer->increment('credit_balance', $redeemedCredit);
-
-                        $redeemedNotes = CreditNote::where('shop_id', $shopId)
-                            ->where('customer_id', $customer->id)
-                            ->where('used_amount', '>', 0)
-                            ->orderBy('id', 'desc')
-                            ->get();
-
-                        $remToRestore = $redeemedCredit;
-                        foreach ($redeemedNotes as $cn) {
-                            if ($remToRestore <= 0) break;
-                            $restoreAmt = min($remToRestore, (float)$cn->used_amount);
-                            $cn->used_amount -= $restoreAmt;
-                            $cn->remaining_balance += $restoreAmt;
-                            if ($cn->status === 'Redeemed' && $cn->remaining_balance > 0) {
-                                $cn->status = 'Active';
-                            }
-                            $cn->save();
-                            $remToRestore -= $restoreAmt;
-                        }
                     }
                 }
             }
 
-            // 4. CashBook Reversal: Post an explicit reversal cash_out entry for audit integrity
+            // 3. CashBook Reversal: Post an explicit reversal cash_out entry for audit integrity
             $actualPaid = (float)($sale->paid_amount ?? 0);
             if ($actualPaid > 0) {
                 $methodMap = [
@@ -611,7 +547,6 @@ class SaleApiController extends Controller
                     'cash' => 'cash',
                     'bank' => 'bank',
                     'upi' => 'upi',
-                    'Store Credit' => 'cash',
                 ];
 
                 CashBook::create([
@@ -668,7 +603,7 @@ class SaleApiController extends Controller
                 'items' => 'required|array|min:1',
                 'items.*.product_id' => ['required', Rule::exists('products', 'id')->where('shop_id', $shopId)],
                 'items.*.quantity' => 'required|integer|min:1',
-                'refund_method' => 'nullable|string|in:cash,bank,upi,credit_note,due_adjustment',
+                'refund_method' => 'nullable|string|in:cash,bank,upi,due_adjustment',
             ]);
 
             if ($validator->fails()) {
@@ -792,34 +727,9 @@ class SaleApiController extends Controller
     {
         if ($actualRefund <= 0) return;
 
-        $isCreditNote = ($refundMethod === 'credit_note') || ($request && $request->boolean('issue_credit_note'));
         $isDueAdj = ($refundMethod === 'due_adjustment') || (!$refundMethod && $sale->payment_type === 'Credit');
 
-        if ($isCreditNote && $sale->customer_id) {
-            $today = Carbon::now();
-            $todayStr = $today->format('Ymd');
-            do {
-                $nextNumber = InvoiceCounter::nextNumber($shopId, 'credit_note', $today);
-                $cnNumber = 'CN-' . $todayStr . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
-            } while (CreditNote::withTrashed()->where('shop_id', $shopId)->where('credit_note_number', $cnNumber)->exists());
-
-            CreditNote::create([
-                'shop_id' => $shopId,
-                'customer_id' => $sale->customer_id,
-                'sale_id' => $sale->id,
-                'credit_note_number' => $cnNumber,
-                'total_amount' => $actualRefund,
-                'used_amount' => 0.00,
-                'remaining_balance' => $actualRefund,
-                'status' => 'Active',
-                'reason' => $request ? $request->input('reason', 'Sales Return: ' . $sale->sale_number) : 'Sales Return: ' . $sale->sale_number,
-            ]);
-
-            $customer = Customer::find($sale->customer_id);
-            if ($customer) {
-                $customer->increment('credit_balance', $actualRefund);
-            }
-        } elseif ($isDueAdj && $sale->customer_id) {
+        if ($isDueAdj && $sale->customer_id) {
             $customer = Customer::find($sale->customer_id);
             if ($customer) {
                 $customer->decrement('due_amount', $actualRefund);

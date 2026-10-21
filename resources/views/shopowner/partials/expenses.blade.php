@@ -29,7 +29,7 @@
         <div class="flex flex-wrap items-center gap-2">
             <div class="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-300">
                 <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <span>Filter Month:</span>
+                <span x-text="(t('filter_month') || 'Filter Month') + ':'">Filter Month:</span>
             </div>
             <div class="relative">
                 <input type="month" x-model="selectedExpenseMonth" onclick="this.showPicker()" @change="loadExpenses()"
@@ -37,12 +37,13 @@
             </div>
             <button type="button" @click="setExpenseCurrentMonth()"
                 :class="selectedExpenseMonth === new Date().toISOString().slice(0, 7) ? 'bg-primary text-white shadow-xs' : 'bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-gray-600'"
-                class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer">
+                class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer"
+                x-text="t('this_month') || 'This Month'">
                 This Month
             </button>
             <template x-if="selectedExpenseMonth">
                 <button type="button" @click="clearExpenseMonthFilter()" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1">
-                    <span>Clear Filter</span>
+                    <span x-text="t('clear_filter') || 'Clear Filter'">Clear Filter</span>
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </template>
@@ -50,10 +51,10 @@
 
         <div class="text-xs text-slate-400">
             <template x-if="selectedExpenseMonth">
-                <span>Filtered by: <strong class="text-slate-800 dark:text-slate-200 font-sans" x-text="formatExpenseMonthDisplay(selectedExpenseMonth)"></strong></span>
+                <span><span x-text="(t('filtered_by') || 'Filtered by') + ':'"></span> <strong class="text-slate-800 dark:text-slate-200 font-sans" x-text="formatExpenseMonthDisplay(selectedExpenseMonth)"></strong></span>
             </template>
             <template x-if="!selectedExpenseMonth">
-                <span>Period: <strong class="text-slate-600 dark:text-slate-300">All Time</strong></span>
+                <span><span x-text="(t('period') || 'Period') + ':'"></span> <strong class="text-slate-600 dark:text-slate-300" x-text="t('all_time') || 'All Time'">All Time</strong></span>
             </template>
         </div>
     </div>
@@ -85,7 +86,7 @@
             <thead>
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('description')">Description</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('category') || 'Category'">Category</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('amount')">Amount</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('payment_type')">Method</th>
                     <th class="px-6 py-3 text-left text-xs font-bold text-slate-400 uppercase" x-text="t('date')">Date</th>

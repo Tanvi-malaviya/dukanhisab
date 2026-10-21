@@ -16,6 +16,20 @@
             x-text="new Date().toLocaleDateString(currentLang === 'gu' ? 'gu-IN' : (currentLang === 'hi' ? 'hi-IN' : 'en-US'), { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })">
         </span>
 
+        {{-- WhatsApp Credits Badge --}}
+        <a href="/dukanhisab/whatsapp" @click.prevent="navigateTo('whatsapp')"
+            :title="'WhatsApp Credits: ' + ((waCreditsBalance() !== null ? waCreditsBalance() : ((waSettings && waSettings.balance !== undefined) ? waSettings.balance : 0)))"
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 border border-emerald-200/80 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-400 transition-all cursor-pointer shadow-xs group">
+            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.001.575 1.765.883 2.806.883 3.18 0 5.767-2.587 5.767-5.766.001-3.18-2.585-5.766-5.767-5.766zm3.39 8.172c-.144.405-.837.774-1.17.824-.312.045-.634.058-1.748-.403-1.428-.592-2.348-2.04-2.42-2.132-.071-.092-.578-.77-.578-1.468 0-.698.362-1.042.491-1.185.129-.143.282-.179.377-.179.095 0 .19.001.272.006.087.005.203-.033.318.243.119.286.406.99.442 1.063.036.072.06.156.012.25-.048.095-.072.155-.144.238-.071.083-.15.186-.214.25-.072.072-.147.15-.063.294.084.144.373.615.8 1.002.551.492 1.015.644 1.159.716.144.071.227.06.31-.036.084-.095.358-.417.454-.56.096-.143.19-.119.322-.071.131.047.836.394.98.466.144.071.239.107.274.167.036.06.036.345-.108.75z"/>
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.988-1.398A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.167a8.136 8.136 0 01-4.39-1.277l-.315-.19-2.956.828.84-2.87-.208-.33A8.136 8.136 0 1112 20.167z"/>
+            </svg>
+            <span class="text-xs font-bold whitespace-nowrap"
+                x-text="((waCreditsBalance() !== null ? waCreditsBalance() : ((waSettings && waSettings.balance !== undefined) ? waSettings.balance : 0)))"></span>
+            <span class="text-xs font-semibold whitespace-nowrap hidden sm:inline"
+                x-text="t('credits') || 'Credits'"></span>
+        </a>
+
         {{-- Notification Bell --}}
         <div class="relative" x-data="{ open: false }">
             <button @click="open = !open; if (open) loadNotifications();" @click.outside="open = false"
@@ -33,15 +47,15 @@
                 <div class="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center justify-between">
                     <p class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">Notifications</p>
                     <button x-show="unreadNotificationsCount > 0" @click="markAllNotificationsRead()"
-                        class="text-[10px] font-semibold text-primary hover:underline">Mark all read</button>
+                        class="text-[10px] font-semibold text-primary hover:underline" x-text="t('mark_all_read') || 'Mark all read'"></button>
                 </div>
 
                 <div class="max-h-96 overflow-y-auto divide-y divide-slate-100 dark:divide-gray-700">
                     <template x-if="notificationsLoading">
-                        <p class="text-xs text-slate-400 text-center py-6">Loading…</p>
+                        <p class="text-xs text-slate-400 text-center py-6" x-text="t('loading') || 'Loading…'"></p>
                     </template>
                     <template x-if="!notificationsLoading && notifications.length === 0">
-                        <p class="text-xs text-slate-400 text-center py-6">No notifications yet.</p>
+                        <p class="text-xs text-slate-400 text-center py-6" x-text="t('no_notifications_yet') || 'No notifications yet.'"></p>
                     </template>
                     <template x-for="n in notifications" :key="n.id">
                         <div @click="markNotificationRead(n)"
@@ -73,30 +87,33 @@
         </div>
 
         {{-- Language Selector Dropdown --}}
-        <div class="relative" x-data="{ open: false }">
-            <button @click="open = !open" @click.outside="open = false" class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300 flex items-center gap-1.5 transition-all hover:bg-slate-200 dark:hover:bg-gray-600" title="Select Language">
+        <div class="relative" x-data="{ open: false, langSearch: '' }">
+            <button @click="open = !open; langSearch = ''" @click.outside="open = false"
+                class="p-1.5 rounded-lg bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-slate-300 flex items-center gap-1.5 transition-all hover:bg-slate-200 dark:hover:bg-gray-600"
+                title="Select Language">
                 <svg class="w-4 h-4 text-slate-500 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                 </svg>
                 <span class="text-[10px] font-extrabold uppercase tracking-wide" x-text="currentLang"></span>
             </button>
             <div x-show="open" x-cloak
-                class="absolute right-0 mt-1 w-28 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-lg z-50 py-1 overflow-hidden transition-all">
-                <button @click="setLanguage('en'); open = false;"
-                    class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between">
-                    <span>English</span>
-                    <span x-show="currentLang === 'en'" class="text-primary font-bold text-xs">✓</span>
-                </button>
-                <button @click="setLanguage('hi'); open = false;"
-                    class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between">
-                    <span>Hindi</span>
-                    <span x-show="currentLang === 'hi'" class="text-primary font-bold text-xs">✓</span>
-                </button>
-                <button @click="setLanguage('gu'); open = false;"
-                    class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between">
-                    <span>Gujarati</span>
-                    <span x-show="currentLang === 'gu'" class="text-primary font-bold text-xs">✓</span>
-                </button>
+                class="absolute right-0 mt-1 w-56 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-xl shadow-xl z-50 py-1.5 overflow-hidden transition-all">
+                <div class="px-2 pb-1.5 border-b border-slate-100 dark:border-gray-700">
+                    <input type="text" x-model="langSearch" placeholder="Search language..."
+                        class="w-full px-2.5 py-1 text-xs bg-slate-50 dark:bg-gray-700 border border-slate-200 dark:border-gray-600 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:border-primary">
+                </div>
+                <div class="max-h-60 overflow-y-auto divide-y divide-slate-50 dark:divide-gray-700/50">
+                    <template x-for="l in (supportedLanguages || []).filter(item => !langSearch || item.name.toLowerCase().includes(langSearch.toLowerCase()) || item.native.toLowerCase().includes(langSearch.toLowerCase()) || item.code.toLowerCase().includes(langSearch.toLowerCase()))" :key="l.code">
+                        <button @click="setLanguage(l.code); open = false;"
+                            class="w-full text-left px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between transition-colors">
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-slate-800 dark:text-slate-100" x-text="l.native"></span>
+                                <span class="text-[10px] text-slate-400" x-text="l.name"></span>
+                            </div>
+                            <span x-show="currentLang === l.code" class="text-primary font-bold text-xs">✓</span>
+                        </button>
+                    </template>
+                </div>
             </div>
         </div>
 
@@ -137,7 +154,7 @@
                 <div class="max-h-60 overflow-y-auto py-1">
                     <template x-for="s in (user && user.shops ? user.shops : [])" :key="s.id">
                         <button @click="switchShop(s); open = false;"
-                            :class="isShopLocked(s) ? 'opacity-60' : ''"
+                            :class="(isShopLocked(s) || isShopInactive(s)) ? 'opacity-60' : ''"
                             class="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-gray-700/50 flex items-center justify-between transition-colors">
                             <div class="flex items-center gap-2.5">
                                 <div class="w-6 h-6 rounded-md bg-slate-200 dark:bg-gray-600 text-slate-700 dark:text-slate-200 font-bold flex items-center justify-center text-[10px] uppercase"
@@ -148,8 +165,9 @@
                                     <span class="text-[9px] text-slate-400" x-text="s.mobile"></span>
                                 </div>
                             </div>
-                            <span x-show="isShopLocked(s)" class="px-1.5 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full">Locked</span>
-                            <span x-show="!isShopLocked(s) && shop && shop.id === s.id" class="text-primary font-bold text-sm">✓</span>
+                            <span x-show="isShopInactive(s)" class="px-1.5 py-0.5 text-[9px] font-bold text-amber-700 bg-amber-500/15 rounded-full" x-text="t('inactive') || 'Inactive'">Inactive</span>
+                            <span x-show="!isShopInactive(s) && isShopLocked(s)" class="px-1.5 py-0.5 text-[9px] font-bold text-amber-600 bg-amber-500/10 rounded-full" x-text="t('locked') || 'Locked'">Locked</span>
+                            <span x-show="!isShopInactive(s) && !isShopLocked(s) && shop && shop.id === s.id" class="text-primary font-bold text-sm">✓</span>
                         </button>
                     </template>
                 </div>
