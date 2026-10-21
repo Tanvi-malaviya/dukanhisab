@@ -105,8 +105,22 @@ class InvoiceApiController extends Controller
     private const SUPPORTED_INVOICE_LOCALES = ['en', 'gu', 'hi', 'bn', 'brx', 'doi', 'kn', 'ks', 'kok', 'mai', 'ml', 'mni', 'mr', 'ne', 'or', 'pa', 'sa', 'sat', 'sd', 'ta', 'te', 'ur'];
 
     /**
+     * TEMPORARY: Odia specifically — every font tried (Noto Sans Oriya:
+     * outright rejected by mPDF for an unsupported MarkGlyphSets table;
+     * Manjari: renders Odia as blank tofu boxes, with or without OTL
+     * shaping; Sarala: renders Odia as fully invisible; DomPDF with any
+     * of those: literal "??????") points to a real limitation in how
+     * mPDF/DomPDF handle the Odia Unicode block itself, not a
+     * font-choice problem — unlike the other 7 languages this round,
+     * which are fully fixed. Falls back to English until a working
+     * Odia font/engine combination is found. Remove once resolved.
+     */
+    private const PDF_UNSAFE_LOCALES = ['or'];
+
+    /**
      * Resolves and validates the invoice locale from the request/shop-owner,
-     * falling back to 'en' for anything not in SUPPORTED_INVOICE_LOCALES.
+     * falling back to 'en' for anything not in SUPPORTED_INVOICE_LOCALES,
+     * and also for anything in PDF_UNSAFE_LOCALES (see its doc comment).
      */
     private function resolveInvoiceLocale(?object $shopOwner): string
     {
@@ -129,6 +143,10 @@ class InvoiceApiController extends Controller
             $locale = explode('_', $locale)[0];
         }
 
+        if (in_array($locale, self::PDF_UNSAFE_LOCALES, true)) {
+            return 'en';
+        }
+
         return in_array($locale, self::SUPPORTED_INVOICE_LOCALES, true) ? $locale : 'en';
     }
 
@@ -144,20 +162,23 @@ class InvoiceApiController extends Controller
         // Every face here was individually load-tested against mPDF (fonts
         // like Noto Sans Bengali/Kannada/etc. have GSUB/GPOS tables too heavy
         // for mPDF's OTL parser and exhaust PHP's memory limit — confirmed by
-        // reproduction, even at a 2GB limit). These are all the lighter ITF
-        // Lohit/Hind-family faces (or mPDF's own bundled fonts for
-        // kn/te/ur), the same class of fix already used for Gujarati/Hindi.
+        // reproduction, even at a 2GB limit) AND checked for full Latin
+        // coverage — mPDF's own bundled "Lohit Kannada"/"Pothana2000" fonts
+        // passed the first test but have ZERO Latin glyphs at all, so an
+        // English customer/product/shop name (very common even on a
+        // Kannada/Telugu invoice) rendered as blank boxes. Hind
+        // Mysuru/Guntur (same ITF family as the others here) cover both.
         return match ($locale) {
             'en' => 'DejaVu Sans', // only path DomPDF (not mPDF) ever actually renders
             'gu' => 'muktavaani',
             'hi', 'mr', 'ne', 'sa' => 'hind', // Devanagari, same script as Hindi
             'bn' => 'hindsiliguri',
-            'kn' => 'lohitkannada', // bundled with mPDF itself
+            'kn' => 'hindmysuru',
             'ml' => 'hindkochi',
             'or' => 'manjari',
             'pa' => 'muktamahee',
             'ta' => 'hindmadurai',
-            'te' => 'pothana2000', // bundled with mPDF itself
+            'te' => 'hindguntur',
             'ur' => 'lateef', // bundled with mPDF itself, built for Urdu/Sindhi/Pashto
             default => 'hind',
         };
@@ -255,9 +276,13 @@ class InvoiceApiController extends Controller
             // handle (confirmed by reproduction: exhausts PHP's memory limit
             // even at 2GB) — every script below uses the lighter ITF
             // Lohit/Hind-family face instead, which mPDF shapes correctly.
-            // Kannada/Telugu/Urdu use mPDF's own bundled fonts (lohitkannada,
-            // pothana2000, lateef — already in $defaultFontConfig['fontdata'],
-            // no extra registration needed) instead of registering a duplicate.
+            // mPDF's own bundled "Lohit Kannada"/"Pothana2000" fonts avoid the
+            // crash but have ZERO Latin glyphs (an English customer/product
+            // name on the same invoice renders as blank boxes), so Kannada
+            // and Telugu also get their own ITF face registered below rather
+            // than reusing those. Urdu does reuse mPDF's bundled "lateef"
+            // (already in $defaultFontConfig['fontdata']) — it has full Latin
+            // coverage and is purpose-built for Urdu shaping.
             'fontdata' => $defaultFontConfig['fontdata'] + [
                 'muktavaani' => [
                     'R' => 'MuktaVaani-Regular.ttf',
@@ -292,6 +317,16 @@ class InvoiceApiController extends Controller
                 'hindmadurai' => [
                     'R' => 'HindMadurai-Regular.ttf',
                     'B' => 'HindMadurai-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'hindmysuru' => [
+                    'R' => 'HindMysuru-Regular.ttf',
+                    'B' => 'HindMysuru-Bold.ttf',
+                    'useOTL' => 0xFF,
+                ],
+                'hindguntur' => [
+                    'R' => 'HindGuntur-Regular.ttf',
+                    'B' => 'HindGuntur-Bold.ttf',
                     'useOTL' => 0xFF,
                 ],
             ],
@@ -365,12 +400,12 @@ class InvoiceApiController extends Controller
                 .font-gujarati { font-family: muktavaani, sans-serif; }
                 .font-devanagari { font-family: hind, sans-serif; }
                 .font-bengali { font-family: hindsiliguri, sans-serif; }
-                .font-kannada { font-family: lohitkannada, sans-serif; }
+                .font-kannada { font-family: hindmysuru, sans-serif; }
                 .font-malayalam { font-family: hindkochi, sans-serif; }
                 .font-oriya { font-family: manjari, sans-serif; }
                 .font-gurmukhi { font-family: muktamahee, sans-serif; }
                 .font-tamil { font-family: hindmadurai, sans-serif; }
-                .font-telugu { font-family: pothana2000, sans-serif; }
+                .font-telugu { font-family: hindguntur, sans-serif; }
                 .font-arabic { font-family: lateef, sans-serif; direction: rtl; unicode-bidi: embed; }
                 * {
                     box-sizing: border-box;
@@ -953,12 +988,12 @@ class InvoiceApiController extends Controller
                 .font-gujarati { font-family: muktavaani, sans-serif; }
                 .font-devanagari { font-family: hind, sans-serif; }
                 .font-bengali { font-family: hindsiliguri, sans-serif; }
-                .font-kannada { font-family: lohitkannada, sans-serif; }
+                .font-kannada { font-family: hindmysuru, sans-serif; }
                 .font-malayalam { font-family: hindkochi, sans-serif; }
                 .font-oriya { font-family: manjari, sans-serif; }
                 .font-gurmukhi { font-family: muktamahee, sans-serif; }
                 .font-tamil { font-family: hindmadurai, sans-serif; }
-                .font-telugu { font-family: pothana2000, sans-serif; }
+                .font-telugu { font-family: hindguntur, sans-serif; }
                 .font-arabic { font-family: lateef, sans-serif; direction: rtl; unicode-bidi: embed; }
                 * {
                     box-sizing: border-box;
@@ -1452,6 +1487,15 @@ class InvoiceApiController extends Controller
 
         foreach ($scripts as $class => $pattern) {
             if (preg_match($pattern, $text)) {
+                // font-oriya: see PDF_UNSAFE_LOCALES's doc comment — no font
+                // tried renders Odia correctly yet, so fall back to the
+                // default font (readable Latin/numerals at least) rather
+                // than tofu/invisible text, regardless of the invoice's
+                // own locale, since this is driven by the text's actual
+                // content, not by resolveInvoiceLocale().
+                if ($class === 'font-oriya') {
+                    return '<span class="font-default">' . $escaped . '</span>';
+                }
                 $dir = $class === 'font-arabic' ? ' dir="rtl"' : '';
                 return '<span class="' . $class . '"' . $dir . '>' . $escaped . '</span>';
             }
