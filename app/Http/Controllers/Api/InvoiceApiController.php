@@ -365,9 +365,14 @@ class InvoiceApiController extends Controller
         $locale = $this->resolveInvoiceLocale($shop->owner);
         app()->setLocale($locale);
         $bodyFontFamily = $this->mpdfFontFamily($locale);
-        $rtlStyle = $this->isRtlLocale($locale)
-            ? 'body, table, td, th, div, span, p, strong { direction: rtl; unicode-bidi: embed; }'
-            : '';
+        // Urdu's actual RTL shaping comes from .font-arabic (scoped to just
+        // the dynamic-content spans via renderMultilingualText()) — applying
+        // direction:rtl to the whole body/table/td here as well used to
+        // mirror the ENTIRE invoice layout (columns, alignment, logo/title
+        // sides), the exact same class of bug as the Flutter app's full-
+        // screen RTL mirroring. The page structure stays LTR; only Urdu
+        // text itself shapes right-to-left, same trade-off as the app.
+        $rtlStyle = '';
 
         $badgeHtml = '';
         if ($sale->status === 'Returned') {
@@ -944,9 +949,10 @@ class InvoiceApiController extends Controller
         $locale = $this->resolveInvoiceLocale($shop->owner);
         app()->setLocale($locale);
         $bodyFontFamily = $this->mpdfFontFamily($locale);
-        $rtlStyle = $this->isRtlLocale($locale)
-            ? 'body, table, td, th, div, span, p, strong { direction: rtl; unicode-bidi: embed; }'
-            : '';
+        // See buildSaleInvoiceHtml()'s matching comment: the page structure
+        // stays LTR for Urdu too — only the .font-arabic-wrapped dynamic
+        // text shapes right-to-left, not the whole table layout.
+        $rtlStyle = '';
 
         $badgeHtml = '';
         if ($purchase->status === 'Returned') {
