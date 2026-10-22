@@ -97,7 +97,9 @@ Route::group([
 
     // Subscription Management
     Route::get('subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::get('subscriptions/plan', fn () => redirect()->route('admin.subscriptions.index'));
     Route::post('subscriptions/plan', [SubscriptionController::class, 'storePlan'])->name('subscriptions.plan.store');
+    Route::get('subscriptions/plan/{id}', fn () => redirect()->route('admin.subscriptions.index'));
     Route::post('subscriptions/plan/{id}', [SubscriptionController::class, 'updatePlan'])->name('subscriptions.plan.update');
     Route::delete('subscriptions/plan/{id}', [SubscriptionController::class, 'destroyPlan'])->name('subscriptions.plan.destroy');
     Route::post('subscriptions/{id}/expire', [SubscriptionController::class, 'expireSubscription'])->name('subscriptions.expire');

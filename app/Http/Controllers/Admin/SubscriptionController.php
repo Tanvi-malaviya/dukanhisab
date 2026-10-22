@@ -79,7 +79,7 @@ class SubscriptionController extends Controller
 
         AuditLog::log("Created subscription plan {$plan->name}", $validated);
 
-        return back()->with('success', 'Subscription plan created successfully.');
+        return redirect()->route('admin.subscriptions.index')->with('success', 'Subscription plan created successfully.');
     }
 
     public function updatePlan(Request $request, $id)
@@ -105,7 +105,7 @@ class SubscriptionController extends Controller
 
         AuditLog::log("Updated subscription plan {$plan->name}", $validated);
 
-        return back()->with('success', 'Subscription plan updated successfully.');
+        return redirect()->route('admin.subscriptions.index')->with('success', 'Subscription plan updated successfully.');
     }
 
     public function expireSubscription($id)
@@ -310,6 +310,6 @@ class SubscriptionController extends Controller
 
         AuditLog::log("Deleted subscription plan {$plan->name}");
 
-        return back()->with('success', "Subscription plan deleted successfully.");
+        return redirect()->route('admin.subscriptions.index')->with('success', "Subscription plan deleted successfully.");
     }
 }
