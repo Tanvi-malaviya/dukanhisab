@@ -57,15 +57,18 @@ class SubscriptionController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        if ($validated['billing_period'] === 'lifetime') {
-            $validated['slug'] = 'business';
-        } elseif ($validated['billing_period'] === 'yearly') {
-            $validated['slug'] = 'premium';
-        } elseif ($validated['billing_period'] === 'free') {
-            $validated['slug'] = 'free';
-        } else {
-            $validated['slug'] = Str::slug($validated['name']);
+        $baseSlug = Str::slug($validated['name']);
+        if (empty($baseSlug)) {
+            $baseSlug = Str::slug($validated['billing_period']) ?: 'plan';
         }
+
+        $slug = $baseSlug;
+        $counter = 1;
+        while (SubscriptionPlan::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+        $validated['slug'] = $slug;
 
         // Ensure features structure has defaults. Shop limits are handled by
         // the Add-ons module, not the subscription plan.
@@ -75,11 +78,15 @@ class SubscriptionController extends Controller
         $features['backup'] = isset($features['backup']) ? true : false;
         $validated['features'] = $features;
 
-        $plan = SubscriptionPlan::create($validated);
+        try {
+            $plan = SubscriptionPlan::create($validated);
+            AuditLog::log("Created subscription plan {$plan->name}", $validated);
 
-        AuditLog::log("Created subscription plan {$plan->name}", $validated);
-
-        return back()->with('success', 'Subscription plan created successfully.');
+            return redirect()->route('admin.subscriptions.index')->with('success', 'Subscription plan created successfully.');
+        } catch (\Throwable $e) {
+            \Log::error('Failed to create subscription plan: ' . $e->getMessage());
+            return redirect()->route('admin.subscriptions.index')->with('error', 'Failed to create plan: ' . $e->getMessage());
+        }
     }
 
     public function updatePlan(Request $request, $id)
@@ -105,7 +112,7 @@ class SubscriptionController extends Controller
 
         AuditLog::log("Updated subscription plan {$plan->name}", $validated);
 
-        return back()->with('success', 'Subscription plan updated successfully.');
+        return redirect()->route('admin.subscriptions.index')->with('success', 'Subscription plan updated successfully.');
     }
 
     public function expireSubscription($id)
@@ -310,6 +317,6 @@ class SubscriptionController extends Controller
 
         AuditLog::log("Deleted subscription plan {$plan->name}");
 
-        return back()->with('success', "Subscription plan deleted successfully.");
+        return redirect()->route('admin.subscriptions.index')->with('success', "Subscription plan deleted successfully.");
     }
 }
