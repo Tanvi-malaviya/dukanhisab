@@ -69,13 +69,13 @@ class SendWhatsAppMessage implements ShouldQueue
             );
             $log->markSent($messageId);
         } catch (WhatsAppException $e) {
-            if ($e->retryable && $this->attempts() < $this->tries) {
+            if ($this->job && $e->retryable && $this->attempts() < $this->tries) {
                 $this->release($this->backoff()[$this->attempts() - 1] ?? 300);
                 return;
             }
             $log->markFailed($e->getMessage());
         } catch (ConnectionException $e) {
-            if ($this->attempts() < $this->tries) {
+            if ($this->job && $this->attempts() < $this->tries) {
                 $this->release($this->backoff()[$this->attempts() - 1] ?? 300);
                 return;
             }

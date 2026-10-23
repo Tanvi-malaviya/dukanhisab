@@ -93,7 +93,13 @@ class WhatsAppMessenger
             return $log;
         });
 
-        SendWhatsAppMessage::dispatch($log->id)->afterCommit();
+        DB::afterCommit(function () use ($log) {
+            try {
+                SendWhatsAppMessage::dispatchSync($log->id);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("WhatsApp message send error for log #{$log->id}: " . $e->getMessage());
+            }
+        });
 
         return $log;
     }
