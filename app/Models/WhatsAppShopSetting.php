@@ -35,7 +35,7 @@ class WhatsAppShopSetting extends Model
     public const MAX_SCHEDULE_DAYS = 2;
 
     public const DEFAULTS = [
-        'enabled' => false,
+        'enabled' => true,
         'schedule_days' => ['mon'],
         'schedule_time' => '10:00',
         'min_due_amount' => 100,
@@ -51,9 +51,14 @@ class WhatsAppShopSetting extends Model
         return in_array($event, self::SCHEDULED_EVENTS, true);
     }
 
-    /** Whether the shop owner switched this event on (everything starts off). */
+    /** Whether the shop owner switched this event on. Defaults to true for customer transactions. */
     public static function isEnabled(int $shopId, string $event): bool
     {
-        return (bool) self::where('shop_id', $shopId)->where('event', $event)->value('enabled');
+        $setting = self::where('shop_id', $shopId)->where('event', $event)->first();
+        if ($setting !== null) {
+            return (bool) $setting->enabled;
+        }
+
+        return in_array($event, ['sale_invoice', 'payment_received'], true);
     }
 }
