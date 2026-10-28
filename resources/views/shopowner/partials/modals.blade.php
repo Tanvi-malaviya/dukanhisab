@@ -231,18 +231,34 @@
                                         x-text="selectedSale.grand_total"></span></span>
                             </div>
                             <template
-                                x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && parseFloat(selectedSale.paid_amount) < parseFloat(selectedSale.grand_total))">
+                                x-if="selectedSale.status === 'Partially Paid' || selectedSale.status === 'Unpaid' || (selectedSale.paid_amount !== null && selectedSale.paid_amount !== undefined && parseFloat(selectedSale.paid_amount) < parseFloat(selectedSale.grand_total)) || (selectedSale.customer && parseFloat(selectedSale.customer.net_balance !== undefined ? selectedSale.customer.net_balance : (selectedSale.customer.due_amount || 0)) > 0)">
                                 <div class="w-full pt-1.5 border-t border-slate-100 dark:border-gray-700 flex flex-col gap-0.5">
                                     <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
                                         <span x-text="(t('paid_amount') || 'Paid Amount') + ':'">Paid Amount:</span>
                                         <span>₹<span
                                                 x-text="parseFloat(selectedSale.paid_amount || 0).toFixed(2)"></span></span>
                                     </div>
-                                    <div class="flex justify-between w-full text-xs font-bold text-rose-600">
-                                        <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
-                                        <span>₹<span
-                                                x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0)).toFixed(2)"></span></span>
-                                    </div>
+                                    <template x-if="selectedSale.customer && parseFloat(selectedSale.customer.net_balance !== undefined ? selectedSale.customer.net_balance : (selectedSale.customer.due_amount || 0)) > 0">
+                                        <div>
+                                            <template x-if="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0)) > 0 && Math.abs(parseFloat(selectedSale.customer.net_balance !== undefined ? selectedSale.customer.net_balance : selectedSale.customer.due_amount) - Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0))) > 0.01">
+                                                <div class="flex justify-between w-full text-xs text-slate-500">
+                                                    <span x-text="(t('this_bill_due') || 'Bill Due') + ':'">Bill Due:</span>
+                                                    <span>₹<span x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0)).toFixed(2)"></span></span>
+                                                </div>
+                                            </template>
+                                            <div class="flex justify-between w-full text-xs font-bold text-rose-600">
+                                                <span x-text="(t('total_due') || 'Total Due') + ':'">Total Due:</span>
+                                                <span>₹<span x-text="parseFloat(selectedSale.customer.net_balance !== undefined ? selectedSale.customer.net_balance : selectedSale.customer.due_amount).toFixed(2)"></span></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!selectedSale.customer || parseFloat(selectedSale.customer.net_balance !== undefined ? selectedSale.customer.net_balance : (selectedSale.customer.due_amount || 0)) <= 0">
+                                        <div class="flex justify-between w-full text-xs font-bold text-rose-600">
+                                            <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
+                                            <span>₹<span
+                                                    x-text="Math.max(0, parseFloat(selectedSale.grand_total) - parseFloat(selectedSale.paid_amount || 0)).toFixed(2)"></span></span>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                         </div>
@@ -2307,9 +2323,9 @@
 
             <!-- Content -->
             <div class="space-y-2">
-                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase" x-text="t('limited_time_offer') || 'Limited Time Offer'">Limited Time Offer</h3>
-                <h4 class="text-base font-bold text-slate-800 dark:text-white" x-text="t('business_lifetime_plan') || 'Business (Lifetime) Plan'">Business (Lifetime) Plan</h4>
-                <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-xs mx-auto">
+                <h3 class="text-xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400 uppercase" x-text="t('limited_time_offer', 'Limited Time Offer')">Limited Time Offer</h3>
+                <h4 class="text-base font-bold text-slate-800 dark:text-white" x-text="t('business_lifetime_plan', 'Business (Lifetime) Plan')">Business (Lifetime) Plan</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-300 leading-relaxed max-w-xs mx-auto" x-text="t('lifetime_offer_desc', 'Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup & restore. No monthly or yearly charges, ever!')">
                     Get lifetime access to all premium features, unlimited invoices, excel export, cloud backup &
                     restore. No monthly or yearly charges, ever!
                 </p>
@@ -2319,10 +2335,10 @@
             <div
                 class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl py-3 px-6 inline-block">
                 <span
-                    class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5" x-text="t('time_remaining') || 'Time Remaining'">Time
+                    class="text-[10px] font-bold text-amber-800 dark:text-amber-400 block uppercase tracking-wider mb-0.5" x-text="t('time_remaining', 'Time Remaining')">Time
                     Remaining</span>
                 <span class="text-lg font-black text-amber-600 dark:text-amber-500"
-                    x-text="Math.ceil(lifetimeOfferDaysLeft) + ' Days Left'"></span>
+                    x-text="Math.ceil(lifetimeOfferDaysLeft) + ' ' + t('days_left', 'Days Left')"></span>
             </div>
 
             <!-- Action Button -->
@@ -2331,7 +2347,7 @@
                     class="w-full py-3 text-sm font-bold rounded-xl transition-all shadow-lg"
                     style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: #0f172a; box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.3);"
                     onmouseover="this.style.filter='brightness(0.9)'" onmouseout="this.style.filter='brightness(1)'"
-                    x-text="t('upgrade_now_and_save') || 'Upgrade Now & Save'">
+                    x-text="t('upgrade_now_and_save', 'Upgrade Now & Save')">
                     Upgrade Now & Save
                 </button>
 
@@ -2341,10 +2357,11 @@
                     <label class="flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" x-model="lifetimeOfferDontShowAgain"
                             class="rounded border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-indigo-600 focus:ring-0 focus:ring-offset-0 w-4 h-4">
-                        <span>Don't show again</span>
+                        <span x-text="t('dont_show_again', 'Don\'t show again')">Don't show again</span>
                     </label>
                     <button type="button" @click="closeLifetimeOfferPopup()"
-                        class="hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium">
+                        class="hover:text-slate-700 dark:hover:text-slate-200 transition-colors font-medium"
+                        x-text="t('close', 'Close')">
                         Close
                     </button>
                 </div>

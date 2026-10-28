@@ -244,9 +244,19 @@
                         class="block w-full pl-7 pr-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-semibold dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
                 </div>
                 <div class="flex justify-between items-center text-xs mt-1.5 px-1 font-semibold"
-                    x-show="getPosDueAmount() > 0">
+                    x-show="getPosDueAmount() > 0 || (getSelectedPosCustomer() && getPosTotalDueAmount() > 0)">
                     <span class="text-emerald-600">Paid: ₹<span x-text="getPosPaidAmount().toFixed(2)"></span></span>
-                    <span class="text-rose-600">Receivable Due: ₹<span x-text="getPosDueAmount().toFixed(2)"></span></span>
+                    <span class="text-rose-600" x-show="getSelectedPosCustomer()">
+                        <template x-if="getPosDueAmount() > 0 && Math.abs(getPosDueAmount() - getPosTotalDueAmount()) > 0.01">
+                            <span class="text-slate-500 font-normal mr-2">
+                                Bill Due: ₹<span x-text="getPosDueAmount().toFixed(2)"></span>
+                            </span>
+                        </template>
+                        Total Due: ₹<span x-text="getPosTotalDueAmount().toFixed(2)"></span>
+                    </span>
+                    <span class="text-rose-600" x-show="!getSelectedPosCustomer() && getPosDueAmount() > 0">
+                        Receivable Due: ₹<span x-text="getPosDueAmount().toFixed(2)"></span>
+                    </span>
                 </div>
             </div>
 

@@ -31,6 +31,35 @@ class EnsureAccountActive
             ], 403);
         }
 
+        // Active Session Tracking: If user accesses app/web today and hasn't logged today
+        if ($user) {
+            $lastLogin = $user->last_login_at ? \Carbon\Carbon::parse($user->last_login_at) : null;
+            if (!$lastLogin || !$lastLogin->isToday()) {
+                $isFirstEver = ($lastLogin === null);
+                $user->last_login_at = \Carbon\Carbon::now();
+                $user->saveQuietly();
+
+                try {
+                    \App\Services\AnalyticsService::track(
+                        eventName: 'login_success',
+                        userId: $user->id,
+                        shopId: $request->header('X-Shop-Id'),
+                        properties: [
+                            'login_type' => 'active_session',
+                            'is_first_login' => $isFirstEver,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                        ],
+                        platform: $request->header('X-Platform') ?? 'web',
+                        appVersion: $request->header('X-App-Version'),
+                        ipAddress: $request->ip()
+                    );
+                } catch (\Throwable $e) {
+                    // Suppress to not break main request
+                }
+            }
+        }
+
         return $next($request);
     }
 }

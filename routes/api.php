@@ -33,6 +33,9 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// Analytics event ingestion endpoint for Mobile (Android/iOS) and Web clients
+Route::post('/v1/analytics/events', [\App\Http\Controllers\Api\AnalyticsApiController::class, 'track']);
+
 // Shop-owner login/registration lives only under /v1/shopowner (OTP verification, suspension
 // check, device limit). The old unchecked /v1/auth/login and /v1/auth/register were removed.
 

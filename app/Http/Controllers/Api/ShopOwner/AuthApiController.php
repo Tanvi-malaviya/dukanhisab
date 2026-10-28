@@ -82,6 +82,23 @@ class AuthApiController extends Controller
             \Log::error('OTP email failed to send: ' . $e->getMessage());
         }
 
+        try {
+            \App\Services\AnalyticsService::track(
+                eventName: 'user_registered',
+                userId: $user->id,
+                properties: [
+                    'email' => $user->email,
+                    'mobile' => $user->mobile,
+                    'name' => $user->name,
+                ],
+                platform: $request->header('X-Platform') ?? 'mobile',
+                appVersion: $request->header('X-App-Version'),
+                ipAddress: $request->ip()
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Analytics tracking failed on register: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'Registration successful. A verification OTP code has been sent to your email.',
             'email' => $user->email,
@@ -130,6 +147,7 @@ class AuthApiController extends Controller
 
         // Verify user email
         $user->email_verified_at = Carbon::now();
+        $user->last_login_at = Carbon::now();
         $user->clearOtp();
         $user->save();
 
@@ -139,6 +157,31 @@ class AuthApiController extends Controller
 
         if ($shop) {
             app(\App\Services\WhatsApp\WhatsAppWallet::class)->grantWelcomeCreditsIfEligible($shop);
+        }
+
+        try {
+            app(\App\Services\PlatformNotificationService::class)->notifyUserRegistered($user);
+        } catch (\Throwable $e) {
+            \Log::warning('PlatformNotificationService error on user register: ' . $e->getMessage());
+        }
+
+        try {
+            \App\Services\AnalyticsService::track(
+                eventName: 'login_success',
+                userId: $user->id,
+                shopId: $shop?->id,
+                properties: [
+                    'login_type' => 'otp_verification',
+                    'is_first_login' => true,
+                    'email' => $user->email,
+                    'name' => $user->name,
+                ],
+                platform: $request->header('X-Platform') ?? 'mobile',
+                appVersion: $request->header('X-App-Version'),
+                ipAddress: $request->ip()
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Analytics tracking failed on verifyOtp: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -227,6 +270,7 @@ class AuthApiController extends Controller
             ], 403);
         }
 
+        $isFirstLogin = ($user->last_login_at === null);
         $user->last_login_at = Carbon::now();
         $user->save();
 
@@ -236,6 +280,25 @@ class AuthApiController extends Controller
 
         if ($shop) {
             app(\App\Services\WhatsApp\WhatsAppWallet::class)->grantWelcomeCreditsIfEligible($shop);
+        }
+
+        try {
+            \App\Services\AnalyticsService::track(
+                eventName: 'login_success',
+                userId: $user->id,
+                shopId: $shop?->id,
+                properties: [
+                    'login_type' => 'password',
+                    'is_first_login' => $isFirstLogin,
+                    'email' => $user->email,
+                    'name' => $user->name,
+                ],
+                platform: $request->header('X-Platform') ?? 'mobile',
+                appVersion: $request->header('X-App-Version'),
+                ipAddress: $request->ip()
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Analytics tracking failed on login: ' . $e->getMessage());
         }
 
         return response()->json([
@@ -601,6 +664,12 @@ class AuthApiController extends Controller
                 ->first();
             if ($unlinkedAddOn) {
                 $unlinkedAddOn->update(['shop_id' => $shop->id]);
+            }
+
+            try {
+                app(\App\Services\PlatformNotificationService::class)->notifyShopAdded($user, $shop);
+            } catch (\Throwable $e) {
+                \Log::warning('PlatformNotificationService error on shop added: ' . $e->getMessage());
             }
         }
 

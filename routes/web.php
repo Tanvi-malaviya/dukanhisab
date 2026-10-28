@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\AddOnController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\AppSettingController;
 use App\Http\Controllers\Admin\InvoiceSettingController;
 use App\Http\Controllers\Admin\PaymentSettingController;
@@ -118,6 +119,10 @@ Route::group([
     Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
     Route::post('payments/{id}/refund', [PaymentController::class, 'refund'])->name('payments.refund');
     Route::post('refunds/{id}/status', [PaymentController::class, 'updateRefundStatus'])->name('refunds.update_status');
+
+    // Product Analytics & User Insights Dashboard
+    Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+    Route::get('analytics/export', [AnalyticsController::class, 'export'])->name('analytics.export');
 
     // Reports Module
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');

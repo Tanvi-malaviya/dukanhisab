@@ -271,6 +271,21 @@ class AddOnApiController extends Controller
             ]
         );
 
+        if ($addOn->slug === 'website') {
+            try {
+                app(\App\Services\PlatformNotificationService::class)->notifyWebsitePurchased($user, [
+                    'shop_name' => $shop?->name,
+                    'website_plan' => $addOn->title,
+                    'amount' => $addOn->price * $quantity,
+                    'order_id' => $isOneTime ? $orderId : ($subscriptionId ?: $paymentId),
+                    'payment_status' => 'Successful',
+                    'purchase_date' => now()->format('d M Y'),
+                ]);
+            } catch (\Throwable $e) {
+                \Log::warning('PlatformNotificationService error on website purchased: ' . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'message' => $addOn->title . ' add-on activated successfully.',
             'user_add_on' => $userAddOn->load('addOn'),

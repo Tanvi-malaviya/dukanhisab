@@ -58,9 +58,24 @@
         input::-ms-clear {
             display: none;
         }
+        /* Clean smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
     </style>
 </head>
-<body class="h-screen overflow-hidden text-slate-900" x-data="authApp()" style="background: linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 45%, #ECFDF5 100%);">
+<body class="min-h-screen text-slate-900 overflow-x-hidden overflow-y-auto" x-data="authApp()" style="background: linear-gradient(135deg, #F0FDF9 0%, #FFFFFF 45%, #ECFDF5 100%);">
 
     <!-- Toast Notification System -->
     <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full">
@@ -106,7 +121,7 @@
         </svg>
     </div>
 
-    <div x-show="!checkingAuth" x-cloak class="shopowner-auth-container relative h-screen w-full overflow-hidden flex flex-col">
+    <div x-show="!checkingAuth" x-cloak class="shopowner-auth-container relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden">
 
         <!-- Subtle background blobs (decorative only, low opacity) -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -131,7 +146,7 @@
         </div>
 
         <!-- Main row: left content / photo / form card -->
-        <div class="relative z-10 flex-1 min-h-0 w-full max-w-[1300px] mx-auto flex flex-col lg:flex-row items-center justify-center gap-2 px-8 lg:px-15 py-2 overflow-hidden">
+        <div class="relative z-10 flex-1 w-full max-w-[1300px] mx-auto flex flex-col lg:flex-row items-center justify-center gap-4 px-4 sm:px-8 lg:px-12 py-3 lg:py-5 my-auto">
 
             <!-- Left: brand content -->
             <div class="hidden lg:flex flex-col justify-center min-w-0" style="width: clamp(300px, 33vw, 460px);">
@@ -216,20 +231,21 @@
             <div class="hidden xl:flex items-center justify-center shrink-0 self-center" style="width: clamp(200px, 20vw, 320px);">
                 <img src="{{ asset('images/auth/shopkeeper.png') }}" alt="Shopkeeper managing their store with DukanHisab"
                      class="relative w-full h-auto object-contain"
-                     style="aspect-ratio: 405 / 915; max-height: 74vh;">
+                     style="aspect-ratio: 405 / 915; max-height: 68vh;">
             </div>
 
             <!-- Right: form card -->
-            <div class="shrink-0 relative z-10 min-w-0 lg:-ml-10" style="width: clamp(300px, 28vw, 400px);">
-                <div class="w-full bg-white border border-slate-100 shadow-lg rounded-2xl p-6">
+            <div class="shrink-0 relative z-10 min-w-0 lg:-ml-6" style="width: clamp(320px, 30vw, 430px);">
+                <div class="w-full bg-white border border-slate-100 shadow-xl rounded-2xl p-5 sm:p-6 max-h-[calc(100vh-4.5rem)] overflow-y-auto flex flex-col">
 
                     <!-- Page Header (top center) -->
-                    <div class="text-center mb-4">
+                    <div class="text-center mb-3">
                         <img src="{{ asset('images/auth/logo-full.png') }}" alt="DukanHisab &ndash; Dukan Ka Hisab, Bilkul Aasan"
-                             class="rounded-2xl shadow-md shadow-primary/20 object-contain mx-auto mb-3"
-                             style="width: 110px; aspect-ratio: 472 / 440;">
+                             class="rounded-2xl shadow-md shadow-primary/20 object-contain mx-auto mb-2"
+                             style="width: 100px; aspect-ratio: 472 / 440;"
+                             x-show="view !== 'shop-setup'">
                         <div class="text-2xl font-extrabold text-slate-800 tracking-tight" x-text="view === 'login' ? 'Welcome Back!' : (view === 'register' ? 'Create Account' : (view === 'forgot-password' ? 'Forgot Password' : (view === 'reset-password' ? 'Reset Password' : (view === 'verify-otp' ? 'Verify OTP' : (view === 'shop-setup' ? 'Shop Setup' : 'Dashboard')))))"></div>
-                        <p class="mt-1.5 text-xs text-slate-500 font-medium" x-text="subtitleText()"></p>
+                        <p class="mt-1 text-xs text-slate-500 font-medium" x-text="subtitleText()"></p>
                     </div>
 
 
@@ -514,9 +530,9 @@
 
                     <!-- 4. SHOP SETUP SCREEN -->
                     <div x-show="view === 'shop-setup'">
-                        <p class="text-xs text-slate-600 mb-4 text-center">Please fill in your shop details to complete your account setup and access your dashboard.</p>
+                        <p class="text-xs text-slate-500 mb-3 text-center">Please fill in your shop details to complete your account setup and access your dashboard.</p>
                         
-                        <form @submit.prevent="handleShopSetup()" class="space-y-3">
+                        <form @submit.prevent="handleShopSetup()" class="space-y-2.5">
                             <!-- Logo Upload + Shop Name inline -->
                             <div class="flex gap-4 items-center mb-1">
                                 <!-- Logo Upload -->
@@ -578,11 +594,14 @@
                                     class="block w-full px-3 py-1.5 bg-white border border-slate-300 focus:border-primary focus:ring-1 focus:ring-primary rounded-lg text-xs placeholder-slate-400 focus:outline-none transition-all">
                             </div>
 
-                            <button type="submit" :disabled="loading" class="w-full flex justify-center py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg transition-all shadow-md shadow-primary/10 cursor-pointer disabled:opacity-50">
-                                <span x-show="!loading">Complete Setup</span>
+                            <button type="submit" :disabled="loading" class="w-full flex justify-center items-center py-2.5 px-4 bg-primary hover:bg-primary-hover text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-primary/20 cursor-pointer disabled:opacity-50 mt-1">
+                                <span x-show="!loading" class="flex items-center gap-1.5">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    Save &amp; Complete Setup
+                                </span>
                                 <span x-show="loading" class="flex items-center gap-1.5">
                                     <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                    Setting up...
+                                    Saving Shop...
                                 </span>
                             </button>
                         </form>

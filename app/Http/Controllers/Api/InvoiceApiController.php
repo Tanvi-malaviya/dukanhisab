@@ -829,17 +829,27 @@ class InvoiceApiController extends Controller
                                     <td class="grand-total-label">' . __('grand_total') . ':</td>
                                     <td class="grand-total-value">&#8377;' . number_format($sale->grand_total, 2) . '</td>
                                 </tr>';
-                                if ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit')) {
+                                if ($sale->status === 'Partially Paid' || $sale->status === 'Unpaid' || ((float)($sale->paid_amount ?? 0) < (float)$sale->grand_total && $sale->payment_type === 'Credit') || ($sale->customer && (float)($sale->customer->net_balance ?? $sale->customer->due_amount ?? 0) > 0)) {
                                     $paidAmt = (float)($sale->paid_amount ?? 0);
-                                    $dueAmt = max(0, (float)$sale->grand_total - $paidAmt);
+                                    $billDueAmt = max(0, (float)$sale->grand_total - $paidAmt);
+                                    $customerTotalDue = $sale->customer ? (float)($sale->customer->net_balance ?? $sale->customer->due_amount ?? $billDueAmt) : $billDueAmt;
                                     $html .= '
                                     <tr>
                                         <td class="total-label" style="color: #16a34a; font-weight: bold; padding-top: 6px;">' . __('paid_amount') . ':</td>
                                         <td class="total-value" style="color: #16a34a; font-weight: bold; padding-top: 6px;">&#8377;' . number_format($paidAmt, 2) . '</td>
-                                    </tr>
+                                    </tr>';
+                                    if ($sale->customer && abs($customerTotalDue - $billDueAmt) > 0.01 && $billDueAmt > 0) {
+                                        $html .= '
+                                        <tr>
+                                            <td class="total-label" style="color: #64748b; font-weight: normal;">' . (__('this_bill_due') ?: 'Bill Due') . ':</td>
+                                            <td class="total-value" style="color: #64748b; font-weight: normal;">&#8377;' . number_format($billDueAmt, 2) . '</td>
+                                        </tr>';
+                                    }
+                                    $dueLabel = $sale->customer ? (__('total_due') ?: __('customer_due')) : __('balance_due');
+                                    $html .= '
                                     <tr>
-                                        <td class="total-label" style="color: #dc2626; font-weight: bold;">' . __('balance_due') . ':</td>
-                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377;' . number_format($dueAmt, 2) . '</td>
+                                        <td class="total-label" style="color: #dc2626; font-weight: bold;">' . $dueLabel . ':</td>
+                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377;' . number_format($customerTotalDue, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '
