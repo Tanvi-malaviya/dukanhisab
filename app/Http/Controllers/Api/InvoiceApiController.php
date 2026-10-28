@@ -1404,15 +1404,25 @@ class InvoiceApiController extends Controller
                                     <td class="grand-total-label">' . __('total_amount') . ':</td>
                                     <td class="grand-total-value">&#8377;' . number_format($purchase->total_amount, 2) . '</td>
                                 </tr>';
-                                if ($paidAmount > 0 || $dueAmount > 0) {
+                                if ($paidAmount > 0 || $dueAmount > 0 || ($purchase->supplier && (float)($purchase->supplier->net_balance ?? $purchase->supplier->due_amount ?? 0) > 0)) {
+                                    $suppTotalDue = $purchase->supplier ? (float)($purchase->supplier->net_balance ?? $purchase->supplier->due_amount ?? $dueAmount) : $dueAmount;
                                     $html .= '
                                     <tr>
                                         <td class="total-label" style="color: #16a34a; font-weight: bold; padding-top: 6px;">' . __('paid_amount') . ':</td>
                                         <td class="total-value" style="color: #16a34a; font-weight: bold; padding-top: 6px;">&#8377;' . number_format($paidAmount, 2) . '</td>
-                                    </tr>
+                                    </tr>';
+                                    if ($purchase->supplier && abs($suppTotalDue - $dueAmount) > 0.01 && $dueAmount > 0) {
+                                        $html .= '
+                                        <tr>
+                                            <td class="total-label" style="color: #64748b; font-weight: normal;">' . (__('this_bill_due') ?: 'Bill Due') . ':</td>
+                                            <td class="total-value" style="color: #64748b; font-weight: normal;">&#8377;' . number_format($dueAmount, 2) . '</td>
+                                        </tr>';
+                                    }
+                                    $dueLabel = $purchase->supplier ? (__('total_due') ?: __('supplier_due')) : __('balance_due');
+                                    $html .= '
                                     <tr>
-                                        <td class="total-label" style="color: #dc2626; font-weight: bold;">' . __('balance_due') . ':</td>
-                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377;' . number_format($dueAmount, 2) . '</td>
+                                        <td class="total-label" style="color: #dc2626; font-weight: bold;">' . $dueLabel . ':</td>
+                                        <td class="total-value" style="color: #dc2626; font-weight: bold;">&#8377;' . number_format($suppTotalDue, 2) . '</td>
                                     </tr>';
                                 }
                                 $html .= '

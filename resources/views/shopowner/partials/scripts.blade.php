@@ -4783,6 +4783,10 @@
                 const sup = this.suppliers.find(s => s.id == this.newPurchase.supplier_id);
                 return sup ? `${sup.name} (${sup.mobile || 'No Mobile'})` : this.t('walk_in_supplier');
             },
+            getSelectedPurchaseSupplier() {
+                if (!this.newPurchase.supplier_id) return null;
+                return this.suppliers.find(s => s.id == this.newPurchase.supplier_id) || null;
+            },
             searchPurchaseHistorySuppliers() {
                 const q = this.purchaseHistorySupplierSearchQuery;
                 fetch('/api/v1/suppliers?search=' + encodeURIComponent(q), { headers: this.getHeaders() })
@@ -4894,6 +4898,11 @@
             getPurchaseDueAmount() {
                 return Math.max(0, this.calculatePurchaseTotal() - this.getPurchasePaidAmount());
             },
+            getPurchaseTotalDueAmount() {
+                const sup = this.getSelectedPurchaseSupplier();
+                const supExistingDue = sup ? parseFloat(sup.net_balance !== undefined ? sup.net_balance : (sup.due_amount || 0)) : 0;
+                return Math.max(0, supExistingDue + this.getPurchaseDueAmount());
+            },
             setPurchasePaymentType(type) {
                 this.newPurchase.payment_type = type;
                 if (type === 'Credit') {
@@ -4905,10 +4914,25 @@
             getPurchaseSaveButtonLabel() {
                 const total = this.calculatePurchaseTotal();
                 const paid = this.getPurchasePaidAmount();
-                const due = total - paid;
+                const due = this.getPurchaseDueAmount();
+                const totalDue = this.getPurchaseTotalDueAmount();
+                const hasSup = !!this.getSelectedPurchaseSupplier();
                 if (total <= 0) return this.t('save_purchase') || 'Save Purchase';
-                if (due <= 0) return `Pay ₹${paid.toFixed(2)} & Save`;
-                if (paid <= 0) return `Save as Due (₹${due.toFixed(2)})`;
+                if (due <= 0) {
+                    if (hasSup && totalDue > 0) {
+                        return `Pay ₹${paid.toFixed(2)} & Save (Total Due: ₹${totalDue.toFixed(2)})`;
+                    }
+                    return `Pay ₹${paid.toFixed(2)} & Save`;
+                }
+                if (paid <= 0) {
+                    if (hasSup && Math.abs(totalDue - due) > 0.01) {
+                        return `Save as Due (Total Due: ₹${totalDue.toFixed(2)})`;
+                    }
+                    return `Save as Due (₹${due.toFixed(2)})`;
+                }
+                if (hasSup && Math.abs(totalDue - due) > 0.01) {
+                    return `Pay ₹${paid.toFixed(2)} (Total Due: ₹${totalDue.toFixed(2)})`;
+                }
                 return `Pay ₹${paid.toFixed(2)} (Due: ₹${due.toFixed(2)})`;
             },
             savePurchase() {
