@@ -232,11 +232,20 @@
                         class="block w-full pl-7 pr-3 py-1.5 border border-slate-300 dark:border-gray-600 rounded-xl text-sm font-semibold dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-primary">
                 </div>
                 <div class="flex justify-between items-center text-xs mt-1.5 px-1 font-semibold"
-                    x-show="getPurchaseDueAmount() > 0">
+                    x-show="getPurchaseDueAmount() > 0 || (getSelectedPurchaseSupplier() && getPurchaseTotalDueAmount() > 0)">
                     <span class="text-emerald-600">Paid: ₹<span
                             x-text="getPurchasePaidAmount().toFixed(2)"></span></span>
-                    <span class="text-rose-600">Payable Due: ₹<span
-                            x-text="getPurchaseDueAmount().toFixed(2)"></span></span>
+                    <span class="text-rose-600" x-show="getSelectedPurchaseSupplier()">
+                        <template x-if="getPurchaseDueAmount() > 0 && Math.abs(getPurchaseDueAmount() - getPurchaseTotalDueAmount()) > 0.01">
+                            <span class="text-slate-500 font-normal mr-2">
+                                Bill Due: ₹<span x-text="getPurchaseDueAmount().toFixed(2)"></span>
+                            </span>
+                        </template>
+                        Total Due: ₹<span x-text="getPurchaseTotalDueAmount().toFixed(2)"></span>
+                    </span>
+                    <span class="text-rose-600" x-show="!getSelectedPurchaseSupplier() && getPurchaseDueAmount() > 0">
+                        Payable Due: ₹<span x-text="getPurchaseDueAmount().toFixed(2)"></span>
+                    </span>
                 </div>
             </div>
 

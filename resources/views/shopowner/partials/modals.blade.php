@@ -974,7 +974,7 @@
                                         x-text="parseFloat(selectedPurchase.total_amount).toFixed(2)"></span></span>
                             </div>
                             <template
-                                x-if="parseFloat(selectedPurchase.paid_amount || 0) > 0 || selectedPurchase.status === 'Partially Paid' || selectedPurchase.status === 'Unpaid'">
+                                x-if="parseFloat(selectedPurchase.paid_amount || 0) > 0 || selectedPurchase.status === 'Partially Paid' || selectedPurchase.status === 'Unpaid' || (selectedPurchase.supplier && parseFloat(selectedPurchase.supplier.net_balance !== undefined ? selectedPurchase.supplier.net_balance : (selectedPurchase.supplier.due_amount || 0)) > 0)">
                                 <div
                                     class="w-full pt-1 border-t border-slate-100 dark:border-gray-700/60 flex flex-col gap-0.5">
                                     <div class="flex justify-between w-full text-xs font-semibold text-emerald-600">
@@ -982,11 +982,27 @@
                                         <span>₹<span
                                                 x-text="parseFloat(selectedPurchase.paid_amount || 0).toFixed(2)"></span></span>
                                     </div>
-                                    <div class="flex justify-between w-full text-xs font-bold text-rose-600">
-                                        <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
-                                        <span>₹<span
-                                                x-text="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)).toFixed(2)"></span></span>
-                                    </div>
+                                    <template x-if="selectedPurchase.supplier && parseFloat(selectedPurchase.supplier.net_balance !== undefined ? selectedPurchase.supplier.net_balance : (selectedPurchase.supplier.due_amount || 0)) > 0">
+                                        <div>
+                                            <template x-if="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)) > 0 && Math.abs(parseFloat(selectedPurchase.supplier.net_balance !== undefined ? selectedPurchase.supplier.net_balance : selectedPurchase.supplier.due_amount) - Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0))) > 0.01">
+                                                <div class="flex justify-between w-full text-xs text-slate-500">
+                                                    <span x-text="(t('this_bill_due') || 'Bill Due') + ':'">Bill Due:</span>
+                                                    <span>₹<span x-text="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)).toFixed(2)"></span></span>
+                                                </div>
+                                            </template>
+                                            <div class="flex justify-between w-full text-xs font-bold text-rose-600">
+                                                <span x-text="(t('total_due') || 'Total Due') + ':'">Total Due:</span>
+                                                <span>₹<span x-text="parseFloat(selectedPurchase.supplier.net_balance !== undefined ? selectedPurchase.supplier.net_balance : selectedPurchase.supplier.due_amount).toFixed(2)"></span></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template x-if="!selectedPurchase.supplier || parseFloat(selectedPurchase.supplier.net_balance !== undefined ? selectedPurchase.supplier.net_balance : (selectedPurchase.supplier.due_amount || 0)) <= 0">
+                                        <div class="flex justify-between w-full text-xs font-bold text-rose-600">
+                                            <span x-text="(t('balance_due') || 'Balance Due') + ':'">Balance Due:</span>
+                                            <span>₹<span
+                                                    x-text="Math.max(0, parseFloat(selectedPurchase.total_amount) - parseFloat(selectedPurchase.paid_amount || 0)).toFixed(2)"></span></span>
+                                        </div>
+                                    </template>
                                 </div>
                             </template>
                         </div>
