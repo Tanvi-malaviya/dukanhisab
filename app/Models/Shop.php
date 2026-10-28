@@ -82,6 +82,21 @@ class Shop extends Model
         return $this->hasOne(WhatsAppWallet::class, 'shop_id');
     }
 
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'shop_id');
+    }
+
+    public function sales()
+    {
+        return $this->hasMany(Sale::class, 'shop_id');
+    }
+
+    public function purchases()
+    {
+        return $this->hasMany(Purchase::class, 'shop_id');
+    }
+
     protected static function booted(): void
     {
         static::created(function (Shop $shop) {

@@ -66,7 +66,7 @@ class WhatsAppApiController extends Controller
         $locale = $request->header('X-Locale') ?: $request->query('locale') ?: $request->input('locale') ?: app()->getLocale();
 
         $events = [];
-        foreach (WhatsAppTemplate::EVENTS as $key => $meta) {
+        foreach (WhatsAppTemplate::SHOP_EVENTS as $key => $meta) {
             $setting = $saved->get($key);
             $template = $messenger->templateFor($shop, $key, $locale);
             $scheduled = WhatsAppShopSetting::isScheduled($key);
@@ -106,7 +106,7 @@ class WhatsAppApiController extends Controller
     {
         $data = $request->validate([
             'events' => 'required|array',
-            'events.*.key' => ['required', 'distinct', Rule::in(array_keys(WhatsAppTemplate::EVENTS))],
+            'events.*.key' => ['required', 'distinct', Rule::in(array_keys(WhatsAppTemplate::SHOP_EVENTS))],
             'events.*.enabled' => 'required|boolean',
             'events.*.schedule_days' => [
                 'nullable',
@@ -423,6 +423,19 @@ class WhatsAppApiController extends Controller
         }
 
         $this->wallet->completePurchase($purchase, $request->razorpay_payment_id);
+
+        try {
+            app(\App\Services\PlatformNotificationService::class)->notifyWhatsAppServicePurchased($request->user(), [
+                'service_name' => 'WhatsApp Messaging Pack',
+                'whatsapp_plan' => $purchase->pack_name . ' (' . number_format($purchase->credits) . ' credits)',
+                'amount' => $purchase->amount,
+                'order_id' => $purchase->razorpay_order_id,
+                'payment_status' => 'Confirmed',
+                'purchase_date' => now()->format('d M Y'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('PlatformNotificationService error on whatsapp service purchased: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => number_format($purchase->credits) . ' WhatsApp message credits added.',

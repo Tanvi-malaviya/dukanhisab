@@ -122,8 +122,23 @@ class SubscriptionApiController extends Controller
             ], 502);
         }
 
+        $cancelledPlanName = $user->activePlan?->name ?? 'Premium';
+        $accessUntil = optional($subscription->ends_at)->format('d M Y') ?? now()->format('d M Y');
+
         $this->downgradeToFree($user, $subscription, 'cancelled');
         $user->load(['activePlan', 'currentSubscription']);
+
+        try {
+            app(\App\Services\PlatformNotificationService::class)->notifyPlanCancelled($user, [
+                'plan_name' => $cancelledPlanName,
+                'cancellation_date' => now()->format('d M Y'),
+                'effective_cancellation_date' => now()->format('d M Y'),
+                'access_end_date' => $accessUntil,
+                'cancellation_status' => 'Confirmed',
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('PlatformNotificationService error on plan cancel: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Your subscription has been cancelled. You are now on the Free plan.',
@@ -274,15 +289,32 @@ class SubscriptionApiController extends Controller
 
         // If user is choosing the free plan, perform downgrade/upgrade immediately
         if ($plan->slug === 'free') {
+            $oldPlan = $user->activePlan;
+            $activeSub = $user->subscriptions()->where('status', 'active')->first();
+            $currentExpiry = optional($activeSub?->ends_at)->format('d M Y') ?? now()->format('d M Y');
+
             $user->active_plan_id = $plan->id;
             $user->save();
 
-            $activeSub = $user->subscriptions()->where('status', 'active')->first();
             if ($activeSub) {
                 $this->downgradeToFree($user, $activeSub, 'cancelled');
             }
 
             $user->load(['activePlan', 'currentSubscription']);
+
+            if ($oldPlan && $oldPlan->slug !== 'free') {
+                try {
+                    app(\App\Services\PlatformNotificationService::class)->notifyPlanDowngraded($user, [
+                        'old_plan' => $oldPlan->name,
+                        'new_plan' => $plan->name,
+                        'request_date' => now()->format('d M Y'),
+                        'effective_date' => now()->format('d M Y'),
+                        'current_expiry_date' => $currentExpiry,
+                    ]);
+                } catch (\Throwable $e) {
+                    Log::warning('PlatformNotificationService error on plan downgrade: ' . $e->getMessage());
+                }
+            }
 
             return response()->json([
                 'message' => 'Subscription updated successfully to ' . $plan->name,
@@ -471,6 +503,9 @@ class SubscriptionApiController extends Controller
             return response()->json(['message' => 'Payment signature verification failed.'], 400);
         }
 
+        // Capture previous plan before updating
+        $previousPlan = $user->activePlan;
+
         // Activate the subscription locally
         $user->active_plan_id = $plan->id;
         $user->save();
@@ -519,6 +554,32 @@ class SubscriptionApiController extends Controller
                 'payment_date' => now(),
             ]
         );
+
+        // Platform notifications: Plan Purchased or Plan Upgraded
+        try {
+            $notificationService = app(\App\Services\PlatformNotificationService::class);
+            if ($previousPlan && $previousPlan->id !== $plan->id && $previousPlan->slug !== 'free') {
+                $notificationService->notifyPlanUpgraded($user, [
+                    'old_plan' => $previousPlan->name,
+                    'new_plan' => $plan->name,
+                    'amount' => $plan->price,
+                    'effective_date' => now()->format('d M Y'),
+                    'expiry_date' => $endsAt ? $endsAt->format('d M Y') : 'Lifetime',
+                ]);
+            } else {
+                $notificationService->notifyPlanPurchased($user, [
+                    'plan_name' => $plan->name,
+                    'amount' => $plan->price,
+                    'purchase_date' => now()->format('d M Y'),
+                    'start_date' => now()->format('d M Y'),
+                    'expiry_date' => $endsAt ? $endsAt->format('d M Y') : 'Lifetime',
+                    'order_id' => $transactionId,
+                    'subscription_status' => 'Active',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('PlatformNotificationService error on plan purchase/upgrade: ' . $e->getMessage());
+        }
 
         $user->load(['activePlan', 'currentSubscription']);
 

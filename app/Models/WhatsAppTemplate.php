@@ -40,16 +40,53 @@ class WhatsAppTemplate extends Model
     public const PAY_BUTTON_TEXT = 'Pay Now';
 
     /**
-     * Every message the platform can send, and who receives it. Shop owners toggle these;
-     * the admin attaches one approved Meta template per event and language.
+     * Shop-level events toggled by shop owners in app settings.
+     */
+    public const SHOP_EVENTS = [
+        'sale_invoice' => ['label' => 'Sale invoice', 'recipient' => 'customer', 'type' => 'shop'],
+        'payment_received' => ['label' => 'Payment received', 'recipient' => 'customer', 'type' => 'shop'],
+        'due_reminder' => ['label' => 'Due reminder', 'recipient' => 'customer', 'type' => 'shop'],
+        'purchase_record' => ['label' => 'Purchase record', 'recipient' => 'supplier', 'type' => 'shop'],
+        'supplier_payment' => ['label' => 'Payment made', 'recipient' => 'supplier', 'type' => 'shop'],
+        'supplier_due' => ['label' => 'Due statement', 'recipient' => 'supplier', 'type' => 'shop'],
+    ];
+
+    /**
+     * Platform lifecycle events triggered automatically by system actions.
+     */
+    public const PLATFORM_EVENTS = [
+        'user_registered' => ['label' => 'User Welcome', 'recipient' => 'user', 'type' => 'platform'],
+        'shop_added' => ['label' => 'Shop Added', 'recipient' => 'user', 'type' => 'platform'],
+        'website_purchased' => ['label' => 'Shop Website Purchased', 'recipient' => 'user', 'type' => 'platform'],
+        'whatsapp_service_purchased' => ['label' => 'WhatsApp Service Purchased', 'recipient' => 'user', 'type' => 'platform'],
+        'whatsapp_low_credits' => ['label' => 'WhatsApp Low Credits (<50)', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_purchased' => ['label' => 'Plan Purchased', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_upgraded' => ['label' => 'Plan Upgraded', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_downgraded' => ['label' => 'Plan Downgraded', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_cancelled' => ['label' => 'Plan Cancelled', 'recipient' => 'user', 'type' => 'platform'],
+    ];
+
+    /**
+     * Every message the platform can send, combining shop and platform events.
      */
     public const EVENTS = [
-        'sale_invoice' => ['label' => 'Sale invoice', 'recipient' => 'customer'],
-        'payment_received' => ['label' => 'Payment received', 'recipient' => 'customer'],
-        'due_reminder' => ['label' => 'Due reminder', 'recipient' => 'customer'],
-        'purchase_record' => ['label' => 'Purchase record', 'recipient' => 'supplier'],
-        'supplier_payment' => ['label' => 'Payment made', 'recipient' => 'supplier'],
-        'supplier_due' => ['label' => 'Due statement', 'recipient' => 'supplier'],
+        // Shop Events
+        'sale_invoice' => ['label' => 'Sale invoice', 'recipient' => 'customer', 'type' => 'shop'],
+        'payment_received' => ['label' => 'Payment received', 'recipient' => 'customer', 'type' => 'shop'],
+        'due_reminder' => ['label' => 'Due reminder', 'recipient' => 'customer', 'type' => 'shop'],
+        'purchase_record' => ['label' => 'Purchase record', 'recipient' => 'supplier', 'type' => 'shop'],
+        'supplier_payment' => ['label' => 'Payment made', 'recipient' => 'supplier', 'type' => 'shop'],
+        'supplier_due' => ['label' => 'Due statement', 'recipient' => 'supplier', 'type' => 'shop'],
+        // Platform Lifecycle Events
+        'user_registered' => ['label' => 'User Welcome', 'recipient' => 'user', 'type' => 'platform'],
+        'shop_added' => ['label' => 'Shop Added', 'recipient' => 'user', 'type' => 'platform'],
+        'website_purchased' => ['label' => 'Shop Website Purchased', 'recipient' => 'user', 'type' => 'platform'],
+        'whatsapp_service_purchased' => ['label' => 'WhatsApp Service Purchased', 'recipient' => 'user', 'type' => 'platform'],
+        'whatsapp_low_credits' => ['label' => 'WhatsApp Low Credits (<50)', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_purchased' => ['label' => 'Plan Purchased', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_upgraded' => ['label' => 'Plan Upgraded', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_downgraded' => ['label' => 'Plan Downgraded', 'recipient' => 'user', 'type' => 'platform'],
+        'plan_cancelled' => ['label' => 'Plan Cancelled', 'recipient' => 'user', 'type' => 'platform'],
     ];
 
     public const LANGUAGES = [
@@ -67,6 +104,26 @@ class WhatsAppTemplate extends Model
         'amount' => ['label' => 'Amount', 'sample' => '₹2,450.00'],
         'due_amount' => ['label' => 'Pending due', 'sample' => '₹1,200.00'],
         'date' => ['label' => 'Date', 'sample' => '01 Oct 2026'],
+        // Platform lifecycle variables
+        'name' => ['label' => 'User full name', 'sample' => 'Rajesh Sharma'],
+        'plan_name' => ['label' => 'Plan name', 'sample' => 'Premium Yearly'],
+        'old_plan' => ['label' => 'Previous plan', 'sample' => 'Basic'],
+        'new_plan' => ['label' => 'New plan', 'sample' => 'Premium Yearly'],
+        'expiry_date' => ['label' => 'Plan expiry date', 'sample' => '28 Oct 2027'],
+        'effective_date' => ['label' => 'Effective date', 'sample' => '28 Oct 2026'],
+        'current_expiry_date' => ['label' => 'Current plan expiry', 'sample' => '28 Nov 2026'],
+        'remaining_credits' => ['label' => 'Remaining credits', 'sample' => '42'],
+        'website_plan' => ['label' => 'Website plan title', 'sample' => 'Online Store Starter'],
+        'service_name' => ['label' => 'Service name', 'sample' => 'WhatsApp Messaging'],
+        'whatsapp_plan' => ['label' => 'WhatsApp pack name', 'sample' => 'Pro Pack (5,000 Credits)'],
+        'order_id' => ['label' => 'Order / Transaction ID', 'sample' => 'ORD-100293'],
+        'payment_status' => ['label' => 'Payment status', 'sample' => 'Paid'],
+        'subscription_status' => ['label' => 'Subscription status', 'sample' => 'Active'],
+        'cancellation_date' => ['label' => 'Cancellation date', 'sample' => '28 Oct 2026'],
+        'access_end_date' => ['label' => 'Access end date', 'sample' => '28 Nov 2026'],
+        'cancellation_status' => ['label' => 'Cancellation status', 'sample' => 'Cancelled'],
+        'downgrade_effect_note' => ['label' => 'Downgrade effect note', 'sample' => 'Your new plan benefits will become effective on the scheduled date.'],
+        'cancellation_effect_note' => ['label' => 'Cancellation effect note', 'sample' => 'Your plan benefits will remain active until the end of your billing period.'],
     ];
 
     /**

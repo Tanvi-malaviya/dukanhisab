@@ -155,6 +155,41 @@ class WhatsAppClient
         return $messageId;
     }
 
+    /**
+     * Sends a plain text message and returns Meta's message id (wamid...).
+     */
+    public function sendText(string $to, string $text, bool $previewUrl = false): string
+    {
+        $normalized = self::normalizePhone($to);
+        if (!$normalized) {
+            throw new WhatsAppException("Invalid destination phone number: {$to}");
+        }
+
+        $response = Http::withToken($this->accessToken)
+            ->timeout(15)
+            ->post($this->url($this->phoneNumberId . '/messages'), [
+                'messaging_product' => 'whatsapp',
+                'recipient_type' => 'individual',
+                'to' => $normalized,
+                'type' => 'text',
+                'text' => [
+                    'preview_url' => $previewUrl,
+                    'body' => $text,
+                ],
+            ]);
+
+        if (!$response->successful()) {
+            throw WhatsAppException::fromResponse($response);
+        }
+
+        $messageId = $response->json('messages.0.id');
+        if (!$messageId) {
+            throw new WhatsAppException('WhatsApp did not return a message id.');
+        }
+
+        return $messageId;
+    }
+
     /** Template management works on the WhatsApp Business Account, not the phone number. */
     public function canManageTemplates(): bool
     {

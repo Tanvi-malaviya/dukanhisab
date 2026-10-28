@@ -135,7 +135,13 @@
             dark: localStorage.getItem('darkMode') === 'true',
 
             // Multi-Language System (Loaded from separate JSON files in /lang directory)
-            currentLang: localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en',
+            currentLang: (() => {
+                try {
+                    const u = JSON.parse(localStorage.getItem('shopowner_user') || '{}');
+                    if (u && u.language) return u.language;
+                } catch (_) {}
+                return localStorage.getItem('dukanhisab_lang') || localStorage.getItem('locale') || 'en';
+            })(),
             translations: {
                 en: @json(json_decode(file_get_contents(base_path('lang/en.json')), true) ?? []),
                 gu: @json(json_decode(file_get_contents(base_path('lang/gu.json')), true) ?? []),
@@ -172,7 +178,7 @@
                     return true;
                 }
                 try {
-                    const cacheKey = 'dukanhisab_trans_v2_' + lang;
+                    const cacheKey = 'dukanhisab_trans_v3_' + lang;
                     const cached = sessionStorage.getItem(cacheKey);
                     if (cached) {
                         try {
@@ -197,7 +203,7 @@
                 return false;
             },
 
-            t(key) {
+            t(key, fallback = null) {
                 const lang = this.currentLang || 'en';
                 if (this.translations && this.translations[lang] && this.translations[lang][key]) {
                     return this.translations[lang][key];
@@ -205,7 +211,7 @@
                 if (this.translations && this.translations['en'] && this.translations['en'][key]) {
                     return this.translations['en'][key];
                 }
-                return key;
+                return fallback !== null ? fallback : key;
             },
 
             sortByName(arr, targetLang = null) {
@@ -246,12 +252,6 @@
                 if (Array.isArray(this.expenseCategories) && this.expenseCategories.length > 0) this.expenseCategories = this.sortByName(this.expenseCategories, lang);
                 if (Array.isArray(this.containerTypes) && this.containerTypes.length > 0) this.containerTypes = this.sortByName(this.containerTypes, lang);
                 window.dispatchEvent(new CustomEvent('language-changed', { detail: { lang } }));
-            },
-
-            async init() {
-                if (this.currentLang && !this.translations[this.currentLang]) {
-                    await this.loadLanguage(this.currentLang);
-                }
             },
 
             formatDate(dateVal) {
@@ -722,6 +722,10 @@
                         }
                     }
                 });
+
+                if (this.currentLang && (!this.translations || !this.translations[this.currentLang])) {
+                    this.loadLanguage(this.currentLang);
+                }
 
                 if (this.token && this.hasShop) {
                     this.loadAllData();
@@ -2029,6 +2033,9 @@
                         if (d.user) {
                             this.user = d.user;
                             localStorage.setItem('shopowner_user', JSON.stringify(d.user));
+                            if (d.user.language && this.currentLang !== d.user.language) {
+                                this.setLanguage(d.user.language);
+                            }
                             this.checkLifetimeOffer();
                             window.dispatchEvent(new CustomEvent('sync-settings-form'));
                         }
@@ -3494,6 +3501,11 @@
             getPosDueAmount() {
                 return Math.max(0, this.calculateGrandTotal() - this.getPosPaidAmount());
             },
+            getPosTotalDueAmount() {
+                const cust = this.getSelectedPosCustomer();
+                const custExistingDue = cust ? parseFloat(cust.net_balance !== undefined ? cust.net_balance : (cust.due_amount || 0)) : 0;
+                return Math.max(0, custExistingDue + this.getPosDueAmount());
+            },
             setPosPaymentType(type) {
                 this.pos.paymentType = type;
                 if (this.posContainers) {
@@ -3510,10 +3522,25 @@
             getSaleSaveButtonLabel() {
                 const total = this.calculateGrandTotal();
                 const paid = this.getPosPaidAmount();
-                const due = total - paid;
+                const due = this.getPosDueAmount();
+                const totalDue = this.getPosTotalDueAmount();
+                const hasCust = !!this.getSelectedPosCustomer();
                 if (total <= 0) return this.t('save_and_print_bill') || 'Save & Print Bill';
-                if (due <= 0) return `Pay ₹${paid.toFixed(2)} & Save`;
-                if (paid <= 0) return `Save as Due (₹${due.toFixed(2)})`;
+                if (due <= 0) {
+                    if (hasCust && totalDue > 0) {
+                        return `Pay ₹${paid.toFixed(2)} & Save (Total Due: ₹${totalDue.toFixed(2)})`;
+                    }
+                    return `Pay ₹${paid.toFixed(2)} & Save`;
+                }
+                if (paid <= 0) {
+                    if (hasCust && Math.abs(totalDue - due) > 0.01) {
+                        return `Save as Due (Total Due: ₹${totalDue.toFixed(2)})`;
+                    }
+                    return `Save as Due (₹${due.toFixed(2)})`;
+                }
+                if (hasCust && Math.abs(totalDue - due) > 0.01) {
+                    return `Pay ₹${paid.toFixed(2)} (Total Due: ₹${totalDue.toFixed(2)})`;
+                }
                 return `Pay ₹${paid.toFixed(2)} (Due: ₹${due.toFixed(2)})`;
             },
 

@@ -121,6 +121,7 @@ class WhatsAppWallet
                 throw new InsufficientCreditsException('You have no WhatsApp message credits left. Buy a message pack to continue.');
             }
 
+            $previousBalance = $wallet->balance;
             $wallet->balance += $credits;
             $wallet->save();
 
@@ -130,6 +131,18 @@ class WhatsAppWallet
                 'credits' => $credits,
                 'balance_after' => $wallet->balance,
             ]);
+
+            // Notify owner when message credits drop below 50
+            if ($credits < 0 && $wallet->balance < 50 && $previousBalance >= 50) {
+                try {
+                    $shop = Shop::with('owner')->find($shopId);
+                    if ($shop && $shop->owner) {
+                        app(\App\Services\PlatformNotificationService::class)->notifyWhatsAppLowCredits($shop->owner, $wallet->balance, $shop);
+                    }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Low credits notification error: ' . $e->getMessage());
+                }
+            }
         });
     }
 

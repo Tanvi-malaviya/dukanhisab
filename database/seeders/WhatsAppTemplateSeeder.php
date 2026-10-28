@@ -231,6 +231,140 @@ class WhatsAppTemplateSeeder extends Seeder
                 'has_pay_button' => false,
                 'status' => 'active',
             ],
+            // ==========================================
+            // 7. USER REGISTRATION WELCOME (Platform)
+            // ==========================================
+            [
+                'key' => 'user_registered',
+                'language' => 'en',
+                'meta_template_name' => 'user_registered_en',
+                'meta_language_code' => 'en_US',
+                'body' => "🎉 *Welcome to DukanHisab, {{1}}!*\n\nThank you for joining us! 💚\n\nDukanHisab helps you manage your business records in one place, including sales, purchases, products, inventory, customers, suppliers, expenses and reports.\n\n🚀 Ready to get started? Set up your shop and start managing your business digitally.\n\n📱 *Download App:*\nhttps://play.google.com/store/apps/details?id=com.app.dukanhisab\n\n💻 *Web Dashboard:*\nhttps://dukanhisab.in/shop/login\n\n*DukanHisab — Apni Dukaan Ka Hisab, Ab Ek App Mein!* 🏪",
+                'variables' => ['name'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 8. SHOP ADDED (Platform)
+            // ==========================================
+            [
+                'key' => 'shop_added',
+                'language' => 'en',
+                'meta_template_name' => 'shop_added_en',
+                'meta_language_code' => 'en_US',
+                'body' => "🎉 *Your Shop Has Been Added Successfully!*\n\nHello {{1}}, 👋\n\nYour shop *{{2}}* is now added to DukanHisab. 🏪\n\nYou're ready to organize your business records in one place!\n\n✅ Add your products and prices\n✅ Record sales and purchases\n✅ Manage inventory\n✅ Maintain customer and supplier accounts\n✅ Track expenses and view reports\n\n🚀 *Next Step:* Add your products and start recording your daily transactions.\n\n📱 App: https://play.google.com/store/apps/details?id=com.app.dukanhisab\n\n💻 Dashboard: https://dukanhisab.in/shop/login\n\nWishing you growth and success!\n\n*Team DukanHisab* 💚",
+                'variables' => ['name', 'shop_name'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 9. SHOP WEBSITE PURCHASED (Platform)
+            // ==========================================
+            [
+                'key' => 'website_purchased',
+                'language' => 'en',
+                'meta_template_name' => 'website_purchased_en',
+                'meta_language_code' => 'en_US',
+                'body' => "🌐 *Thank You for Choosing a DukanHisab Shop Website!*\n\nHello {{1}}, 👋\n\nWe've received your shop website purchase for *{{2}}*.\n\n📋 *Purchase Details*\n• Plan: {{3}}\n• Amount: {{4}}\n• Order ID: {{5}}\n• Payment Status: {{6}}\n\nOnce your payment is confirmed, we'll proceed with the website activation or setup according to your plan.\n\n💻 Manage your shop:\nhttps://dukanhisab.in/shop/login\n\nNeed help? Contact the DukanHisab support team.\n\n*Team DukanHisab* 💚",
+                'variables' => ['name', 'shop_name', 'website_plan', 'amount', 'order_id', 'payment_status'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 10. WHATSAPP SERVICE PURCHASED (Platform)
+            // ==========================================
+            [
+                'key' => 'whatsapp_service_purchased',
+                'language' => 'en',
+                'meta_template_name' => 'whatsapp_service_purchased_en',
+                'meta_language_code' => 'en_US',
+                'body' => "🎉 *WhatsApp Service Purchase Received!*\n\nHello {{1}},\n\nThank you for choosing the WhatsApp service through DukanHisab! 💚\n\n📋 *Purchase Details*\n• Service: {{2}}\n• Plan: {{3}}\n• Amount: {{4}}\n• Order ID: {{5}}\n• Status: {{6}}\n\nAfter payment confirmation, your purchased service or credits will be activated according to your plan.\n\nYou can manage your service from your DukanHisab dashboard:\n\n💻 https://dukanhisab.in/shop/login\n\n*Team DukanHisab*",
+                'variables' => ['name', 'service_name', 'whatsapp_plan', 'amount', 'order_id', 'payment_status'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 11. WHATSAPP LOW CREDITS (Platform)
+            // ==========================================
+            [
+                'key' => 'whatsapp_low_credits',
+                'language' => 'en',
+                'meta_template_name' => 'whatsapp_low_credits_en',
+                'meta_language_code' => 'en_US',
+                'body' => "⚠️ *Your WhatsApp Message Credits Are Running Low!*\n\nHello {{1}},\n\nYour DukanHisab WhatsApp account has fewer than 50 message credits remaining.\n\n📊 *Current Balance:* {{2}} credits\n\nTo avoid interruptions to your WhatsApp messaging, please recharge your credits before they run out.\n\n💻 *Recharge & Manage Credits:*\nhttps://dukanhisab.in/shop/login\n\nStay connected with your customers without interruption!\n\n*Team DukanHisab* 💚",
+                'variables' => ['name', 'remaining_credits'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 12. PLAN PURCHASED (Platform)
+            // ==========================================
+            [
+                'key' => 'plan_purchased',
+                'language' => 'en',
+                'meta_template_name' => 'plan_purchased_en',
+                'meta_language_code' => 'en_US',
+                'body' => "🎉 *Your DukanHisab Plan Purchase Is Confirmed!*\n\nHello {{1}},\n\nThank you for upgrading your business management experience with DukanHisab! 💚\n\n📋 *Subscription Details*\n• Plan: {{2}}\n• Amount: {{3}}\n• Valid Until: {{4}}\n• Order ID: {{5}}\n• Status: {{6}}\n\nYour plan benefits will be available according to the confirmed subscription details.\n\n🚀 Manage your subscription:\nhttps://dukanhisab.in/shop/login\n\nThank you for choosing DukanHisab!\n\n*Team DukanHisab*",
+                'variables' => ['name', 'plan_name', 'amount', 'expiry_date', 'order_id', 'subscription_status'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 13. PLAN UPGRADED (Platform)
+            // ==========================================
+            [
+                'key' => 'plan_upgraded',
+                'language' => 'en',
+                'meta_template_name' => 'plan_upgraded_en',
+                'meta_language_code' => 'en_US',
+                'body' => "🚀 *Your DukanHisab Plan Has Been Upgraded!*\n\nHello {{1}},\n\nYour subscription has been upgraded successfully! 🎉\n\n📋 *Plan Details*\n• Previous Plan: {{2}}\n• New Plan: {{3}}\n• Amount Charged: {{4}}\n• Effective From: {{5}}\n• Valid Until: {{6}}\n\nYou can now access the features included in your new plan, according to its terms.\n\n💻 Manage your plan:\nhttps://dukanhisab.in/shop/login\n\nThank you for growing with DukanHisab! 💚\n\n*Team DukanHisab*",
+                'variables' => ['name', 'old_plan', 'new_plan', 'amount', 'effective_date', 'expiry_date'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 14. PLAN DOWNGRADED (Platform)
+            // ==========================================
+            [
+                'key' => 'plan_downgraded',
+                'language' => 'en',
+                'meta_template_name' => 'plan_downgraded_en',
+                'meta_language_code' => 'en_US',
+                'body' => "ℹ️ *Your DukanHisab Plan Change Is Confirmed*\n\nHello {{1}},\n\nYour request to change your subscription has been confirmed.\n\n📋 *Plan Details*\n• Current Plan: {{2}}\n• New Plan: {{3}}\n• Effective Date: {{4}}\n• Current Plan Valid Until: {{5}}\n\n{{6}}\n\nPlease review the features and limits of your new plan before the change takes effect.\n\n💻 Manage your subscription:\nhttps://dukanhisab.in/shop/login\n\nNeed help? Contact DukanHisab Support.\n\n*Team DukanHisab*",
+                'variables' => ['name', 'old_plan', 'new_plan', 'effective_date', 'current_expiry_date', 'downgrade_effect_note'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
+
+            // ==========================================
+            // 15. PLAN CANCELLED (Platform)
+            // ==========================================
+            [
+                'key' => 'plan_cancelled',
+                'language' => 'en',
+                'meta_template_name' => 'plan_cancelled_en',
+                'meta_language_code' => 'en_US',
+                'body' => "ℹ️ *Your DukanHisab Subscription Cancellation*\n\nHello {{1}},\n\nWe've received your request to cancel your *{{2}}* subscription.\n\n📋 *Cancellation Details*\n• Plan: {{2}}\n• Request Date: {{3}}\n• Access Until: {{4}}\n• Cancellation Status: {{5}}\n\n{{6}}\n\nYou can review your subscription or explore available plans here:\n\n💻 https://dukanhisab.in/shop/login\n\nWe're sorry to see you leave and thank you for being part of DukanHisab. 💚\n\nIf you need assistance, our support team is here to help.\n\n*Team DukanHisab*",
+                'variables' => ['name', 'plan_name', 'cancellation_date', 'access_end_date', 'cancellation_status', 'cancellation_effect_note'],
+                'has_document' => false,
+                'has_pay_button' => false,
+                'status' => 'active',
+            ],
         ];
 
         foreach ($templates as $data) {

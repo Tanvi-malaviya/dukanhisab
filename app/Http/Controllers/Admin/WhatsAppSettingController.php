@@ -43,12 +43,12 @@ class WhatsAppSettingController extends Controller
         $templates = WhatsAppTemplate::orderBy('key')->orderBy('language')->get();
         $packs = WhatsAppPack::orderBy('credits')->get();
 
-        // Which (event, language) pairs still have no sendable template — those messages can't be sent.
+        // Which (event, language) pairs still have no sendable template for shop operations
         $missing = [];
-        foreach (array_keys(WhatsAppTemplate::EVENTS) as $key) {
+        foreach (array_keys(WhatsAppTemplate::SHOP_EVENTS) as $key) {
             foreach (array_keys(WhatsAppTemplate::LANGUAGES) as $lang) {
                 if (!$templates->first(fn ($t) => $t->key === $key && $t->language === $lang && $t->isSendable())) {
-                    $missing[] = WhatsAppTemplate::EVENTS[$key]['label'] . ' (' . WhatsAppTemplate::LANGUAGES[$lang] . ')';
+                    $missing[] = WhatsAppTemplate::SHOP_EVENTS[$key]['label'] . ' (' . WhatsAppTemplate::LANGUAGES[$lang] . ')';
                 }
             }
         }
