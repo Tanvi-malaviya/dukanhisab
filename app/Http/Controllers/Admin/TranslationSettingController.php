@@ -509,6 +509,15 @@ class TranslationSettingController extends Controller
     }
 
     /**
+     * Clear all translation cache and reload fresh from disk.
+     */
+    public function clearCache()
+    {
+        TranslationService::clearAllCache();
+        return back()->with('success', 'Translation cache refreshed successfully from disk and database.');
+    }
+
+    /**
      * AJAX reset an override back to the base Git default value.
      */
     public function destroyOverride(Request $request)

@@ -65,6 +65,18 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center gap-2 shrink-0">
+                <form action="{{ route('admin.settings.translations.clear_cache') }}" method="POST" class="inline m-0">
+                    @csrf
+                    <button type="submit"
+                        class="px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                        title="Reload fresh translations from disk and clear cache">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Refresh Cache</span>
+                    </button>
+                </form>
+
                 <button type="button" onclick="openNewKeyModal()"
                     class="px-3 py-1.5 bg-white hover:bg-teal-50/50 border border-slate-200 hover:border-teal-300 text-slate-700 text-xs font-semibold rounded-lg transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer">
                     <svg class="w-3.5 h-3.5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
