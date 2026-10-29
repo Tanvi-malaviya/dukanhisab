@@ -168,6 +168,7 @@ Route::group([
     Route::post('settings/translations/update-all', [TranslationSettingController::class, 'updateKeyAll'])->name('settings.translations.update_all');
     Route::post('settings/translations/store-key', [TranslationSettingController::class, 'storeKey'])->name('settings.translations.store_key');
     Route::post('settings/translations/reset-override', [TranslationSettingController::class, 'destroyOverride'])->name('settings.translations.reset_override');
+    Route::post('settings/translations/clear-cache', [TranslationSettingController::class, 'clearCache'])->name('settings.translations.clear_cache');
 
     // Advertisement Management
     Route::get('ads', [AdvertisementController::class, 'index'])->name('ads.index');

@@ -52,11 +52,15 @@ class TranslationService
 
     /**
      * Get combined translations (base file merged with database overrides).
-     * Database overrides always take precedence over static base files.
+     * Automatically invalidates when lang/{locale}.json changes via git pull.
      */
     public static function getCombined(string $locale): array
     {
-        return Cache::rememberForever(self::CACHE_PREFIX . "combined_{$locale}", function () use ($locale) {
+        $path = base_path("lang/{$locale}.json");
+        $mtime = file_exists($path) ? filemtime($path) : 0;
+        $cacheKey = self::CACHE_PREFIX . "combined_{$locale}_{$mtime}";
+
+        return Cache::remember($cacheKey, 86400, function () use ($locale) {
             $base = self::getBase($locale);
             $overrides = self::getOverrides($locale);
 
@@ -179,8 +183,12 @@ class TranslationService
      */
     public static function clearLocaleCache(string $locale): void
     {
+        $path = base_path("lang/{$locale}.json");
+        $mtime = file_exists($path) ? filemtime($path) : 0;
+
         Cache::forget(self::CACHE_PREFIX . "overrides_{$locale}");
         Cache::forget(self::CACHE_PREFIX . "combined_{$locale}");
+        Cache::forget(self::CACHE_PREFIX . "combined_{$locale}_{$mtime}");
         Cache::forget(self::CACHE_PREFIX . 'all_overrides_map');
 
         // Re-generate the storage mirror file
@@ -201,8 +209,7 @@ class TranslationService
     {
         Cache::forget(self::CACHE_PREFIX . 'all_overrides_map');
         foreach (\App\Http\Controllers\Admin\TranslationSettingController::LANGUAGES as $code => $meta) {
-            Cache::forget(self::CACHE_PREFIX . "overrides_{$code}");
-            Cache::forget(self::CACHE_PREFIX . "combined_{$code}");
+            self::clearLocaleCache($code);
         }
     }
 
