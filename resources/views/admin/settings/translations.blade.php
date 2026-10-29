@@ -7,6 +7,18 @@
 @section('content')
 <div class="space-y-3">
 
+    <!-- Persistence Status Notice -->
+    <div class="bg-teal-50/70 border border-teal-200/80 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs text-teal-900 shadow-2xs">
+        <div class="flex items-center gap-2">
+            <svg class="w-4 h-4 text-teal-700 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+            </svg>
+            <span>
+                <strong class="font-bold">Database Persistence Active:</strong> All translations saved here are stored directly in MySQL and cached in memory. When you deploy or run <code>git pull</code> on the live server, your custom translations remain 100% intact and will never revert.
+            </span>
+        </div>
+    </div>
+
     <!-- Compact Unified Controls Card -->
     <div class="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs space-y-3">
         <!-- Row 1: Search, Filter, Stats & Actions -->
@@ -166,17 +178,35 @@
                             <!-- Key -->
                             <td class="py-2 px-3 border-r border-slate-100 align-top pt-2.5">
                                 <input type="hidden" name="translations[{{ $index }}][key]" value="{{ $item['key'] }}">
-                                <div class="flex items-start justify-between gap-1 group/key">
-                                    <span class="font-mono text-[11px] text-slate-700 leading-snug break-words select-all font-medium" title="{{ $item['key'] }}">
-                                        {{ $item['key'] }}
-                                    </span>
-                                    <button type="button" onclick="navigator.clipboard.writeText('{{ $item['key'] }}'); showToast('Copied key!');"
-                                            class="opacity-0 group-hover/key:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer shrink-0"
-                                            title="Copy Key">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                        </svg>
-                                    </button>
+                                <div class="space-y-1">
+                                    <div class="flex items-start justify-between gap-1 group/key">
+                                        <span class="font-mono text-[11px] text-slate-700 leading-snug break-words select-all font-medium" title="{{ $item['key'] }}">
+                                            {{ $item['key'] }}
+                                        </span>
+                                        <button type="button" onclick="navigator.clipboard.writeText('{{ $item['key'] }}'); showToast('Copied key!');"
+                                                class="opacity-0 group-hover/key:opacity-100 p-0.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-all cursor-pointer shrink-0"
+                                                title="Copy Key">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    @php
+                                        $hasOverride = false;
+                                        foreach(array_merge(['en'], $activeLangs) as $checkLang) {
+                                            if (!empty($overridesMap[$checkLang][$item['key']])) {
+                                                $hasOverride = true;
+                                                break;
+                                            }
+                                        }
+                                    @endphp
+                                    @if($hasOverride)
+                                        <div>
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Saved in database (immune to git pull)">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> DB Saved
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
                             </td>
 
