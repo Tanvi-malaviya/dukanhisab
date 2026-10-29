@@ -57,5 +57,15 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('openTicketsBadge', 0);
             }
         });
+
+        // Load database translation overrides into Laravel's translator
+        try {
+            \Illuminate\Support\Facades\Event::listen(\Illuminate\Foundation\Events\LocaleUpdated::class, function ($event) {
+                \App\Services\TranslationService::loadIntoTranslator($event->locale);
+            });
+            \App\Services\TranslationService::loadIntoTranslator(app()->getLocale());
+        } catch (\Throwable $e) {
+            // Graceful fallback
+        }
     }
 }

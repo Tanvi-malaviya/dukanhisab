@@ -18,14 +18,14 @@ Route::get('/v1/translations/{lang}', function (string $lang) {
     if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
         abort(404);
     }
-    $path = base_path("lang/{$lang}.json");
-    if (!file_exists($path)) {
+    $data = \App\Services\TranslationService::getCombined($lang);
+    if (empty($data)) {
         abort(404);
     }
-    return response()->file($path, [
+    return response()->json($data, 200, [
         'Content-Type' => 'application/json',
-        'Cache-Control' => 'public, max-age=86400',
-    ]);
+        'Cache-Control' => 'no-cache, private',
+    ], JSON_UNESCAPED_UNICODE);
 });
 
 // Sanctum authenticated user info route

@@ -32,27 +32,27 @@ Route::get('/v1/translations/{lang}', function (string $lang) {
     if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
         abort(404);
     }
-    $path = base_path("lang/{$lang}.json");
-    if (!file_exists($path)) {
+    $data = \App\Services\TranslationService::getCombined($lang);
+    if (empty($data)) {
         abort(404);
     }
-    return response()->file($path, [
+    return response()->json($data, 200, [
         'Content-Type' => 'application/json',
-        'Cache-Control' => 'public, max-age=86400',
-    ]);
+        'Cache-Control' => 'no-cache, private',
+    ], JSON_UNESCAPED_UNICODE);
 });
 Route::get('/translations/{lang}', function (string $lang) {
     if (!preg_match('/^[a-z]{2,5}$/', $lang)) {
         abort(404);
     }
-    $path = base_path("lang/{$lang}.json");
-    if (!file_exists($path)) {
+    $data = \App\Services\TranslationService::getCombined($lang);
+    if (empty($data)) {
         abort(404);
     }
-    return response()->file($path, [
+    return response()->json($data, 200, [
         'Content-Type' => 'application/json',
-        'Cache-Control' => 'public, max-age=86400',
-    ]);
+        'Cache-Control' => 'no-cache, private',
+    ], JSON_UNESCAPED_UNICODE);
 });
 
 // Admin Auth Routes
@@ -167,6 +167,7 @@ Route::group([
     Route::get('settings/translations/key-all', [TranslationSettingController::class, 'getKeyAll'])->name('settings.translations.key_all');
     Route::post('settings/translations/update-all', [TranslationSettingController::class, 'updateKeyAll'])->name('settings.translations.update_all');
     Route::post('settings/translations/store-key', [TranslationSettingController::class, 'storeKey'])->name('settings.translations.store_key');
+    Route::post('settings/translations/reset-override', [TranslationSettingController::class, 'destroyOverride'])->name('settings.translations.reset_override');
 
     // Advertisement Management
     Route::get('ads', [AdvertisementController::class, 'index'])->name('ads.index');
